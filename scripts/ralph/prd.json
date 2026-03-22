@@ -35,7 +35,7 @@
         "shellcheck passes on all .sh files",
         "bootstrap/verify.sh checks that kubectl can connect and nodes are Ready"
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "003",
@@ -51,7 +51,7 @@
         "All three provider docs exist with prerequisites, steps, and copy-pasteable commands",
         "shellcheck passes on all .sh files"
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "004",

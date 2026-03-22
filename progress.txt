@@ -11,7 +11,54 @@
 - Keycloak OIDC client IDs follow pattern: sovereign-<service>
 - ArgoCD apps live in argocd-apps/<tier>/<service>-app.yaml
 - Namespace naming: one namespace per service, named after the service
+- SSH_OPTS in shell scripts must be a bash array (not a string) to satisfy shellcheck SC2086 — use `SSH_OPTS=(-o ... -i "$KEY")` and expand as `"${SSH_OPTS[@]}"`
+- `grep -v 'x' | wc -l` triggers SC2126 — use `grep -vc 'x' || true` instead (the `|| true` guards against grep returning exit 1 when there are 0 matches, which would trip `set -e`)
+- New branch for each story must be created from main and then merge in prior story branches to build on scaffold work
+- prd.json only exists at root (not scripts/ralph/) — only update the root copy
 
 ## Run History
 
-(Entries added here after each Ralph iteration)
+## 2026-03-22 - Story 001
+- Scaffolded complete repo directory structure (all dirs from CLAUDE.md)
+- Created charts/_globals/values.yaml with global.domain, global.storageClass, global.keycloak, global.tls, global.ingressClass stubs
+- Created bootstrap/config.yaml.example with all providers documented (hetzner, generic, aws, digitalocean) and every field commented
+- Created README.md with ASCII architecture diagram, quick start, service URL table, provider guide links
+- Created argocd-apps/{platform,security,observability,devex,testing}/README.md
+- Created platform/xrds/README.md and platform/compositions/README.md explaining the Crossplane XRD pattern
+- Created docs/quickstart.md with 6-step setup guide
+- Created .gitignore (protects bootstrap/config.yaml from accidental commit)
+- Files changed: 13 new files, all directory scaffolding
+- **Learnings for future iterations:**
+  - prd.json exists at both root AND scripts/ralph/prd.json — update both when marking stories passes: true
+  - bash heredoc with ${variable^} (uppercase) causes "bad substitution" in zsh — use Python or write files individually
+  - shellcheck is at /opt/homebrew/bin/shellcheck (not in PATH by default in eval context)
+  - No .sh files were created in story 001, so shellcheck requirement was trivially satisfied
+---
+
+## 2026-03-22 - Story 002
+- Created bootstrap/bootstrap.sh — main entry point that reads config.yaml with yq, validates required fields, and delegates to provider scripts
+- Created bootstrap/providers/hetzner.sh — provisions Hetzner CX22 server via hcloud CLI, installs K3s with TLS SANs, fetches kubeconfig
+- Created bootstrap/providers/generic-vps.sh — SSH-installs K3s on any Ubuntu 22.04 server given IP and SSH key
+- Created bootstrap/verify.sh — checks kubectl connectivity and node Ready status
+- All scripts print monthly cost estimates and Cloudflare wildcard DNS setup instructions
+- Files changed: bootstrap/bootstrap.sh, bootstrap/providers/hetzner.sh, bootstrap/providers/generic-vps.sh, bootstrap/verify.sh
+- **Learnings for future iterations:**
+  - SSH_OPTS must be a bash array for shellcheck compliance: `SSH_OPTS=(-o StrictHostKeyChecking=no -i "$KEY")` expanded as `"${SSH_OPTS[@]}"`
+  - `grep -vc 'pattern' || true` is the shellcheck-compliant way to count non-matching lines with `set -e`
+  - New feature branches need to merge from prior story branch before work begins (story 001 scaffold was on feature/repo-scaffold, not main)
+  - yq is the YAML parser used in bootstrap scripts (require check at top of each script)
+---
+
+## 2026-03-22 - Story 003
+- Created bootstrap/providers/aws-ec2.sh — provisions EC2 instance via AWS CLI, auto-detects Ubuntu 22.04 AMI, imports SSH key, creates security group, launches instance, installs K3s, outputs kubeconfig to ~/.kube/sovereign-aws.yaml
+- Created bootstrap/providers/digitalocean.sh — provisions Droplet via doctl, uploads SSH key by fingerprint (idempotent), creates Droplet, installs K3s, outputs kubeconfig to ~/.kube/sovereign-do.yaml
+- Created docs/providers/hetzner.md — cost table, prerequisites, step-by-step with copy-pasteable commands, scaling and troubleshooting
+- Created docs/providers/aws-ec2-free-tier.md — free tier guide, Elastic IP note, cost table, cleanup steps
+- Created docs/providers/digitalocean.md — cost table, region list, doctl setup, scaling guide
+- Files changed: bootstrap/providers/aws-ec2.sh, bootstrap/providers/digitalocean.sh, docs/providers/hetzner.md, docs/providers/aws-ec2-free-tier.md, docs/providers/digitalocean.md
+- **Learnings for future iterations:**
+  - AWS EC2 uses `ubuntu` user (not `root`) for Ubuntu 22.04 official AMIs from Canonical (owner 099720109477)
+  - DigitalOcean SSH key deduplication should use fingerprint matching via `ssh-keygen -lf` + `doctl compute ssh-key list`
+  - AWS security group describe query returns "None" string (not empty) when no SG found — check for both conditions
+  - New feature branches created from the prior story branch include all prior work automatically
+---

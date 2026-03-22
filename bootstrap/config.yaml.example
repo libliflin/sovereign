@@ -1,0 +1,104 @@
+# Sovereign Platform — Bootstrap Configuration
+# Copy this file to config.yaml and fill in your values.
+# config.yaml is gitignored — never commit it.
+#
+# Usage:
+#   cp bootstrap/config.yaml.example bootstrap/config.yaml
+#   # Edit config.yaml with your values
+#   ./bootstrap/bootstrap.sh
+
+# ─────────────────────────────────────────────
+# REQUIRED: Your domain name
+# All services will be at <service>.<domain>
+# You must own this domain and be able to create DNS records.
+# Example: sovereign-autarky.dev
+# ─────────────────────────────────────────────
+domain: "your-domain.com"
+
+# ─────────────────────────────────────────────
+# REQUIRED: Cloud/VPS provider
+# Supported: hetzner | generic | aws-ec2 | digitalocean
+# ─────────────────────────────────────────────
+provider: "hetzner"
+
+# ─────────────────────────────────────────────
+# SSH key to use for server access
+# Must be an absolute path to your private key.
+# The public key (.pub) will be added to the server.
+# ─────────────────────────────────────────────
+sshKeyPath: "~/.ssh/id_ed25519"
+
+# ─────────────────────────────────────────────
+# HETZNER CLOUD (provider: hetzner)
+# Get your token at: https://console.hetzner.cloud/
+# ─────────────────────────────────────────────
+hetzner:
+  # Hetzner Cloud API token (read+write)
+  apiToken: ""
+  # Server type. CX21 (~€4.15/mo) is the minimum recommended.
+  # Options: cx11, cx21, cx31, cx41, cx51
+  serverType: "cx21"
+  # Datacenter location. Choose closest to your users.
+  # Options: nbg1 (Nuremberg), fsn1 (Falkenstein), hel1 (Helsinki), ash (Ashburn), hil (Hillsboro)
+  location: "nbg1"
+  # Server name (hostname)
+  serverName: "sovereign-1"
+
+# ─────────────────────────────────────────────
+# GENERIC VPS (provider: generic)
+# Use this if you already have a running Ubuntu 22.04 server.
+# ─────────────────────────────────────────────
+generic:
+  # IP address of your existing server
+  serverIp: ""
+  # SSH user (usually root or ubuntu)
+  sshUser: "root"
+
+# ─────────────────────────────────────────────
+# AWS EC2 (provider: aws-ec2)
+# Uses AWS CLI. Run `aws configure` first.
+# t2.micro is free tier eligible (750 hrs/mo for 12 months).
+# ─────────────────────────────────────────────
+aws:
+  # AWS region
+  region: "us-east-1"
+  # Instance type. t2.micro = free tier, t3.small = ~$15/mo
+  instanceType: "t2.micro"
+  # AMI ID for Ubuntu 22.04 LTS (varies by region — leave empty to auto-detect)
+  amiId: ""
+  # Name tag for the EC2 instance
+  instanceName: "sovereign-1"
+
+# ─────────────────────────────────────────────
+# DIGITALOCEAN (provider: digitalocean)
+# Uses doctl CLI. Run `doctl auth init` first.
+# ─────────────────────────────────────────────
+digitalocean:
+  # Droplet size. s-1vcpu-1gb = ~$6/mo, s-1vcpu-2gb = ~$12/mo
+  size: "s-1vcpu-2gb"
+  # Region slug. nyc3, sfo3, ams3, sgp1, lon1, fra1, tor1, blr1
+  region: "nyc3"
+  # Droplet name
+  dropletName: "sovereign-1"
+
+# ─────────────────────────────────────────────
+# KUBERNETES CONFIGURATION
+# ─────────────────────────────────────────────
+kubernetes:
+  # K8s distribution to install. k3s recommended for single-node.
+  # Options: k3s | kubeadm
+  distribution: "k3s"
+  # Where to save the kubeconfig after bootstrap
+  kubeconfigPath: "~/.kube/config-sovereign"
+
+# ─────────────────────────────────────────────
+# PLATFORM CONFIGURATION
+# ─────────────────────────────────────────────
+platform:
+  # Git repository URL for ArgoCD to watch.
+  # Must be accessible from your cluster (use HTTPS or deploy SSH key).
+  repoUrl: "https://github.com/your-org/your-sovereign-fork"
+  # Branch ArgoCD should track
+  repoBranch: "main"
+  # Admin email (used for Let's Encrypt if enabled, Keycloak admin)
+  adminEmail: "admin@your-domain.com"
