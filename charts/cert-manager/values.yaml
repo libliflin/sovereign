@@ -1,0 +1,54 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  keycloak:
+    url: "https://auth.{{ .Values.global.domain }}"
+    realm: "sovereign"
+
+# cert-manager upstream chart values
+cert-manager:
+  installCRDs: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  webhook:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  cainjector:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+# Self-signed ClusterIssuer (always enabled — used for bootstrap)
+selfSigned:
+  enabled: true
+
+# Vault ClusterIssuer (disabled by default — enable after Phase 2 Vault is running)
+vault:
+  enabled: false
+  # URL of your Vault instance
+  url: "https://vault.sovereign-autarky.dev"
+  # Vault PKI mount path
+  pkiMount: "pki"
+  # Vault role for cert-manager
+  role: "cert-manager"
+  # Kubernetes auth mount path in Vault
+  authMount: "kubernetes"
+  # ServiceAccount used by cert-manager for Vault auth
+  serviceAccountName: "cert-manager"
+  # Secret containing the Vault CA bundle (optional)
+  caBundle: ""

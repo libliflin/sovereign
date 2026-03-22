@@ -1,0 +1,26 @@
+{{- if .Values.vault.enabled }}
+---
+# Vault ClusterIssuer — enabled after Phase 2 (Vault is running and PKI engine initialized)
+# To enable: set vault.enabled=true and configure vault.url, vault.pkiMount, vault.role
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: vault-issuer
+  labels:
+    {{- include "cert-manager.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  vault:
+    server: {{ .Values.vault.url | quote }}
+    path: {{ printf "%s/sign/%s" .Values.vault.pkiMount .Values.vault.role | quote }}
+    {{- if .Values.vault.caBundle }}
+    caBundle: {{ .Values.vault.caBundle | quote }}
+    {{- end }}
+    auth:
+      kubernetes:
+        mountPath: {{ printf "/v1/auth/%s" .Values.vault.authMount | quote }}
+        role: {{ .Values.vault.role | quote }}
+        serviceAccountRef:
+          name: {{ .Values.vault.serviceAccountName | quote }}
+{{- end }}

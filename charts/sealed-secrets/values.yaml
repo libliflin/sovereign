@@ -1,0 +1,19 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+
+# sealed-secrets upstream chart values
+sealed-secrets:
+  fullnameOverride: "sealed-secrets-controller"
+  namespace: sealed-secrets
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+  # Retain the sealing key as a regular Kubernetes secret for backup
+  secretName: "sealed-secrets-key"
+  # Rotate sealing keys every 30 days
+  keyrenewperiod: "720h"

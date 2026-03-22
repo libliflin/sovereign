@@ -1,0 +1,12 @@
+apiVersion: v2
+name: sealed-secrets
+description: Sealed Secrets controller for GitOps-safe secret storage in Sovereign Platform
+type: application
+version: 0.1.0
+appVersion: "0.26.0"
+
+dependencies:
+  - name: sealed-secrets
+    version: "2.15.0"
+    repository: "https://bitnami-labs.github.io/sealed-secrets"
+    alias: sealed-secrets
