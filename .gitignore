@@ -1,0 +1,24 @@
+# Bootstrap config with credentials — NEVER commit this
+bootstrap/config.yaml
+
+# Kubeconfig files
+*.kubeconfig
+kubeconfig
+
+# Node.js
+node_modules/
+dist/
+.env
+.env.local
+
+# Build artifacts
+*.tgz
+charts/*.tgz
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

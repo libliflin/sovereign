@@ -1,0 +1,24 @@
+# Sovereign Platform — Ralph Progress Log
+# This file is updated after each Ralph iteration.
+# Claude Code reads this before every iteration to learn from prior work.
+
+## Codebase Patterns
+(Updated by Ralph after each iteration — check here first for conventions discovered)
+
+- Domain variable: always {{ .Values.global.domain }} in Helm templates
+- Storage class: always {{ .Values.global.storageClass }} — default is "ceph-block"
+- All ingresses use TLS, cert from cert-manager
+- Keycloak OIDC client IDs follow pattern: sovereign-<service>
+- ArgoCD apps live in argocd-apps/<tier>/<service>-app.yaml
+- Namespace naming: one namespace per service, named after the service
+
+## Run History
+
+## 2026-03-22 - Story 001
+- Scaffolded complete repo directory structure (all dirs from CLAUDE.md)
+- Created charts/_globals/values.yaml with global.domain, global.storageClass, global.keycloak stubs
+- Created bootstrap/config.yaml.example documenting all providers
+- Created README.md with ASCII architecture diagram and quickstart
+- Created argocd-apps tier READMEs, platform XRD/composition READMEs, docs/quickstart.md, .gitignore
+- prd.json exists at both root AND scripts/ralph/prd.json — update both when marking stories passes: true
+---

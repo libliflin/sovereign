@@ -14,4 +14,19 @@
 
 ## Run History
 
-(Entries added here after each Ralph iteration)
+## 2026-03-22 - Story 001
+- Scaffolded complete repo directory structure (all dirs from CLAUDE.md)
+- Created charts/_globals/values.yaml with global.domain, global.storageClass, global.keycloak, global.tls, global.ingressClass stubs
+- Created bootstrap/config.yaml.example with all providers documented (hetzner, generic, aws, digitalocean) and every field commented
+- Created README.md with ASCII architecture diagram, quick start, service URL table, provider guide links
+- Created argocd-apps/{platform,security,observability,devex,testing}/README.md
+- Created platform/xrds/README.md and platform/compositions/README.md explaining the Crossplane XRD pattern
+- Created docs/quickstart.md with 6-step setup guide
+- Created .gitignore (protects bootstrap/config.yaml from accidental commit)
+- Files changed: 13 new files, all directory scaffolding
+- **Learnings for future iterations:**
+  - prd.json exists at both root AND scripts/ralph/prd.json — update both when marking stories passes: true
+  - bash heredoc with ${variable^} (uppercase) causes "bad substitution" in zsh — use Python or write files individually
+  - shellcheck is at /opt/homebrew/bin/shellcheck (not in PATH by default in eval context)
+  - No .sh files were created in story 001, so shellcheck requirement was trivially satisfied
+---
