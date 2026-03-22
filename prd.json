@@ -116,7 +116,7 @@
         "helm lint passes",
         "Bootstrap script includes step to install ArgoCD and apply root-app.yaml"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "008",

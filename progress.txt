@@ -118,3 +118,22 @@
   - Vault ClusterIssuer auth.kubernetes.mountPath expects the full vault path: "/v1/auth/<mount>" not just the mount name
   - sealed-secrets 2.15.0 chart (upstream) uses `namespace:` field in values to set the deployment namespace; fullnameOverride sets the controller name to "sealed-secrets-controller" (the standard expected by kubeseal CLI)
 ---
+
+## 2026-03-22 - Story 007
+- Created charts/argocd/ wrapper chart using official argo/argo-cd 6.7.3 (app v2.10.0) as Helm dependency
+- charts/argocd/values.yaml: Keycloak OIDC SSO stub (sso.enabled=false by default), resource limits, repo URL config, admin password placeholder
+- charts/argocd/templates/ingress.yaml: ArgoCD server ingress using {{ .Values.global.domain }} (argocd.<domain>), TLS via cert-manager
+- charts/argocd/templates/oidc-config.yaml: Dex OIDC config for Keycloak — guarded by `sso.enabled` flag, creates argocd-cm ConfigMap patch and client secret placeholder
+- charts/argocd/templates/admin-secret.yaml: Comment-only file with instructions for generating and sealing admin password
+- argocd-apps/root-app.yaml: App-of-Apps root application watching argocd-apps/ directory with recurse:true and excluding root-app.yaml itself
+- bootstrap/bootstrap.sh: Added Phase 1 ArgoCD install steps after provider provisioning — helm dependency update, helm upgrade --install argocd, kubectl wait, kubectl apply root-app
+- All 5 tier subdirectories (platform, security, observability, devex, testing) already had README.md from Story 001
+- helm lint passes (0 charts failed); helm template renders ~300 resources correctly
+- shellcheck passes on bootstrap.sh
+- **Learnings for future iterations:**
+  - ArgoCD App-of-Apps root app: use `directory.recurse: true` + `directory.exclude: "root-app.yaml"` to avoid infinite self-referential loop
+  - argo-cd subchart (6.7.3) uses `server.extraArgs: [--insecure]` + `configs.params.server.insecure: "true"` to allow HTTP at ingress, with TLS termination at the ingress level
+  - SSO/Dex config: when using Keycloak as OIDC upstream via Dex, set the issuer URL to `<keycloak-url>/realms/<realm>` (not just the base URL)
+  - ArgoCD admin password in the argo-cd subchart: set `configs.secret.argocdServerAdminPassword` to "" (empty) to disable the default password and force use of argocd-initial-admin-secret
+  - bootstrap.sh ArgoCD install step should use `helm dependency update` before `helm upgrade --install` so Chart.lock is respected
+---
