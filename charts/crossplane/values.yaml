@@ -1,0 +1,41 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+
+# Values passed to the upstream crossplane chart
+crossplane:
+  # Resource limits for crossplane pods
+  resourcesCrossplane:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  resourcesRBACManager:
+    limits:
+      cpu: 100m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Crossplane providers to install
+providers:
+  helm:
+    enabled: true
+    package: "xpkg.upbound.io/crossplane-contrib/provider-helm:v0.19.0"
+  kubernetes:
+    enabled: true
+    package: "xpkg.upbound.io/upbound/provider-kubernetes:v0.14.1"
+
+# ProviderConfig settings
+providerConfig:
+  # Helm provider uses in-cluster credentials by default
+  helm:
+    credentials:
+      source: InjectedIdentity
+  # Kubernetes provider uses in-cluster credentials by default
+  kubernetes:
+    credentials:
+      source: InjectedIdentity

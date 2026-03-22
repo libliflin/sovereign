@@ -1,0 +1,15 @@
+{{- if .Values.providers.helm.enabled }}
+# ProviderConfig for the Helm provider — uses in-cluster service account credentials.
+# This allows Crossplane to install Helm releases into the local cluster.
+# To install releases into a remote cluster, replace credentials.source with Secret
+# and reference a kubeconfig secret.
+apiVersion: helm.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+  labels:
+    {{- include "crossplane-sovereign.labels" . | nindent 4 }}
+spec:
+  credentials:
+    source: {{ .Values.providerConfig.helm.credentials.source | quote }}
+{{- end }}

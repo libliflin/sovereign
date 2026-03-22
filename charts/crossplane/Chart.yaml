@@ -1,0 +1,12 @@
+apiVersion: v2
+name: crossplane
+description: Crossplane with Helm and Kubernetes providers for Sovereign Platform
+type: application
+version: 0.1.0
+appVersion: "1.17.0"
+
+dependencies:
+  - name: crossplane
+    version: "1.17.0"
+    repository: "https://charts.crossplane.io/stable"
+    alias: crossplane

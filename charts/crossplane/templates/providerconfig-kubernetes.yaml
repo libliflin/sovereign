@@ -1,0 +1,15 @@
+{{- if .Values.providers.kubernetes.enabled }}
+# ProviderConfig for the Kubernetes provider — uses in-cluster service account credentials.
+# This allows Crossplane to manage Kubernetes resources in the local cluster.
+# To manage resources in a remote cluster, replace credentials.source with Secret
+# and reference a kubeconfig secret.
+apiVersion: kubernetes.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+  labels:
+    {{- include "crossplane-sovereign.labels" . | nindent 4 }}
+spec:
+  credentials:
+    source: {{ .Values.providerConfig.kubernetes.credentials.source | quote }}
+{{- end }}
