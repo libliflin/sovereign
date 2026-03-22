@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+  annotations:
+    # Deploy after Vault (wave -80), before services that need SSO
+    argocd.argoproj.io/sync-wave: "-75"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/keycloak
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keycloak
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

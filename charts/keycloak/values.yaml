@@ -1,0 +1,172 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+
+# ---------------------------------------------------------------------------
+# Ingress for Keycloak (custom — upstream ingress disabled)
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  # Hostname is always auth.{{ .Values.global.domain }} — set via _helpers.tpl
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: sovereign-ca-issuer
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+  tls: true
+
+# ---------------------------------------------------------------------------
+# Realm initialization Job
+# Creates the 'sovereign' realm and all platform OIDC clients
+# ---------------------------------------------------------------------------
+realmInit:
+  enabled: true
+  # Admin credentials to bootstrap Keycloak
+  adminUser: admin
+  # Admin password source — from Sealed Secret (see templates/admin-secret.yaml)
+  adminPasswordSecret: keycloak-admin-secret
+  adminPasswordKey: admin-password
+  # OIDC clients to create in the sovereign realm
+  clients:
+    - id: sovereign-argocd
+      name: "ArgoCD"
+      redirectUris:
+        - "https://argocd.{{ .Values.global.domain }}/auth/callback"
+        - "https://argocd.{{ .Values.global.domain }}/dex/callback"
+    - id: sovereign-gitlab
+      name: "GitLab"
+      redirectUris:
+        - "https://gitlab.{{ .Values.global.domain }}/users/auth/openid_connect/callback"
+    - id: sovereign-grafana
+      name: "Grafana"
+      redirectUris:
+        - "https://grafana.{{ .Values.global.domain }}/login/generic_oauth"
+    - id: sovereign-backstage
+      name: "Backstage"
+      redirectUris:
+        - "https://backstage.{{ .Values.global.domain }}/api/auth/keycloak/handler/frame"
+    - id: sovereign-pm
+      name: "Sovereign PM"
+      redirectUris:
+        - "https://pm.{{ .Values.global.domain }}/*"
+    - id: sovereign-code-server
+      name: "Code Server"
+      redirectUris:
+        - "https://code.{{ .Values.global.domain }}/callback"
+
+# ---------------------------------------------------------------------------
+# External PostgreSQL (disabled by default — uses embedded H2 for bootstrap)
+# Set postgresql.enabled=false and externalDatabase.* when switching to prod
+# ---------------------------------------------------------------------------
+externalDatabase:
+  enabled: false
+  # When enabled, Keycloak uses an external PostgreSQL instance (Crossplane-managed)
+  # host: keycloak-postgresql.keycloak.svc.cluster.local
+  # port: 5432
+  # database: keycloak
+  # user: keycloak
+  # existingSecret: keycloak-db-secret
+  # existingSecretKey: password
+
+# ---------------------------------------------------------------------------
+# Production PostgreSQL — uncomment and set externalDatabase.enabled=true
+# to switch away from embedded H2 database
+# ---------------------------------------------------------------------------
+# productionPostgres:
+#   enabled: true
+#   # Crossplane-managed PostgreSQL (example XR reference)
+#   crossplane:
+#     xrd: PostgreSQLInstance
+#     apiVersion: database.sovereign.dev/v1alpha1
+#     storageClass: ceph-block
+#     storageSize: 10Gi
+#     replicas: 2
+
+# ---------------------------------------------------------------------------
+# Upstream keycloak subchart values
+# ---------------------------------------------------------------------------
+keycloak:
+  # Embedded PostgreSQL sub-chart (bootstrap mode — no external DB needed).
+  # Keycloak 17+ dropped H2 support; bitnami chart uses PostgreSQL always.
+  # Set to false and configure externalDatabase above for production mode.
+  postgresql:
+    enabled: true
+    auth:
+      username: keycloak
+      database: keycloak
+      existingSecret: keycloak-db-secret
+      secretKeys:
+        adminPasswordKey: postgres-password
+        userPasswordKey: password
+    primary:
+      persistence:
+        enabled: true
+        storageClass: ""   # uses cluster default; override with global.storageClass
+        size: 1Gi
+
+  externalDatabase:
+    host: ""
+    port: 5432
+    database: keycloak
+    user: keycloak
+    password: ""
+    existingSecret: ""
+    existingSecretKey: ""
+
+  auth:
+    adminUser: admin
+    existingSecret: keycloak-admin-secret
+    passwordSecretKey: admin-password
+    # Bootstrap: create a secret named keycloak-admin-secret with key admin-password
+    # See templates/admin-secret.yaml for kubeseal instructions
+
+  # Production mode flag (H2 is not supported in production mode)
+  production: false
+
+  # Proxy mode for reverse proxy / ingress
+  proxy: edge
+
+  # HTTP settings
+  httpRelativePath: "/"
+
+  # Disable the upstream chart's own ingress (we manage it separately)
+  ingress:
+    enabled: false
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      http: 80
+      https: 443
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+  # Persistence for H2 embedded database (bootstrap mode)
+  persistence:
+    enabled: true
+    storageClass: ""   # uses cluster default; override with {{ .Values.global.storageClass }}
+    size: 1Gi
+
+  # Extra environment variables for Keycloak configuration
+  extraEnvVars:
+    - name: KC_HOSTNAME_STRICT
+      value: "false"
+    - name: KC_HOSTNAME_STRICT_HTTPS
+      value: "false"
+    - name: KC_HTTP_ENABLED
+      value: "true"
+
+  # ServiceAccount
+  serviceAccount:
+    create: true
+    name: keycloak

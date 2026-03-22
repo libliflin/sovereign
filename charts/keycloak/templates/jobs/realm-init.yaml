@@ -1,0 +1,150 @@
+{{- if .Values.realmInit.enabled }}
+# ---------------------------------------------------------------------------
+# Realm Init Job
+# Runs after Keycloak is Ready. Creates the 'sovereign' realm and all platform
+# OIDC clients using the Keycloak admin REST API (kcadm.sh).
+# Uses ArgoCD PostSync hook so it runs after the Keycloak deployment is ready.
+# ---------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-realm-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "keycloak.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        {{- include "keycloak.labels" . | nindent 8 }}
+        job: realm-init
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ .Values.keycloak.serviceAccount.name }}
+      containers:
+        - name: realm-init
+          image: quay.io/keycloak/keycloak:23.0.7
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+
+              KEYCLOAK_URL="{{ include "keycloak.serviceUrl" . }}"
+              REALM="{{ .Values.global.keycloak.realm }}"
+              ADMIN_USER="{{ .Values.realmInit.adminUser }}"
+              ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD}"
+              DOMAIN="{{ .Values.global.domain }}"
+
+              echo "==> Waiting for Keycloak to be ready..."
+              until curl -sf "${KEYCLOAK_URL}/health/ready" > /dev/null 2>&1; do
+                echo "    Keycloak not ready, waiting 5s..."
+                sleep 5
+              done
+              echo "==> Keycloak is ready."
+
+              echo "==> Authenticating with admin CLI..."
+              /opt/keycloak/bin/kcadm.sh config credentials \
+                --server "${KEYCLOAK_URL}" \
+                --realm master \
+                --user "${ADMIN_USER}" \
+                --password "${ADMIN_PASS}"
+
+              echo "==> Checking if realm '${REALM}' exists..."
+              if /opt/keycloak/bin/kcadm.sh get realms/${REALM} > /dev/null 2>&1; then
+                echo "    Realm '${REALM}' already exists. Skipping creation."
+              else
+                echo "==> Creating realm '${REALM}'..."
+                /opt/keycloak/bin/kcadm.sh create realms \
+                  -s realm="${REALM}" \
+                  -s enabled=true \
+                  -s displayName="Sovereign Platform" \
+                  -s loginWithEmailAllowed=true \
+                  -s registrationAllowed=false \
+                  -s resetPasswordAllowed=true \
+                  -s sslRequired=external
+                echo "    Realm '${REALM}' created."
+              fi
+
+              echo "==> Creating platform OIDC clients..."
+
+              create_client() {
+                local CLIENT_ID="$1"
+                local CLIENT_NAME="$2"
+                local REDIRECT_URI="$3"
+
+                if /opt/keycloak/bin/kcadm.sh get clients -r "${REALM}" \
+                    --fields clientId -q clientId="${CLIENT_ID}" | grep -q "${CLIENT_ID}"; then
+                  echo "    Client '${CLIENT_ID}' already exists. Skipping."
+                  return
+                fi
+
+                /opt/keycloak/bin/kcadm.sh create clients -r "${REALM}" \
+                  -s clientId="${CLIENT_ID}" \
+                  -s name="${CLIENT_NAME}" \
+                  -s enabled=true \
+                  -s publicClient=false \
+                  -s standardFlowEnabled=true \
+                  -s implicitFlowEnabled=false \
+                  -s directAccessGrantsEnabled=false \
+                  -s serviceAccountsEnabled=false \
+                  -s "redirectUris=[\"${REDIRECT_URI}\"]" \
+                  -s "webOrigins=[\"https://${DOMAIN}\"]" \
+                  -s protocol=openid-connect
+                echo "    Client '${CLIENT_ID}' created."
+              }
+
+              create_client "sovereign-argocd" \
+                "ArgoCD" \
+                "https://argocd.${DOMAIN}/auth/callback"
+
+              create_client "sovereign-gitlab" \
+                "GitLab" \
+                "https://gitlab.${DOMAIN}/users/auth/openid_connect/callback"
+
+              create_client "sovereign-grafana" \
+                "Grafana" \
+                "https://grafana.${DOMAIN}/login/generic_oauth"
+
+              create_client "sovereign-backstage" \
+                "Backstage" \
+                "https://backstage.${DOMAIN}/api/auth/keycloak/handler/frame"
+
+              create_client "sovereign-pm" \
+                "Sovereign PM" \
+                "https://pm.${DOMAIN}/*"
+
+              create_client "sovereign-code-server" \
+                "Code Server" \
+                "https://code.${DOMAIN}/callback"
+
+              echo "==> Creating platform admin group..."
+              if /opt/keycloak/bin/kcadm.sh get groups -r "${REALM}" \
+                  --fields name -q name="platform-admins" | grep -q "platform-admins"; then
+                echo "    Group 'platform-admins' already exists. Skipping."
+              else
+                /opt/keycloak/bin/kcadm.sh create groups -r "${REALM}" \
+                  -s name="platform-admins"
+                echo "    Group 'platform-admins' created."
+              fi
+
+              echo "==> Realm initialization complete."
+          env:
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.realmInit.adminPasswordSecret }}
+                  key: {{ .Values.realmInit.adminPasswordKey }}
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+{{- end }}

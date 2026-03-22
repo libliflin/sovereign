@@ -1,0 +1,12 @@
+apiVersion: v2
+name: keycloak
+description: Keycloak SSO for Sovereign Platform — embedded DB by default, external PostgreSQL togglable
+type: application
+version: 0.1.0
+appVersion: "23.0.7"
+
+dependencies:
+  - name: keycloak
+    version: "21.4.4"
+    repository: "https://charts.bitnami.com/bitnami"
+    alias: keycloak
