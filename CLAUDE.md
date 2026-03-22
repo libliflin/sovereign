@@ -29,6 +29,92 @@ Architecture: ArgoCD App-of-Apps pattern, Helm charts, Crossplane for infrastruc
 - **Bootstrapping** is the only manual step. After that, GitOps manages everything.
 - **Namespaces are sovereign** — each service lives in its own namespace with network policies
 
+### High Availability — MANDATORY at every layer
+**bootstrap.sh MUST refuse to proceed with fewer than 3 nodes or an even node count.**
+HA is not optional and is not a "phase 2" concern. It is baked in from the first commit.
+
+```
+Node layer:      3+ nodes (odd). etcd quorum + Ceph quorum both require this.
+API server:      kube-vip floating VIP across all control plane nodes.
+CNI:             Cilium DaemonSet — inherently HA.
+Front door:      cloudflared DaemonSet on ALL nodes, not a single systemd unit.
+Storage:         Rook/Ceph replication factor 3.
+Applications:    replicaCount >= 2 on every Helm chart (3 for critical services).
+Rollout:         maxUnavailable: 0, maxSurge: 1. Never take a service to zero replicas.
+```
+
+**Every Helm chart MUST include:**
+- `replicaCount: 2` minimum (configurable, but default must be >= 2)
+- `podDisruptionBudget: { minAvailable: 1 }` — prevents both replicas going down during drain
+- `podAntiAffinity` — replicas must land on different nodes (preferredDuringScheduling minimum,
+  requiredDuring for critical services like etcd, ArgoCD, Keycloak)
+- `readinessProbe` and `livenessProbe` on every container
+- `resources.requests` and `resources.limits` on every container
+
+**Every bootstrap provider script MUST:**
+- Accept `nodes.count` from config.yaml (validate: odd number, >= 3, abort otherwise)
+- Provision all N nodes before proceeding
+- Install kube-vip on control plane nodes for API server VIP
+- Install K3s with `--cluster-init` on node 1, `--server https://<VIP>:6443` on nodes 2+
+- Verify ALL nodes are Ready before returning kubeconfig
+
+### Backup Strategy — MANDATORY
+The git repo is the nuclear recovery path. Everything else makes recovery fast, not possible.
+
+**Recovery path (worst case — all servers lost):**
+1. Clone sovereign repo (backed up to at least one secondary remote)
+2. `vendor/fetch.sh --all` — recreates all GitLab mirrors from upstream at pinned SHAs
+3. `vendor/build.sh --all` — rebuilds all images from patched source
+4. Bootstrap a new cluster from scratch
+5. ArgoCD restores all services from git state
+
+**Operational backup (day-to-day):**
+- `vendor/backup.sh` runs as a Kubernetes CronJob (daily, HA by default)
+- Mirrors all `gitlab.<domain>/vendor/*` repos to a secondary remote (S3 bare repo or secondary git)
+- `crane copy` all `harbor.<domain>/sovereign/*` images to a backup registry
+- Writes `backup-manifest.json` with {name, source_sha, image_digest, timestamp} for every artifact
+- Exits non-zero on any failure so alerting triggers
+
+**Every vendor script MUST support:**
+- `--dry-run` — print actions without executing
+- `--backup` — push to secondary remote/registry after primary operation
+- Tagging current state before overwriting: `git tag sovereign/pre-update-<timestamp>`
+
+### Zero Downtime Rollout — MANDATORY
+No image is ever pushed directly to production. Every change goes through staging first.
+
+```
+build.sh  →  harbor.../sovereign-staging/<name>:<tag>
+                ↓
+deploy.sh →  apply to staging namespace
+                ↓  (kubectl rollout status --timeout=5m)
+             smoke-test.sh (vendor/recipes/<name>/smoke-test.sh)
+                ↓  (must exit 0)
+             record last-known-good SHA in ConfigMap sovereign-vendor/lkg-<name>
+                ↓
+             promote to production ArgoCD Application
+                ↓  (kubectl rollout status --timeout=10m)
+             if production rollout fails → auto-rollback via rollback.sh
+```
+
+**Image tag format:** `<upstream-version>-<source-sha>-p<patch-count>` e.g. `v1.16.0-a3f8c2d-p3`
+Never `:latest`. Never just `:<version>`. The patch count makes vendor divergence visible.
+
+**Every recipe.yaml MUST declare:**
+```yaml
+rollout:
+  strategy: rolling        # rolling | node_by_node (CNI only) | skip (bootstrap tools)
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: critical       # critical | standard | derived (can be rebuilt, skip backup)
+```
+
+**rollback.sh** reads `sovereign-vendor/lkg-<name>` ConfigMap and repins that image digest.
+Always know the last-known-good. Rollback must complete in under 2 minutes.
+
 ### Autarky Build Philosophy (CRITICAL)
 The platform must be **genuinely self-sufficient at runtime**. After bootstrap completes, the cluster
 must never pull images from external registries (docker.io, quay.io, ghcr.io, gcr.io, etc.).
@@ -318,18 +404,23 @@ The `prd.json` schema it generates:
 ## VPS PROVIDER DOCUMENTATION REQUIREMENTS
 
 Every provider script (`bootstrap/providers/*.sh`) must:
-1. Accept `config.yaml` as input (domain, SSH key path, desired node count/size)
-2. Provision the server(s)
-3. Install K3s or kubeadm (K3s preferred for single-node, kubeadm for multi-node)
-4. Output a valid `kubeconfig`
-5. Print estimated monthly cost
-6. Print Cloudflare DNS setup instructions (for wildcard `*.domain.com → IP`)
+1. Accept `config.yaml` as input (domain, SSH key, `nodes.count`, `nodes.serverType`)
+2. **Validate `nodes.count` is odd and >= 3 — abort with clear error if not**
+3. Provision all N nodes (loop, not single-server)
+4. Install kube-vip on control plane nodes for a floating API server VIP
+5. Install K3s with `--cluster-init` + embedded etcd on node 1; join nodes 2+ via the VIP
+6. Verify ALL nodes are `Ready` before outputting kubeconfig
+7. Output a valid `kubeconfig` pointing at the kube-vip VIP (not a single node IP)
+8. Print estimated **3-node monthly cost** (single-node cost is not shown — it is not supported)
+9. Print Cloudflare wildcard DNS setup instructions (`*.domain.com → kube-vip VIP`)
 
 Provider docs (`docs/providers/*.md`) must include:
-- Estimated cost (free tier or cheapest paid)
+- Estimated cost for **3-node HA cluster** (minimum) and **recommended spec**
+- Note if the provider's free tier is viable (most aren't — be honest)
 - Prerequisites (CLI tools, accounts needed)
 - Step-by-step with copy-pasteable commands
-- How to scale up nodes later
+- How to add nodes later (scale out)
+- How to replace a failed node without downtime
 
 ---
 
@@ -338,9 +429,21 @@ Provider docs (`docs/providers/*.md`) must include:
 Before marking any story `passes: true`, you MUST:
 1. `helm lint charts/<name>/` — no errors
 2. `helm template charts/<name>/ | kubectl apply --dry-run=client -f -` — no errors
-3. For bootstrap scripts: `shellcheck bootstrap/providers/*.sh` — no errors
-4. For any JS/TS code: `npm run typecheck && npm run lint` — clean
-5. For ArgoCD apps: validate YAML with `kubectl apply --dry-run=client`
+3. For bootstrap scripts: `shellcheck bootstrap/**/*.sh` — no errors
+4. For vendor scripts: `shellcheck vendor/*.sh` — no errors
+5. For any JS/TS code: `npm run typecheck && npm run lint` — clean
+6. For ArgoCD apps: validate YAML with `kubectl apply --dry-run=client`
+
+**HA gate — every Helm chart story MUST also verify:**
+7. `helm template` output contains a `PodDisruptionBudget` resource
+8. `helm template` output contains `podAntiAffinity` in the Deployment/StatefulSet
+9. Default `replicaCount` in values.yaml is >= 2
+10. Every container spec has `readinessProbe`, `livenessProbe`, `resources.requests`, `resources.limits`
+
+**Vendor/build gate — every vendor story MUST also verify:**
+11. `vendor/audit.sh` exits 0 (no license violations, no missing alternatives)
+12. All new recipe.yaml files have `rollout` and `backup` sections
+13. All new vendor/*.sh scripts support `--dry-run` flag
 
 ---
 
