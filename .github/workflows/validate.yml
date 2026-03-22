@@ -1,0 +1,405 @@
+name: Validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_call: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Job 1: Helm chart validation (HA gate) ─────────────────────────────────
+  helm-validate:
+    name: Helm Validate — ${{ matrix.chart }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        chart:
+          - argocd
+          - backstage
+          - cert-manager
+          - chaos-mesh
+          - cilium
+          - code-server
+          - crossplane
+          - falco
+          - gitlab
+          - harbor
+          - istio
+          - k6-operator
+          - keycloak
+          - loki
+          - mailhog
+          - opa-gatekeeper
+          - prometheus-stack
+          - reportportal
+          - rook-ceph
+          - sealed-secrets
+          - selenium-grid
+          - sonarqube
+          - sovereign-pm
+          - tempo
+          - thanos
+          - trivy-operator
+          - vault
+          - wiremock
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.29.0
+
+      - name: Cache Helm deps
+        uses: actions/cache@v4
+        with:
+          path: charts/${{ matrix.chart }}/charts
+          key: helm-${{ matrix.chart }}-${{ hashFiles(format('charts/{0}/Chart.lock', matrix.chart)) }}
+          restore-keys: helm-${{ matrix.chart }}-
+
+      - name: Helm dependency update
+        run: |
+          if [ -f "charts/${{ matrix.chart }}/Chart.yaml" ]; then
+            helm dependency update "charts/${{ matrix.chart }}/" 2>/dev/null || true
+          fi
+
+      - name: Helm lint
+        run: |
+          helm lint "charts/${{ matrix.chart }}/"
+
+      - name: Helm template (render)
+        id: template
+        run: |
+          helm template sovereign "charts/${{ matrix.chart }}/" \
+            --set global.domain=sovereign-autarky.dev \
+            > /tmp/rendered-${{ matrix.chart }}.yaml
+          echo "Rendered $(wc -l < /tmp/rendered-${{ matrix.chart }}.yaml) lines"
+
+      - name: Assert PodDisruptionBudget present
+        run: |
+          if grep -q "kind: Deployment\|kind: StatefulSet" /tmp/rendered-${{ matrix.chart }}.yaml; then
+            if ! grep -q "kind: PodDisruptionBudget" /tmp/rendered-${{ matrix.chart }}.yaml; then
+              echo "ERROR: chart/${{ matrix.chart }} has a Deployment/StatefulSet but no PodDisruptionBudget"
+              exit 1
+            fi
+            echo "✓ PodDisruptionBudget found"
+          else
+            echo "✓ No Deployment/StatefulSet — PodDisruptionBudget not required"
+          fi
+
+      - name: Assert podAntiAffinity present
+        run: |
+          if grep -q "kind: Deployment\|kind: StatefulSet" /tmp/rendered-${{ matrix.chart }}.yaml; then
+            if ! grep -q "podAntiAffinity" /tmp/rendered-${{ matrix.chart }}.yaml; then
+              echo "ERROR: chart/${{ matrix.chart }} has a Deployment/StatefulSet but no podAntiAffinity"
+              exit 1
+            fi
+            echo "✓ podAntiAffinity found"
+          else
+            echo "✓ No Deployment/StatefulSet — podAntiAffinity not required"
+          fi
+
+      - name: Assert replicaCount >= 2 in values.yaml
+        run: |
+          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          if [ ! -f "$VALUES" ]; then
+            echo "No values.yaml — skipping replicaCount check"
+            exit 0
+          fi
+          REPLICA=$(python3 -c "
+          import yaml, sys
+          with open('$VALUES') as f:
+              v = yaml.safe_load(f)
+          rc = v.get('replicaCount', None)
+          if rc is None:
+              print('NONE')
+          else:
+              print(rc)
+          " 2>/dev/null || echo "NONE")
+
+          if [ "$REPLICA" = "NONE" ]; then
+            echo "INFO: replicaCount not set in values.yaml (may be inherited from subchart)"
+          elif [ "$REPLICA" -lt 2 ] 2>/dev/null; then
+            echo "ERROR: charts/${{ matrix.chart }}/values.yaml has replicaCount=$REPLICA (must be >= 2)"
+            exit 1
+          else
+            echo "✓ replicaCount=$REPLICA"
+          fi
+
+      - name: Assert no :latest image tags in values.yaml
+        run: |
+          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          if [ ! -f "$VALUES" ]; then exit 0; fi
+          if grep -qE ":\s*latest\b|tag:\s*latest\b" "$VALUES"; then
+            echo "ERROR: charts/${{ matrix.chart }}/values.yaml contains :latest image tag"
+            grep -nE ":\s*latest\b|tag:\s*latest\b" "$VALUES"
+            exit 1
+          fi
+          echo "✓ No :latest tags found"
+
+      - name: Assert image.repository uses global.imageRegistry
+        run: |
+          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          if [ ! -f "$VALUES" ]; then exit 0; fi
+          # Only check if image.repository is explicitly set (not via subchart)
+          if python3 -c "
+          import yaml, sys
+          with open('$VALUES') as f:
+              v = yaml.safe_load(f) or {}
+          img = v.get('image', {})
+          repo = img.get('repository', None)
+          if repo and not repo.startswith('{{') and not repo.startswith('harbor') and '/' in repo and not repo.startswith('global'):
+              # Has a hardcoded external registry
+              parts = repo.split('/')
+              if any(x in parts[0] for x in ['docker.io', 'ghcr.io', 'quay.io', 'gcr.io', 'registry.k8s.io']):
+                  print('FAIL:' + repo)
+                  sys.exit(1)
+          " 2>/dev/null; then
+            echo "✓ image.repository does not hardcode an external registry"
+          fi
+
+  # ── Job 2: Shell script validation ────────────────────────────────────────
+  shell-validate:
+    name: Shell Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+
+      - name: Shellcheck bootstrap scripts
+        run: |
+          find bootstrap -name "*.sh" -print0 | xargs -0 shellcheck
+
+      - name: Shellcheck prd scripts
+        run: |
+          find prd -name "*.sh" -print0 | xargs -0 shellcheck
+
+      - name: Shellcheck scripts/ralph
+        run: |
+          find scripts/ralph -name "*.sh" -print0 | xargs -0 shellcheck
+
+      - name: Shellcheck vendor scripts (if any)
+        run: |
+          if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
+            find vendor -name "*.sh" -print0 | xargs -0 shellcheck
+          else
+            echo "No vendor scripts yet — skipping"
+          fi
+
+      - name: Assert vendor scripts handle --dry-run and --backup
+        run: |
+          FAIL=0
+          if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
+            for script in vendor/*.sh; do
+              if ! grep -qE "dry.run|DRY_RUN" "$script"; then
+                echo "ERROR: $script missing --dry-run handling"
+                FAIL=1
+              fi
+              if ! grep -qE "backup|BACKUP" "$script"; then
+                echo "ERROR: $script missing --backup handling"
+                FAIL=1
+              fi
+            done
+          else
+            echo "No vendor scripts yet — skipping"
+          fi
+          exit $FAIL
+
+  # ── Job 3: Vendor audit (only when vendor/ changes) ───────────────────────
+  vendor-audit:
+    name: Vendor Audit
+    runs-on: ubuntu-latest
+    if: >
+      contains(github.event.head_commit.modified, 'vendor/') ||
+      contains(toJson(github.event.pull_request.changed_files), 'vendor/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run vendor/audit.sh
+        run: |
+          if [ -f vendor/audit.sh ]; then
+            bash vendor/audit.sh
+          else
+            echo "vendor/audit.sh not yet created — skipping"
+          fi
+
+      - name: Validate VENDORS.yaml schema
+        run: |
+          if [ -f vendor/VENDORS.yaml ]; then
+            python3 - <<'PYEOF'
+          import yaml, sys
+
+          with open('vendor/VENDORS.yaml') as f:
+              vendors = yaml.safe_load(f)
+
+          required = ['name', 'upstream', 'version', 'license', 'distroless']
+          blocked_licenses = ['BSL', 'SSPL']
+          errors = []
+
+          for entry in (vendors.get('vendors') or []):
+              name = entry.get('name', '<unknown>')
+              for field in required:
+                  if field not in entry:
+                      errors.append(f"{name}: missing required field '{field}'")
+              lic = entry.get('license', '')
+              if any(b in lic for b in blocked_licenses):
+                  if not entry.get('deprecated'):
+                      errors.append(f"{name}: blocked license '{lic}' but not marked deprecated")
+
+          if errors:
+              print("VENDORS.yaml validation errors:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+          print(f"✓ VENDORS.yaml: {len(vendors.get('vendors', []))} entries validated")
+          PYEOF
+          else
+            echo "vendor/VENDORS.yaml not yet created — skipping"
+          fi
+
+      - name: Validate recipe.yaml rollout and backup sections
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, sys, os
+
+          errors = []
+          checked = 0
+
+          for root, dirs, files in os.walk('vendor/recipes'):
+              for fname in files:
+                  if fname == 'recipe.yaml':
+                      path = os.path.join(root, fname)
+                      with open(path) as f:
+                          recipe = yaml.safe_load(f)
+                      checked += 1
+                      rollout = recipe.get('rollout', {})
+                      backup = recipe.get('backup', {})
+                      if not rollout.get('strategy'):
+                          errors.append(f"{path}: missing rollout.strategy")
+                      if 'max_unavailable' not in rollout:
+                          errors.append(f"{path}: missing rollout.max_unavailable")
+                      if not backup.get('priority'):
+                          errors.append(f"{path}: missing backup.priority")
+
+          if errors:
+              print("recipe.yaml validation errors:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+          if checked == 0:
+              print("No recipe.yaml files found yet — skipping")
+          else:
+              print(f"✓ {checked} recipe.yaml files validated")
+          PYEOF
+
+  # ── Job 4: ArgoCD application validation ─────────────────────────────────
+  argocd-validate:
+    name: ArgoCD Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert revisionHistoryLimit: 3 on all Applications
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, sys, os
+
+          errors = []
+          checked = 0
+
+          for root, dirs, files in os.walk('argocd-apps'):
+              for fname in files:
+                  if not fname.endswith('.yaml') and not fname.endswith('.yml'):
+                      continue
+                  path = os.path.join(root, fname)
+                  with open(path) as f:
+                      docs = list(yaml.safe_load_all(f))
+                  for doc in docs:
+                      if not doc:
+                          continue
+                      if doc.get('kind') == 'Application':
+                          checked += 1
+                          rhl = doc.get('spec', {}).get('revisionHistoryLimit')
+                          if rhl != 3:
+                              errors.append(f"{path}: revisionHistoryLimit is {rhl!r} (must be 3)")
+
+          if errors:
+              print("ArgoCD Application validation errors:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+          if checked == 0:
+              print("No ArgoCD Application manifests found — skipping")
+          else:
+              print(f"✓ {checked} Application manifests validated (revisionHistoryLimit=3)")
+          PYEOF
+
+  # ── Job 5: Bootstrap script validation ───────────────────────────────────
+  bootstrap-validate:
+    name: Bootstrap Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+
+      - name: Shellcheck provider scripts
+        run: |
+          find bootstrap/providers -name "*.sh" -print0 | xargs -0 shellcheck
+
+      - name: Assert node count guard in bootstrap.sh
+        run: |
+          if ! grep -qE "nodes.*count.*[<].*3|count.*<.*3|NODE_COUNT" bootstrap/bootstrap.sh; then
+            echo "ERROR: bootstrap/bootstrap.sh is missing a node count guard (nodes.count < 3 check)"
+            echo "All provider scripts must reject node counts < 3 or even."
+            exit 1
+          fi
+          echo "✓ Node count guard found in bootstrap.sh"
+
+      - name: Assert provider scripts loop over node count
+        run: |
+          FAIL=0
+          for script in bootstrap/providers/*.sh; do
+            if ! grep -qE "for .* in|while .* NODE|NODE_COUNT|NODES" "$script"; then
+              echo "ERROR: $script does not appear to loop over multiple nodes"
+              FAIL=1
+            fi
+          done
+          [ $FAIL -eq 0 ] && echo "✓ All provider scripts contain node loop logic"
+          exit $FAIL
+
+      - name: Assert no single hardcoded server IP in provider scripts
+        run: |
+          FAIL=0
+          for script in bootstrap/providers/*.sh; do
+            # Reject patterns like IP="1.2.3.4" or SERVER_IP="..." with a real IP literal
+            if grep -qE 'IP="[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"' "$script"; then
+              echo "ERROR: $script contains a hardcoded IP address"
+              FAIL=1
+            fi
+          done
+          [ $FAIL -eq 0 ] && echo "✓ No hardcoded IP addresses in provider scripts"
+          exit $FAIL

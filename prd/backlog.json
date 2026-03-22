@@ -369,13 +369,13 @@
         "bootstrap/config.yaml.example has frontDoor field with cloudflare as default",
         "shellcheck passes on all new .sh files"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 0,
         "measurable": 0,
@@ -383,7 +383,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
     },
     {
       "id": "013",
@@ -417,7 +418,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
     },
     {
       "id": "014",
@@ -447,7 +449,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
     },
     {
       "id": "015",
@@ -485,7 +488,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
     },
     {
       "id": "016",

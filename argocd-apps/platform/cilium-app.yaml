@@ -12,6 +12,7 @@ metadata:
     # ArgoCD itself will not be healthy until Cilium is running.
     argocd.argoproj.io/sync-wave: "-100"
 spec:
+  revisionHistoryLimit: 3
   project: default
   source:
     repoURL: https://github.com/libliflin/sovereign

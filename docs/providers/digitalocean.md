@@ -1,22 +1,21 @@
 # DigitalOcean — Provider Guide
 
 DigitalOcean Droplets offer simple pricing and a developer-friendly CLI (`doctl`).
-The cheapest Droplet runs from $4–6/month, making it one of the most affordable
-options for Sovereign.
+Sovereign requires a **3-node HA cluster** minimum — single-node deployments are not supported.
 
-## Estimated Cost
+## Estimated Cost (3-Node HA Cluster)
 
-| Droplet Size    | vCPU | RAM  | Monthly (USD)          |
-|-----------------|------|------|------------------------|
-| s-1vcpu-1gb     | 1    | 1 GB | ~$6                    |
-| s-1vcpu-2gb     | 1    | 2 GB | ~$12 ✓ default         |
-| s-2vcpu-2gb     | 2    | 2 GB | ~$18                   |
-| s-2vcpu-4gb     | 2    | 4 GB | ~$24 ✓ recommended     |
-| s-4vcpu-8gb     | 4    | 8 GB | ~$48                   |
+| Droplet Size    | vCPU | RAM  | Per Node/Month | 3-Node Total |
+|-----------------|------|------|----------------|--------------|
+| s-2vcpu-4gb     | 2    | 4 GB | ~$24           | **~$72/month** ✓ recommended minimum |
+| s-4vcpu-8gb     | 4    | 8 GB | ~$48           | **~$144/month** |
+| s-8vcpu-16gb    | 8    | 16 GB| ~$96           | **~$288/month** |
 
-The `s-2vcpu-4gb` (~$24/month) is recommended for a comfortable platform experience.
+The **3x s-2vcpu-4gb** cluster (~$72/month) is the minimum for production workloads.
 
-**Note:** New DigitalOcean accounts often receive $200 in free credits valid for 60 days.
+> **Free credits:** New DigitalOcean accounts often receive $200 in free credits valid
+> for 60 days — enough to run a 3-node cluster for free while evaluating the platform.
+> The s-1vcpu-1gb ($6/node) is NOT supported — too small for K3s + workloads.
 
 ## Prerequisites
 
@@ -32,7 +31,6 @@ The `s-2vcpu-4gb` (~$24/month) is recommended for a comfortable platform experie
 brew install doctl
 
 # Linux
-cd ~
 wget https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(curl -s https://api.github.com/repos/digitalocean/doctl/releases/latest | grep tag_name | cut -d '"' -f4 | tr -d 'v')-linux-amd64.tar.gz
 tar xf ~/doctl-*.tar.gz
 sudo mv ~/doctl /usr/local/bin
@@ -60,11 +58,8 @@ sudo snap install yq
 ```bash
 doctl auth init
 # Enter your access token: <paste-token>
-```
 
-Verify authentication:
-
-```bash
+# Verify
 doctl account get
 ```
 
@@ -81,10 +76,17 @@ domain: "your-domain.com"
 provider: "digitalocean"
 sshKeyPath: "~/.ssh/id_ed25519"
 
+nodes:
+  count: 3                 # minimum — must be odd and >= 3
+  serverType: "s-2vcpu-4gb"  # per-node droplet size
+
+# Optional: specify the kube-vip VIP (auto-derived as <node1-private-subnet>.100 if omitted)
+# kubeVip:
+#   vip: "10.108.0.100"   # must be an unused IP on the VPC private subnet
+
 digitalocean:
-  size: "s-2vcpu-4gb"   # ~$24/mo — recommended
-  region: "nyc3"        # choose closest to you
-  dropletName: "sovereign-1"
+  region: "nyc3"           # choose closest to your users
+  dropletName: "sovereign" # droplets will be sovereign-1, sovereign-2, sovereign-3
 ```
 
 **Available regions:**
@@ -105,67 +107,67 @@ digitalocean:
 ```
 
 This will:
-1. Upload your SSH public key to DigitalOcean (if not already present)
-2. Create a Droplet running Ubuntu 22.04 LTS
-3. Wait for the Droplet to be running and SSH-accessible
-4. Install K3s
-5. Fetch and save kubeconfig to `~/.kube/sovereign-do.yaml`
+1. Upload your SSH public key to DigitalOcean (idempotent by fingerprint)
+2. Create a private VPC for inter-node communication
+3. Create `nodes.count` Droplets running Ubuntu 22.04 (sovereign-1, -2, -3) with private networking
+4. Install kube-vip on each node for a floating API server VIP (on the private VPC subnet)
+5. Install K3s with `--cluster-init` + embedded etcd on node-1
+6. Join nodes 2+ to the cluster via the kube-vip VIP
+7. Wait for all nodes to be Ready
+8. Fetch and save kubeconfig (pointing at kube-vip VIP) to `~/.kube/sovereign-do.yaml`
 
-### 4. Configure DNS
-
-After bootstrap, add the following records in Cloudflare (or your DNS provider):
-
-```
-Type: A   Name: *.your-domain.com   Value: <droplet-ip>   Proxy: DNS only
-Type: A   Name: your-domain.com     Value: <droplet-ip>   Proxy: DNS only
-```
-
-DigitalOcean Droplets retain their public IP unless deleted, so no Elastic IP equivalent
-is needed.
-
-Optionally, you can use DigitalOcean's built-in DNS:
-
-```bash
-doctl compute domain create your-domain.com --ip-address <droplet-ip>
-doctl compute domain records create your-domain.com \
-  --record-type A --record-name "*" --record-data <droplet-ip> --record-ttl 300
-```
-
-### 5. Verify the cluster
+### 4. Verify the cluster
 
 ```bash
 export KUBECONFIG=~/.kube/sovereign-do.yaml
 kubectl get nodes
-# NAME          STATUS   ROLES                  AGE   VERSION
-# sovereign-1   Ready    control-plane,master   1m    v1.29.4+k3s1
+# NAME           STATUS   ROLES                       AGE   VERSION
+# sovereign-1    Ready    control-plane,etcd,master   2m    v1.29.4+k3s1
+# sovereign-2    Ready    control-plane,etcd,master   1m    v1.29.4+k3s1
+# sovereign-3    Ready    control-plane,etcd,master   1m    v1.29.4+k3s1
 
-./bootstrap/verify.sh
+./bootstrap/verify.sh --vip <kube-vip-address>
 ```
 
-## Scaling Up
+## Adding Nodes
 
-To resize a Droplet (requires a power-off):
+To scale out the cluster (must maintain odd count):
+
+1. Update `nodes.count: 5` in `config.yaml`
+2. Re-run `./bootstrap/bootstrap.sh` — it's idempotent and will provision the new nodes
+3. The new nodes auto-join via the kube-vip VIP
+
+## Replacing a Failed Node
+
+To replace `sovereign-2` without cluster downtime:
 
 ```bash
-doctl compute droplet-action resize <droplet-id> --size s-4vcpu-8gb --wait
+# 1. Cordon and drain the failed node
+kubectl cordon sovereign-2
+kubectl drain sovereign-2 --ignore-daemonsets --delete-emptydir-data
+
+# 2. Remove from K3s cluster
+kubectl delete node sovereign-2
+
+# 3. Delete the failed Droplet
+doctl compute droplet delete sovereign-2 --force
+
+# 4. Re-run bootstrap — it will create sovereign-2 and join it
+./bootstrap/bootstrap.sh
 ```
 
-For horizontal scaling, provision additional Droplets and join them as K3s agents:
-
-```bash
-# Get the join token from the server
-K3S_TOKEN=$(ssh root@<server-ip> "cat /var/lib/rancher/k3s/server/node-token")
-
-# On each agent Droplet
-curl -sfL https://get.k3s.io | K3S_URL=https://<server-ip>:6443 K3S_TOKEN=$K3S_TOKEN sh -
-```
+etcd continues operating with 2/3 healthy nodes (quorum maintained) during the replacement.
 
 ## Cleanup
 
-To destroy all resources:
-
 ```bash
-doctl compute droplet delete sovereign-1 --force
+# Delete all Droplets
+for i in 1 2 3; do
+  doctl compute droplet delete "sovereign-${i}" --force
+done
+
+# Delete the VPC (after all Droplets are deleted)
+doctl vpcs delete <vpc-id>
 ```
 
 ## Troubleshooting
@@ -174,11 +176,14 @@ doctl compute droplet delete sovereign-1 --force
 
 **Authentication failed:** Run `doctl auth init` again with a fresh API token.
 
-**SSH key import fails:** Ensure `~/.ssh/id_ed25519.pub` exists. Generate a key pair
-with `ssh-keygen -t ed25519 -C "your-email@example.com"`.
+**SSH key import fails:** Ensure `~/.ssh/id_ed25519.pub` exists.
+Generate a key pair with: `ssh-keygen -t ed25519 -C "your-email@example.com"`
 
-**K3s install fails:** Check that the Droplet has internet access. Verify with:
-`ssh root@<ip> "curl -I https://get.k3s.io"`
+**Node fails to join:** Check the kube-vip VIP is reachable on the private subnet.
+Verify: `ssh root@<node-ip> "curl -sk https://<vip>:6443/healthz"`
 
-**Droplet not found after creation:** DigitalOcean Droplets take ~30–60 seconds to
-provision. The `--wait` flag in `doctl` handles this automatically.
+**Droplet not found after creation:** The `--wait` flag in `doctl` handles provisioning delays.
+If a Droplet still isn't available after 5 minutes, check the DigitalOcean control panel.
+
+**kube-vip pod not found:** Verify `/var/lib/rancher/k3s/server/manifests/kube-vip.yaml`
+exists on node-1: `ssh root@<node1-ip> "ls /var/lib/rancher/k3s/server/manifests/"`

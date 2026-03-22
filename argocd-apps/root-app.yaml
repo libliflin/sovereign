@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/name: sovereign-root
     app.kubernetes.io/part-of: sovereign-platform
 spec:
+  revisionHistoryLimit: 3
   project: default
   source:
     repoURL: https://github.com/libliflin/sovereign

@@ -2,14 +2,40 @@
 
 Get from zero to a running platform in ~15 minutes.
 
+## Security posture
+
+By default, **Sovereign closes all inbound ports** on your VPS.  All traffic
+(HTTP, HTTPS, SSH) is routed through a Cloudflare Tunnel — an outbound-only
+connection from your server to Cloudflare's edge.  No firewall rules, no open
+ports, no IP whitelisting required.
+
+```
+User → Cloudflare edge → Cloudflare Tunnel (outbound) → your VPS
+```
+
+If you prefer a different approach (WireGuard VPN, static IP allow-list, or
+no front door at all), you can swap the front door provider in `config.yaml`:
+
+```yaml
+frontDoor: cloudflare   # default — recommended
+# frontDoor: none       # bare-metal / known-IP setup (prompts for your IP)
+# frontDoor: wireguard  # custom WireGuard-based front door
+```
+
+See [Front Door Provider Guide](providers/front-door-custom.md) to implement
+your own.
+
+---
+
 ## Prerequisites
 
 Before you begin, you need:
 
-- **A domain name** (e.g., `example.com`) with DNS you can manage
+- **A domain name** (e.g., `example.com`) with DNS managed by Cloudflare
+  (required for the default front door; see [Cloudflare Setup](providers/cloudflare-setup.md))
 - **A server or cloud account** — see [Provider Guides](#provider-guides)
 - **Local tools:**
-  - `bash`, `ssh`, `curl`
+  - `bash`, `ssh`, `curl`, `yq`
   - `kubectl` — [install](https://kubernetes.io/docs/tasks/tools/)
   - `helm` v3+ — [install](https://helm.sh/docs/intro/install/)
   - Provider CLI (see your provider guide)
@@ -30,7 +56,9 @@ cp bootstrap/config.yaml.example bootstrap/config.yaml
 Open `bootstrap/config.yaml` and fill in:
 - `domain` — your domain name
 - `provider` — your cloud provider (`hetzner`, `generic`, `aws-ec2`, `digitalocean`)
+- `frontDoor` — security front door (`cloudflare` recommended; see [Cloudflare Setup](providers/cloudflare-setup.md))
 - Provider credentials (API tokens, SSH key path)
+- Cloudflare credentials (`cloudflare.apiToken`, `accountId`, `zoneId`, `tunnelName`)
 - `platform.repoUrl` — your fork URL (ArgoCD will watch this)
 
 ## Step 3: Bootstrap
@@ -40,21 +68,27 @@ Open `bootstrap/config.yaml` and fill in:
 ```
 
 This will:
-1. Provision a server (or connect to your existing one)
-2. Install K3s
-3. Install cluster foundations (Cilium, Crossplane, cert-manager, Sealed Secrets)
-4. Print DNS setup instructions
+1. Harden all nodes (unattended-upgrades, fail2ban, auditd, CIS sysctl)
+2. Provision a server (or connect to your existing one)
+3. Create a Cloudflare Tunnel and install `cloudflared` on every node
+4. Configure `*.<domain>` DNS via Cloudflare API (automatic — no manual step)
+5. Install K3s with HA (3-node etcd cluster, kube-vip floating VIP)
+6. Install cluster foundations (Cilium, Crossplane, cert-manager, Sealed Secrets)
+7. Print connection instructions
 
-## Step 4: Configure DNS
+> **No open ports.**  The Cloudflare Tunnel is outbound-only.  UFW blocks all
+> inbound connections by default.
 
-The bootstrap script will print a line like:
+## Step 4: Verify the tunnel
 
-```
-ACTION REQUIRED: Create DNS record:
-  *.example.com → 1.2.3.4 (A record, TTL 300)
-```
+If you are using the default Cloudflare front door, DNS is configured
+automatically and the tunnel is live when bootstrap completes.
 
-Create that wildcard DNS record in your DNS provider. This enables all service subdomains.
+Check tunnel health in the Cloudflare Zero Trust dashboard:
+**Zero Trust → Access → Tunnels → your-tunnel-name → Healthy**
+
+For other front door providers, the bootstrap will print the DNS record you
+need to create.
 
 ## Step 5: Verify
 
@@ -80,11 +114,16 @@ Default admin credentials are printed by the bootstrap script and stored in Seal
 
 ## Provider Guides
 
-- [Hetzner Cloud](providers/hetzner.md) — ~€4/mo, recommended
-- [AWS EC2 Free Tier](providers/aws-ec2-free-tier.md) — free for 12 months
-- [DigitalOcean](providers/digitalocean.md) — ~$6/mo
-- [Vultr](providers/vultr.md) — ~$6/mo
+- [Hetzner Cloud](providers/hetzner.md) — ~€12/mo for 3-node HA cluster, recommended
+- [AWS EC2](providers/aws-ec2-free-tier.md) — ~$60/mo for 3-node HA cluster (t3.small minimum)
+- [DigitalOcean](providers/digitalocean.md) — ~$18/mo for 3-node HA cluster
+- [Vultr](providers/vultr.md) — ~$18/mo for 3-node HA cluster
 - [Bare metal / existing cluster](providers/bare-metal.md) — free
+
+## Front Door Guides
+
+- [Cloudflare Setup](providers/cloudflare-setup.md) — default, free, no open ports
+- [Custom Front Door](providers/front-door-custom.md) — WireGuard, Tailscale, or any provider
 
 ## Next Steps
 

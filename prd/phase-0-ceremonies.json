@@ -2,7 +2,7 @@
   "phase": 0,
   "name": "ceremonies",
   "description": "Build the sprint ceremony infrastructure. This is the foundation of the file-based PM system that manages all subsequent phases. We are dogfooding: the tooling that runs Sovereign is built using the same tooling pattern that Sovereign PM will eventually provide via web UI.",
-  "sprintGoal": "A working ceremonies.sh that can run a full agile cycle: refine → plan → execute → review → retro. After this phase, all subsequent phases are managed by ceremonies.sh, not manually.",
+  "sprintGoal": "A working ceremonies.sh that can run a full agile cycle: refine \u2192 plan \u2192 execute \u2192 review \u2192 retro. After this phase, all subsequent phases are managed by ceremonies.sh, not manually.",
   "capacity": 15,
   "stories": [
     {
@@ -30,8 +30,8 @@
         "shellcheck passes on modified ralph.sh",
         "Existing ralph.sh tests (if any) still pass"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     },
@@ -41,7 +41,7 @@
       "points": 3,
       "branchName": "feature/prd-structure",
       "title": "prd/ directory: manifest schema, story schema v2, backlog migration, advance.sh",
-      "description": "Formalise the prd/ directory structure. (1) Write prd/schema/story.schema.json — JSON Schema for a story object with all v2 fields: id, phase, priority, points, branchName, title, description, smart{specific,measurable,achievable,relevant,timeBound,notes}, testPlan, dependencies[], acceptanceCriteria[], passes, reviewed, reviewNotes[], attempts. (2) Write prd/schema/manifest.schema.json — JSON Schema for manifest.json. (3) Migrate the monolithic root prd.json to prd/backlog.json. During migration: fix story 009 (rename charts/vault → charts/openbao, switch to openbao/openbao chart — BSL blocked); fix story 019 and 022 to remove all Bazel references (replace with ko/docker); add points estimates, testPlan, and dependency fields to every story; mark stories 001-011 as reviewed:false (they passed Ralph's self-grade but need independent review). (4) Write prd/advance.sh: marks current phase complete in manifest.json (sets status:complete, endDate, pointsCompleted, reviewPassRate), increments currentPhase, sets next phase status:active and activeSprint to next phase file. Guards: must not advance if any story in active sprint has passes:false or reviewed:false.",
+      "description": "Formalise the prd/ directory structure. (1) Write prd/schema/story.schema.json \u2014 JSON Schema for a story object with all v2 fields: id, phase, priority, points, branchName, title, description, smart{specific,measurable,achievable,relevant,timeBound,notes}, testPlan, dependencies[], acceptanceCriteria[], passes, reviewed, reviewNotes[], attempts. (2) Write prd/schema/manifest.schema.json \u2014 JSON Schema for manifest.json. (3) Migrate the monolithic root prd.json to prd/backlog.json. During migration: fix story 009 (rename charts/vault \u2192 charts/openbao, switch to openbao/openbao chart \u2014 BSL blocked); fix story 019 and 022 to remove all Bazel references (replace with ko/docker); add points estimates, testPlan, and dependency fields to every story; mark stories 001-011 as reviewed:false (they passed Ralph's self-grade but need independent review). (4) Write prd/advance.sh: marks current phase complete in manifest.json (sets status:complete, endDate, pointsCompleted, reviewPassRate), increments currentPhase, sets next phase status:active and activeSprint to next phase file. Guards: must not advance if any story in active sprint has passes:false or reviewed:false.",
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -51,7 +51,9 @@
         "notes": "Achievable score 4: migration of 36 stories with new fields is mechanical but verbose. Acceptable in one story given the points budget."
       },
       "testPlan": "Validate prd/backlog.json against story.schema.json using ajv-cli. Validate prd/manifest.json against manifest.schema.json. Check story 009 references openbao. Check stories 019/022 have no Bazel references. Run prd/advance.sh --dry-run and verify output. shellcheck advance.sh.",
-      "dependencies": ["P0-001"],
+      "dependencies": [
+        "P0-001"
+      ],
       "acceptanceCriteria": [
         "prd/schema/story.schema.json defines all v2 story fields",
         "prd/schema/manifest.schema.json defines manifest structure",
@@ -64,8 +66,8 @@
         "prd/advance.sh --dry-run prints what would change without modifying files",
         "shellcheck passes on advance.sh"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     },
@@ -75,17 +77,19 @@
       "points": 2,
       "branchName": "feature/ceremony-refine",
       "title": "ceremonies/refine.md and ceremonies/smart-check.md: backlog health prompts",
-      "description": "Write two ceremony prompt files used before sprint planning. (1) scripts/ralph/ceremonies/refine.md: instructs Claude to read prd/backlog.json, identify stories that are not ready (vague descriptions, missing ACs, no testPlan, dependencies not listed, title not action-oriented), output a structured refinement report as prd/refinement-report.json with fields: storyId, issue, suggestion. For stories that are too large (points > 3), propose a split into two stories and write them into prd/proposed-splits.json. Does NOT modify backlog.json directly — human reviews proposals first. (2) scripts/ralph/ceremonies/smart-check.md: instructs Claude to score every story in the active sprint file against SMART dimensions (1-5 each), write scores into smart{} fields in the sprint file, flag any story with a dimension score < 3 as not-ready and write a specific improvement note into smart.notes. A story is sprint-ready if all SMART dimensions >= 3. Output a summary table to stdout.",
+      "description": "Write two ceremony prompt files used before sprint planning. (1) scripts/ralph/ceremonies/refine.md: instructs Claude to read prd/backlog.json, identify stories that are not ready (vague descriptions, missing ACs, no testPlan, dependencies not listed, title not action-oriented), output a structured refinement report as prd/refinement-report.json with fields: storyId, issue, suggestion. For stories that are too large (points > 3), propose a split into two stories and write them into prd/proposed-splits.json. Does NOT modify backlog.json directly \u2014 human reviews proposals first. (2) scripts/ralph/ceremonies/smart-check.md: instructs Claude to score every story in the active sprint file against SMART dimensions (1-5 each), write scores into smart{} fields in the sprint file, flag any story with a dimension score < 3 as not-ready and write a specific improvement note into smart.notes. A story is sprint-ready if all SMART dimensions >= 3. Output a summary table to stdout.",
       "smart": {
         "specific": 5,
         "measurable": 5,
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Prompt files — well scoped, clear output formats defined."
+        "notes": "Prompt files \u2014 well scoped, clear output formats defined."
       },
       "testPlan": "Run the refine ceremony against prd/backlog.json (with a deliberately vague test story added). Verify prd/refinement-report.json is produced with correct structure. Run smart-check against prd/phase-0-ceremonies.json and verify smart{} fields are populated on all stories. Verify any story with a dimension < 3 is flagged.",
-      "dependencies": ["P0-002"],
+      "dependencies": [
+        "P0-002"
+      ],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/refine.md exists and instructs Claude to read backlog.json",
         "refine.md produces prd/refinement-report.json with storyId, issue, suggestion per finding",
@@ -96,8 +100,8 @@
         "smart-check.md flags stories with any dimension < 3 in smart.notes",
         "smart-check.md outputs a summary table to stdout"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     },
@@ -106,7 +110,7 @@
       "priority": 4,
       "points": 2,
       "branchName": "feature/ceremony-plan",
-      "title": "ceremonies/plan.md: sprint planning — pull from backlog, point stories, check readiness",
+      "title": "ceremonies/plan.md: sprint planning \u2014 pull from backlog, point stories, check readiness",
       "description": "Write scripts/ralph/ceremonies/plan.md. This ceremony runs at the start of a new sprint to populate a phase file from the backlog. Instructions to Claude: (1) Read prd/manifest.json to find the next pending phase. (2) Read prd/backlog.json and find stories for that phase (by phase field), ordered by priority. (3) For each candidate story, estimate story points (1=trivial config, 2=single chart or script, 3=complex multi-file feature, 5=must-split) and write to points field. (4) Check definition-of-ready: description is specific, all ACs are verifiable (have a concrete pass/fail check), testPlan exists, dependencies are listed and exist in backlog or a completed sprint. Mark not-ready stories with a readinessNote. (5) Pull stories into the phase file respecting the sprint capacity from manifest phases[N].capacity (default 15 points). Leave not-ready stories in backlog with readinessNote. (6) Write the new phase file. (7) Update manifest.json: set phase status to active, set activeSprint. Output a sprint planning summary: X stories pulled, Y points committed, Z stories left in backlog with reasons.",
       "smart": {
         "specific": 5,
@@ -117,7 +121,10 @@
         "notes": "Clear input/output contract. Output format well defined."
       },
       "testPlan": "Run plan ceremony targeting phase-1. Verify a phase-1-bootstrap.json is created with stories totalling <= 15 points. Verify not-ready stories remain in backlog.json with readinessNote. Verify manifest.json updated with activeSprint. Check JSON Schema validation passes on the produced phase file.",
-      "dependencies": ["P0-002", "P0-003"],
+      "dependencies": [
+        "P0-002",
+        "P0-003"
+      ],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/plan.md exists",
         "plan.md reads manifest.json to find next pending phase",
@@ -130,8 +137,8 @@
         "Produced phase file passes prd/schema/story.schema.json validation",
         "Sprint planning summary printed to stdout"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     },
@@ -140,8 +147,8 @@
       "priority": 5,
       "points": 3,
       "branchName": "feature/ceremony-review",
-      "title": "ceremonies/review.md: independent AC verification — the definition of done",
-      "description": "Write scripts/ralph/ceremonies/review.md. This is the most critical ceremony: it independently verifies that stories Ralph marked passes:true actually satisfy their acceptanceCriteria. Ralph self-grades; this ceremony is the independent second opinion. Instructions to Claude: (1) Read the active sprint file. (2) For each story where passes:true and reviewed:false: re-read acceptanceCriteria. For each criterion, run the appropriate verification: 'helm lint passes' → run helm lint and capture exit code; 'shellcheck passes' → run shellcheck; 'file X exists' → check existence; 'values.yaml contains Y' → grep/parse; 'replicaCount >= 2' → parse YAML and assert; 'kubectl dry-run passes' → run it; 'npm run typecheck passes' → run it. (3) If ALL criteria verified: set reviewed:true. (4) If any criterion fails: set passes:false, append specific failure detail to reviewNotes[], increment attempts. (5) After reviewing all stories, output a review report: X/Y stories accepted, list any failures with exact criterion text and failure detail. (6) If any stories were re-opened (passes set back to false), write 'STORIES_REOPENED=true' to a temp file so ceremonies.sh knows to re-run ralph. The review ceremony must itself be idempotent: safe to run multiple times.",
+      "title": "ceremonies/review.md: independent AC verification \u2014 the definition of done",
+      "description": "Write scripts/ralph/ceremonies/review.md. This is the most critical ceremony: it independently verifies that stories Ralph marked passes:true actually satisfy their acceptanceCriteria. Ralph self-grades; this ceremony is the independent second opinion. Instructions to Claude: (1) Read the active sprint file. (2) For each story where passes:true and reviewed:false: re-read acceptanceCriteria. For each criterion, run the appropriate verification: 'helm lint passes' \u2192 run helm lint and capture exit code; 'shellcheck passes' \u2192 run shellcheck; 'file X exists' \u2192 check existence; 'values.yaml contains Y' \u2192 grep/parse; 'replicaCount >= 2' \u2192 parse YAML and assert; 'kubectl dry-run passes' \u2192 run it; 'npm run typecheck passes' \u2192 run it. (3) If ALL criteria verified: set reviewed:true. (4) If any criterion fails: set passes:false, append specific failure detail to reviewNotes[], increment attempts. (5) After reviewing all stories, output a review report: X/Y stories accepted, list any failures with exact criterion text and failure detail. (6) If any stories were re-opened (passes set back to false), write 'STORIES_REOPENED=true' to a temp file so ceremonies.sh knows to re-run ralph. The review ceremony must itself be idempotent: safe to run multiple times.",
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -151,7 +158,10 @@
         "notes": "Achievable 4: running actual quality gates requires the right tools installed. Prompt must gracefully handle missing tools (kubectl, helm, etc.) by noting the gap rather than erroring out."
       },
       "testPlan": "Create a test story with passes:true but a deliberately failing AC (a file that does not exist). Run review ceremony and verify: story gets passes:false, reviewNotes contains specific failure, reviewed remains false. Then fix the file, re-run review, verify reviewed:true. Verify STORIES_REOPENED is written correctly.",
-      "dependencies": ["P0-001", "P0-002"],
+      "dependencies": [
+        "P0-001",
+        "P0-002"
+      ],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/review.md exists",
         "review.md runs helm lint for 'helm lint passes' criteria",
@@ -165,8 +175,8 @@
         "review.md is idempotent (safe to run multiple times)",
         "Review report printed to stdout with pass/fail per story"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     },
@@ -175,8 +185,8 @@
       "priority": 6,
       "points": 2,
       "branchName": "feature/ceremony-retro",
-      "title": "ceremonies/retro.md: retrospective — extract learnings, update CLAUDE.md, track velocity",
-      "description": "Write scripts/ralph/ceremonies/retro.md. Runs after all stories in the active sprint are reviewed:true. Instructions to Claude: (1) Read the active sprint file and collect all reviewNotes from stories that had passes set back to false (stories that failed review at least once). (2) Read progress.txt entries since the last sprint start (use the sprint startDate from manifest.json to filter). (3) Identify failure patterns: which types of ACs are consistently failing? Which quality gates does Ralph miss? Which story types are over-pointed or under-pointed? (4) Generate specific, actionable CLAUDE.md updates: new entries for the LEARNINGS section, updated quality gate guidance, updated story patterns to avoid. Write these as a diff/patch — do NOT apply directly, write to prd/retro-patch-phaseN.md for human review before applying. (5) Update manifest.json: set phase status:complete, endDate, pointsCompleted, reviewPassRate (stories accepted on first review / total stories), append sprint summary to sprintHistory[]. (6) Generate velocity data point: {phase, pointsCompleted, storiesAccepted, reviewPassRate, date}. (7) Print retro summary: what went well (high review pass rate stories), what to improve (patterns from failures), velocity trend if >1 sprint completed.",
+      "title": "ceremonies/retro.md: retrospective \u2014 extract learnings, update CLAUDE.md, track velocity",
+      "description": "Write scripts/ralph/ceremonies/retro.md. Runs after all stories in the active sprint are reviewed:true. Instructions to Claude: (1) Read the active sprint file and collect all reviewNotes from stories that had passes set back to false (stories that failed review at least once). (2) Read progress.txt entries since the last sprint start (use the sprint startDate from manifest.json to filter). (3) Identify failure patterns: which types of ACs are consistently failing? Which quality gates does Ralph miss? Which story types are over-pointed or under-pointed? (4) Generate specific, actionable CLAUDE.md updates: new entries for the LEARNINGS section, updated quality gate guidance, updated story patterns to avoid. Write these as a diff/patch \u2014 do NOT apply directly, write to prd/retro-patch-phaseN.md for human review before applying. (5) Update manifest.json: set phase status:complete, endDate, pointsCompleted, reviewPassRate (stories accepted on first review / total stories), append sprint summary to sprintHistory[]. (6) Generate velocity data point: {phase, pointsCompleted, storiesAccepted, reviewPassRate, date}. (7) Print retro summary: what went well (high review pass rate stories), what to improve (patterns from failures), velocity trend if >1 sprint completed.",
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -186,7 +196,9 @@
         "notes": "Well defined. Output to prd/retro-patch rather than directly modifying CLAUDE.md is intentionally safe."
       },
       "testPlan": "Run retro ceremony after phase-0 completes. Verify manifest.json has phase 0 status:complete with correct metrics. Verify prd/retro-patch-phase0.md exists with CLAUDE.md update suggestions. Verify sprintHistory has a new entry. Verify velocity[] has a new data point.",
-      "dependencies": ["P0-002"],
+      "dependencies": [
+        "P0-002"
+      ],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md exists",
         "retro.md reads reviewNotes from re-opened stories to identify failure patterns",
@@ -198,8 +210,8 @@
         "retro.md prints retro summary to stdout",
         "retro.md refuses to run if any story in the sprint still has reviewed:false"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     },
@@ -209,7 +221,7 @@
       "points": 2,
       "branchName": "feature/ceremonies-orchestrator",
       "title": "ceremonies.sh: full sprint orchestrator with retry, review gates, and phase advancement",
-      "description": "Write scripts/ralph/ceremonies.sh — the single command that runs a complete sprint. Usage: ./ceremonies.sh [--phase N] [--tool claude|amp] [--max-retries 3]. Sequence: (1) SMART CHECK: run smart-check ceremony against the active sprint file. If any story scores < 3 on any SMART dimension, abort with instructions to refine those stories first. (2) EXECUTE: run ralph.sh --prd <activeSprint> --tool <tool> until all stories pass or max iterations hit. (3) REVIEW: run review ceremony. If STORIES_REOPENED signal detected, go back to EXECUTE (up to --max-retries times). If max retries hit with stories still failing: mark those stories with status:blocked, log details, continue with accepted stories. (4) RETRO: run retro ceremony. (5) ADVANCE: if all non-blocked stories reviewed:true, run prd/advance.sh to move to next phase. Print a clear summary at each step. Honour --dry-run flag: print what would happen without executing. Log all ceremony outputs to prd/logs/phase-N-<timestamp>.log for audit trail.",
+      "description": "Write scripts/ralph/ceremonies.sh \u2014 the single command that runs a complete sprint. Usage: ./ceremonies.sh [--phase N] [--tool claude|amp] [--max-retries 3]. Sequence: (1) SMART CHECK: run smart-check ceremony against the active sprint file. If any story scores < 3 on any SMART dimension, abort with instructions to refine those stories first. (2) EXECUTE: run ralph.sh --prd <activeSprint> --tool <tool> until all stories pass or max iterations hit. (3) REVIEW: run review ceremony. If STORIES_REOPENED signal detected, go back to EXECUTE (up to --max-retries times). If max retries hit with stories still failing: mark those stories with status:blocked, log details, continue with accepted stories. (4) RETRO: run retro ceremony. (5) ADVANCE: if all non-blocked stories reviewed:true, run prd/advance.sh to move to next phase. Print a clear summary at each step. Honour --dry-run flag: print what would happen without executing. Log all ceremony outputs to prd/logs/phase-N-<timestamp>.log for audit trail.",
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -219,7 +231,14 @@
         "notes": "Achievable 4: orchestration logic with retry is moderately complex. Well within one story budget."
       },
       "testPlan": "Run ./ceremonies.sh --dry-run --phase 0 and verify it prints the execution plan without modifying files. Run with a mock sprint file where one story will fail review and verify it retries ralph up to max-retries. Verify log file written to prd/logs/. shellcheck must pass.",
-      "dependencies": ["P0-001", "P0-002", "P0-003", "P0-004", "P0-005", "P0-006"],
+      "dependencies": [
+        "P0-001",
+        "P0-002",
+        "P0-003",
+        "P0-004",
+        "P0-005",
+        "P0-006"
+      ],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies.sh exists and is executable",
         "ceremonies.sh runs SMART check before execution and aborts on score < 3",
@@ -233,8 +252,8 @@
         "ceremonies.sh logs all output to prd/logs/phase-N-<timestamp>.log",
         "shellcheck passes on ceremonies.sh"
       ],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0
     }

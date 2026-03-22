@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/libliflin/sovereign/prd/schema/story.schema.json",
+  "title": "Sovereign Story",
+  "description": "A user story in the Sovereign Platform sprint system (v2)",
+  "type": "object",
+  "required": [
+    "id", "phase", "priority", "points", "branchName",
+    "title", "description", "acceptanceCriteria",
+    "passes", "reviewed", "reviewNotes", "attempts"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique story identifier (e.g. '001', 'P0-001')"
+    },
+    "phase": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Phase number this story belongs to"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Priority within the sprint (lower = higher priority)"
+    },
+    "points": {
+      "type": "integer",
+      "enum": [1, 2, 3, 5],
+      "description": "Story points: 1=trivial, 2=standard, 3=complex, 5=must-split"
+    },
+    "branchName": {
+      "type": "string",
+      "pattern": "^feature/.+",
+      "description": "Git branch name for this story (must start with feature/)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Action-oriented story title"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "description": "What to build — specific enough to implement without further clarification"
+    },
+    "smart": {
+      "type": "object",
+      "description": "SMART scoring (1-5 each). Populated by smart-check ceremony.",
+      "properties": {
+        "specific":   { "type": "integer", "minimum": 0, "maximum": 5 },
+        "measurable": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "achievable": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "relevant":   { "type": "integer", "minimum": 0, "maximum": 5 },
+        "timeBound":  { "type": "integer", "minimum": 0, "maximum": 5 },
+        "notes":      { "type": "string" }
+      }
+    },
+    "testPlan": {
+      "type": "string",
+      "description": "How to verify this story is done — concrete commands or checks"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Story IDs that must be accepted before this story can start"
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Verifiable pass/fail criteria — each must be independently checkable"
+    },
+    "passes": {
+      "type": "boolean",
+      "description": "True when Ralph has self-graded this story as complete"
+    },
+    "reviewed": {
+      "type": "boolean",
+      "description": "True only when the review ceremony has independently verified all ACs"
+    },
+    "reviewNotes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Failure details written by the review ceremony when re-opening a story"
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of times this story has been re-opened by the review ceremony"
+    },
+    "readinessNote": {
+      "type": "string",
+      "description": "Set by planning ceremony when a story is not-ready for the current sprint"
+    }
+  },
+  "additionalProperties": true
+}
