@@ -100,7 +100,7 @@
         "helm lint passes on both",
         "argocd-apps/platform/cert-manager-app.yaml and sealed-secrets-app.yaml exist"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "007",

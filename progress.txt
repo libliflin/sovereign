@@ -101,3 +101,20 @@
   - Provider installRuntimeConfig.spec.serviceAccountName sets which SA the provider pod uses — must match the SA created in the same template
   - ArgoCD sync-wave "-90" for Crossplane (after Cilium CNI at "-100") ensures correct deploy order
 ---
+
+## 2026-03-22 - Story 006
+- Created charts/cert-manager/ wrapper chart using official jetstack/cert-manager 1.14.0 as Helm dependency
+- charts/cert-manager/values.yaml: self-signed issuer enabled by default, Vault issuer disabled (vault.enabled=false)
+- charts/cert-manager/templates/clusterissuer-selfsigned.yaml: three resources — selfsigned-issuer (bootstrap), sovereign-ca Certificate (10yr, isCA=true), sovereign-ca-issuer (CA-backed issuer for all platform certs)
+- charts/cert-manager/templates/clusterissuer-vault.yaml: Vault ClusterIssuer using Kubernetes auth — disabled by default, toggled via vault.enabled
+- Created charts/sealed-secrets/ wrapper chart using bitnami-labs/sealed-secrets 2.15.0 (chart version) / 0.26.0 (app)
+- argocd-apps/platform/cert-manager-app.yaml: sync-wave "-85" (after Crossplane at -90, before services needing TLS)
+- argocd-apps/platform/sealed-secrets-app.yaml: sync-wave "-85" (alongside cert-manager)
+- helm lint passes on both charts (0 failures)
+- helm template renders correctly for both charts
+- **Learnings for future iterations:**
+  - cert-manager ClusterIssuer/Certificate/ClusterIssuer chain: use sync-waves 1→2→3 within the chart to ensure ordering (selfsigned-issuer → CA cert → CA-backed issuer)
+  - cert-manager 1.14.0 uses installCRDs: true in values to auto-install CRDs (no separate CRD chart needed)
+  - Vault ClusterIssuer auth.kubernetes.mountPath expects the full vault path: "/v1/auth/<mount>" not just the mount name
+  - sealed-secrets 2.15.0 chart (upstream) uses `namespace:` field in values to set the deployment namespace; fullnameOverride sets the controller name to "sealed-secrets-controller" (the standard expected by kubeseal CLI)
+---
