@@ -129,7 +129,7 @@
         "Provider docs updated: all costs show 3-node totals, AWS free tier removed",
         "shellcheck passes on all modified scripts"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "shellcheck bootstrap/**/*.sh; verify loop pattern in each provider; verify kube-vip install in each provider; verify cluster-init/server flags; verify verify.sh checks etcd; verify cloudflare.sh DaemonSet manifest.",
       "dependencies": [
