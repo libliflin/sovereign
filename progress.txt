@@ -48,3 +48,17 @@
   - New feature branches need to merge from prior story branch before work begins (story 001 scaffold was on feature/repo-scaffold, not main)
   - yq is the YAML parser used in bootstrap scripts (require check at top of each script)
 ---
+
+## 2026-03-22 - Story 003
+- Created bootstrap/providers/aws-ec2.sh — provisions EC2 instance via AWS CLI, auto-detects Ubuntu 22.04 AMI, imports SSH key, creates security group, launches instance, installs K3s, outputs kubeconfig to ~/.kube/sovereign-aws.yaml
+- Created bootstrap/providers/digitalocean.sh — provisions Droplet via doctl, uploads SSH key by fingerprint (idempotent), creates Droplet, installs K3s, outputs kubeconfig to ~/.kube/sovereign-do.yaml
+- Created docs/providers/hetzner.md — cost table, prerequisites, step-by-step with copy-pasteable commands, scaling and troubleshooting
+- Created docs/providers/aws-ec2-free-tier.md — free tier guide, Elastic IP note, cost table, cleanup steps
+- Created docs/providers/digitalocean.md — cost table, region list, doctl setup, scaling guide
+- Files changed: bootstrap/providers/aws-ec2.sh, bootstrap/providers/digitalocean.sh, docs/providers/hetzner.md, docs/providers/aws-ec2-free-tier.md, docs/providers/digitalocean.md
+- **Learnings for future iterations:**
+  - AWS EC2 uses `ubuntu` user (not `root`) for Ubuntu 22.04 official AMIs from Canonical (owner 099720109477)
+  - DigitalOcean SSH key deduplication should use fingerprint matching via `ssh-keygen -lf` + `doctl compute ssh-key list`
+  - AWS security group describe query returns "None" string (not empty) when no SG found — check for both conditions
+  - New feature branches created from the prior story branch include all prior work automatically
+---
