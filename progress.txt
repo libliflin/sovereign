@@ -1,0 +1,17 @@
+# Sovereign Platform — Ralph Progress Log
+# This file is updated after each Ralph iteration.
+# Claude Code reads this before every iteration to learn from prior work.
+
+## Codebase Patterns
+(Updated by Ralph after each iteration — check here first for conventions discovered)
+
+- Domain variable: always {{ .Values.global.domain }} in Helm templates
+- Storage class: always {{ .Values.global.storageClass }} — default is "ceph-block"
+- All ingresses use TLS, cert from cert-manager
+- Keycloak OIDC client IDs follow pattern: sovereign-<service>
+- ArgoCD apps live in argocd-apps/<tier>/<service>-app.yaml
+- Namespace naming: one namespace per service, named after the service
+
+## Run History
+
+(Entries added here after each Ralph iteration)
