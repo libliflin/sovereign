@@ -76,3 +76,60 @@ export SOVEREIGN_CONFIG="$CONFIG_FILE"
 export SOVEREIGN_DOMAIN="$DOMAIN"
 
 bash "$PROVIDER_SCRIPT"
+
+# ── Phase 1: Install foundational platform components ──────────────────────────
+echo ""
+echo "==> Phase 1: Installing ArgoCD and bootstrapping App-of-Apps"
+echo ""
+
+# Resolve sovereign repo root (parent of bootstrap/)
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Require helm
+if ! command -v helm &>/dev/null; then
+  echo "ERROR: 'helm' is required. Install from https://helm.sh/docs/intro/install/" >&2
+  exit 1
+fi
+
+# Require kubectl
+if ! command -v kubectl &>/dev/null; then
+  echo "ERROR: 'kubectl' is required. Install from https://kubernetes.io/docs/tasks/tools/" >&2
+  exit 1
+fi
+
+# Add ArgoCD Helm repo
+echo "==> Adding argo Helm repo..."
+helm repo add argo https://argoproj.github.io/argo-helm 2>/dev/null || true
+helm repo update argo
+
+# Install ArgoCD into the argocd namespace
+echo "==> Installing ArgoCD..."
+helm dependency update "${REPO_ROOT}/charts/argocd"
+helm upgrade --install argocd "${REPO_ROOT}/charts/argocd" \
+  --namespace argocd \
+  --create-namespace \
+  --set "global.domain=${SOVEREIGN_DOMAIN}" \
+  --wait \
+  --timeout 300s
+
+echo "==> ArgoCD installed. Waiting for server to be ready..."
+kubectl wait --for=condition=available deployment/argocd-server \
+  -n argocd --timeout=120s
+
+# Apply the root App-of-Apps
+echo "==> Applying root App-of-Apps manifest..."
+kubectl apply -f "${REPO_ROOT}/argocd-apps/root-app.yaml"
+
+echo ""
+echo "✓ Bootstrap complete!"
+echo ""
+echo "ArgoCD is now managing the platform via GitOps."
+echo "Access ArgoCD at: https://argocd.${SOVEREIGN_DOMAIN}"
+echo ""
+echo "Get the initial admin password with:"
+echo "  kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d"
+echo ""
+echo "Next steps:"
+echo "  1. Configure Cloudflare wildcard DNS: *.${SOVEREIGN_DOMAIN} → <node-IP>"
+echo "  2. Run: ./bootstrap/verify.sh"
+echo "  3. Push your config changes to the sovereign repo to trigger GitOps sync"

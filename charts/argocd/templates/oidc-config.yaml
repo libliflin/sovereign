@@ -1,0 +1,52 @@
+{{- if .Values.sso.enabled }}
+---
+# Dex config for Keycloak OIDC — applied as a ConfigMap patch when SSO is enabled
+# This configures Dex to use Keycloak as the upstream OIDC provider
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "argocd.labels" . | nindent 4 }}
+  annotations:
+    # Merge with the argocd-cm created by the argo-cd subchart
+    helm.sh/resource-policy: keep
+data:
+  url: "https://{{ include "argocd.host" . }}"
+  dex.config: |
+    connectors:
+      - type: oidc
+        id: keycloak
+        name: Keycloak
+        config:
+          issuer: {{ .Values.global.keycloak.url }}/realms/{{ .Values.global.keycloak.realm }}
+          clientID: {{ .Values.sso.clientID }}
+          clientSecretEnv: OIDC_CLIENT_SECRET
+          redirectURI: "https://{{ include "argocd.host" . }}/api/dex/callback"
+          scopes:
+            - openid
+            - profile
+            - email
+            - groups
+          insecureSkipEmailVerified: true
+---
+# Secret placeholder — in production this comes from a SealedSecret
+# The actual value is set by: kubectl create secret generic argocd-keycloak-secret \
+#   --from-literal=clientSecret=<value> -n argocd
+# Then seal it with: kubeseal --format yaml < secret.yaml > sealed-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.sso.clientSecretRef }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "argocd.labels" . | nindent 4 }}
+  annotations:
+    # Replace this with a SealedSecret in production
+    helm.sh/resource-policy: keep
+type: Opaque
+stringData:
+  # Placeholder — replace with actual SealedSecret
+  clientSecret: "REPLACE_WITH_SEALED_SECRET"
+{{- end }}

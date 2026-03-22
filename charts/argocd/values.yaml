@@ -1,0 +1,110 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+
+# Sovereign repo — ArgoCD watches this for App-of-Apps
+repo:
+  url: "https://github.com/libliflin/sovereign"
+  targetRevision: "HEAD"
+  appsPath: "argocd-apps"
+
+# Keycloak OIDC SSO (disabled by default — enable after Phase 2 Keycloak is running)
+sso:
+  enabled: false
+  # clientID is auto-set to "sovereign-argocd" when enabled
+  clientID: "sovereign-argocd"
+  # clientSecret stored in a SealedSecret — reference name below
+  clientSecretRef: "argocd-keycloak-secret"
+
+# argo-cd upstream chart values
+argo-cd:
+  # Disable default ingress — we create our own in templates/ingress.yaml
+  server:
+    ingress:
+      enabled: false
+    extraArgs:
+      - --insecure  # TLS terminated at ingress level
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  repoServer:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  applicationSet:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  notifications:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  dex:
+    # Dex is used as OIDC connector to Keycloak
+    enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  redis:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
+  controller:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+  # Admin password comes from a SealedSecret (see templates/admin-secret.yaml)
+  # Set configs.secret.argocdServerAdminPassword to "" to disable default password
+  configs:
+    secret:
+      # Admin password hash — override with SealedSecret in production
+      # Generate with: htpasswd -nbBC 10 "" <password> | tr -d ':\n' | sed 's/$2y/$2a/'
+      argocdServerAdminPassword: ""
+      argocdServerAdminPasswordMtime: "2024-01-01T00:00:00Z"
+    cm:
+      # OIDC config — populated when sso.enabled=true (see templates/oidc-config.yaml)
+      url: ""
+      # Disable anonymous access
+      users.anonymous.enabled: "false"
+      # Application in any namespace feature
+      application.resourceTrackingMethod: "annotation"
+    params:
+      server.insecure: "true"

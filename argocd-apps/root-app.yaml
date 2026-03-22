@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sovereign-root
+  namespace: argocd
+  # The root app has no sync-wave — it bootstraps everything else
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: sovereign-root
+    app.kubernetes.io/part-of: sovereign-platform
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    # This directory contains all tier app manifests.
+    # ArgoCD recurses into subdirectories to find all Application resources.
+    path: argocd-apps
+    directory:
+      recurse: true
+      # Exclude this root-app.yaml itself to avoid infinite loop
+      exclude: "root-app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
