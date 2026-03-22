@@ -134,7 +134,7 @@
         "helm lint passes",
         "argocd-apps/platform/vault-app.yaml exists"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "009",

@@ -137,3 +137,20 @@
   - ArgoCD admin password in the argo-cd subchart: set `configs.secret.argocdServerAdminPassword` to "" (empty) to disable the default password and force use of argocd-initial-admin-secret
   - bootstrap.sh ArgoCD install step should use `helm dependency update` before `helm upgrade --install` so Chart.lock is respected
 ---
+
+## 2026-03-22 - Story 008
+- Created charts/vault/ wrapper chart using hashicorp/vault 0.27.0 (Vault app 1.15.0)
+- charts/vault/values.yaml: dev mode enabled by default; full HA raft config documented in comments; auto-unseal stub (awskms/transit) disabled by default
+- charts/vault/templates/ingress.yaml: Vault UI ingress at vault.{{ .Values.global.domain }} with TLS via cert-manager
+- charts/vault/templates/jobs/pki-init.yaml: PostSync ArgoCD Job — creates root CA (10yr) + intermediate CA (5yr) + sovereign role for *.{{ .Values.global.domain }}
+- charts/vault/templates/jobs/k8s-auth.yaml: PostSync ArgoCD Job (sync-wave 1) — enables Kubernetes auth method, creates sovereign-platform policy, creates KV-v2 secrets engine
+- argocd-apps/platform/vault-app.yaml: sync-wave "-80" (after cert-manager/sealed-secrets at -85, before services needing secrets)
+- helm lint passes (0 charts failed); helm template renders all resources correctly
+- Files changed: charts/vault/Chart.yaml, Chart.lock, values.yaml, templates/_helpers.tpl, templates/ingress.yaml, templates/jobs/pki-init.yaml, templates/jobs/k8s-auth.yaml, argocd-apps/platform/vault-app.yaml
+- **Learnings for future iterations:**
+  - hashicorp/vault chart uses `vault.server.dev.enabled` (nested under the vault alias) to control dev mode — set via alias in parent chart values
+  - Upstream vault chart disables its own ingress via `vault.server.ingress.enabled: false`; custom ingress template references service `<release>-vault` on port 8200
+  - ArgoCD PostSync hooks with sync-wave annotation on Jobs control ordering between pki-init and k8s-auth (wave 0 → wave 1)
+  - Vault Job containers need the ServiceAccount that Vault itself uses (`<release>-vault`) to access the Kubernetes API for auth config
+  - In dev mode the root token is always "root" — init jobs can use this directly; in production mount token from a Sealed Secret
+---
