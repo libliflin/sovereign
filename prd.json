@@ -84,7 +84,7 @@
         "helm lint passes",
         "argocd-apps/platform/crossplane-app.yaml exists and is valid"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "006",

@@ -84,3 +84,20 @@
   - ArgoCD sync-wave annotation -100 ensures CNI (Cilium) installs before all other apps
   - helm is at /opt/homebrew/bin/helm (not in PATH by default in eval context, same as shellcheck)
 ---
+
+## 2026-03-22 - Story 005
+- Created charts/crossplane/ wrapper chart using official crossplane/crossplane 1.17.0 as a Helm dependency
+- charts/crossplane/values.yaml: resource limits for crossplane pods, provider toggles for provider-helm and provider-kubernetes
+- charts/crossplane/templates/provider-helm.yaml: Provider CRD + ServiceAccount + ClusterRoleBinding (cluster-admin) for Helm provider
+- charts/crossplane/templates/provider-kubernetes.yaml: Provider CRD + ServiceAccount + ClusterRoleBinding for Kubernetes provider
+- charts/crossplane/templates/providerconfig-helm.yaml: ProviderConfig using InjectedIdentity (in-cluster credentials)
+- charts/crossplane/templates/providerconfig-kubernetes.yaml: ProviderConfig using InjectedIdentity
+- argocd-apps/platform/crossplane-app.yaml: ArgoCD Application with sync-wave "-90" (after CNI at -100)
+- platform/xrds/README.md and platform/compositions/README.md already existed from Story 001
+- helm lint passes; helm template renders Provider, ProviderConfig, ServiceAccount, ClusterRoleBinding, Deployment resources
+- **Learnings for future iterations:**
+  - Crossplane Provider resources (pkg.crossplane.io/v1) are Crossplane CRDs — they won't exist until Crossplane is running, so kubectl dry-run will fail; helm lint + helm template are sufficient quality gate
+  - ProviderConfig for helm uses apiVersion: helm.crossplane.io/v1beta1; for kubernetes uses kubernetes.crossplane.io/v1alpha1
+  - Provider installRuntimeConfig.spec.serviceAccountName sets which SA the provider pod uses — must match the SA created in the same template
+  - ArgoCD sync-wave "-90" for Crossplane (after Cilium CNI at "-100") ensures correct deploy order
+---
