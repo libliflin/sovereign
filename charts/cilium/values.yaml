@@ -1,0 +1,55 @@
+global:
+  domain: "sovereign-autarky.dev"
+  tls:
+    clusterIssuer: "selfsigned"
+  ingressClass: "nginx"
+
+# Cilium chart values (passed to the cilium dependency)
+cilium:
+  # Use Kubernetes host networking for the agent
+  kubeProxyReplacement: "true"
+
+  # WireGuard encryption between nodes
+  encryption:
+    enabled: true
+    type: wireguard
+
+  # Hubble observability
+  hubble:
+    enabled: true
+    relay:
+      enabled: true
+    ui:
+      enabled: true
+      ingress:
+        enabled: true
+        annotations:
+          kubernetes.io/ingress.class: nginx
+          cert-manager.io/cluster-issuer: selfsigned
+        hosts:
+          - hubble.sovereign-autarky.dev
+        tls:
+          - secretName: hubble-tls
+            hosts:
+              - hubble.sovereign-autarky.dev
+
+  # IPAM configuration
+  ipam:
+    mode: kubernetes
+
+  # Enable network policy enforcement
+  policyEnforcementMode: "default"
+
+  # Operator settings
+  operator:
+    replicas: 1
+
+# Default deny-all network policy settings
+networkPolicies:
+  # Whether to create the default deny-all policy
+  defaultDenyAll: true
+  # Namespaces to exempt from the default deny-all policy
+  # (kube-system is always exempt)
+  exemptNamespaces:
+    - kube-system
+    - cert-manager

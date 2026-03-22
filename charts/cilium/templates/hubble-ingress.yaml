@@ -1,0 +1,31 @@
+# Hubble UI Ingress — provides cluster network observability at hubble.<domain>
+# This ingress is managed separately from the upstream cilium chart's built-in
+# ingress so that the hostname uses the Sovereign global.domain variable.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hubble-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sovereign-cilium.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.global.ingressClass | quote }}
+    cert-manager.io/cluster-issuer: {{ .Values.global.tls.clusterIssuer | quote }}
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  ingressClassName: {{ .Values.global.ingressClass }}
+  tls:
+    - hosts:
+        - {{ include "sovereign-cilium.hubbleHost" . | quote }}
+      secretName: hubble-ui-tls
+  rules:
+    - host: {{ include "sovereign-cilium.hubbleHost" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hubble-ui
+                port:
+                  number: 80

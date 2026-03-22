@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cilium
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    sovereign.platform/tier: platform
+    sovereign.platform/phase: "1"
+  annotations:
+    # Cilium MUST be deployed before all other apps — it is the CNI.
+    # ArgoCD itself will not be healthy until Cilium is running.
+    argocd.argoproj.io/sync-wave: "-100"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/cilium
+    helm:
+      valueFiles:
+        - values.yaml
+      # Override global domain from the environment-specific values
+      # kubectl create secret generic argocd-sovereign-globals \
+      #   --from-literal=domain=your-domain.com -n argocd
+      parameters: []
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,66 @@
+{{- if .Values.networkPolicies.defaultDenyAll }}
+# Default deny-all NetworkPolicy for the Cilium namespace.
+# Apply this pattern to every application namespace to enforce zero-trust networking.
+# Cilium enforces these policies cluster-wide once installed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sovereign-cilium.labels" . | nindent 4 }}
+  annotations:
+    # IMPORTANT: Apply this same policy to each application namespace.
+    # The bootstrap script copies this to all namespaces it creates.
+    sovereign.platform/policy: "default-deny-all"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Allow DNS egress — required for all pods to resolve service names.
+# Without this, pods cannot communicate by service name even within the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sovereign-cilium.labels" . | nindent 4 }}
+  annotations:
+    sovereign.platform/policy: "allow-dns-egress"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# Allow same-namespace ingress and egress.
+# Pods within the same namespace can communicate freely.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sovereign-cilium.labels" . | nindent 4 }}
+  annotations:
+    sovereign.platform/policy: "allow-same-namespace"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
+{{- end }}
