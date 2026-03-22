@@ -54,8 +54,25 @@ if [[ -z "$DOMAIN" || "$DOMAIN" == "null" ]]; then
   exit 1
 fi
 
+# Read and validate node count — must be odd and >= 3 (HA requirement)
+NODE_COUNT="$(yq '.nodes.count // 1' "$CONFIG_FILE")"
+if [[ "$NODE_COUNT" -lt 3 ]]; then
+  echo "ERROR: nodes.count must be >= 3. Single-node and 2-node clusters are not supported." >&2
+  echo "  Sovereign requires an odd number of nodes >= 3 for etcd quorum and Ceph quorum." >&2
+  exit 1
+fi
+if (( NODE_COUNT % 2 == 0 )); then
+  echo "ERROR: nodes.count must be odd (got $NODE_COUNT). Even-node clusters break etcd quorum." >&2
+  exit 1
+fi
+
 echo "==> Provider: $PROVIDER"
 echo "==> Domain:   $DOMAIN"
+echo "==> Nodes:    $NODE_COUNT"
+
+# Read front door provider (default: cloudflare)
+FRONT_DOOR="$(yq '.frontDoor // "cloudflare"' "$CONFIG_FILE")"
+echo "==> FrontDoor: $FRONT_DOOR"
 echo ""
 
 # Route to the appropriate provider script
@@ -68,14 +85,105 @@ if [[ ! -f "$PROVIDER_SCRIPT" ]]; then
   exit 1
 fi
 
-echo "==> Delegating to provider script: $PROVIDER_SCRIPT"
-echo ""
+# Validate and source front door implementation
+FRONTDOOR_SCRIPT="${SCRIPT_DIR}/frontdoor/${FRONT_DOOR}.sh"
+if [[ ! -f "$FRONTDOOR_SCRIPT" ]]; then
+  echo "ERROR: No front door script found for '$FRONT_DOOR'" >&2
+  echo "  Supported front doors: cloudflare, none" >&2
+  echo "  Expected file: $FRONTDOOR_SCRIPT" >&2
+  exit 1
+fi
+
+# Source the front door implementation (see interface.sh for the hook contract)
+# shellcheck disable=SC1090
+source "$FRONTDOOR_SCRIPT"
 
 # Export config path so provider scripts can read it
 export SOVEREIGN_CONFIG="$CONFIG_FILE"
 export SOVEREIGN_DOMAIN="$DOMAIN"
 
+echo "==> Delegating to provider script: $PROVIDER_SCRIPT"
+echo ""
+
+# Provider script must write node IPs (one per line) to SOVEREIGN_NODELIST
+SOVEREIGN_NODELIST="${TMPDIR:-/tmp}/sovereign-nodes-$$.txt"
+export SOVEREIGN_NODELIST
+
 bash "$PROVIDER_SCRIPT"
+
+# Read node IPs provisioned by the provider
+if [[ ! -f "$SOVEREIGN_NODELIST" ]] || [[ ! -s "$SOVEREIGN_NODELIST" ]]; then
+  echo "WARN: Provider did not write node list to ${SOVEREIGN_NODELIST}." >&2
+  echo "  Hardening and frontdoor hooks will be skipped." >&2
+  echo "  (Provider scripts write IPs via: echo \"\$IP\" >> \"\$SOVEREIGN_NODELIST\")" >&2
+else
+  # Build space-separated node IPs for frontdoor hooks
+  SOVEREIGN_NODE_IPS=""
+  while IFS= read -r ip; do
+    [[ -z "$ip" ]] && continue
+    SOVEREIGN_NODE_IPS="${SOVEREIGN_NODE_IPS:+$SOVEREIGN_NODE_IPS }$ip"
+  done < "$SOVEREIGN_NODELIST"
+  export SOVEREIGN_NODE_IPS
+
+  SSH_KEY="$(yq '.sshKeyPath' "$CONFIG_FILE")"
+  SSH_KEY="${SSH_KEY/#\~/$HOME}"
+  export SOVEREIGN_SSH_KEY="$SSH_KEY"
+
+  # ── Step 1: Run base hardening on all nodes ──────────────────────────────
+  echo ""
+  echo "==> Running base hardening on all nodes..."
+  for NODE_IP in $SOVEREIGN_NODE_IPS; do
+    echo "  --> Hardening node: $NODE_IP"
+    SSH_OPTS=(-o StrictHostKeyChecking=no -o ConnectTimeout=30 -i "$SSH_KEY")
+    ssh "${SSH_OPTS[@]}" "root@${NODE_IP}" 'bash -s' < "${SCRIPT_DIR}/hardening/base.sh"
+    ssh "${SSH_OPTS[@]}" "root@${NODE_IP}" 'bash -s' < "${SCRIPT_DIR}/hardening/ssh.sh"
+    ssh "${SSH_OPTS[@]}" "root@${NODE_IP}" 'bash -s' < "${SCRIPT_DIR}/hardening/kernel.sh"
+  done
+
+  # ── Step 2: Provision the front door (local) ─────────────────────────────
+  echo ""
+  echo "==> Provisioning front door: $FRONT_DOOR..."
+  frontdoor_provision
+
+  # ── Step 3: Install front door agent on all nodes ────────────────────────
+  echo ""
+  echo "==> Installing front door agent on nodes..."
+  # shellcheck disable=SC2086
+  frontdoor_install_agent $SOVEREIGN_NODE_IPS
+
+  # ── Step 4: Configure DNS ────────────────────────────────────────────────
+  echo ""
+  echo "==> Configuring DNS via front door..."
+  frontdoor_configure_dns
+
+  # ── Step 5: Apply firewall rules using frontdoor CIDRs ───────────────────
+  echo ""
+  echo "==> Applying firewall rules (frontdoor_allowed_cidrs → UFW)..."
+  FRONTDOOR_CIDRS="$(frontdoor_allowed_cidrs)"
+  export FRONTDOOR_CIDRS
+
+  NODE_CIDRS=""
+  for ip in $SOVEREIGN_NODE_IPS; do
+    NODE_CIDRS="${NODE_CIDRS:+$NODE_CIDRS
+}${ip}/32"
+  done
+  export NODE_CIDRS
+
+  for NODE_IP in $SOVEREIGN_NODE_IPS; do
+    echo "  --> Applying firewall on node: $NODE_IP"
+    SSH_OPTS=(-o StrictHostKeyChecking=no -o ConnectTimeout=30 -i "$SSH_KEY")
+    FRONTDOOR_CIDRS="$FRONTDOOR_CIDRS" NODE_CIDRS="$NODE_CIDRS" \
+      ssh "${SSH_OPTS[@]}" "root@${NODE_IP}" 'bash -s' \
+      < "${SCRIPT_DIR}/hardening/firewall.sh"
+  done
+
+  # ── Step 6: Print connection info ────────────────────────────────────────
+  echo ""
+  frontdoor_connection_info
+
+  # Cleanup
+  rm -f "$SOVEREIGN_NODELIST"
+fi
 
 # ── Phase 1: Install foundational platform components ──────────────────────────
 echo ""

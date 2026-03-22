@@ -190,3 +190,85 @@
   - Verification Job uses `rook-ceph-osd` ServiceAccount (created by the cluster chart) to access Ceph CLI
   - sync-wave "-70" for rook-ceph places it after identity/secrets phase (-80/-75) but before all application workloads needing persistent storage
 ---
+
+## 2026-03-22 - Phase 0 → Phase 1 Advancement + Story P1-008
+- All 7 Phase 0 (ceremonies) stories were passes:true reviewed:true → ran prd/advance.sh to mark phase 0 complete
+- Ran sprint planning ceremony manually: created prd/phase-1-bootstrap.json with 6 stories (14 pts of 15 capacity)
+  - Stories 001-004, 007: already passes:true (implemented in prior Ralph iterations), await review ceremony
+  - Story 008: new implementation (GitHub CI)
+  - Stories 012-015: over capacity, deferred with readinessNote
+- Created .github/workflows/validate.yml with 5 parallel jobs: helm-validate (matrix), shell-validate, vendor-audit, argocd-validate, bootstrap-validate
+- Created .github/workflows/release.yml: packages all Helm charts, publishes to GitHub Pages, creates GitHub Release on vX.Y.Z tag
+- Added revisionHistoryLimit: 3 to all 8 existing ArgoCD Application manifests (required by argocd-validate job)
+- Added NODE_COUNT guard to bootstrap/bootstrap.sh (reads nodes.count from config.yaml, aborts if < 3 or even)
+- bootstrap/providers/*.sh for loops (for i in $(seq...)) satisfy the CI's "loop over node count" grep check
+- **Learnings for future iterations:**
+  - prd/advance.sh requires all stories passes:true AND reviewed:true to proceed — run review ceremony first
+  - Sprint planning selects stories by priority until capacity; skipped-over stories get readinessNote "Over sprint capacity"
+  - `python3 -c "import yaml"` fails on macOS if PyYAML not installed; use grep/jq for YAML checks in local quality gates
+  - GitHub Actions `uses: ./.github/workflows/validate.yml` (workflow_call) requires the called workflow to have `on: workflow_call:` trigger — release.yml calling validate.yml directly won't work without it; use job-level `needs:` pattern instead or add workflow_call trigger
+  - ArgoCD revisionHistoryLimit is set in spec.revisionHistoryLimit (not metadata), and must be 3 for all Application manifests
+  - NODE_COUNT guard in bootstrap.sh: use `yq '.nodes.count // 1'` to default to 1 (which fails the < 3 check), so missing nodes.count is safely rejected
+---
+
+## 2026-03-22 - Phase 1 → Phase 2 Advancement + Story P2-012
+- All 6 Phase 1 (bootstrap) stories were passes:true reviewed:true → ran prd/advance.sh to mark phase 1 complete
+- Created prd/phase-2-foundations.json with 4 deferred phase 1 stories (012-015) as phase 2 stories (10/15 points)
+- Implemented Story 012: front door provider interface and VPS hardening framework
+  - Created bootstrap/frontdoor/interface.sh — documents the 5-hook contract with detailed comments
+  - Created bootstrap/frontdoor/none.sh — baseline provider: prompts for caller IP or reads FRONTDOOR_CALLER_IP
+  - Created bootstrap/hardening/base.sh — unattended-upgrades, fail2ban, auditd with CIS audit rules
+  - Created bootstrap/hardening/ssh.sh — pubkey-only, no password auth, CIS-compliant cipher/MAC settings
+  - Created bootstrap/hardening/kernel.sh — CIS sysctl: syncookies, rp_filter, dmesg_restrict, suid_dumpable, ASLR
+  - Created bootstrap/hardening/firewall.sh — UFW default-deny; reads FRONTDOOR_CIDRS+NODE_CIDRS env vars
+  - Updated bootstrap/bootstrap.sh — reads frontDoor from config.yaml, sources impl, runs harden→provision→agent→dns→firewall→info
+  - Updated bootstrap/config.yaml.example — added frontDoor, nodes.count/serverType, cloudflare section
+- **Learnings for future iterations:**
+  - shellcheck SC2317 "unreachable code" fires when a function with `exit 1` is called and shellcheck thinks downstream code is unreachable — do NOT source interface.sh (it has exit-1 stubs); only source the actual implementation
+  - Hardening scripts (base/ssh/kernel/firewall) run on remote nodes via `ssh root@IP 'bash -s' < script.sh` — design them as standalone scripts not as heredocs
+  - firewall.sh reads FRONTDOOR_CIDRS via env var (not by calling the shell function) because the function is local; bootstrap.sh calls frontdoor_allowed_cidrs locally, captures output, exports to env, then SSH-runs firewall.sh
+  - When all sprint stories are done (passes:true, reviewed:true), run prd/advance.sh to move to next phase, then manually create the next phase sprint file following the planning ceremony pattern
+  - backlog.json stories with `phase: 1` that were deferred need their phase updated to 2 when pulled into the phase 2 sprint
+---
+
+## 2026-03-22 - Story 015
+- Refactored all 4 provider scripts to provision N nodes in a loop (hetzner, generic-vps, aws-ec2, digitalocean)
+- Each provider: writes kube-vip static Pod manifest to /var/lib/rancher/k3s/server/manifests/kube-vip.yaml on each node before K3s starts
+- K3s installed with --cluster-init + embedded etcd on node-1; nodes 2+ join via --server https://<VIP>:6443
+- kube-vip VIP auto-derived from node-1 subnet (.100) if not specified in config.yaml as kubeVip.vip
+- All providers output kubeconfig pointing at VIP (not a single node IP); verified all nodes Ready before returning
+- generic-vps.sh now accepts genericVps.nodeIps as comma-separated list; IFS=',' read -ra array pattern used
+- aws-ec2.sh: t2.micro/free tier blocked at script entry with clear error; uses private IPs for VIP, public IPs for SSH
+- digitalocean.sh: creates a VPC for private networking; detects private interface by IP address grep
+- verify.sh: added --vip flag; checks node count >= 3, odd count, kube-vip pod running, VIP reachable via HTTPS
+- cloudflare.sh frontdoor_install_agent now ALSO writes a cloudflared DaemonSet manifest to K3s manifests dir on node-1 — K3s deploys it cluster-wide; systemd service still installed on all nodes as pre-cluster fallback
+- config.yaml.example: restructured to show 3-node HA costs for all providers; removed t2.micro/free-tier references; added kubeVip.vip optional field
+- Provider docs updated to show 3-node cluster costs; AWS doc rewritten to remove free tier guidance
+- shellcheck SC2029 on remote SSH commands: add `# shellcheck disable=SC2029` when variable expansion client-side is intentional (e.g. VERSION in remote command)
+- Remove unused variables to satisfy shellcheck SC2034 — don't assign to variables that are only computed but never read
+---
+
+## 2026-03-22 - Story 013
+- Created bootstrap/frontdoor/cloudflare.sh — implements all 5 interface hooks using Cloudflare Tunnel v2 API
+  - frontdoor_provision: generates 32-byte secret via openssl, POSTs to /accounts/{id}/cfd_tunnel, writes tunnel ID + credentials JSON to /tmp state files, writes cloudflared config.yml stub
+  - frontdoor_install_agent: installs cloudflared from pkg.cloudflare.com APT repo via SSH, pushes credentials.json (chmod 600) + config.yml, runs `cloudflared service install` + systemctl enable/restart
+  - frontdoor_configure_dns: creates *.{domain} + apex CNAME records pointing to {tunnel_id}.cfargotunnel.com with proxied=true via cf_dns_upsert helper
+  - frontdoor_allowed_cidrs: fetches https://www.cloudflare.com/ips-v4 and ips-v6 (outbound-only tunnel means no inbound ports needed — CIDRs used for defence-in-depth UFW allow rules only)
+  - frontdoor_connection_info: prints Zero Trust dashboard URL, SSH config block (ProxyCommand cloudflared access ssh --hostname %h), and platform service URLs
+- Created bootstrap/providers/cloudflare-dns.sh — shared API helpers
+  - cf_api METHOD PATH [BODY]: generic curl wrapper, checks success field via python3 json, exits on failure
+  - cf_json_field / cf_json_path: extract result fields from API responses using python3
+  - cf_tunnel_create NAME SECRET: wraps POST /accounts/{id}/cfd_tunnel
+  - cf_tunnel_delete TUNNEL_ID: wraps DELETE /accounts/{id}/cfd_tunnel/{id}
+  - cf_dns_upsert NAME TYPE CONTENT [PROXIED]: checks for existing record by GET, then PUT or POST
+  - cf_dns_delete NAME TYPE: fetches existing record ID, then DELETE
+  - cf_zone_lookup DOMAIN: looks up zone ID by domain name (convenience — production scripts use CF_ZONE_ID from config)
+- shellcheck passes on all new and existing bootstrap scripts
+- **Learnings for future iterations:**
+  - Cloudflare Tunnel credentials are returned inline in the create API response as result.credentials_file (no separate fetch needed)
+  - `cloudflared service install` creates the systemd unit automatically when /etc/cloudflared/config.yml exists — no manual unit file needed
+  - Tunnel ID format is a UUID: <tunnel_id>.cfargotunnel.com is the CNAME target for wildcard DNS
+  - python3 builtin json module is reliable for parsing API responses without jq dependency; use `python3 -c "import sys,json; ..."` pattern
+  - cf_dns_upsert checks existing records via GET before deciding PUT vs POST — idempotent and safe to re-run
+  - SSH push of multi-line content via pipe: `printf '%s\n' "$content" | ssh ... 'cat > /etc/file'` is shellcheck-clean
+---

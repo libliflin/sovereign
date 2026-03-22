@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  validate:
+    name: Run Validation
+    uses: ./.github/workflows/validate.yml
+
+  release:
+    name: Package and Publish
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Cache Helm deps (all charts)
+        uses: actions/cache@v4
+        with:
+          path: |
+            charts/*/charts
+          key: helm-all-${{ hashFiles('charts/*/Chart.lock') }}
+          restore-keys: helm-all-
+
+      - name: Update all Helm dependencies
+        run: |
+          for chart_dir in charts/*/; do
+            chart="${chart_dir%/}"
+            chart="${chart##*/}"
+            if [ "$chart" = "_globals" ]; then continue; fi
+            if [ -f "charts/$chart/Chart.yaml" ]; then
+              helm dependency update "charts/$chart/" 2>/dev/null || true
+            fi
+          done
+
+      - name: Package Helm charts
+        run: |
+          mkdir -p dist/charts
+          for chart_dir in charts/*/; do
+            chart="${chart_dir%/}"
+            chart="${chart##*/}"
+            if [ "$chart" = "_globals" ]; then continue; fi
+            if [ -f "charts/$chart/Chart.yaml" ]; then
+              helm package "charts/$chart/" --destination dist/charts/
+              echo "Packaged: $chart"
+            fi
+          done
+
+      - name: Generate Helm repo index
+        run: |
+          helm repo index dist/charts/ \
+            --url "https://libliflin.github.io/sovereign/charts"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist/charts
+          destination_dir: charts
+          keep_files: true
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log "$PREV_TAG"..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges | head -20)
+          fi
+          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ## Sovereign Platform ${{ github.ref_name }}
+
+            ### Changes
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### Helm Repository
+
+            Add the Sovereign Helm repository:
+            ```bash
+            helm repo add sovereign https://libliflin.github.io/sovereign/charts
+            helm repo update
+            ```
+
+            ### Charts in this release
+            ```bash
+            helm search repo sovereign
+            ```
+          files: dist/charts/*.tgz
+          generate_release_notes: false

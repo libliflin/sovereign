@@ -17,9 +17,59 @@ domain: "your-domain.com"
 
 # ─────────────────────────────────────────────
 # REQUIRED: Cloud/VPS provider
-# Supported: hetzner | generic | aws-ec2 | digitalocean
+# Supported: hetzner | generic-vps | aws-ec2 | digitalocean
 # ─────────────────────────────────────────────
 provider: "hetzner"
+
+# ─────────────────────────────────────────────
+# REQUIRED: Node count (must be odd and >= 3)
+# Sovereign enforces HA — single-node and 2-node clusters are NOT supported.
+# 3 nodes = minimum for etcd quorum and Ceph replication factor 3.
+# 5 nodes = recommended for production workloads.
+#
+# Estimated costs for 3-node clusters:
+#   Hetzner  3x CX22 (2 vCPU/4GB):    ~15-18 EUR/month  [recommended]
+#   Hetzner  3x CX32 (2 vCPU/8GB):    ~30-36 EUR/month
+#   DigitalOcean 3x s-2vcpu-4gb:       ~$72/month
+#   AWS EC2  3x t3.medium:             ~$90/month
+#
+# NOTE: AWS free tier (t2.micro) is NOT viable. Minimum is t3.small.
+# ─────────────────────────────────────────────
+nodes:
+  count: 3
+  # Server type/size per node (provider-specific)
+  # Hetzner:      cx22 (4GB) | cx32 (8GB) | cx42 (16GB)
+  # DigitalOcean: s-2vcpu-4gb | s-4vcpu-8gb
+  # AWS EC2:      t3.small (min) | t3.medium | t3.large
+  serverType: "cx22"
+
+# ─────────────────────────────────────────────
+# OPTIONAL: kube-vip floating VIP address
+# kube-vip provides a floating API server VIP across all control plane nodes.
+# The VIP must be on the same subnet as the node private IPs (unused address).
+# If not set, it is auto-derived: <node1-subnet>.100
+# Examples:
+#   Hetzner private network: 10.0.0.100
+#   DigitalOcean VPC:        10.108.0.100
+#   AWS VPC:                 10.0.1.100
+# ─────────────────────────────────────────────
+# kubeVip:
+#   vip: "10.0.0.100"
+
+# ─────────────────────────────────────────────
+# REQUIRED: Front door security provider
+# Controls how traffic reaches your cluster.
+#
+# cloudflare (default): All inbound ports are CLOSED. Traffic flows through a
+#   Cloudflare Tunnel (free tier). Zero open ports on the VPS. Most secure.
+#   Requires: cloudflare.apiToken, accountId, tunnelName, zoneId below.
+#
+# none: UFW allows only your whitelisted IP (FRONTDOOR_CALLER_IP or interactive
+#   prompt). Suitable for home lab. Not recommended for production.
+#
+# custom: Source your own implementation. See bootstrap/frontdoor/custom.sh.example
+# ─────────────────────────────────────────────
+frontDoor: "cloudflare"
 
 # ─────────────────────────────────────────────
 # SSH key to use for server access
@@ -29,66 +79,101 @@ provider: "hetzner"
 sshKeyPath: "~/.ssh/id_ed25519"
 
 # ─────────────────────────────────────────────
+# CLOUDFLARE (frontDoor: cloudflare)
+# Create a Cloudflare account at https://cloudflare.com (free tier is enough).
+# API token needs: Tunnel:Edit, DNS:Edit permissions.
+# Find account ID and zone ID in the Cloudflare dashboard.
+# See docs/providers/cloudflare-setup.md for step-by-step instructions.
+# ─────────────────────────────────────────────
+cloudflare:
+  # API token with Tunnel:Edit + DNS:Edit permissions
+  apiToken: ""
+  # Account ID (from Cloudflare dashboard → right sidebar)
+  accountId: ""
+  # Name for the Cloudflare Tunnel (arbitrary, e.g. "sovereign-prod")
+  tunnelName: "sovereign"
+  # Zone ID for your domain (from Cloudflare dashboard → right sidebar)
+  zoneId: ""
+
+# ─────────────────────────────────────────────
 # HETZNER CLOUD (provider: hetzner)
 # Get your token at: https://console.hetzner.cloud/
+#
+# 3-node estimated costs:
+#   3x cx22 (2 vCPU, 4GB): ~15-18 EUR/month  [recommended minimum]
+#   3x cx32 (2 vCPU, 8GB): ~30-36 EUR/month
+#   3x cx42 (4 vCPU, 16GB): ~54-60 EUR/month
 # ─────────────────────────────────────────────
 hetzner:
   # Hetzner Cloud API token (read+write)
   apiToken: ""
-  # Server type. CX21 (~€4.15/mo) is the minimum recommended.
-  # Options: cx11, cx21, cx31, cx41, cx51
-  serverType: "cx21"
   # Datacenter location. Choose closest to your users.
   # Options: nbg1 (Nuremberg), fsn1 (Falkenstein), hel1 (Helsinki), ash (Ashburn), hil (Hillsboro)
   location: "nbg1"
-  # Server name (hostname)
-  serverName: "sovereign-1"
+  # Server name prefix — nodes will be named <serverName>-1, <serverName>-2, etc.
+  serverName: "sovereign"
+  # SSH key name as registered in Hetzner (required for SSH access to new servers)
+  sshKeyName: "your-key-name"
 
 # ─────────────────────────────────────────────
-# GENERIC VPS (provider: generic)
-# Use this if you already have a running Ubuntu 22.04 server.
+# GENERIC VPS (provider: generic-vps)
+# Use this if you already have Ubuntu 22.04 servers running.
+# Provide all node IPs as a comma-separated list.
+#
+# 3-node estimated costs:
+#   3x Vultr  2 vCPU/4GB: ~$72/month
+#   3x Linode 2 vCPU/4GB: ~$60/month
 # ─────────────────────────────────────────────
-generic:
-  # IP address of your existing server
-  serverIp: ""
-  # SSH user (usually root or ubuntu)
+genericVps:
+  # Comma-separated list of node IPs (must match nodes.count)
+  # Example: "10.0.0.1,10.0.0.2,10.0.0.3"
+  nodeIps: ""
+  # SSH user (usually root for VPS providers)
   sshUser: "root"
 
 # ─────────────────────────────────────────────
 # AWS EC2 (provider: aws-ec2)
 # Uses AWS CLI. Run `aws configure` first.
-# t2.micro is free tier eligible (750 hrs/mo for 12 months).
+#
+# IMPORTANT: AWS free tier (t2.micro) is NOT supported.
+# Minimum viable instance: t3.small (2 vCPU, 2GB RAM)
+# Recommended for production: t3.medium (2 vCPU, 4GB RAM)
+#
+# 3-node estimated costs (us-east-1, on-demand):
+#   3x t3.small  (2 vCPU, 2GB): ~$45/month  [development only]
+#   3x t3.medium (2 vCPU, 4GB): ~$90/month  [recommended minimum]
+#   3x t3.large  (2 vCPU, 8GB): ~$180/month
+#   Additional: EBS storage (~$0.10/GB/mo) + data transfer
 # ─────────────────────────────────────────────
 aws:
   # AWS region
   region: "us-east-1"
-  # Instance type. t2.micro = free tier, t3.small = ~$15/mo
-  instanceType: "t2.micro"
-  # AMI ID for Ubuntu 22.04 LTS (varies by region — leave empty to auto-detect)
+  # Instance name prefix — instances will be named <instanceName>-1, <instanceName>-2, etc.
+  instanceName: "sovereign"
+  # AMI ID for Ubuntu 22.04 LTS (leave empty to auto-detect latest)
   amiId: ""
-  # Name tag for the EC2 instance
-  instanceName: "sovereign-1"
 
 # ─────────────────────────────────────────────
 # DIGITALOCEAN (provider: digitalocean)
 # Uses doctl CLI. Run `doctl auth init` first.
+#
+# 3-node estimated costs:
+#   3x s-2vcpu-4gb  (2 vCPU, 4GB): ~$72/month   [recommended minimum]
+#   3x s-4vcpu-8gb  (4 vCPU, 8GB): ~$144/month
 # ─────────────────────────────────────────────
 digitalocean:
-  # Droplet size. s-1vcpu-1gb = ~$6/mo, s-1vcpu-2gb = ~$12/mo
-  size: "s-1vcpu-2gb"
   # Region slug. nyc3, sfo3, ams3, sgp1, lon1, fra1, tor1, blr1
   region: "nyc3"
-  # Droplet name
-  dropletName: "sovereign-1"
+  # Droplet name prefix — droplets will be named <dropletName>-1, <dropletName>-2, etc.
+  dropletName: "sovereign"
 
 # ─────────────────────────────────────────────
 # KUBERNETES CONFIGURATION
 # ─────────────────────────────────────────────
 kubernetes:
-  # K8s distribution to install. k3s recommended for single-node.
-  # Options: k3s | kubeadm
+  # K8s distribution. k3s with embedded etcd is the supported HA option.
   distribution: "k3s"
-  # Where to save the kubeconfig after bootstrap
+  # Where to save the kubeconfig after bootstrap (points at kube-vip VIP)
   kubeconfigPath: "~/.kube/config-sovereign"
 
 # ─────────────────────────────────────────────
@@ -100,5 +185,5 @@ platform:
   repoUrl: "https://github.com/your-org/your-sovereign-fork"
   # Branch ArgoCD should track
   repoBranch: "main"
-  # Admin email (used for Let's Encrypt if enabled, Keycloak admin)
+  # Admin email (used for cert-manager, Keycloak admin)
   adminEmail: "admin@your-domain.com"

@@ -2,22 +2,22 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM — phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-0-ceremonies.json",
-  "currentPhase": 0,
+  "activeSprint": "prd/phase-2-foundations.json",
+  "currentPhase": 2,
   "phases": [
     {
       "id": 0,
       "name": "ceremonies",
       "description": "Build the sprint ceremony infrastructure that manages all subsequent phases. Dogfooding: the PM tooling is the first thing built.",
       "file": "prd/phase-0-ceremonies.json",
-      "status": "active",
+      "status": "complete",
       "startDate": null,
-      "endDate": null,
+      "endDate": "2026-03-22T20:46:45Z",
       "pointsTotal": 15,
-      "pointsCompleted": 0,
+      "pointsCompleted": 15,
       "storiesTotal": 7,
       "storiesAccepted": 0,
-      "reviewPassRate": null,
+      "reviewPassRate": 100.0,
       "retro": null
     },
     {
@@ -25,16 +25,29 @@
       "name": "bootstrap",
       "description": "VPS provisioning, HA cluster setup, front door security, ingress, MetalLB, secrets bootstrapping, GitHub CI.",
       "file": "prd/phase-1-bootstrap.json",
-      "status": "pending",
-      "dependsOn": [0]
+      "status": "complete",
+      "dependsOn": [
+        0
+      ],
+      "storiesTotal": 6,
+      "pointsTotal": 14,
+      "startDate": "2026-03-22T20:48:24Z",
+      "endDate": "2026-03-22T20:58:04Z",
+      "pointsCompleted": 14,
+      "reviewPassRate": 100.00
     },
     {
       "id": 2,
       "name": "foundations",
       "description": "Crossplane compositions (PostgreSQL, namespaces, RBAC), OpenBao, network policies, cert-manager CA transition.",
       "file": "prd/phase-2-foundations.json",
-      "status": "pending",
-      "dependsOn": [1]
+      "status": "active",
+      "dependsOn": [
+        1
+      ],
+      "storiesTotal": 4,
+      "pointsTotal": 10,
+      "startDate": "2026-03-22T21:00:00Z"
     },
     {
       "id": 3,
@@ -42,7 +55,9 @@
       "description": "GitLab (split into sub-stories), Harbor, ArgoCD Image Updater, GitLab Runners.",
       "file": "prd/phase-3-gitops-engine.json",
       "status": "pending",
-      "dependsOn": [2]
+      "dependsOn": [
+        2
+      ]
     },
     {
       "id": 4,
@@ -50,7 +65,9 @@
       "description": "Vendor system: VENDORS.yaml, fetch, build recipes (ko/docker), deploy/rollback/backup, pipeline wiring.",
       "file": "prd/phase-4-autarky.json",
       "status": "pending",
-      "dependsOn": [3]
+      "dependsOn": [
+        3
+      ]
     },
     {
       "id": 5,
@@ -58,7 +75,9 @@
       "description": "Istio mTLS, OPA/Gatekeeper, Trivy Operator, Falco, OWASP ZAP.",
       "file": "prd/phase-5-security.json",
       "status": "pending",
-      "dependsOn": [2]
+      "dependsOn": [
+        2
+      ]
     },
     {
       "id": 6,
@@ -66,7 +85,9 @@
       "description": "kube-prometheus-stack, Grafana, Loki, Thanos, Tempo, dashboards, AlertManager.",
       "file": "prd/phase-6-observability.json",
       "status": "pending",
-      "dependsOn": [2]
+      "dependsOn": [
+        2
+      ]
     },
     {
       "id": 7,
@@ -74,7 +95,10 @@
       "description": "Backstage, code-server, SonarQube, ReportPortal.",
       "file": "prd/phase-7-devex.json",
       "status": "pending",
-      "dependsOn": [3, 6]
+      "dependsOn": [
+        3,
+        6
+      ]
     },
     {
       "id": 8,
@@ -82,7 +106,10 @@
       "description": "Selenium Grid, k6, MailHog, Chaos Mesh, HA pass across all charts, GitLab CI vendor builds.",
       "file": "prd/phase-8-testing-and-ha.json",
       "status": "pending",
-      "dependsOn": [5, 6]
+      "dependsOn": [
+        5,
+        6
+      ]
     },
     {
       "id": 9,
@@ -90,9 +117,27 @@
       "description": "Sovereign PM web app (Node.js/React) — replaces this file-based PM system. Self-hosting the sprint tooling.",
       "file": "prd/phase-9-sovereign-pm.json",
       "status": "pending",
-      "dependsOn": [3, 4, 6, 7]
+      "dependsOn": [
+        3,
+        4,
+        6,
+        7
+      ]
     }
   ],
   "velocity": [],
-  "sprintHistory": []
+  "sprintHistory": [
+    {
+      "phase": 0,
+      "endDate": "2026-03-22T20:46:45Z",
+      "pointsCompleted": 15,
+      "reviewPassRate": 100.0
+    },
+    {
+      "phase": 1,
+      "endDate": "2026-03-22T20:58:04Z",
+      "pointsCompleted": 14,
+      "reviewPassRate": 100.00
+    }
+  ]
 }
