@@ -175,8 +175,64 @@
     },
     {
       "id": "011",
-      "phase": 4,
+      "phase": 0,
       "priority": 11,
+      "branchName": "feature/bootstrap-frontdoor-interface",
+      "title": "Bootstrap: front door provider interface and VPS hardening framework",
+      "description": "Create a pluggable 'front door' security provider pattern for the bootstrap. Add bootstrap/frontdoor/interface.sh defining 5 shell function hooks every provider must implement: frontdoor_provision (local: create tunnel/service), frontdoor_install_agent (remote: install daemon on VPS), frontdoor_allowed_cidrs (returns newline-separated CIDRs to whitelist \u2014 everything else dropped), frontdoor_configure_dns (point DNS records), frontdoor_connection_info (print how to connect after bootstrap). Add bootstrap/frontdoor/none.sh as the baseline impl (allowed_cidrs prompts for caller IP, no agent, prints SSH instructions). Add hardening scripts that ALWAYS run regardless of front door: bootstrap/hardening/base.sh (unattended-upgrades, fail2ban, auditd, purge unused packages), bootstrap/hardening/ssh.sh (PasswordAuthentication no, PermitRootLogin prohibit-password, PubkeyAuthentication yes), bootstrap/hardening/kernel.sh (CIS benchmark sysctl: tcp_syncookies, rp_filter, dmesg_restrict, suid_dumpable=0), bootstrap/hardening/firewall.sh (UFW default-deny, reads frontdoor_allowed_cidrs output, opens only those CIDRs). Update bootstrap/config.yaml.example to add frontDoor field (default: cloudflare). Update bootstrap/bootstrap.sh to source the chosen front door impl and call hooks in order: harden \u2192 frontdoor_provision \u2192 frontdoor_install_agent (remote) \u2192 frontdoor_configure_dns \u2192 firewall.sh \u2192 frontdoor_connection_info.",
+      "acceptanceCriteria": [
+        "bootstrap/frontdoor/interface.sh documents all 5 required hooks with usage comments",
+        "bootstrap/frontdoor/none.sh implements all 5 hooks (allowed_cidrs prompts for caller IP)",
+        "bootstrap/hardening/base.sh installs and enables unattended-upgrades, fail2ban, auditd",
+        "bootstrap/hardening/ssh.sh disables password auth, root password login, enforces pubkey",
+        "bootstrap/hardening/kernel.sh applies CIS benchmark sysctl settings",
+        "bootstrap/hardening/firewall.sh calls frontdoor_allowed_cidrs and applies UFW rules",
+        "bootstrap/bootstrap.sh sources frontdoor impl and calls hooks in correct order",
+        "bootstrap/config.yaml.example has frontDoor field with cloudflare as default",
+        "shellcheck passes on all new .sh files"
+      ],
+      "passes": false
+    },
+    {
+      "id": "012",
+      "phase": 0,
+      "priority": 12,
+      "branchName": "feature/bootstrap-frontdoor-cloudflare",
+      "title": "Bootstrap: Cloudflare front door implementation",
+      "description": "Implement bootstrap/frontdoor/cloudflare.sh with all 5 interface hooks using Cloudflare Tunnel + Zero Trust Access (free tier). frontdoor_provision: use Cloudflare API (token + account ID from config.yaml) to create a named tunnel, store tunnel credentials JSON, create a cloudflared config.yml for the VPS. frontdoor_install_agent: SSH to VPS, install cloudflared deb package, write /etc/cloudflared/config.yml, enable and start cloudflared.service as a systemd unit. frontdoor_allowed_cidrs: fetch https://www.cloudflare.com/ips-v4 and https://www.cloudflare.com/ips-v6 and echo them (no local ports needed \u2014 tunnel is outbound-only). frontdoor_configure_dns: use Cloudflare API to create CNAME records routing *.<domain> to the tunnel hostname. frontdoor_connection_info: print instructions for using 'cloudflare access ssh' and the Zero Trust dashboard URL. Add bootstrap/providers/cloudflare-dns.sh as a shared helper for Cloudflare API calls (zone lookup, record create/update) reusable by both the front door and any provider that needs DNS. config.yaml.example cloudflare section needs: apiToken, accountId, tunnelName, zoneId.",
+      "acceptanceCriteria": [
+        "bootstrap/frontdoor/cloudflare.sh implements all 5 hooks",
+        "frontdoor_provision creates a Cloudflare Tunnel via API and writes tunnel credentials",
+        "frontdoor_install_agent installs cloudflared on the VPS as a systemd service via SSH",
+        "frontdoor_allowed_cidrs fetches live Cloudflare IP ranges (v4 + v6)",
+        "frontdoor_configure_dns creates wildcard CNAME via Cloudflare API",
+        "bootstrap/providers/cloudflare-dns.sh has reusable API helper functions",
+        "config.yaml.example has cloudflare.apiToken, accountId, tunnelName, zoneId",
+        "shellcheck passes on all new .sh files",
+        "After running: VPS has no open inbound ports, all traffic flows through tunnel"
+      ],
+      "passes": false
+    },
+    {
+      "id": "013",
+      "phase": 0,
+      "priority": 13,
+      "branchName": "feature/bootstrap-frontdoor-docs",
+      "title": "Bootstrap: front door provider docs and custom provider template",
+      "description": "Add bootstrap/frontdoor/custom.sh.example as a heavily commented template for users implementing their own front door (WireGuard, Tailscale, custom reverse proxy, etc.) \u2014 each of the 5 hooks stubbed with comments describing exactly what it must do. Add docs/providers/cloudflare-setup.md covering: Cloudflare free account setup, creating an API token with Tunnel+DNS edit permissions, finding account ID and zone ID, Zero Trust SSH access setup, and how the bootstrap uses the tunnel. Add docs/providers/front-door-custom.md explaining the provider pattern, the 5 hooks contract, and a worked example implementing a WireGuard-based front door. Update docs/quickstart.md to include the front door selection step and security posture explanation (default: all ports closed, SSH via tunnel).",
+      "acceptanceCriteria": [
+        "bootstrap/frontdoor/custom.sh.example stubs all 5 hooks with detailed comments",
+        "docs/providers/cloudflare-setup.md covers full Cloudflare account and tunnel setup",
+        "docs/providers/front-door-custom.md explains the 5-hook contract with WireGuard example",
+        "docs/quickstart.md updated with front door selection and security posture section",
+        "All markdown files render without broken links or malformed headings"
+      ],
+      "passes": false
+    },
+    {
+      "id": "014",
+      "phase": 4,
+      "priority": 14,
       "branchName": "feature/helm-gitlab",
       "title": "Helm chart: GitLab self-hosted",
       "description": "Create charts/gitlab/ wrapping gitlab/gitlab with opinionated values: external object storage pointing to Ceph (MinIO-compatible), PostgreSQL via Crossplane, Redis via Crossplane, Keycloak OIDC auth, GitLab Runner pre-configured. Ingress at gitlab.{{ .Values.global.domain }}. Registry at registry.{{ .Values.global.domain }}. Initial admin credentials from Sealed Secret. ArgoCD app in argocd-apps/platform/.",
@@ -192,9 +248,9 @@
       "passes": false
     },
     {
-      "id": "012",
+      "id": "015",
       "phase": 4,
-      "priority": 12,
+      "priority": 15,
       "branchName": "feature/helm-harbor",
       "title": "Helm chart: Harbor artifact registry",
       "description": "Create charts/harbor/ wrapping goharbor/harbor. Storage backend: Ceph S3-compatible (ceph-bucket StorageClass). Keycloak OIDC auth. Trivy scanner integration (internal). Ingress at registry.{{ .Values.global.domain }} (or harbor.{{ .Values.global.domain }} for UI). Replication rules stub for syncing public images. ArgoCD app in argocd-apps/platform/.",
@@ -209,9 +265,9 @@
       "passes": false
     },
     {
-      "id": "013",
+      "id": "016",
       "phase": 5,
-      "priority": 13,
+      "priority": 16,
       "branchName": "feature/helm-istio",
       "title": "Helm chart: Istio service mesh with mTLS",
       "description": "Create charts/istio/ wrapping istio/base and istio/istiod as subcharts. Default PeerAuthentication: STRICT mTLS for all namespaces. Gateway resource for the sovereign ingress domain. Kiali UI at kiali.{{ .Values.global.domain }} with Keycloak OIDC. Jaeger/Tempo integration for tracing. ArgoCD app in argocd-apps/security/.",
@@ -227,9 +283,9 @@
       "passes": false
     },
     {
-      "id": "014",
+      "id": "017",
       "phase": 5,
-      "priority": 14,
+      "priority": 17,
       "branchName": "feature/helm-opa-trivy-falco",
       "title": "Helm charts: OPA/Gatekeeper, Trivy Operator, Falco",
       "description": "Create charts/opa-gatekeeper/ wrapping gatekeeper/gatekeeper. Include ConstraintTemplates for: no-privilege-escalation, require-resource-limits, require-labels (app/tier). Create charts/trivy-operator/ wrapping aquasecurity/trivy-operator (scans all running pods). Create charts/falco/ wrapping falcosecurity/falco with JSON output to Loki. All three get ArgoCD apps in argocd-apps/security/.",
@@ -243,9 +299,9 @@
       "passes": false
     },
     {
-      "id": "015",
+      "id": "018",
       "phase": 6,
-      "priority": 15,
+      "priority": 18,
       "branchName": "feature/helm-prometheus-stack",
       "title": "Helm chart: kube-prometheus-stack",
       "description": "Create charts/prometheus-stack/ wrapping prometheus-community/kube-prometheus-stack. Grafana at grafana.{{ .Values.global.domain }} with Keycloak OIDC. Prometheus retention: 15 days (Thanos handles long-term). AlertManager with a stub for Slack/email routing. Pre-load dashboards: Node Exporter, Kubernetes cluster, GitLab, Ceph (from rook-ceph chart), Istio. Persistent storage on ceph-block.",
@@ -261,9 +317,9 @@
       "passes": false
     },
     {
-      "id": "016",
+      "id": "019",
       "phase": 6,
-      "priority": 16,
+      "priority": 19,
       "branchName": "feature/helm-loki-thanos-tempo",
       "title": "Helm charts: Loki, Thanos, Tempo",
       "description": "Create charts/loki/ wrapping grafana/loki in Simple Scalable mode, storage on ceph-bucket. Create charts/thanos/ wrapping bitnami/thanos with sidecar mode (connects to Prometheus), storage on ceph-bucket. Create charts/tempo/ wrapping grafana/tempo-distributed, storage on ceph-bucket. All pre-configured as Grafana datasources (via ConfigMap in prometheus-stack chart). ArgoCD apps in argocd-apps/observability/.",
@@ -278,9 +334,9 @@
       "passes": false
     },
     {
-      "id": "017",
+      "id": "020",
       "phase": 7,
-      "priority": 17,
+      "priority": 20,
       "branchName": "feature/helm-backstage",
       "title": "Helm chart: Backstage developer portal",
       "description": "Create charts/backstage/ using a custom Dockerfile-based deployment (backstage/backstage base image). Pre-configure plugins: GitLab catalog, Kubernetes plugin, ArgoCD plugin, TechDocs (stored on ceph-bucket). Keycloak OIDC auth. Ingress at backstage.{{ .Values.global.domain }}. Service catalog auto-discovers GitLab repos via catalog-info.yaml. ArgoCD app in argocd-apps/devex/.",
@@ -297,9 +353,9 @@
       "passes": false
     },
     {
-      "id": "018",
+      "id": "021",
       "phase": 7,
-      "priority": 18,
+      "priority": 21,
       "branchName": "feature/helm-code-server",
       "title": "Helm chart: code-server (VS Code in browser for agents)",
       "description": "Create charts/code-server/ deploying coder/code-server. This is the primary interface for Claude Code agents operating on the platform. Pre-install extensions: GitLens, YAML, Kubernetes, Helm, Python, ESLint. Mount kubeconfig so agents can run kubectl/helm from browser. Workspace storage on ceph-filesystem. Keycloak OIDC auth. Ingress at code.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/devex/.",
@@ -315,9 +371,9 @@
       "passes": false
     },
     {
-      "id": "019",
+      "id": "022",
       "phase": 7,
-      "priority": 19,
+      "priority": 22,
       "branchName": "feature/helm-sonarqube-reportportal",
       "title": "Helm charts: SonarQube and ReportPortal",
       "description": "Create charts/sonarqube/ wrapping sonarqube/sonarqube. PostgreSQL storage via Crossplane. Keycloak OIDC. Ingress at sonar.{{ .Values.global.domain }}. GitLab CI integration documented. Create charts/reportportal/ using reportportal Helm chart. PostgreSQL + Elasticsearch + RabbitMQ dependencies. Keycloak OIDC. Ingress at reports.{{ .Values.global.domain }}. Both in argocd-apps/devex/.",
@@ -332,9 +388,9 @@
       "passes": false
     },
     {
-      "id": "020",
+      "id": "023",
       "phase": 8,
-      "priority": 20,
+      "priority": 23,
       "branchName": "feature/helm-testing-infra",
       "title": "Helm charts: Selenium Grid, k6, Wiremock, MailHog, Chaos Mesh",
       "description": "Create 5 testing infrastructure charts: charts/selenium-grid/ (Selenium HQ official chart, Chrome+Firefox+Edge nodes), charts/k6-operator/ (grafana/k6-operator), charts/wiremock/ (wiremock/wiremock), charts/mailhog/ (mailhog deployment), charts/chaos-mesh/ (chaos-mesh/chaos-mesh). All get ArgoCD apps in argocd-apps/testing/. Selenium and MailHog get ingresses. Grafana dashboards for k6 results.",
@@ -349,12 +405,12 @@
       "passes": false
     },
     {
-      "id": "021",
+      "id": "024",
       "phase": 9,
-      "priority": 21,
+      "priority": 24,
       "branchName": "feature/sovereign-pm-backend",
       "title": "Sovereign PM: Node.js/Express backend",
-      "description": "Create sovereign-pm/src/server/ — a Node.js + Express + TypeScript API server. Data model: Project, Epic, Story, AgentRun. PostgreSQL via Sequelize. Endpoints: CRUD for epics/stories, POST /api/prd/generate (outputs prd.json), POST /api/ralph/trigger (creates a Kubernetes Job running ralph.sh), GET /api/ralph/runs (list run history). Keycloak OIDC JWT validation middleware. OpenAPI spec in sovereign-pm/openapi.yaml.",
+      "description": "Create sovereign-pm/src/server/ \u2014 a Node.js + Express + TypeScript API server. Data model: Project, Epic, Story, AgentRun. PostgreSQL via Sequelize. Endpoints: CRUD for epics/stories, POST /api/prd/generate (outputs prd.json), POST /api/ralph/trigger (creates a Kubernetes Job running ralph.sh), GET /api/ralph/runs (list run history). Keycloak OIDC JWT validation middleware. OpenAPI spec in sovereign-pm/openapi.yaml.",
       "acceptanceCriteria": [
         "sovereign-pm/src/server/ TypeScript Express app",
         "Sequelize models for Project, Epic, Story, AgentRun",
@@ -368,12 +424,12 @@
       "passes": false
     },
     {
-      "id": "022",
+      "id": "025",
       "phase": 9,
-      "priority": 22,
+      "priority": 25,
       "branchName": "feature/sovereign-pm-frontend",
       "title": "Sovereign PM: React frontend",
-      "description": "Create sovereign-pm/src/client/ — a React + TypeScript + Vite frontend. Pages: Dashboard (all projects), Project view (epics/stories kanban), Story editor (title, description, acceptance criteria, priority, phase), PRD Generator (shows generated prd.json, copy button), Agent Runs (history of Ralph loops, pass/fail per story, timestamps). Keycloak OIDC via keycloak-js. Tailwind CSS. Clean, minimal design.",
+      "description": "Create sovereign-pm/src/client/ \u2014 a React + TypeScript + Vite frontend. Pages: Dashboard (all projects), Project view (epics/stories kanban), Story editor (title, description, acceptance criteria, priority, phase), PRD Generator (shows generated prd.json, copy button), Agent Runs (history of Ralph loops, pass/fail per story, timestamps). Keycloak OIDC via keycloak-js. Tailwind CSS. Clean, minimal design.",
       "acceptanceCriteria": [
         "React + TypeScript + Vite app in sovereign-pm/src/client/",
         "All 5 pages implemented",
@@ -386,9 +442,9 @@
       "passes": false
     },
     {
-      "id": "023",
+      "id": "026",
       "phase": 9,
-      "priority": 23,
+      "priority": 26,
       "branchName": "feature/sovereign-pm-helm",
       "title": "Sovereign PM: Dockerfile and Helm chart",
       "description": "Create sovereign-pm/Dockerfile (multi-stage: build frontend, build backend, combined production image). Create charts/sovereign-pm/ Helm chart deploying the PM app. PostgreSQL dependency (or external Crossplane-managed). Keycloak OIDC config from values. Ingress at pm.{{ .Values.global.domain }}. Ralph scripts mounted as a volume (reads prd.json from PVC shared with the K8s Job). ArgoCD app in argocd-apps/devex/sovereign-pm-app.yaml.",
@@ -404,9 +460,9 @@
       "passes": false
     },
     {
-      "id": "024",
+      "id": "027",
       "phase": 0,
-      "priority": 24,
+      "priority": 27,
       "branchName": "feature/docs-and-quickstart",
       "title": "Documentation: quickstart, architecture, and all provider guides",
       "description": "Write docs/quickstart.md (15 minute path from zero to running cluster). Write docs/architecture.md (explains the bootstrap sequence, App-of-Apps pattern, namespace layout, security model, all services with their ingress URLs). Write docs/providers/aws-ec2-free-tier.md, docs/providers/digitalocean.md, docs/providers/vultr.md, docs/providers/bare-metal.md. Update README.md with badges, architecture diagram (ASCII), and contribution guide.",
@@ -421,9 +477,9 @@
       "passes": false
     },
     {
-      "id": "025",
+      "id": "028",
       "phase": 0,
-      "priority": 25,
+      "priority": 28,
       "branchName": "feature/ci-pipeline",
       "title": "CI pipeline: lint and validate all Helm charts on every PR",
       "description": "Create .github/workflows/validate.yml: on PR and push to main, run helm lint on all charts, helm template | kubectl apply --dry-run, shellcheck on all .sh files, markdownlint on all .md files. Create .github/workflows/release.yml: on tag push, package all Helm charts and publish to GitHub Pages as a Helm repository (so users can add sovereign as a Helm repo). Create charts/index.yaml structure for the Helm repo.",
