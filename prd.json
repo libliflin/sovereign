@@ -68,7 +68,7 @@
         "helm template | kubectl apply --dry-run passes",
         "argocd-apps/platform/cilium-app.yaml exists and is valid"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "005",

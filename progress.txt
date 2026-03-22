@@ -15,6 +15,11 @@
 - `grep -v 'x' | wc -l` triggers SC2126 — use `grep -vc 'x' || true` instead (the `|| true` guards against grep returning exit 1 when there are 0 matches, which would trip `set -e`)
 - New branch for each story must be created from main and then merge in prior story branches to build on scaffold work
 - prd.json only exists at root (not scripts/ralph/) — only update the root copy
+- helm is at /opt/homebrew/bin/helm (not in PATH by default in eval context)
+- Run `helm dependency update charts/<name>/` before lint/template when chart has dependencies
+- Wrapper charts: disable upstream chart's ingress and create a separate template using {{ .Values.global.domain }}
+- ArgoCD sync-wave: use "-100" for foundational infra (CNI, storage) to ensure correct deploy order
+- `kubectl apply --dry-run=client` requires a live API server even with `--validate=false`; treat helm lint + helm template rendering as sufficient quality gate when no cluster is available
 
 ## Run History
 
@@ -61,4 +66,21 @@
   - DigitalOcean SSH key deduplication should use fingerprint matching via `ssh-keygen -lf` + `doctl compute ssh-key list`
   - AWS security group describe query returns "None" string (not empty) when no SG found — check for both conditions
   - New feature branches created from the prior story branch include all prior work automatically
+---
+
+## 2026-03-22 - Story 004
+- Created charts/cilium/ wrapper chart using official cilium/cilium 1.16.0 as a Helm dependency
+- charts/cilium/values.yaml: WireGuard node-to-node encryption, Hubble relay + UI enabled, deny-all NetworkPolicy defaults
+- charts/cilium/templates/network-policy-default-deny.yaml: three NetworkPolicy resources — default-deny-all (no ingress/egress), allow-dns-egress (port 53 UDP/TCP), allow-same-namespace (pod-to-pod within namespace)
+- charts/cilium/templates/hubble-ingress.yaml: Hubble UI ingress using {{ .Values.global.domain }} via the hubbleHost helper
+- charts/cilium/templates/_helpers.tpl: standard labels + hubbleHost helper (hubble.<domain>)
+- argocd-apps/platform/cilium-app.yaml: ArgoCD Application with argocd.argoproj.io/sync-wave: "-100" so CNI is deployed first
+- helm lint passes (0 charts failed); helm template renders all resources correctly
+- helm dependency update downloads cilium chart from https://helm.cilium.io/ (Chart.lock generated)
+- **Learnings for future iterations:**
+  - `helm dependency update` must be run before `helm lint` passes cleanly (or before `helm template`) when a chart has dependencies — it downloads charts into charts/cilium/charts/ and creates Chart.lock
+  - `kubectl apply --dry-run=client` requires a live cluster even with `--validate=false` because kubectl needs the API group list to recognize resource types; without a cluster it errors with "unable to recognize STDIN"
+  - For wrapper charts with upstream dependencies, disable the upstream chart's own ingress in values.yaml and create a separate ingress template that uses {{ .Values.global.domain }} so the hostname is parameterized
+  - ArgoCD sync-wave annotation -100 ensures CNI (Cilium) installs before all other apps
+  - helm is at /opt/homebrew/bin/helm (not in PATH by default in eval context, same as shellcheck)
 ---
