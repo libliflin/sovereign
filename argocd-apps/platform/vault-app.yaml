@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+  annotations:
+    # Deploy after cert-manager and sealed-secrets (wave -85), before services that need secrets
+    argocd.argoproj.io/sync-wave: "-80"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/vault
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,117 @@
+{{- if .Values.jobs.pkiInit.enabled }}
+---
+# PKI secrets engine initialisation Job.
+# Runs once after Vault is Ready. Creates:
+#   - Root CA at pki/ (10-year TTL)
+#   - Intermediate CA at pki_int/ (5-year TTL)
+#   - Role "sovereign" that issues certs for *.{{ .Values.global.domain }}
+#
+# This Job uses the root token (only available in dev mode).
+# In production, bootstrap with a Vault operator token instead.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-vault-pki-init
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "vault.labels" . | nindent 4 }}
+  annotations:
+    # ArgoCD: run after Vault is deployed
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "vault.labels" . | nindent 8 }}
+        app.kubernetes.io/component: pki-init
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ .Release.Name }}-vault
+      initContainers:
+        - name: wait-for-vault
+          image: curlimages/curl:8.5.0
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Vault to be ready..."
+              until curl -sf {{ include "vault.address" . }}/v1/sys/health?standbyok=true; do
+                sleep 5
+              done
+              echo "Vault is ready."
+      containers:
+        - name: pki-init
+          image: hashicorp/vault:1.15.0
+          env:
+            - name: VAULT_ADDR
+              value: {{ include "vault.address" . | quote }}
+            # In dev mode the root token is "root". In production, mount from a Secret.
+            - name: VAULT_TOKEN
+              value: "root"
+          command:
+            - sh
+            - -ec
+            - |
+              DOMAIN="{{ .Values.global.domain }}"
+              ROOT_TTL="{{ .Values.jobs.pkiInit.ttl }}"
+              INT_TTL="{{ .Values.jobs.pkiInit.intermediateTtl }}"
+
+              echo "=== Enabling PKI secrets engine (root) ==="
+              vault secrets enable -path=pki pki 2>/dev/null || echo "pki already enabled"
+              vault secrets tune -max-lease-ttl="${ROOT_TTL}" pki
+
+              echo "=== Generating root CA ==="
+              vault write -field=certificate pki/root/generate/internal \
+                common_name="Sovereign Root CA" \
+                issuer_name="sovereign-root" \
+                ttl="${ROOT_TTL}" > /tmp/root_ca.crt
+
+              vault write pki/config/urls \
+                issuing_certificates="{{ include "vault.address" . }}/v1/pki/ca" \
+                crl_distribution_points="{{ include "vault.address" . }}/v1/pki/crl"
+
+              echo "=== Enabling PKI secrets engine (intermediate) ==="
+              vault secrets enable -path=pki_int pki 2>/dev/null || echo "pki_int already enabled"
+              vault secrets tune -max-lease-ttl="${INT_TTL}" pki_int
+
+              echo "=== Generating intermediate CA CSR ==="
+              vault write -format=json pki_int/intermediate/generate/internal \
+                common_name="Sovereign Intermediate CA" \
+                issuer_name="sovereign-intermediate" \
+                | jq -r '.data.csr' > /tmp/pki_intermediate.csr
+
+              echo "=== Signing intermediate CA with root ==="
+              vault write -format=json pki/root/sign-intermediate \
+                issuer_ref="sovereign-root" \
+                csr="$(cat /tmp/pki_intermediate.csr)" \
+                format=pem_bundle \
+                ttl="${INT_TTL}" \
+                | jq -r '.data.certificate' > /tmp/intermediate.cert.pem
+
+              echo "=== Importing signed intermediate CA ==="
+              vault write pki_int/intermediate/set-signed \
+                certificate="$(cat /tmp/intermediate.cert.pem)"
+
+              vault write pki_int/config/urls \
+                issuing_certificates="{{ include "vault.address" . }}/v1/pki_int/ca" \
+                crl_distribution_points="{{ include "vault.address" . }}/v1/pki_int/crl"
+
+              echo "=== Creating sovereign role ==="
+              vault write pki_int/roles/sovereign \
+                issuer_ref="sovereign-intermediate" \
+                allowed_domains="${DOMAIN}" \
+                allow_subdomains=true \
+                allow_glob_domains=true \
+                max_ttl="2160h"
+
+              echo "=== PKI initialisation complete ==="
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+{{- end }}
