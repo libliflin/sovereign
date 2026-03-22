@@ -272,3 +272,18 @@
   - cf_dns_upsert checks existing records via GET before deciding PUT vs POST — idempotent and safe to re-run
   - SSH push of multi-line content via pipe: `printf '%s\n' "$content" | ssh ... 'cat > /etc/file'` is shellcheck-clean
 ---
+
+## 2026-03-22 - Phase 2 Review Ceremony
+
+- Reviewed all 4 phase-2 stories (012-015): all had passes:true but were never pushed to remote
+- Pushed all 4 branches before running ceremony: feature/bootstrap-frontdoor-interface, feature/bootstrap-frontdoor-cloudflare, feature/bootstrap-frontdoor-docs, feature/bootstrap-ha-multi-node
+- Stories 012, 013, 014: ALL ACs verified, marked reviewed:true (ACCEPTED)
+- Story 015: AC12 FAILED — docs/providers/aws-ec2-free-tier.md still named "free-tier" with 3 free tier refs; story reopened
+- Fixed story 015: renamed to docs/providers/aws-ec2.md, removed all free-tier language; re-marked passes:true
+- Merged feature/bootstrap-ha-multi-node into main with fix
+- **Learnings for future iterations:**
+  - Always git push branches before marking passes:true — the review ceremony fails stories that only exist locally (INSTANT FAIL)
+  - "Remove all references to X" means the filename too, not just the content
+  - Self-certification failure pattern: progress.txt said "free tier guidance removed" but the file was still named aws-ec2-free-tier.md with 3 free-tier mentions
+  - Review ceremony is adversarial — check the actual files on disk, not the agent's description
+---
