@@ -12,11 +12,47 @@ Architecture: ArgoCD App-of-Apps pattern, Helm charts, Crossplane for infrastruc
 
 ## BEFORE EVERY ITERATION
 
-1. Read `prd.json` — find the highest-priority story where `"passes": false`
-2. Read `progress.txt` — study ALL prior learnings, especially the "Codebase Patterns" section
-3. Check which git branch the current story requires (`branchName` in prd.json)
-4. Check out that branch (or create from main if it doesn't exist)
-5. Read any `CLAUDE.md` files in subdirectories relevant to your story
+1. Read `prd/manifest.json` → find `activeSprint` field → read that file (e.g. `prd/phase-0-ceremonies.json`)
+   - If `prd/manifest.json` does not exist yet, fall back to reading `prd.json` at repo root
+   - The active sprint file contains only the stories for the current phase (~8 stories max)
+2. Find the highest-priority story where `"passes": false` AND `"reviewed": false`
+   - `passes: true` but `reviewed: false` means Ralph marked it done but the review ceremony has not run yet — do NOT re-implement it, leave it for the review ceremony
+3. Read `progress.txt` — study ALL prior learnings, especially the "Codebase Patterns" section
+4. Check which git branch the current story requires (`branchName` in the sprint file)
+5. Check out that branch (or create from main if it doesn't exist)
+6. Read any `CLAUDE.md` files in subdirectories relevant to your story
+
+## THE SPRINT CYCLE (how phases work)
+
+The project is split into phases. Each phase is a sprint with ~8 stories and ~15 story points.
+Phases are managed by the ceremony system in `scripts/ralph/ceremonies/`.
+
+```
+prd/manifest.json          ← source of truth: which phase is active
+prd/phase-N-<name>.json    ← active sprint: only stories for this phase
+prd/backlog.json           ← full backlog: all future stories
+prd/advance.sh             ← marks phase complete, activates next phase
+```
+
+**Story lifecycle:**
+```
+passes: false, reviewed: false  → needs implementation (Ralph's job)
+passes: true,  reviewed: false  → implemented, awaiting review ceremony
+passes: true,  reviewed: true   → accepted (done)
+passes: false, reviewed: false, attempts > 0  → re-opened by review ceremony with reviewNotes
+```
+
+When re-opened, read `reviewNotes[]` carefully — they contain the exact failure from the review
+ceremony. Fix only what the reviewNotes describe. Do not re-implement the whole story.
+
+**Story points:**
+1 = trivial (config file, small script change)
+2 = standard (single Helm chart, medium script)
+3 = complex (multi-file feature, chart with dependencies)
+5 = must split before implementing
+
+When you complete a story, mark `passes: true`. Do NOT mark `reviewed: true` — that is set
+by the review ceremony only.
 
 ---
 

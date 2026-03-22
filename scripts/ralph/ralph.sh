@@ -1,25 +1,33 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop
-# Usage: ./ralph.sh [--tool amp|claude] [max_iterations]
+# Usage: ./ralph.sh [--tool amp|claude] [--prd <path>] [--phase <N>] [max_iterations]
+#
+# PRD resolution order:
+#   1. --prd <path>          explicit path to a sprint file
+#   2. --phase <N>           resolves phases[N].file from prd/manifest.json
+#   3. prd/manifest.json     auto-detect activeSprint if manifest exists
+#   4. scripts/ralph/prd.json  legacy fallback
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Parse arguments
 TOOL="amp"  # Default to amp for backwards compatibility
 MAX_ITERATIONS=10
+PRD_OVERRIDE=""
+PHASE_OVERRIDE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --tool)
-      TOOL="$2"
-      shift 2
-      ;;
-    --tool=*)
-      TOOL="${1#*=}"
-      shift
-      ;;
+    --tool)      TOOL="$2";          shift 2 ;;
+    --tool=*)    TOOL="${1#*=}";     shift   ;;
+    --prd)       PRD_OVERRIDE="$2";  shift 2 ;;
+    --prd=*)     PRD_OVERRIDE="${1#*=}"; shift ;;
+    --phase)     PHASE_OVERRIDE="$2"; shift 2 ;;
+    --phase=*)   PHASE_OVERRIDE="${1#*=}"; shift ;;
     *)
-      # Assume it's max_iterations if it's a number
       if [[ "$1" =~ ^[0-9]+$ ]]; then
         MAX_ITERATIONS="$1"
       fi
@@ -33,8 +41,29 @@ if [[ "$TOOL" != "amp" && "$TOOL" != "claude" ]]; then
   echo "Error: Invalid tool '$TOOL'. Must be 'amp' or 'claude'."
   exit 1
 fi
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRD_FILE="$SCRIPT_DIR/prd.json"
+
+# Resolve PRD file path
+MANIFEST="$REPO_ROOT/prd/manifest.json"
+if [[ -n "$PRD_OVERRIDE" ]]; then
+  # Explicit --prd flag: treat as relative to repo root if not absolute
+  [[ "$PRD_OVERRIDE" = /* ]] && PRD_FILE="$PRD_OVERRIDE" || PRD_FILE="$REPO_ROOT/$PRD_OVERRIDE"
+elif [[ -n "$PHASE_OVERRIDE" ]] && [[ -f "$MANIFEST" ]] && command -v jq &>/dev/null; then
+  # --phase N: look up phases[N].file in manifest
+  PHASE_FILE=$(jq -r ".phases[] | select(.id == $PHASE_OVERRIDE) | .file" "$MANIFEST" 2>/dev/null || echo "")
+  if [[ -z "$PHASE_FILE" || "$PHASE_FILE" == "null" ]]; then
+    echo "Error: Phase $PHASE_OVERRIDE not found in $MANIFEST" >&2; exit 1
+  fi
+  PRD_FILE="$REPO_ROOT/$PHASE_FILE"
+elif [[ -f "$MANIFEST" ]] && command -v jq &>/dev/null; then
+  # Auto-detect from manifest activeSprint
+  ACTIVE=$(jq -r '.activeSprint' "$MANIFEST" 2>/dev/null || echo "")
+  [[ -n "$ACTIVE" && "$ACTIVE" != "null" ]] && PRD_FILE="$REPO_ROOT/$ACTIVE" || PRD_FILE="$SCRIPT_DIR/prd.json"
+else
+  # Legacy fallback
+  PRD_FILE="$SCRIPT_DIR/prd.json"
+fi
+
+echo "PRD file: $PRD_FILE"
 PROGRESS_FILE="$SCRIPT_DIR/progress.txt"
 ARCHIVE_DIR="$SCRIPT_DIR/archive"
 LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
