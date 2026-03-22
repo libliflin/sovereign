@@ -27,7 +27,7 @@
       "points": 3,
       "testPlan": "shellcheck bootstrap/frontdoor/*.sh bootstrap/hardening/*.sh bootstrap/bootstrap.sh; verify all 5 hook functions defined in interface.sh; verify none.sh implements all 5; verify hardening scripts are sourced in bootstrap.sh; verify config.yaml.example has frontDoor field.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -36,7 +36,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All ACs are binary file/function/shellcheck checks. Well-scoped."
+        "notes": "All SMART dimensions green except Achievable 4: seven shell scripts with distinct functions is near the 3-point ceiling \u2014 well-scoped but dense."
       }
     },
     {
@@ -63,16 +63,16 @@
       "dependencies": [
         "012"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
         "specific": 5,
-        "measurable": 5,
-        "achievable": 4,
+        "measurable": 4,
+        "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Concrete API calls and file outputs. ACs are binary. Achievable 4: Cloudflare API dependency."
+        "notes": "Measurable 4: final AC ('VPS has no open inbound ports') requires live Cloudflare + VPS infrastructure to truly verify \u2014 cannot be checked with shellcheck or dry-run alone. Achievable raised to 5: only 2 points, two files."
       }
     },
     {
@@ -95,16 +95,16 @@
       "dependencies": [
         "012"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
         "specific": 5,
-        "measurable": 5,
+        "measurable": 4,
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Pure documentation and template files. All ACs are file-existence checks."
+        "notes": "Measurable 4: 'All markdown files render without broken links or malformed headings' has no specified command to verify it (markdownlint? lychee?) \u2014 ambiguous pass/fail gate. Relevant 4: documentation advances the sprint goal indirectly; could be deferred without blocking HA provisioning."
       }
     },
     {
@@ -137,15 +137,17 @@
         "013"
       ],
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 1,
+      "reviewNotes": [
+        "[Review 1] AC failed: 'Provider docs updated: all costs show 3-node totals, AWS free tier removed'. Command: grep -n 'free.tier' docs/providers/aws-ec2-free-tier.md | head -20. Output: Line 6: '> **AWS free tier is not viable.**', Line 23: '> **Free tier note:** AWS free tier (t2.micro) is NOT supported', Line 25: 'There is no free tier path'. The file is still named 'aws-ec2-free-tier.md' and contains 3 explicit 'free tier' references. Story description requires: 'Remove all references to AWS free tier'. Fix: rename file to docs/providers/aws-ec2.md and remove all 'free tier' language from the file."
+      ],
+      "attempts": 2,
       "smart": {
         "specific": 5,
         "measurable": 5,
-        "achievable": 4,
+        "achievable": 3,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Complex multi-script refactor. All ACs are verifiable with grep/shellcheck. Achievable 4: touches many scripts."
+        "notes": "Achievable 3: story touches 4 provider scripts + bootstrap.sh + verify.sh + cloudflare.sh + frontdoor interface + all provider docs in a single story \u2014 borderline for one Ralph iteration at 3 points. All ACs are binary grep/shellcheck verifiable so the story can proceed, but an implementation split (providers vs docs) would reduce risk."
       }
     }
   ]
