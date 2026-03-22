@@ -152,7 +152,7 @@
         "helm lint passes",
         "argocd-apps/platform/keycloak-app.yaml exists"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "010",

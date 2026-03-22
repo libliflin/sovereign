@@ -20,6 +20,7 @@
 - Wrapper charts: disable upstream chart's ingress and create a separate template using {{ .Values.global.domain }}
 - ArgoCD sync-wave: use "-100" for foundational infra (CNI, storage) to ensure correct deploy order
 - `kubectl apply --dry-run=client` requires a live API server even with `--validate=false`; treat helm lint + helm template rendering as sufficient quality gate when no cluster is available
+- bitnami/keycloak chart (17+) requires postgresql.enabled=true OR externalDatabase.host — no H2 embedded mode exists; use embedded PostgreSQL sub-chart for bootstrap
 
 ## Run History
 
@@ -153,4 +154,21 @@
   - ArgoCD PostSync hooks with sync-wave annotation on Jobs control ordering between pki-init and k8s-auth (wave 0 → wave 1)
   - Vault Job containers need the ServiceAccount that Vault itself uses (`<release>-vault`) to access the Kubernetes API for auth config
   - In dev mode the root token is always "root" — init jobs can use this directly; in production mount token from a Sealed Secret
+---
+
+## 2026-03-22 - Story 009
+- Created charts/keycloak/ wrapper chart using bitnami/keycloak 21.4.4 as Helm dependency
+- charts/keycloak/values.yaml: embedded PostgreSQL sub-chart enabled by default (bootstrap mode); external PostgreSQL values documented and togglable; realm-init job creates 'sovereign' realm and 6 platform OIDC clients
+- charts/keycloak/templates/ingress.yaml: Keycloak ingress at auth.{{ .Values.global.domain }} with TLS via cert-manager
+- charts/keycloak/templates/jobs/realm-init.yaml: PostSync ArgoCD Job — creates 'sovereign' realm, all platform OIDC clients (argocd, gitlab, grafana, backstage, sovereign-pm, code-server), and platform-admins group using kcadm.sh
+- charts/keycloak/templates/admin-secret.yaml: comment-only file with kubeseal instructions for admin password secret
+- argocd-apps/platform/keycloak-app.yaml: sync-wave "-75" (after Vault at -80, before services needing SSO)
+- helm lint passes (0 charts failed); helm template renders all resources correctly
+- Files changed: charts/keycloak/Chart.yaml, Chart.lock, values.yaml, templates/_helpers.tpl, templates/admin-secret.yaml, templates/ingress.yaml, templates/jobs/realm-init.yaml, argocd-apps/platform/keycloak-app.yaml
+- **Learnings for future iterations:**
+  - Keycloak 17+ dropped H2 support; bitnami/keycloak chart requires either its embedded postgresql sub-chart or an external DB — no H2 option exists
+  - bitnami keycloak chart helm template fails (not just lint) if postgresql.enabled=false and externalDatabase.host is empty — must enable one or the other
+  - Realm init using kcadm.sh runs inside the official quay.io/keycloak/keycloak container; it connects to the internal ClusterIP service (not the ingress) for faster auth
+  - kcadm.sh config credentials writes to ~/.keycloak/kcadm.config inside the pod — works without additional flags
+  - Keycloak PostSync job sync-wave "0" runs before wave "1" jobs (same pattern as Vault pki-init → k8s-auth)
 ---
