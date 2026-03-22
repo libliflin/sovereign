@@ -172,3 +172,21 @@
   - kcadm.sh config credentials writes to ~/.keycloak/kcadm.config inside the pod — works without additional flags
   - Keycloak PostSync job sync-wave "0" runs before wave "1" jobs (same pattern as Vault pki-init → k8s-auth)
 ---
+
+## 2026-03-22 - Story 010
+- Created charts/rook-ceph/ wrapper chart using rook-release/rook-ceph 1.13.0 (operator) AND rook-release/rook-ceph-cluster 1.13.0 (cluster) as Helm dependencies (aliases: operator, cluster)
+- charts/rook-ceph/values.yaml: encryptedDevice="true" for at-rest OSD encryption (cluster-local key by default); Vault KMS integration documented and togglable via vault.enabled; toolbox enabled; 3-mon HA; pg_autoscaler enabled
+- charts/rook-ceph/templates/grafana-dashboard.yaml: Ceph cluster overview dashboard ConfigMap (OSD health, throughput, latency panels) — picked up by Grafana sidecar in monitoring namespace
+- charts/rook-ceph/templates/jobs/verify-osds.yaml: PostSync ArgoCD Job (sync-wave 2) that verifies OSDs are up and cluster health is not HEALTH_ERR
+- argocd-apps/platform/rook-ceph-app.yaml: sync-wave "-70" (after Vault -80, Keycloak -75; before workloads needing storage)
+- All three StorageClasses (ceph-block, ceph-filesystem, ceph-bucket) are created by the rook-ceph-cluster subchart — no separate StorageClass template needed
+- helm lint passes (0 charts failed); helm template renders 3 StorageClasses, CephCluster, CephBlockPool, CephFilesystem, CephObjectStore, 19 CRDs, Deployment, Job, ConfigMap correctly
+- Files changed: charts/rook-ceph/Chart.yaml, Chart.lock, values.yaml, templates/_helpers.tpl, templates/grafana-dashboard.yaml, templates/jobs/verify-osds.yaml, argocd-apps/platform/rook-ceph-app.yaml
+- **Learnings for future iterations:**
+  - rook-ceph-cluster chart creates StorageClasses (ceph-block, ceph-filesystem, ceph-bucket) automatically — do NOT create duplicate StorageClass templates or they will conflict on apply
+  - OSD encryption at rest is configured via `cephClusterSpec.storage.config.encryptedDevice: "true"` in the cluster chart values — this uses dm-crypt/LUKS with a cluster-local key
+  - Vault KMS for Ceph uses the Transit secrets engine (not KV) — need vault write -f transit/keys/<key-name> before enabling
+  - The rook-ceph-cluster chart uses alias `cluster` in parent chart — pass values as `cluster.cephBlockPools`, `cluster.cephFileSystems`, etc.
+  - Verification Job uses `rook-ceph-osd` ServiceAccount (created by the cluster chart) to access Ceph CLI
+  - sync-wave "-70" for rook-ceph places it after identity/secrets phase (-80/-75) but before all application workloads needing persistent storage
+---
