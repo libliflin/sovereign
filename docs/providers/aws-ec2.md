@@ -3,8 +3,8 @@
 AWS EC2 is a supported Sovereign provider. Sovereign requires a **3-node HA cluster**
 minimum — single-node deployments are not supported.
 
-> **AWS free tier is not viable.** The `t2.micro` (1 vCPU, 1 GB RAM) cannot run
-> K3s + Cilium + Crossplane + any workloads. Minimum supported instance: **t3.small**.
+The minimum supported EC2 instance type is **t3.small** (2 vCPU, 2 GB RAM). The recommended
+instance for production is **t3.medium** (2 vCPU, 4 GB RAM).
 
 ## Estimated Cost (3-Node HA Cluster)
 
@@ -19,10 +19,6 @@ minimum — single-node deployments are not supported.
 (free while running, $0.005/hr when stopped).
 
 Recommended minimum for production: **3x t3.medium** (~$90/month total).
-
-> **Free tier note:** AWS free tier (t2.micro) is NOT supported by Sovereign.
-> The platform requires at minimum t3.small per node, with t3.medium recommended
-> for production. There is no free tier path for a production-grade K8s stack.
 
 ## Prerequisites
 
