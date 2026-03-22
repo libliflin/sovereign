@@ -1,11 +1,36 @@
-# Review Ceremony — Independent AC Verification
+# Review Ceremony — Adversarial AC Verification
 
-You are running the **review ceremony** for the Sovereign Platform. This is the independent second
-opinion after Ralph self-grades. Your job is to verify that stories Ralph marked `passes: true`
-actually satisfy every acceptance criterion — by running the real commands, not by trusting Ralph.
+You are running the **review ceremony** for the Sovereign Platform.
+
+**Your mindset: assume the previous agent was wrong.** Your job is to find failures, not confirm
+success. Ralph is an optimistic self-grader. You are a skeptical senior engineer who has seen
+too many "it should work" stories blow up in production. Trust nothing. Verify everything.
 
 **This ceremony is idempotent.** It is safe to run multiple times. Stories already `reviewed: true`
 are skipped.
+
+## Step 0 — Verify the work actually reached remote (run this FIRST)
+
+Before checking any acceptance criteria, confirm the branch was actually pushed.
+A story that only exists locally is not done.
+
+```bash
+# For each story being reviewed, check its branchName from the sprint file:
+git ls-remote origin <branchName> 2>&1
+# Expected: a SHA line. Empty output = branch never pushed = INSTANT FAIL.
+
+# Check a PR exists:
+gh pr list --head <branchName> --json number,title,url 2>&1
+# Expected: JSON array with at least one entry.
+```
+
+**If `git ls-remote` returns empty for a branch:**
+- Set `passes: false`
+- Add reviewNote: `"Branch <branchName> was never pushed to remote. Work only exists locally."`
+- Skip all other criteria for that story — it is not done.
+
+**If no PR exists:** Add to reviewNotes (warning, not instant fail):
+`"No PR found for branch <branchName>. A PR is required per PROOF OF WORK rules."`
 
 ## Your task
 
@@ -212,6 +237,20 @@ Ralph must be re-run to fix the above stories.
 All stories accepted. Sprint ready for retrospective.
 Run: claude < scripts/ralph/ceremonies/retro.md
 ```
+
+## Prohibited review patterns
+
+The following are **never acceptable** in a review ceremony run:
+
+❌ Writing `✓ verified` next to a criterion without showing the command and its output
+❌ Writing "this should work" or "this looks correct" as verification
+❌ Skipping a criterion because "it's obvious" or "we checked something similar"
+❌ Marking `reviewed: true` when any criterion is unverifiable due to missing tools
+❌ Trusting Ralph's own description of what it did — verify the files on disk directly
+❌ Passing a story where the branch was never pushed to remote
+
+If you are unsure whether something passes, it does not pass. Mark it UNVERIFIABLE,
+add it to reviewNotes, and set `passes: false`. The next sprint iteration can address it.
 
 ## Idempotency guarantee
 

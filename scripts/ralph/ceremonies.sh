@@ -88,14 +88,20 @@ if [[ "$DRY_RUN" == true ]]; then
   echo "Log file      : $LOG_FILE"
   echo ""
   echo "Steps that WOULD execute:"
+  echo "  0. PRE-FLIGHT   — capability matrix: tools, credentials, cluster access"
+  echo "                    flags stories with unresolvable blockers before wasting iterations"
   echo "  1. SMART CHECK  — run: claude < $SCRIPT_DIR/ceremonies/smart-check.md"
   echo "                    abort if any story scores < 3 on any SMART dimension"
   echo "  2. EXECUTE      — run: $SCRIPT_DIR/ralph.sh --prd $ACTIVE_SPRINT --tool $TOOL $RALPH_MAX_ITER"
   echo "                    until all stories pass or max iterations hit"
-  echo "  3. REVIEW       — run: claude < $SCRIPT_DIR/ceremonies/review.md"
-  echo "                    retry EXECUTE up to $MAX_RETRIES times if stories re-opened"
-  echo "  4. RETRO        — run: claude < $SCRIPT_DIR/ceremonies/retro.md"
-  echo "  5. ADVANCE      — run: $REPO_ROOT/prd/advance.sh"
+  echo "  3. SMOKE TEST   — run: claude < $SCRIPT_DIR/ceremonies/smoke-test.md"
+  echo "                    actually runs built artifacts (helm lint, --dry-run, bash -n)"
+  echo "                    re-opens stories that fail before review even sees them"
+  echo "  4. REVIEW       — run: claude < $SCRIPT_DIR/ceremonies/review.md"
+  echo "                    adversarial AC verification + git remote push check"
+  echo "                    retry EXECUTE+SMOKE TEST up to $MAX_RETRIES times if re-opened"
+  echo "  5. RETRO        — run: claude < $SCRIPT_DIR/ceremonies/retro.md"
+  echo "  6. ADVANCE      — run: $REPO_ROOT/prd/advance.sh"
   echo ""
   echo "No files modified (--dry-run)."
   exit 0
@@ -125,8 +131,20 @@ log "  Sprint: $ACTIVE_SPRINT"
 log "  Log   : $LOG_FILE"
 log "=============================================================="
 
+# ── STEP 0: PRE-FLIGHT ────────────────────────────────────────────────────────
 log ""
-log "STEP 1/5 — SMART CHECK"
+log "STEP 0/6 — PRE-FLIGHT CAPABILITY CHECK"
+log "Checking what tools, credentials, and cluster access are available..."
+log "Stories with missing required capabilities will be flagged before execution."
+log ""
+
+run_ceremony "Pre-flight" "$SCRIPT_DIR/ceremonies/pre-flight.md"
+
+log ""
+log "✓ Pre-flight complete. See above for capability matrix and any story flags."
+
+log ""
+log "STEP 1/6 — SMART CHECK"
 
 run_ceremony "SMART Check" "$SCRIPT_DIR/ceremonies/smart-check.md"
 
@@ -159,10 +177,10 @@ RETRY=0
 while [[ $RETRY -le $MAX_RETRIES ]]; do
   if [[ $RETRY -gt 0 ]]; then
     log ""
-    log "STEP 2/5 — EXECUTE (retry $RETRY of $MAX_RETRIES)"
+    log "STEP 2/6 — EXECUTE (retry $RETRY of $MAX_RETRIES)"
   else
     log ""
-    log "STEP 2/5 — EXECUTE"
+    log "STEP 2/6 — EXECUTE"
   fi
 
   # Run ralph
@@ -175,9 +193,27 @@ while [[ $RETRY -le $MAX_RETRIES ]]; do
     log "WARNING: ralph.sh exited with code $RALPH_EXIT (may have hit max iterations)"
   fi
 
+  # Run smoke test — catches failures before review even sees them
+  log ""
+  log "STEP 3/6 — SMOKE TEST"
+  log "Running built artifacts: helm lint, bash -n, shellcheck, JSON validation..."
+  rm -f "$REVIEW_SIGNAL"
+
+  run_ceremony "Smoke Test" "$SCRIPT_DIR/ceremonies/smoke-test.md"
+
+  # If smoke test re-opened stories, skip review and retry execute immediately
+  if [[ -f "$REVIEW_SIGNAL" ]] && grep -q "STORIES_REOPENED=true" "$REVIEW_SIGNAL"; then
+    RETRY=$((RETRY + 1))
+    if [[ $RETRY -le $MAX_RETRIES ]]; then
+      log ""
+      log "Smoke test re-opened stories. Retrying execution ($RETRY of $MAX_RETRIES) before review..."
+      continue
+    fi
+  fi
+
   # Run review ceremony
   log ""
-  log "STEP 3/5 — REVIEW"
+  log "STEP 4/6 — REVIEW"
   rm -f "$REVIEW_SIGNAL"
 
   run_ceremony "Review" "$SCRIPT_DIR/ceremonies/review.md"
@@ -225,13 +261,13 @@ done
 
 # ── STEP 4: RETRO ─────────────────────────────────────────────────────────────
 log ""
-log "STEP 4/5 — RETRO"
+log "STEP 5/6 — RETRO"
 
 run_ceremony "Retrospective" "$SCRIPT_DIR/ceremonies/retro.md"
 
-# ── STEP 5: ADVANCE ───────────────────────────────────────────────────────────
+# ── STEP 6: ADVANCE ───────────────────────────────────────────────────────────
 log ""
-log "STEP 5/5 — ADVANCE"
+log "STEP 6/6 — ADVANCE"
 
 # Check if all non-blocked stories are reviewed:true
 NOT_ACCEPTED=$(jq '[.stories[] | select(.reviewed != true)] | length' "$SPRINT_FILE" 2>/dev/null || echo "99")
@@ -251,6 +287,6 @@ log "All stories accepted. Running prd/advance.sh..."
 
 log ""
 log "=============================================================="
-log "  SPRINT COMPLETE — Phase $PHASE_NUM finished"
+log "  SPRINT COMPLETE — Phase $PHASE_NUM accepted"
 log "  Log: $LOG_FILE"
 log "=============================================================="

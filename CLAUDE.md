@@ -460,6 +460,114 @@ Provider docs (`docs/providers/*.md`) must include:
 
 ---
 
+## PROOF OF WORK — MANDATORY BEFORE passes:true
+
+**Every completed story MUST do all of the following before setting `passes: true`.**
+There are no exceptions. "It should work" is not proof. Showing output is proof.
+
+### 1. Commit and push to remote
+```bash
+git add <specific files>          # never git add -A blindly
+git commit -m "story-NNN: <description>"
+git push origin <branchName>      # NON-NEGOTIABLE — if push fails, fix it
+```
+
+If `git push` fails for any reason, DO NOT mark the story done. Fix the push problem.
+
+### 2. Create or verify a PR exists
+```bash
+gh pr create --title "story-NNN: <title>" --base main --head <branchName>
+# or if PR already exists:
+gh pr view --head <branchName>
+```
+
+If `gh` is not authenticated, note it as a blocker but still push the branch.
+
+### 3. Show actual command output
+Every quality gate run MUST be shown verbatim in your response:
+```
+$ helm lint charts/cert-manager/
+==> Linting charts/cert-manager/
+[INFO] Chart.yaml: icon is recommended
+1 chart(s) linted, 0 chart(s) failed
+exit code: 0
+```
+
+Do NOT write "helm lint passes ✓" without showing the actual output.
+Do NOT write "I ran shellcheck and it passed" — show the command and output.
+
+### 4. The response must contain a Proof of Work block
+End every story completion response with:
+```
+## Proof of Work — story-NNN
+
+git push:  pushed to origin/<branchName> ✓
+PR:        https://github.com/libliflin/sovereign/pull/<N>
+helm lint: exit 0 (output above)
+shellcheck: exit 0 (output above)
+HA gate:   PDB ✓ | anti-affinity ✓ | replicaCount=2 ✓
+```
+
+---
+
+## BLOCKER PROTOCOL
+
+When you cannot complete or test a story due to a missing prerequisite, **do not fake it**.
+
+Missing prerequisites include:
+- Cloud provider API tokens (HETZNER_TOKEN, CLOUDFLARE_API_TOKEN, DO_TOKEN, AWS keys)
+- A running Kubernetes cluster
+- An external service that must be live
+- A tool that is not installed
+
+**What to do instead:**
+1. Implement the code as completely as possible — write everything that can be written
+2. Add a `blocker` field to the story in the sprint JSON:
+```json
+"blocker": {
+  "type": "missing_credential",
+  "name": "HETZNER_TOKEN",
+  "description": "Cannot live-test node provisioning without a Hetzner Cloud account. Code is complete and dry-tested. Set HETZNER_TOKEN and re-run the smoke-test ceremony to verify."
+}
+```
+3. Set `passes: false` — a story with an honest blocker is NOT a failure, it is parked
+4. Push what you have anyway (`git push` is still required — partial work on remote beats nothing)
+5. In your response, clearly state: `BLOCKER: <specific thing missing>`
+
+**A story with a clear blocker and pushed code is better than a story marked passes:true
+that was never actually tested.** The next engineer (or the next sprint after credentials
+are obtained) can pick it up immediately.
+
+### Things that are NOT valid blockers
+- "I can't run kubectl because there's no cluster" → `kubectl apply --dry-run=client -f -`
+  works without a cluster for manifest validation. Use it.
+- "I can't test helm install" → `helm template` + `helm lint` works without a cluster. Use it.
+- "shellcheck isn't installed" → `brew install shellcheck`. It takes 10 seconds.
+
+---
+
+## NEVER SELF-CERTIFY
+
+You are not allowed to mark a criterion verified if you did not actually run a command that
+proves it. The following are **prohibited**:
+
+❌ "The helm chart should pass lint" → must run `helm lint` and show output
+❌ "This follows the HA pattern" → must run `helm template | grep PodDisruptionBudget`
+❌ "The script will work correctly" → must run with `--dry-run` and show output
+❌ "I verified all acceptance criteria" → must show each one with actual command + output
+❌ "The PR/CI will confirm this" → CI is not a substitute for running checks locally first
+
+If you cannot verify a criterion because a tool is unavailable:
+- State it explicitly: `UNVERIFIABLE: helm not installed`
+- Add it to `reviewNotes` in the sprint file
+- Do NOT write ✓ next to it
+- Do NOT mark the story `passes: true` if critical criteria are unverifiable
+
+The review ceremony will catch self-certification. Stories re-opened by review with
+`reviewNotes` about unverified criteria count as wasted iterations against the sprint budget.
+
+---
+
 ## QUALITY GATES
 
 Before marking any story `passes: true`, you MUST:

@@ -92,6 +92,55 @@
     "readinessNote": {
       "type": "string",
       "description": "Set by planning ceremony when a story is not-ready for the current sprint"
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tools or env vars required to fully test this story (e.g. HETZNER_TOKEN, kind, helm). Pre-flight ceremony cross-references these against the environment and flags stories where capabilities are missing. Missing capabilities do NOT block coding — they block integration testing only.",
+      "examples": [
+        ["helm", "kubectl"],
+        ["HETZNER_TOKEN", "kind"],
+        ["CLOUDFLARE_API_TOKEN", "gh"]
+      ]
+    },
+    "blocker": {
+      "type": "object",
+      "description": "Set by Ralph (or pre-flight) when a story cannot be completed or integration-tested due to a missing prerequisite. A story with a blocker should have passes:false and code pushed to its branch.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["missing_credential", "missing_tool", "missing_service", "missing_dependency", "requires_live_cluster"],
+          "description": "Category of blocker"
+        },
+        "name": {
+          "type": "string",
+          "description": "Specific name of the missing thing (e.g. HETZNER_TOKEN, kind, a live K8s cluster)"
+        },
+        "description": {
+          "type": "string",
+          "description": "What the missing thing is needed for and how to resolve it"
+        },
+        "codeComplete": {
+          "type": "boolean",
+          "description": "True if the code was fully written and pushed — only integration testing is blocked"
+        }
+      },
+      "required": ["type", "name", "description"]
+    },
+    "preFlightNotes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Notes added by the pre-flight ceremony about missing capabilities for this story"
+    },
+    "smokeTestResults": {
+      "type": "object",
+      "description": "Results from the smoke-test ceremony",
+      "properties": {
+        "ran":      { "type": "boolean" },
+        "passed":   { "type": "boolean" },
+        "summary":  { "type": "string" },
+        "failures": { "type": "array", "items": { "type": "string" } }
+      }
     }
   },
   "additionalProperties": true
