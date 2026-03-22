@@ -266,8 +266,99 @@
     },
     {
       "id": "016",
-      "phase": 5,
+      "phase": 1,
       "priority": 16,
+      "branchName": "feature/vendor-manifest",
+      "title": "Vendor manifest: VENDORS.yaml schema, license audit, and initial inventory",
+      "description": "Create the vendor manifest system \u2014 the 'ebuild database' of the platform. Create vendor/VENDORS.yaml defining every upstream project the platform depends on. Schema per entry: name, upstream_url, license_spdx, license_allows_vendor (bool \u2014 false for BSL/SSPL/AGPL), version_pinned, fetch_method (git_tag|tarball), distroless_compatible (yes|partial|no), distroless_base (gcr.io/distroless/static|java17|nodejs|none), deprecated (bool), deprecated_reason, alternative. Populate with ALL services in the current stack: cilium, crossplane, cert-manager, sealed-secrets, vault (flag BSL, alternative: openbao), keycloak, rook-ceph, gitlab, harbor, argocd, istio, opa-gatekeeper, trivy-operator, falco, prometheus-stack, loki, thanos, tempo, backstage, code-server, sonarqube, reportportal, selenium-grid, k6-operator, wiremock, mailhog, chaos-mesh. Create vendor/audit.sh that reads VENDORS.yaml and prints a report: license violations, distroless-incompatible services, deprecated entries with alternatives. Exit non-zero if any entry has license_allows_vendor: false without an alternative specified. NOTE: Vault must be marked license_allows_vendor: false with alternative: openbao. Update prd.json story 008 description to reference OpenBao (openbao/openbao) instead of HashiCorp Vault so the next iteration rebuilds that chart correctly.",
+      "acceptanceCriteria": [
+        "vendor/VENDORS.yaml exists with all 27+ services from the current stack",
+        "Every entry has all required schema fields",
+        "Vault entry has license_allows_vendor: false and alternative: openbao",
+        "vendor/audit.sh produces a formatted report grouped by: license issues, distroless status, deprecated",
+        "vendor/audit.sh exits non-zero when any entry lacks an alternative for a non-vendorable license",
+        "shellcheck passes on vendor/audit.sh",
+        "prd.json story 008 updated to use OpenBao instead of HashiCorp Vault"
+      ],
+      "passes": false
+    },
+    {
+      "id": "017",
+      "phase": 1,
+      "priority": 17,
+      "branchName": "feature/vendor-distroless-audit",
+      "title": "Vendor distroless audit: compatibility matrix, recipe stubs, and platform standard",
+      "description": "Create the definitive distroless compatibility audit. Create vendor/DISTROLESS.md as a living document with a table per vendor: service, language/runtime, distroless base image, status (compatible/partial/incompatible/rewrite-candidate), notes. Go-based services (cilium, cert-manager, crossplane, argocd, sealed-secrets, harbor, trivy-operator, openbao, thanos, loki, tempo, k6-operator) \u2192 distroless/static, mark compatible. Java-based (keycloak) \u2192 distroless/java21, mark partial with note suggesting Kanidm (Rust, native distroless) as long-term alternative. Node-based (backstage, code-server) \u2192 distroless/nodejs, mark partial. Shell-script containers \u2192 incompatible, note they run outside cluster. Create vendor/recipes/ directory with a recipe.yaml stub for each service \u2014 schema: name, upstream_url, version, license_spdx, fetch_method, distroless_base, build_tool (bazel|docker|skip). Update CLAUDE.md to add a DISTROLESS STANDARD section: all new container images must use distroless base; PRs adding non-distroless images require explicit deprecated entry in VENDORS.yaml with migration plan.",
+      "acceptanceCriteria": [
+        "vendor/DISTROLESS.md has a row for every service in VENDORS.yaml",
+        "All Go-based services marked as distroless/static compatible",
+        "Keycloak marked partial with Kanidm noted as Rust alternative",
+        "vendor/recipes/ directory has recipe.yaml stub for every service",
+        "recipe.yaml schema has: name, upstream_url, version, license_spdx, fetch_method, distroless_base, build_tool",
+        "CLAUDE.md updated with DISTROLESS STANDARD section"
+      ],
+      "passes": false
+    },
+    {
+      "id": "018",
+      "phase": 1,
+      "priority": 18,
+      "branchName": "feature/vendor-fetch-framework",
+      "title": "Vendor fetch framework: Gentoo-style source fetching into internal GitLab",
+      "description": "Build the source fetching framework. Equivalent to Gentoo portage fetch \u2014 gets upstream source into internal GitLab without creating runtime dependency on external git hosts. Create vendor/fetch.sh [name|all]: for each recipe in vendor/recipes/<name>/recipe.yaml, clone or update the upstream repo into the internal GitLab at gitlab.<domain>/vendor/<name> using GitLab API (GITLAB_TOKEN from env). Create the GitLab group 'vendor' and project if they don't exist, then mirror the upstream at the pinned version. Create vendor/update-check.sh: queries each upstream for new releases (GitHub API or git ls-remote), compares to pinned version in recipe.yaml, outputs report of available updates, optionally creates GitLab issues. Create vendor/pin.sh <name> <version>: updates version in recipe.yaml. Fetch method implementations: git_tag (clone at tag), tarball (download release tarball, verify SHA256 from upstream checksums file), git_commit (pin to SHA). Populate vendor/recipes/ with full recipe.yaml for the 10 most fundamental services: cilium, cert-manager, crossplane, argocd, sealed-secrets, openbao, keycloak, harbor, rook-ceph, prometheus-stack. All scripts must work with the GitLab instance running from story 014.",
+      "acceptanceCriteria": [
+        "vendor/fetch.sh fetches a single named recipe or all recipes",
+        "vendor/fetch.sh creates GitLab group 'vendor' and project if not exists via API",
+        "vendor/fetch.sh mirrors upstream at pinned version into internal GitLab",
+        "vendor/update-check.sh reports available updates vs pinned versions",
+        "vendor/pin.sh <name> <version> updates recipe.yaml",
+        "vendor/recipes/ has full recipe.yaml for 10 fundamental services",
+        "vendor/fetch.sh --dry-run prints actions without making API calls",
+        "shellcheck passes on all vendor/*.sh"
+      ],
+      "passes": false
+    },
+    {
+      "id": "019",
+      "phase": 1,
+      "priority": 19,
+      "branchName": "feature/vendor-bazel-builds",
+      "title": "Vendor Bazel workspace: distroless image build recipes for Go services",
+      "description": "Set up the Bazel build system for building distroless container images from vendored source. Create root MODULE.bazel (Bzlmod) and BUILD.bazel files. Use rules_go for Go compilation and rules_oci for OCI image assembly. Create bazel/toolchains/ with Go toolchain pinned to the version each service requires. Create bazel/distroless/ with reusable base image targets: distroless_static and distroless_java21. For each Go-based service, create vendor/recipes/<name>/BUILD.bazel that: compiles binary with rules_go, assembles distroless OCI image, tags for push to harbor.<domain>/sovereign/<name>:<version>. Implement BUILD.bazel for: cert-manager, crossplane, argocd, sealed-secrets, openbao. Create vendor/build.sh [name|all] that runs bazel build //vendor/recipes/<name>:image and pushes to Harbor using crane. Add .bazelrc with remote cache config. Builds must be reproducible: same source + same toolchain = bit-identical image. Create vendor/verify-distroless.sh that runs each built image with --version, confirms it exits cleanly, then attempts docker exec to verify no shell is present (must fail with 'not found').",
+      "acceptanceCriteria": [
+        "MODULE.bazel and BUILD.bazel exist at repo root with rules_go and rules_oci",
+        "bazel/distroless/ has reusable distroless_static and distroless_java21 base targets",
+        "vendor/recipes/cert-manager/BUILD.bazel, crossplane/BUILD.bazel, argocd/BUILD.bazel, sealed-secrets/BUILD.bazel, openbao/BUILD.bazel all exist",
+        "vendor/build.sh builds and pushes to Harbor",
+        "vendor/verify-distroless.sh confirms no shell in built images",
+        ".bazelrc configures remote cache pointing to internal Harbor OCI cache",
+        "bazel query //vendor/recipes/...:all lists all image targets"
+      ],
+      "passes": false
+    },
+    {
+      "id": "020",
+      "phase": 1,
+      "priority": 20,
+      "branchName": "feature/vendor-pipeline-wiring",
+      "title": "Vendor pipeline: GitLab CI triggers, ArgoCD Image Updater, Harbor-first Helm values",
+      "description": "Wire up the full vendor pipeline: source in GitLab \u2192 Bazel build in GitLab CI \u2192 push to Harbor \u2192 ArgoCD Image Updater detects new tag \u2192 ArgoCD syncs updated Helm release. Install ArgoCD Image Updater as an ArgoCD Application (argocd-apps/platform/argocd-image-updater-app.yaml) watching harbor.<domain>/sovereign/*. Create vendor/gitlab-ci-template.yml: on new tag pushed to internal mirror \u2192 bazel build \u2192 push harbor.<domain>/sovereign/<name>:<version> \u2192 create GitLab release. Update charts/_globals/values.yaml to add global.imageRegistry defaulting to harbor.<domain>/sovereign (empty string for bootstrap mode before Harbor is up). Update every chart's values.yaml image.repository to use global.imageRegistry prefix. Add ArgoCD Image Updater annotations to every ArgoCD Application manifest. Create vendor/smoke-test.sh: pulls each sovereign/* image from Harbor, runs --version, verifies image starts without a shell (distroless validation). This story completes the autarky loop: zero external image pulls after bootstrap.",
+      "acceptanceCriteria": [
+        "ArgoCD Image Updater installed as ArgoCD Application with Harbor credentials",
+        "vendor/gitlab-ci-template.yml defines fetch\u2192build\u2192push pipeline",
+        "charts/_globals/values.yaml has global.imageRegistry",
+        "All chart values.yaml files use global.imageRegistry prefix",
+        "All ArgoCD Application manifests have argocd-image-updater annotations",
+        "vendor/smoke-test.sh validates each sovereign/* image is distroless",
+        "helm lint passes on all updated charts",
+        "End-to-end: pinning a new version in recipe.yaml \u2192 fetch \u2192 build \u2192 Harbor \u2192 ArgoCD auto-syncs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "021",
+      "phase": 5,
+      "priority": 21,
       "branchName": "feature/helm-istio",
       "title": "Helm chart: Istio service mesh with mTLS",
       "description": "Create charts/istio/ wrapping istio/base and istio/istiod as subcharts. Default PeerAuthentication: STRICT mTLS for all namespaces. Gateway resource for the sovereign ingress domain. Kiali UI at kiali.{{ .Values.global.domain }} with Keycloak OIDC. Jaeger/Tempo integration for tracing. ArgoCD app in argocd-apps/security/.",
@@ -283,9 +374,9 @@
       "passes": false
     },
     {
-      "id": "017",
+      "id": "022",
       "phase": 5,
-      "priority": 17,
+      "priority": 22,
       "branchName": "feature/helm-opa-trivy-falco",
       "title": "Helm charts: OPA/Gatekeeper, Trivy Operator, Falco",
       "description": "Create charts/opa-gatekeeper/ wrapping gatekeeper/gatekeeper. Include ConstraintTemplates for: no-privilege-escalation, require-resource-limits, require-labels (app/tier). Create charts/trivy-operator/ wrapping aquasecurity/trivy-operator (scans all running pods). Create charts/falco/ wrapping falcosecurity/falco with JSON output to Loki. All three get ArgoCD apps in argocd-apps/security/.",
@@ -299,9 +390,9 @@
       "passes": false
     },
     {
-      "id": "018",
+      "id": "023",
       "phase": 6,
-      "priority": 18,
+      "priority": 23,
       "branchName": "feature/helm-prometheus-stack",
       "title": "Helm chart: kube-prometheus-stack",
       "description": "Create charts/prometheus-stack/ wrapping prometheus-community/kube-prometheus-stack. Grafana at grafana.{{ .Values.global.domain }} with Keycloak OIDC. Prometheus retention: 15 days (Thanos handles long-term). AlertManager with a stub for Slack/email routing. Pre-load dashboards: Node Exporter, Kubernetes cluster, GitLab, Ceph (from rook-ceph chart), Istio. Persistent storage on ceph-block.",
@@ -317,9 +408,9 @@
       "passes": false
     },
     {
-      "id": "019",
+      "id": "024",
       "phase": 6,
-      "priority": 19,
+      "priority": 24,
       "branchName": "feature/helm-loki-thanos-tempo",
       "title": "Helm charts: Loki, Thanos, Tempo",
       "description": "Create charts/loki/ wrapping grafana/loki in Simple Scalable mode, storage on ceph-bucket. Create charts/thanos/ wrapping bitnami/thanos with sidecar mode (connects to Prometheus), storage on ceph-bucket. Create charts/tempo/ wrapping grafana/tempo-distributed, storage on ceph-bucket. All pre-configured as Grafana datasources (via ConfigMap in prometheus-stack chart). ArgoCD apps in argocd-apps/observability/.",
@@ -334,9 +425,9 @@
       "passes": false
     },
     {
-      "id": "020",
+      "id": "025",
       "phase": 7,
-      "priority": 20,
+      "priority": 25,
       "branchName": "feature/helm-backstage",
       "title": "Helm chart: Backstage developer portal",
       "description": "Create charts/backstage/ using a custom Dockerfile-based deployment (backstage/backstage base image). Pre-configure plugins: GitLab catalog, Kubernetes plugin, ArgoCD plugin, TechDocs (stored on ceph-bucket). Keycloak OIDC auth. Ingress at backstage.{{ .Values.global.domain }}. Service catalog auto-discovers GitLab repos via catalog-info.yaml. ArgoCD app in argocd-apps/devex/.",
@@ -353,9 +444,9 @@
       "passes": false
     },
     {
-      "id": "021",
+      "id": "026",
       "phase": 7,
-      "priority": 21,
+      "priority": 26,
       "branchName": "feature/helm-code-server",
       "title": "Helm chart: code-server (VS Code in browser for agents)",
       "description": "Create charts/code-server/ deploying coder/code-server. This is the primary interface for Claude Code agents operating on the platform. Pre-install extensions: GitLens, YAML, Kubernetes, Helm, Python, ESLint. Mount kubeconfig so agents can run kubectl/helm from browser. Workspace storage on ceph-filesystem. Keycloak OIDC auth. Ingress at code.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/devex/.",
@@ -371,9 +462,9 @@
       "passes": false
     },
     {
-      "id": "022",
+      "id": "027",
       "phase": 7,
-      "priority": 22,
+      "priority": 27,
       "branchName": "feature/helm-sonarqube-reportportal",
       "title": "Helm charts: SonarQube and ReportPortal",
       "description": "Create charts/sonarqube/ wrapping sonarqube/sonarqube. PostgreSQL storage via Crossplane. Keycloak OIDC. Ingress at sonar.{{ .Values.global.domain }}. GitLab CI integration documented. Create charts/reportportal/ using reportportal Helm chart. PostgreSQL + Elasticsearch + RabbitMQ dependencies. Keycloak OIDC. Ingress at reports.{{ .Values.global.domain }}. Both in argocd-apps/devex/.",
@@ -388,9 +479,9 @@
       "passes": false
     },
     {
-      "id": "023",
+      "id": "028",
       "phase": 8,
-      "priority": 23,
+      "priority": 28,
       "branchName": "feature/helm-testing-infra",
       "title": "Helm charts: Selenium Grid, k6, Wiremock, MailHog, Chaos Mesh",
       "description": "Create 5 testing infrastructure charts: charts/selenium-grid/ (Selenium HQ official chart, Chrome+Firefox+Edge nodes), charts/k6-operator/ (grafana/k6-operator), charts/wiremock/ (wiremock/wiremock), charts/mailhog/ (mailhog deployment), charts/chaos-mesh/ (chaos-mesh/chaos-mesh). All get ArgoCD apps in argocd-apps/testing/. Selenium and MailHog get ingresses. Grafana dashboards for k6 results.",
@@ -405,9 +496,9 @@
       "passes": false
     },
     {
-      "id": "024",
+      "id": "029",
       "phase": 9,
-      "priority": 24,
+      "priority": 29,
       "branchName": "feature/sovereign-pm-backend",
       "title": "Sovereign PM: Node.js/Express backend",
       "description": "Create sovereign-pm/src/server/ \u2014 a Node.js + Express + TypeScript API server. Data model: Project, Epic, Story, AgentRun. PostgreSQL via Sequelize. Endpoints: CRUD for epics/stories, POST /api/prd/generate (outputs prd.json), POST /api/ralph/trigger (creates a Kubernetes Job running ralph.sh), GET /api/ralph/runs (list run history). Keycloak OIDC JWT validation middleware. OpenAPI spec in sovereign-pm/openapi.yaml.",
@@ -424,9 +515,9 @@
       "passes": false
     },
     {
-      "id": "025",
+      "id": "030",
       "phase": 9,
-      "priority": 25,
+      "priority": 30,
       "branchName": "feature/sovereign-pm-frontend",
       "title": "Sovereign PM: React frontend",
       "description": "Create sovereign-pm/src/client/ \u2014 a React + TypeScript + Vite frontend. Pages: Dashboard (all projects), Project view (epics/stories kanban), Story editor (title, description, acceptance criteria, priority, phase), PRD Generator (shows generated prd.json, copy button), Agent Runs (history of Ralph loops, pass/fail per story, timestamps). Keycloak OIDC via keycloak-js. Tailwind CSS. Clean, minimal design.",
@@ -442,9 +533,9 @@
       "passes": false
     },
     {
-      "id": "026",
+      "id": "031",
       "phase": 9,
-      "priority": 26,
+      "priority": 31,
       "branchName": "feature/sovereign-pm-helm",
       "title": "Sovereign PM: Dockerfile and Helm chart",
       "description": "Create sovereign-pm/Dockerfile (multi-stage: build frontend, build backend, combined production image). Create charts/sovereign-pm/ Helm chart deploying the PM app. PostgreSQL dependency (or external Crossplane-managed). Keycloak OIDC config from values. Ingress at pm.{{ .Values.global.domain }}. Ralph scripts mounted as a volume (reads prd.json from PVC shared with the K8s Job). ArgoCD app in argocd-apps/devex/sovereign-pm-app.yaml.",
@@ -460,9 +551,9 @@
       "passes": false
     },
     {
-      "id": "027",
+      "id": "032",
       "phase": 0,
-      "priority": 27,
+      "priority": 32,
       "branchName": "feature/docs-and-quickstart",
       "title": "Documentation: quickstart, architecture, and all provider guides",
       "description": "Write docs/quickstart.md (15 minute path from zero to running cluster). Write docs/architecture.md (explains the bootstrap sequence, App-of-Apps pattern, namespace layout, security model, all services with their ingress URLs). Write docs/providers/aws-ec2-free-tier.md, docs/providers/digitalocean.md, docs/providers/vultr.md, docs/providers/bare-metal.md. Update README.md with badges, architecture diagram (ASCII), and contribution guide.",
@@ -477,9 +568,9 @@
       "passes": false
     },
     {
-      "id": "028",
+      "id": "033",
       "phase": 0,
-      "priority": 28,
+      "priority": 33,
       "branchName": "feature/ci-pipeline",
       "title": "CI pipeline: lint and validate all Helm charts on every PR",
       "description": "Create .github/workflows/validate.yml: on PR and push to main, run helm lint on all charts, helm template | kubectl apply --dry-run, shellcheck on all .sh files, markdownlint on all .md files. Create .github/workflows/release.yml: on tag push, package all Helm charts and publish to GitHub Pages as a Helm repository (so users can add sovereign as a Helm repo). Create charts/index.yaml structure for the Helm repo.",

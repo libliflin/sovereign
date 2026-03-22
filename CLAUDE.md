@@ -29,6 +29,42 @@ Architecture: ArgoCD App-of-Apps pattern, Helm charts, Crossplane for infrastruc
 - **Bootstrapping** is the only manual step. After that, GitOps manages everything.
 - **Namespaces are sovereign** — each service lives in its own namespace with network policies
 
+### Autarky Build Philosophy (CRITICAL)
+The platform must be **genuinely self-sufficient at runtime**. After bootstrap completes, the cluster
+must never pull images from external registries (docker.io, quay.io, ghcr.io, gcr.io, etc.).
+
+**Vendor everything. Build everything. Own everything.**
+
+#### The Vendor System (Gentoo-inspired)
+- Every upstream dependency has a **recipe** in `vendor/recipes/<name>/recipe.yaml`
+- Recipes declare: upstream URL, pinned version, SPDX license, fetch method, distroless base, build tool
+- `vendor/fetch.sh` mirrors upstream source into the internal GitLab at `gitlab.<domain>/vendor/<name>`
+- `vendor/build.sh` builds OCI images via Bazel and pushes to `harbor.<domain>/sovereign/<name>:<version>`
+- `vendor/update-check.sh` checks for upstream releases and opens GitLab issues
+- **No git submodules.** No external dependencies at runtime. The internal GitLab is the source of truth.
+
+#### Distroless Standard (MANDATORY)
+- **All container images MUST use distroless base images.** No exceptions without an approved deprecation.
+- Go binaries → `gcr.io/distroless/static` (fetched during bootstrap, cached in Harbor after)
+- JVM services → `gcr.io/distroless/java21`
+- Node.js services → `gcr.io/distroless/nodejs`
+- Any service that cannot run distroless MUST have a `deprecated: true` entry in `vendor/VENDORS.yaml`
+  with a `deprecated_reason` and an `alternative` pointing to a distroless-compatible replacement.
+- When writing new code (Sovereign PM, custom operators, etc.) — **use Rust or Go**, build distroless.
+
+#### License Policy
+- Apache 2.0, MIT, BSD, LGPL → approved for vendoring
+- **BSL (HashiCorp products) → BLOCKED.** Use OpenBao instead of Vault.
+- AGPL → review required before adding
+- SSPL → blocked
+- Run `vendor/audit.sh` before marking any vendor story as passing. It must exit 0.
+
+#### Image Registry Policy
+- All Helm charts MUST use `{{ .Values.global.imageRegistry }}/` as the image repository prefix
+- `global.imageRegistry` defaults to `harbor.<domain>/sovereign` (set in `charts/_globals/values.yaml`)
+- During bootstrap (before Harbor is up), set `global.imageRegistry: ""` to use upstream registries temporarily
+- ArgoCD Image Updater watches Harbor and auto-syncs when new images are pushed
+
 ### Bootstrap Sequence (strict ordering — dependencies must come first)
 ```
 PHASE 0 — Cluster Provisioning (scripts, not Helm)
@@ -111,9 +147,38 @@ sovereign/
 │   │   ├── generic-vps.sh       ← Generic VPS (Ubuntu 22.04+)
 │   │   ├── aws-ec2.sh           ← AWS free tier compatible
 │   │   └── existing-cluster.sh ← Onboard existing K8s cluster
+│   ├── frontdoor/               ← Pluggable security front door (tunnel/firewall)
+│   │   ├── interface.sh         ← 5-hook contract all providers must implement
+│   │   ├── cloudflare.sh        ← Cloudflare Tunnel + Zero Trust (default)
+│   │   ├── none.sh              ← Baseline (prompt for caller IP, UFW only)
+│   │   └── custom.sh.example   ← Template for custom implementations
+│   ├── hardening/               ← Always-on VPS hardening (runs before front door)
+│   │   ├── base.sh              ← unattended-upgrades, fail2ban, auditd
+│   │   ├── ssh.sh               ← pubkey-only, no root password login
+│   │   ├── kernel.sh            ← CIS benchmark sysctl settings
+│   │   └── firewall.sh          ← UFW default-deny + front door CIDRs
 │   ├── bootstrap.sh             ← Main entry point
 │   ├── config.yaml.example      ← User fills this in (domain, provider, creds)
 │   └── verify.sh                ← Post-bootstrap health check
+│
+├── vendor/                      ← Autarky build system (Gentoo-inspired)
+│   ├── VENDORS.yaml             ← Manifest: every upstream with license + distroless status
+│   ├── DISTROLESS.md            ← Compatibility matrix: which services use which base
+│   ├── audit.sh                 ← License + distroless audit (must exit 0 before passing)
+│   ├── fetch.sh                 ← Mirror upstream repos into internal GitLab
+│   ├── build.sh                 ← Bazel build all recipes → push to Harbor
+│   ├── update-check.sh          ← Check for new upstream releases
+│   ├── pin.sh                   ← Pin a service to a specific version
+│   ├── verify-distroless.sh     ← Confirm built images have no shell
+│   ├── gitlab-ci-template.yml   ← CI template included by all mirrored repos
+│   └── recipes/                 ← One recipe per vendored service
+│       ├── cilium/
+│       │   ├── recipe.yaml      ← upstream, version, license, fetch_method, distroless_base
+│       │   └── BUILD.bazel      ← Bazel build + distroless OCI image target
+│       ├── cert-manager/
+│       ├── crossplane/
+│       ├── argocd/
+│       └── ...                  ← One per service in VENDORS.yaml
 │
 ├── platform/                    ← Crossplane XRDs and Compositions
 │   ├── xrds/
@@ -125,7 +190,7 @@ sovereign/
 │   ├── crossplane/
 │   ├── cert-manager/
 │   ├── sealed-secrets/
-│   ├── vault/
+│   ├── openbao/                 ← OpenBao (Apache 2.0 fork of Vault — BSL blocked)
 │   ├── keycloak/
 │   ├── rook-ceph/
 │   ├── gitlab/
