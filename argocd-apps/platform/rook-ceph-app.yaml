@@ -1,0 +1,42 @@
+---
+# ArgoCD Application — Rook/Ceph distributed encrypted storage
+# sync-wave "-70": after Vault (-80) and Keycloak (-75), before workloads needing persistent storage
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rook-ceph
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    tier: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-70"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/rook-ceph
+    helm:
+      valueFiles:
+        - values.yaml
+      # Override domain at deploy time:
+      # parameters:
+      #   - name: global.domain
+      #     value: "your-domain.com"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rook-ceph
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
