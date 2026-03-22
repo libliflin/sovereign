@@ -1,0 +1,34 @@
+global:
+  # The base domain for all services.
+  # All ingresses will be at <service>.<domain>
+  # Example: sovereign-autarky.dev
+  domain: "sovereign-autarky.dev"
+
+  # The default StorageClass for persistent volumes.
+  # Set to "ceph-block" once Rook/Ceph is installed (Phase 3).
+  # For bootstrap, use your cluster's default (e.g., "local-path" for K3s).
+  storageClass: "ceph-block"
+
+  # Keycloak SSO configuration.
+  # These are used by all services that integrate with Keycloak OIDC.
+  keycloak:
+    # Full URL to Keycloak. Will be at auth.<domain> once deployed.
+    url: "https://auth.{{ .Values.global.domain }}"
+    # The Keycloak realm all platform clients belong to.
+    realm: "sovereign"
+    # Client ID prefix. Each service appends its name: sovereign-argocd, sovereign-grafana, etc.
+    clientIdPrefix: "sovereign"
+
+  # Image pull policy for all platform services.
+  # Use "IfNotPresent" for production, "Always" for development.
+  imagePullPolicy: "IfNotPresent"
+
+  # TLS configuration. cert-manager handles certificate issuance.
+  tls:
+    # ClusterIssuer to use for all ingress TLS certificates.
+    # "selfsigned" during bootstrap, "vault-pki" or "letsencrypt" for production.
+    clusterIssuer: "selfsigned"
+
+  # Ingress class to use for all services.
+  # "nginx" (ingress-nginx) or "istio" once service mesh is deployed.
+  ingressClass: "nginx"
