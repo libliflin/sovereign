@@ -698,6 +698,50 @@ Layer 1 — Static analysis               Always runs in CI
 
 ---
 
+## GOVERNANCE CHECKPOINTS — CONSULT BEFORE THESE DECISIONS
+
+These are hard gates, identical in weight to quality gates. Governance failures are BLOCKERS.
+Do not skip them. Do not self-certify. Read the referenced document and apply the rule.
+
+### 1. Before adding any new chart, tool, library, or upstream dependency
+
+Read **`docs/governance/license-policy.md`**:
+- Is the license on the Permitted list (Apache 2.0, MIT, BSD, MPL 2.0, ISC)?
+- If not → **BLOCKER**. Find a foundation-governed alternative. Do not proceed.
+
+Read **`docs/governance/sovereignty.md`** → "Evaluating a New Dependency":
+- What tier is this? Platform infrastructure or application layer?
+- Tier 1 (CNI, storage, PKI, secret management, GitOps, mesh, policy, observability): must be in CNCF/ASF/LF. No exceptions.
+- Tier 2 (GitLab, Keycloak, Harbor, etc.): must be Apache 2.0/MIT/BSD. Foundation preferred.
+- Is there a CNCF project that does the same thing? Use that instead.
+- If a vendor controls the roadmap and could change the license → flag it in VENDORS.yaml with a note.
+
+### 2. Before making any cluster-level architectural decision
+(CNI, StorageClass, PKI, bootstrap scripts, network policy, secret management)
+
+Read **`docs/governance/cluster-contract.md`**:
+- Does your change assume a specific cloud provider primitive? (ALB, Cloud SQL, S3) → **BLOCKER**. Self-hosted only.
+- Does your change require a specific OS or kernel version? → document it in the cluster contract.
+- Will your change work on a cluster you didn't provision (bring-your-own-cluster)? → it must.
+- Are you replacing a CNI other than Cilium? → Cilium is the reference CNI. Document why.
+
+### 3. Before implementing anything that seems outside the platform's mission
+
+Read **`docs/governance/scope.md`** → "The 'Should We Add X?' Decision Tree":
+- If out of scope → add `"scopeNote": "out of scope — reason"` to the story's reviewNotes and raise a BLOCKER.
+- Do not implement out-of-scope work even if the story explicitly asks for it. Escalate.
+
+### 4. If you notice an upstream dependency has changed its license
+
+This is a Vault-precedent situation. Read **`docs/governance/sovereignty.md`** → "The Vault Precedent":
+- Check if a foundation fork exists immediately.
+- Flag the dependency in VENDORS.yaml with `"license_change_detected": true` and the date.
+- Create a story in the backlog to replace it.
+- Do NOT upgrade past the last permissively-licensed release.
+- This is a P0 blocker — higher priority than any feature work.
+
+---
+
 ## QUALITY GATES
 
 Before marking any story `passes: true`, you MUST:
