@@ -54,7 +54,7 @@
         "recipe.yaml schema has: name, upstream_url, version, license_spdx, fetch_method, distroless_base, build_tool",
         "CLAUDE.md updated with DISTROLESS STANDARD section"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
@@ -68,7 +68,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/9",
+      "notes": "vendor/DISTROLESS.md (29 services), vendor/recipes/ (29 recipe.yaml stubs), CLAUDE.md updated with PR policy. All Go services compatible/distroless/static, keycloak/sonarqube/reportportal/wiremock partial/java21, backstage/code-server partial/nodejs, falco/selenium-grid/gitlab incompatible/skip. PR #9 merged CI green."
     },
     {
       "id": "020",

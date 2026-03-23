@@ -339,6 +339,23 @@
   - AGPL entries should be flagged in VENDORS.yaml with license_allows_vendor: false and an alternative — they don't block, but they require review
 ---
 
+## 2026-03-22 - Phase 4 Autarky (Story 019)
+- Created vendor/DISTROLESS.md: 29-service compatibility table (compatible/partial/incompatible/rewrite-candidate)
+- All Go services (cilium, crossplane, cert-manager, sealed-secrets, openbao, rook-ceph, argocd, harbor, istio, opa-gatekeeper, trivy-operator, prometheus-stack, thanos, mailhog, chaos-mesh) → compatible, gcr.io/distroless/static
+- Java services (keycloak, sonarqube, reportportal, wiremock) → partial, gcr.io/distroless/java21, multi-stage build
+- Node.js services (backstage, code-server) → partial, gcr.io/distroless/nodejs, multi-stage build
+- Incompatible/skip: falco (kernel modules/eBPF), selenium-grid (browser binaries), gitlab (Ruby monolith)
+- Keycloak marked partial with Kanidm (Rust, Apache-2.0) as long-term distroless-native alternative
+- Created vendor/recipes/ with recipe.yaml for all 29 services: schema name/upstream_url/version/license_spdx/fetch_method/distroless_base/build_tool/rollout/backup
+- build_tool: ko for Go services, docker for Java/Node.js, skip for incompatible
+- Updated CLAUDE.md Distroless Standard section with PR policy: non-distroless PRs require VENDORS.yaml deprecated entry
+- PR #9 merged, CI green
+- **Learnings for future iterations:**
+  - recipe.yaml rollout/backup sections are required in all recipes — CI or audit scripts may check for them in story 021+
+  - python3 cross-check between VENDORS.yaml and DISTROLESS.md is the right approach (regex match on `^  - name:` and `^\| <name> \|`)
+  - 29 services: go-compatible (15), java-partial (4), node-partial (2), incompatible-skip (3), deprecated-go-but-skip (5)
+---
+
 ## 2026-03-22 - Phase 3 GitOps Engine (Stories 016 and 017)
 - Story 016 (GitLab): wrapper around gitlab/gitlab 8.5.0; Ceph S3, Keycloak OmniAuth, Runner k8s executor; PR #6 merged CI green
 - Story 017 (Harbor): wrapper around goharbor/harbor 1.15.0; Ceph S3, Trivy enabled; sovereign wrapper ingress (upstream disabled); PR #7 merged CI green
