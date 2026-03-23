@@ -1,0 +1,35 @@
+{{- /*
+  Harbor ingress — created by the sovereign wrapper so the hostname uses
+  {{ .Values.global.domain }} rather than a hardcoded string.
+  The upstream harbor/harbor chart ingress is disabled (expose.type: clusterIP).
+*/ -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "harbor-sovereign.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "harbor-sovereign.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ include "harbor-sovereign.harborHost" . | quote }}
+      secretName: harbor-tls
+  rules:
+    - host: {{ include "harbor-sovereign.harborHost" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: harbor
+                port:
+                  number: 80
