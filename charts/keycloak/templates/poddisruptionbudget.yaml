@@ -1,0 +1,23 @@
+{{- /*
+  PodDisruptionBudget for the Keycloak StatefulSet.
+  Ensures at least 1 Keycloak pod remains available during node drains or rolling updates.
+  We disable the bitnami chart's own PDB (keycloak.pdb.create: false) and manage it here
+  so sovereign controls minAvailable explicitly.
+*/ -}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-keycloak-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: keycloak
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: keycloak
