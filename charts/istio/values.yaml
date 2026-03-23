@@ -26,6 +26,18 @@ istiod:
     autoscaleEnabled: true
     autoscaleMin: 2
     autoscaleMax: 5
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - istiod
+              topologyKey: kubernetes.io/hostname
   meshConfig:
     enableTracing: true
     defaultConfig:
