@@ -12,10 +12,12 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENDORS_FILE="$REPO_ROOT/vendor/VENDORS.yaml"
 DRY_RUN=false
+BACKUP=false
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
+    --backup)  BACKUP=true ;;
     *) echo "Unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
@@ -24,6 +26,11 @@ if [[ "$DRY_RUN" == "true" ]]; then
   echo "[DRY RUN] Would audit: $VENDORS_FILE"
   echo "[DRY RUN] Would exit non-zero if any entry has license_allows_vendor: false without an alternative."
   exit 0
+fi
+
+# --backup is a no-op for audit (nothing to push) — flag accepted for script interface consistency
+if [[ "$BACKUP" == "true" ]]; then
+  echo "[INFO] --backup flag set (no-op for audit — audit produces no artifacts to back up)"
 fi
 
 if [[ ! -f "$VENDORS_FILE" ]]; then
