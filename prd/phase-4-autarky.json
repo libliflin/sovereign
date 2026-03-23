@@ -1,0 +1,177 @@
+{
+  "phase": 4,
+  "name": "autarky",
+  "description": "Vendor system: VENDORS.yaml, fetch, build recipes (ko/docker), deploy/rollback/backup, pipeline wiring.",
+  "sprintGoal": "A complete vendor manifest with license audit, distroless matrix, and automated fetch/build pipeline that makes the platform self-sufficient at runtime \u2014 no external image pulls after bootstrap.",
+  "capacity": 15,
+  "stories": [
+    {
+      "id": "018",
+      "phase": 4,
+      "priority": 18,
+      "branchName": "feature/vendor-manifest",
+      "title": "Vendor manifest: VENDORS.yaml schema, license audit, and initial inventory",
+      "description": "Create the vendor manifest system \u2014 the 'ebuild database' of the platform. Create vendor/VENDORS.yaml defining every upstream project the platform depends on. Schema per entry: name, upstream_url, license_spdx, license_allows_vendor (bool \u2014 false for BSL/SSPL/AGPL), version_pinned, fetch_method (git_tag|tarball), distroless_compatible (yes|partial|no), distroless_base (gcr.io/distroless/static|java17|nodejs|none), deprecated (bool), deprecated_reason, alternative. Populate with ALL services in the current stack: cilium, crossplane, cert-manager, sealed-secrets, vault (flag BSL, alternative: openbao), keycloak, rook-ceph, gitlab, harbor, argocd, istio, opa-gatekeeper, trivy-operator, falco, prometheus-stack, loki, thanos, tempo, backstage, code-server, sonarqube, reportportal, selenium-grid, k6-operator, wiremock, mailhog, chaos-mesh. Create vendor/audit.sh that reads VENDORS.yaml and prints a report: license violations, distroless-incompatible services, deprecated entries with alternatives. Exit non-zero if any entry has license_allows_vendor: false without an alternative specified. NOTE: Vault must be marked license_allows_vendor: false with alternative: openbao. Update prd.json story 008 description to reference OpenBao (openbao/openbao) instead of HashiCorp Vault so the next iteration rebuilds that chart correctly.",
+      "acceptanceCriteria": [
+        "vendor/VENDORS.yaml exists with all 27+ services from the current stack",
+        "Every entry has all required schema fields",
+        "Vault entry has license_allows_vendor: false and alternative: openbao",
+        "vendor/audit.sh produces a formatted report grouped by: license issues, distroless status, deprecated",
+        "vendor/audit.sh exits non-zero when any entry lacks an alternative for a non-vendorable license",
+        "shellcheck passes on vendor/audit.sh",
+        "prd.json story 008 updated to use OpenBao instead of HashiCorp Vault"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      }
+    },
+    {
+      "id": "019",
+      "phase": 4,
+      "priority": 19,
+      "branchName": "feature/vendor-distroless-audit",
+      "title": "Vendor distroless audit: compatibility matrix, recipe stubs, and platform standard",
+      "description": "Create the definitive distroless compatibility audit. Create vendor/DISTROLESS.md as a living document with a table per vendor: service, language/runtime, distroless base image, status (compatible/partial/incompatible/rewrite-candidate), notes. Go-based services (cilium, cert-manager, crossplane, argocd, sealed-secrets, harbor, trivy-operator, openbao, thanos, loki, tempo, k6-operator) \u2192 distroless/static, mark compatible. Java-based (keycloak) \u2192 distroless/java21, mark partial with note suggesting Kanidm (Rust, native distroless) as long-term alternative. Node-based (backstage, code-server) \u2192 distroless/nodejs, mark partial. Shell-script containers \u2192 incompatible, note they run outside cluster. Create vendor/recipes/ directory with a recipe.yaml stub for each service \u2014 schema: name, upstream_url, version, license_spdx, fetch_method, distroless_base, build_tool (ko|docker|skip). Update CLAUDE.md to add a DISTROLESS STANDARD section: all new container images must use distroless base; PRs adding non-distroless images require explicit deprecated entry in VENDORS.yaml with migration plan.",
+      "acceptanceCriteria": [
+        "vendor/DISTROLESS.md has a row for every service in VENDORS.yaml",
+        "All Go-based services marked as distroless/static compatible",
+        "Keycloak marked partial with Kanidm noted as Rust alternative",
+        "vendor/recipes/ directory has recipe.yaml stub for every service",
+        "recipe.yaml schema has: name, upstream_url, version, license_spdx, fetch_method, distroless_base, build_tool",
+        "CLAUDE.md updated with DISTROLESS STANDARD section"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      }
+    },
+    {
+      "id": "020",
+      "phase": 4,
+      "priority": 20,
+      "branchName": "feature/vendor-fetch-framework",
+      "title": "Vendor fetch framework: Gentoo-style source fetching into internal GitLab",
+      "description": "Build the source fetching framework. Equivalent to Gentoo portage fetch \u2014 gets upstream source into internal GitLab without creating runtime dependency on external git hosts. Create vendor/fetch.sh [name|all]: for each recipe in vendor/recipes/<name>/recipe.yaml, clone or update the upstream repo into the internal GitLab at gitlab.<domain>/vendor/<name> using GitLab API (GITLAB_TOKEN from env). Create the GitLab group 'vendor' and project if they don't exist, then mirror the upstream at the pinned version. Create vendor/update-check.sh: queries each upstream for new releases (GitHub API or git ls-remote), compares to pinned version in recipe.yaml, outputs report of available updates, optionally creates GitLab issues. Create vendor/pin.sh <name> <version>: updates version in recipe.yaml. Fetch method implementations: git_tag (clone at tag), tarball (download release tarball, verify SHA256 from upstream checksums file), git_commit (pin to SHA). Populate vendor/recipes/ with full recipe.yaml for the 10 most fundamental services: cilium, cert-manager, crossplane, argocd, sealed-secrets, openbao, keycloak, harbor, rook-ceph, prometheus-stack. All scripts must work with the GitLab instance running from story 014.",
+      "acceptanceCriteria": [
+        "vendor/fetch.sh fetches a single named recipe or all recipes",
+        "vendor/fetch.sh creates GitLab group 'vendor' and project if not exists via API",
+        "vendor/fetch.sh mirrors upstream at pinned version into internal GitLab",
+        "vendor/update-check.sh reports available updates vs pinned versions",
+        "vendor/pin.sh <name> <version> updates recipe.yaml",
+        "vendor/recipes/ has full recipe.yaml for 10 fundamental services",
+        "vendor/fetch.sh --dry-run prints actions without making API calls",
+        "shellcheck passes on all vendor/*.sh"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      }
+    },
+    {
+      "id": "021",
+      "phase": 4,
+      "priority": 21,
+      "branchName": "feature/vendor-build-recipes",
+      "title": "Vendor build recipes: ko for Go, multi-stage Docker, patch application, SHA verification",
+      "description": "Implement the build recipe system \u2014 each service has a build.sh that speaks the upstream's own build toolchain, applies patches, and produces a distroless OCI image. No Bazel. Reproducibility comes from: pinned git SHA in recipe.yaml + upstream go.sum/Cargo.lock (upstream's own lock file) + pinned compiler version in recipe.yaml. vendor/fetch.sh SHA verification: after cloning at the pinned tag, assert `git rev-parse HEAD == recipe.git_sha` \u2014 abort if mismatch (tag was tampered with). Tag state before overwriting: `git tag sovereign/pre-update-<timestamp>` on the internal GitLab mirror. Add git_sha field to recipe.yaml (alongside version tag). For Go services: build.sh uses `ko build` (https://ko.build) \u2014 single command, automatically produces distroless images, uses the project's own go.mod/go.sum, pinned Go version from recipe.yaml go_version field. For Java services (keycloak): multi-stage Dockerfile \u2014 builder stage uses gradle/maven from source, final stage copies artifact into gcr.io/distroless/java21. For Node.js services (backstage): multi-stage Dockerfile \u2014 builder with npm ci, final stage uses gcr.io/distroless/nodejs. vendor/build.sh [name|all]: checks out source from internal GitLab at pinned SHA, applies vendor/recipes/<name>/patches/*.patch in alphabetical order, calls vendor/recipes/<name>/build.sh, tags image as <version>-<source_sha>-p<patch_count>, pushes to harbor.<domain>/sovereign-staging/<name> (not production \u2014 deploy.sh promotes). Bakes OCI labels: org.sovereign.source_sha, org.sovereign.patches_applied, org.sovereign.compiler_version, org.sovereign.build_timestamp. vendor/verify-distroless.sh: runs each built image with the equivalent of --version, then attempts `docker exec <container> /bin/sh` and asserts it fails with 'not found'. Implement build.sh for: cert-manager (Go/ko), crossplane (Go/ko), argocd (Go/ko), sealed-secrets (Go/ko), openbao (Go/ko).",
+      "acceptanceCriteria": [
+        "recipe.yaml has git_sha field alongside version tag",
+        "vendor/fetch.sh verifies git rev-parse HEAD == recipe.git_sha after clone, aborts if mismatch",
+        "vendor/fetch.sh tags pre-update state before overwriting mirror",
+        "vendor/build.sh applies patches in alphabetical order before building",
+        "vendor/build.sh tags images as <version>-<source_sha>-p<patch_count>",
+        "vendor/build.sh pushes to sovereign-staging (not production)",
+        "Built images have OCI labels for source_sha, patches_applied, compiler_version, build_timestamp",
+        "vendor/recipes/cert-manager/build.sh uses ko build",
+        "vendor/recipes/crossplane/build.sh uses ko build",
+        "vendor/recipes/argocd/build.sh uses ko build",
+        "vendor/recipes/sealed-secrets/build.sh uses ko build",
+        "vendor/recipes/openbao/build.sh uses ko build",
+        "vendor/verify-distroless.sh confirms no shell in built images",
+        "shellcheck passes on all vendor/*.sh and vendor/recipes/*/build.sh"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      }
+    },
+    {
+      "id": "022",
+      "phase": 4,
+      "priority": 22,
+      "branchName": "feature/vendor-pipeline-wiring",
+      "title": "Vendor pipeline: GitLab CI triggers, ArgoCD Image Updater, Harbor-first Helm values",
+      "description": "Wire up the full vendor pipeline: source in GitLab \u2192 ko/docker build in GitLab CI \u2192 push to Harbor \u2192 ArgoCD Image Updater detects new tag \u2192 ArgoCD syncs updated Helm release. Install ArgoCD Image Updater as an ArgoCD Application (argocd-apps/platform/argocd-image-updater-app.yaml) watching harbor.<domain>/sovereign/*. Create vendor/gitlab-ci-template.yml: on new tag pushed to internal mirror \u2192 ko/docker build \u2192 push harbor.<domain>/sovereign/<name>:<version> \u2192 create GitLab release. Update charts/_globals/values.yaml to add global.imageRegistry defaulting to harbor.<domain>/sovereign (empty string for bootstrap mode before Harbor is up). Update every chart's values.yaml image.repository to use global.imageRegistry prefix. Add ArgoCD Image Updater annotations to every ArgoCD Application manifest. Create vendor/smoke-test.sh: pulls each sovereign/* image from Harbor, runs --version, verifies image starts without a shell (distroless validation). This story completes the autarky loop: zero external image pulls after bootstrap.",
+      "acceptanceCriteria": [
+        "ArgoCD Image Updater installed as ArgoCD Application with Harbor credentials",
+        "vendor/gitlab-ci-template.yml defines fetch\u2192build\u2192push pipeline",
+        "charts/_globals/values.yaml has global.imageRegistry",
+        "All chart values.yaml files use global.imageRegistry prefix",
+        "All ArgoCD Application manifests have argocd-image-updater annotations",
+        "vendor/smoke-test.sh validates each sovereign/* image is distroless",
+        "helm lint passes on all updated charts",
+        "End-to-end: pinning a new version in recipe.yaml \u2192 fetch \u2192 build \u2192 Harbor \u2192 ArgoCD auto-syncs"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      }
+    }
+  ]
+}
