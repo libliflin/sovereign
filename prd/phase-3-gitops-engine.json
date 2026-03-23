@@ -21,7 +21,7 @@
         "helm lint passes",
         "argocd-apps/platform/gitlab-app.yaml exists"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "helm dependency update charts/gitlab/ && helm lint charts/gitlab/; helm template charts/gitlab/ | grep -E 'kind: (Deployment|StatefulSet|Ingress|PodDisruptionBudget)'; verify Keycloak OIDC values present; verify Ceph storage config; verify ArgoCD app YAML exists.",
       "dependencies": [],
