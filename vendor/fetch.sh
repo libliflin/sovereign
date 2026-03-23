@@ -146,10 +146,11 @@ fetch_one() {
     return 1
   fi
 
-  local upstream_url version fetch_method
+  local upstream_url version fetch_method git_sha
   upstream_url=$(recipe_field "upstream_url" "$recipe_file")
   version=$(recipe_field "version" "$recipe_file")
   fetch_method=$(recipe_field "fetch_method" "$recipe_file")
+  git_sha=$(recipe_field "git_sha" "$recipe_file")
 
   if [[ -z "$upstream_url" || -z "$version" || -z "$fetch_method" ]]; then
     echo "ERROR: $name/recipe.yaml is missing upstream_url, version, or fetch_method" >&2
@@ -159,6 +160,9 @@ fetch_one() {
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "[DRY RUN] fetch $name @ $version (method: $fetch_method)"
     echo "[DRY RUN]   upstream : $upstream_url"
+    if [[ -n "$git_sha" ]]; then
+      echo "[DRY RUN]   git_sha  : $git_sha (will verify after clone)"
+    fi
     echo "[DRY RUN]   mirror   : \$GITLAB_URL/vendor/$name"
     if [[ "$BACKUP" == "true" ]]; then
       echo "[DRY RUN]   backup   : \$SECONDARY_REMOTE/$name"
@@ -174,6 +178,17 @@ fetch_one() {
   case "$fetch_method" in
     git_tag|git_commit)
       git clone --quiet --depth 1 --branch "$version" "$upstream_url" "$src_dir/src"
+      # Verify pinned SHA matches what was actually cloned — abort if tag was tampered with
+      if [[ -n "$git_sha" ]]; then
+        local actual_sha
+        actual_sha=$(git -C "$src_dir/src" rev-parse HEAD)
+        if [[ "$actual_sha" != "$git_sha" ]]; then
+          echo "ERROR: SHA mismatch for $name: pinned=$git_sha actual=$actual_sha" >&2
+          echo "ERROR: The tag '$version' may have been moved or tampered with. Aborting." >&2
+          return 1
+        fi
+        echo "[INFO] SHA verified: $name @ $actual_sha"
+      fi
       ;;
     tarball)
       local tarball_url="${upstream_url}/archive/refs/tags/${version}.tar.gz"

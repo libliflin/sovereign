@@ -1,6 +1,8 @@
 name: openbao
 upstream_url: https://github.com/openbao/openbao
 version: "v2.0.3"
+git_sha: "a2522eb71d1854f83c7e2e02fdbfc01ae74c3a78"
+go_version: "1.22"
 license_spdx: Apache-2.0
 fetch_method: git_tag
 distroless_base: gcr.io/distroless/static

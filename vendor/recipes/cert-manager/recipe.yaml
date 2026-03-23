@@ -1,6 +1,8 @@
 name: cert-manager
 upstream_url: https://github.com/cert-manager/cert-manager
 version: "v1.14.0"
+git_sha: "2c14e5fe224859b7976a017bd89fb1d15d8d5cb6"
+go_version: "1.21"
 license_spdx: Apache-2.0
 fetch_method: git_tag
 distroless_base: gcr.io/distroless/static

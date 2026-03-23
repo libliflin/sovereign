@@ -1,6 +1,8 @@
 name: argocd
 upstream_url: https://github.com/argoproj/argo-cd
 version: "v2.10.0"
+git_sha: "2175939ed6156ddd743e60f427f7f48118c971bf"
+go_version: "1.21"
 license_spdx: Apache-2.0
 fetch_method: git_tag
 distroless_base: gcr.io/distroless/static
