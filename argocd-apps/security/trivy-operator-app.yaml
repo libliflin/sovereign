@@ -9,6 +9,7 @@ metadata:
     app.kubernetes.io/name: trivy-operator
     app.kubernetes.io/part-of: sovereign-security
 spec:
+  revisionHistoryLimit: 3
   project: default
   source:
     repoURL: https://github.com/libliflin/sovereign

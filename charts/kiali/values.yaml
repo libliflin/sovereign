@@ -16,6 +16,18 @@ kiali-operator:
     limits:
       cpu: "200m"
       memory: "256Mi"
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - kiali-operator
+            topologyKey: kubernetes.io/hostname
 
 # Kiali CR configuration (sovereign-managed, deployed via templates/kiali-cr.yaml)
 kiali:

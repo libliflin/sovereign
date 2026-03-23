@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kiali-operator
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kiali.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kiali-operator
+      app.kubernetes.io/instance: {{ .Release.Name }}
