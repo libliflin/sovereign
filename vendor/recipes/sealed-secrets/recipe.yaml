@@ -1,6 +1,8 @@
 name: sealed-secrets
 upstream_url: https://github.com/bitnami-labs/sealed-secrets
 version: "v0.26.0"
+git_sha: "90016584e4b1c9545bdcad42dc434e4cf8aa68aa"
+go_version: "1.21"
 license_spdx: Apache-2.0
 fetch_method: git_tag
 distroless_base: gcr.io/distroless/static

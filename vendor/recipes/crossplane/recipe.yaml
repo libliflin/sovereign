@@ -1,6 +1,8 @@
 name: crossplane
 upstream_url: https://github.com/crossplane/crossplane
 version: "v1.17.0"
+git_sha: "0e973c9fabe336bf7a82abb0752869d27abadabc"
+go_version: "1.22"
 license_spdx: Apache-2.0
 fetch_method: git_tag
 distroless_base: gcr.io/distroless/static

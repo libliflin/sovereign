@@ -130,7 +130,7 @@
         "vendor/verify-distroless.sh confirms no shell in built images",
         "shellcheck passes on all vendor/*.sh and vendor/recipes/*/build.sh"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
@@ -144,7 +144,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "notes": "vendor/build.sh (applies patches, ko build, OCI labels, sovereign-staging push, --dry-run/--backup), vendor/verify-distroless.sh (shell-not-found assertion, OCI label check, --dry-run/--backup), 5 per-recipe build.sh (cert-manager, crossplane, argocd, sealed-secrets, openbao all use ko build). git_sha + go_version added to all 5 recipes. fetch.sh SHA verification added. shellcheck -S error clean on all scripts."
     },
     {
       "id": "022",
