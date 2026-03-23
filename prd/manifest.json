@@ -2,8 +2,8 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-2h-hardening.json",
-  "currentPhase": "2h",
+  "activeSprint": "prd/phase-2-foundations.json",
+  "currentPhase": 2,
   "phases": [
     {
       "id": 0,
@@ -41,20 +41,19 @@
       "name": "foundations",
       "description": "Crossplane compositions (PostgreSQL, namespaces, RBAC), OpenBao, network policies, cert-manager CA transition.",
       "file": "prd/phase-2-foundations.json",
-      "status": "paused",
+      "status": "active",
       "dependsOn": [
         1
       ],
       "storiesTotal": 4,
       "pointsTotal": 10,
-      "startDate": "2026-03-22T21:00:00Z",
-      "pauseReason": "Blocked by CI hardening sprint (phase-2h). Resume after all CI gates are green on main."
+      "startDate": "2026-03-23T01:18:03.746704+00:00"
     },
     {
       "id": "2h",
       "name": "ci-hardening",
       "file": "prd/phase-2h-hardening.json",
-      "status": "active",
+      "status": "complete",
       "capacity": 8,
       "description": "Tech debt sprint. No new work until CI is fully green.",
       "blockedPhases": [
@@ -65,7 +64,12 @@
         7,
         8,
         9
-      ]
+      ],
+      "endDate": "2026-03-23T01:17:26.857383+00:00",
+      "pointsCompleted": 7,
+      "storiesTotal": 4,
+      "storiesAccepted": 4,
+      "reviewPassRate": 75.0
     },
     {
       "id": 3,
@@ -143,7 +147,15 @@
       ]
     }
   ],
-  "velocity": [],
+  "velocity": [
+    {
+      "phase": "2h",
+      "pointsCompleted": 7,
+      "storiesAccepted": 4,
+      "reviewPassRate": 75.0,
+      "date": "2026-03-23T01:17:26.857383+00:00"
+    }
+  ],
   "sprintHistory": [
     {
       "phase": 0,
@@ -156,6 +168,15 @@
       "endDate": "2026-03-22T20:58:04Z",
       "pointsCompleted": 14,
       "reviewPassRate": 100.0
+    },
+    {
+      "phase": "2h",
+      "name": "ci-hardening",
+      "endDate": "2026-03-23T01:17:26.857383+00:00",
+      "pointsCompleted": 7,
+      "storiesTotal": 4,
+      "storiesAccepted": 4,
+      "reviewPassRate": 75.0
     }
   ]
 }
