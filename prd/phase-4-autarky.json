@@ -164,21 +164,15 @@
         "helm lint passes on all updated charts",
         "End-to-end: pinning a new version in recipe.yaml \u2192 fetch \u2192 build \u2192 Harbor \u2192 ArgoCD auto-syncs"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
-      "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      "attempts": 1,
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/12",
+      "notes": "argocd-image-updater-app.yaml (Harbor credentials, semver strategy), vendor/gitlab-ci-template.yml (SHA verify→ko build→distroless test→staging→prod promote→GitLab release), vendor/smoke-test.sh (--version check, no-shell assert, OCI label check, --dry-run/--backup). global.imageRegistry added to all 28 chart values.yaml + charts/_globals/values.yaml. 18 stub charts get Chart.yaml+values.yaml. All 9 platform ArgoCD apps annotated with image-updater annotations. helm lint 28/28 passed, shellcheck exit 0. PR #12 merged CI green."
     }
   ]
 }
