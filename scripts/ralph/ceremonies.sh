@@ -71,7 +71,7 @@ resolve_sprint() {
   fi
   SPRINT_FILE="$REPO_ROOT/$ACTIVE_SPRINT"
   PHASE_NUM=$(jq -r '.currentPhase // "unknown"' "$MANIFEST" 2>/dev/null || echo "unknown")
-  [[ -n "$PHASE_OVERRIDE" ]] && PHASE_NUM="$PHASE_OVERRIDE"
+  if [[ -n "$PHASE_OVERRIDE" ]]; then PHASE_NUM="$PHASE_OVERRIDE"; fi
 }
 
 resolve_sprint
@@ -226,11 +226,11 @@ check_tool() {
     log "  ✓ $tool ($(command -v "$tool"))"
   elif [[ "$required" == "true" ]]; then
     log "  ✗ MISSING (required): $tool"
-    [[ -n "$fix" ]] && log "    → Fix: $fix"
+    if [[ -n "$fix" ]]; then log "    → Fix: $fix"; fi
     PREFLIGHT_FAIL=1
   else
     log "  ~ MISSING (optional): $tool"
-    [[ -n "$fix" ]] && log "    → To install: $fix"
+    if [[ -n "$fix" ]]; then log "    → To install: $fix"; fi
   fi
 }
 
@@ -483,7 +483,7 @@ ${SC_OUT}"
 
   check_branch_pushed() {
     local branch="$1"
-    [[ -z "$branch" ]] && return 0
+    if [[ -z "$branch" ]]; then return 0; fi
     if git -C "$REPO_ROOT" ls-remote --heads origin "$branch" 2>/dev/null | grep -q .; then
       log "  ✓ pushed: origin/$branch"
     else
@@ -496,8 +496,8 @@ ${SC_OUT}"
 
   check_pr_exists() {
     local branch="$1"
-    [[ -z "$branch" ]] && return 0
-    command -v gh &>/dev/null || return 0
+    if [[ -z "$branch" ]]; then return 0; fi
+    if ! command -v gh &>/dev/null; then return 0; fi
     local pr_num
     pr_num=$(gh pr list --head "$branch" --json number --jq '.[0].number' 2>/dev/null || echo "")
     if [[ -n "$pr_num" && "$pr_num" != "null" ]]; then

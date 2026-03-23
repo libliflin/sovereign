@@ -127,7 +127,7 @@ build_failure_context() {
   ] | length' "$sprint_file" 2>/dev/null || echo 0)
 
   local total=$(( smoke_count + proof_count + review_count ))
-  [[ $total -eq 0 ]] && return 0
+  if [[ $total -eq 0 ]]; then return 0; fi
 
   cat >> "$out_file" <<'HEADER'
 
