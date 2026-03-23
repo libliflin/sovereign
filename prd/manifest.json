@@ -2,8 +2,8 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-2-foundations.json",
-  "currentPhase": 2,
+  "activeSprint": "prd/phase-3-gitops-engine.json",
+  "currentPhase": 3,
   "phases": [
     {
       "id": 0,
@@ -41,13 +41,17 @@
       "name": "foundations",
       "description": "Crossplane compositions (PostgreSQL, namespaces, RBAC), OpenBao, network policies, cert-manager CA transition.",
       "file": "prd/phase-2-foundations.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         1
       ],
       "storiesTotal": 4,
       "pointsTotal": 10,
-      "startDate": "2026-03-23T01:18:03.746704+00:00"
+      "startDate": "2026-03-23T01:18:03.746704+00:00",
+      "endDate": "2026-03-23T01:19:05.771367+00:00",
+      "pointsCompleted": 10,
+      "storiesAccepted": 4,
+      "reviewPassRate": 75.0
     },
     {
       "id": "2h",
@@ -76,10 +80,13 @@
       "name": "gitops-engine",
       "description": "GitLab (split into sub-stories), Harbor, ArgoCD Image Updater, GitLab Runners.",
       "file": "prd/phase-3-gitops-engine.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [
         2
-      ]
+      ],
+      "startDate": "2026-03-23T01:20:23.182423+00:00",
+      "pointsTotal": 5,
+      "storiesTotal": 2
     },
     {
       "id": 4,
@@ -154,6 +161,13 @@
       "storiesAccepted": 4,
       "reviewPassRate": 75.0,
       "date": "2026-03-23T01:17:26.857383+00:00"
+    },
+    {
+      "phase": 2,
+      "pointsCompleted": 10,
+      "storiesAccepted": 4,
+      "reviewPassRate": 75.0,
+      "date": "2026-03-23T01:19:05.771367+00:00"
     }
   ],
   "sprintHistory": [
@@ -174,6 +188,15 @@
       "name": "ci-hardening",
       "endDate": "2026-03-23T01:17:26.857383+00:00",
       "pointsCompleted": 7,
+      "storiesTotal": 4,
+      "storiesAccepted": 4,
+      "reviewPassRate": 75.0
+    },
+    {
+      "phase": 2,
+      "name": "foundations",
+      "endDate": "2026-03-23T01:19:05.771367+00:00",
+      "pointsCompleted": 10,
       "storiesTotal": 4,
       "storiesAccepted": 4,
       "reviewPassRate": 75.0

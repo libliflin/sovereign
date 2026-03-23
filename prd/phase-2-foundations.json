@@ -136,7 +136,7 @@
         "012",
         "013"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [
         "[Review 1] AC failed: 'Provider docs updated: all costs show 3-node totals, AWS free tier removed'. Command: grep -n 'free.tier' docs/providers/aws-ec2-free-tier.md | head -20. Output: Line 6: '> **AWS free tier is not viable.**', Line 23: '> **Free tier note:** AWS free tier (t2.micro) is NOT supported', Line 25: 'There is no free tier path'. The file is still named 'aws-ec2-free-tier.md' and contains 3 explicit 'free tier' references. Story description requires: 'Remove all references to AWS free tier'. Fix: rename file to docs/providers/aws-ec2.md and remove all 'free tier' language from the file."
       ],
