@@ -1,9 +1,9 @@
 {
   "projectName": "Sovereign Platform",
-  "description": "File-based agile PM — phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
+  "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-2-foundations.json",
-  "currentPhase": 2,
+  "activeSprint": "prd/phase-2h-hardening.json",
+  "currentPhase": "2h",
   "phases": [
     {
       "id": 0,
@@ -34,20 +34,38 @@
       "startDate": "2026-03-22T20:48:24Z",
       "endDate": "2026-03-22T20:58:04Z",
       "pointsCompleted": 14,
-      "reviewPassRate": 100.00
+      "reviewPassRate": 100.0
     },
     {
       "id": 2,
       "name": "foundations",
       "description": "Crossplane compositions (PostgreSQL, namespaces, RBAC), OpenBao, network policies, cert-manager CA transition.",
       "file": "prd/phase-2-foundations.json",
-      "status": "active",
+      "status": "paused",
       "dependsOn": [
         1
       ],
       "storiesTotal": 4,
       "pointsTotal": 10,
-      "startDate": "2026-03-22T21:00:00Z"
+      "startDate": "2026-03-22T21:00:00Z",
+      "pauseReason": "Blocked by CI hardening sprint (phase-2h). Resume after all CI gates are green on main."
+    },
+    {
+      "id": "2h",
+      "name": "ci-hardening",
+      "file": "prd/phase-2h-hardening.json",
+      "status": "active",
+      "capacity": 8,
+      "description": "Tech debt sprint. No new work until CI is fully green.",
+      "blockedPhases": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
     },
     {
       "id": 3,
@@ -114,7 +132,7 @@
     {
       "id": 9,
       "name": "sovereign-pm",
-      "description": "Sovereign PM web app (Node.js/React) — replaces this file-based PM system. Self-hosting the sprint tooling.",
+      "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
       "file": "prd/phase-9-sovereign-pm.json",
       "status": "pending",
       "dependsOn": [
@@ -137,7 +155,7 @@
       "phase": 1,
       "endDate": "2026-03-22T20:58:04Z",
       "pointsCompleted": 14,
-      "reviewPassRate": 100.00
+      "reviewPassRate": 100.0
     }
   ]
 }
