@@ -170,13 +170,22 @@ else
   run helm repo add cilium https://helm.cilium.io/ 2>/dev/null || true
   run helm repo update cilium
 
+  # On single-node clusters the cilium-operator Deployment wants 2 replicas
+  # by default but anti-affinity prevents both landing on one node, so
+  # helm --wait always times out. Set operator.replicas=1 for single-node.
+  OPERATOR_REPLICAS=2
+  if [[ "$MODE" == "single" ]]; then OPERATOR_REPLICAS=1; fi
+
+  CP_IP="$(kubectl get node "${CLUSTER_NAME}-control-plane" \
+    -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+
   run helm upgrade --install cilium cilium/cilium \
     --namespace kube-system \
     --set kubeProxyReplacement=true \
-    --set k8sServiceHost="$(kubectl get node "${CLUSTER_NAME}-control-plane" \
-      -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')" \
+    --set k8sServiceHost="${CP_IP}" \
     --set k8sServicePort=6443 \
     --set image.pullPolicy=IfNotPresent \
+    --set operator.replicas="${OPERATOR_REPLICAS}" \
     --wait \
     --timeout 5m
 fi
