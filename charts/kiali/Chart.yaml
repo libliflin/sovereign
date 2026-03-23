@@ -1,0 +1,11 @@
+apiVersion: v2
+name: kiali
+description: Kiali service mesh observability UI with Keycloak OIDC and Tempo tracing
+type: application
+version: 0.1.0
+appVersion: "v2.23.0"
+dependencies:
+  - name: kiali-operator
+    version: "2.23.0"
+    repository: "https://kiali.org/helm-charts"
+    alias: kiali-operator

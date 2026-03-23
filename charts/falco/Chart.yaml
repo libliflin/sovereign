@@ -1,6 +1,11 @@
 apiVersion: v2
 name: falco
-description: Falco runtime security monitoring
+description: Falco runtime threat detection with JSON stdout output for Loki scraping
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "0.43.0"
+dependencies:
+  - name: falco
+    version: "8.0.1"
+    repository: "https://falcosecurity.github.io/charts"
+    alias: falco

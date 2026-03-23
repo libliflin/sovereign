@@ -1,7 +1,33 @@
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
-  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+# trivy-operator subchart values
+trivy-operator:
+  # Scan all namespaces (empty string = all)
+  targetNamespaces: ""
+
+  # Enable vulnerability and config audit reports
+  trivyOperator:
+    scanJobTimeout: 5m
+
+  operator:
+    vulnerabilityReportsPlugin: "Trivy"
+    configAuditReportsPlugin: "Trivy"
+    # Scan images when new workloads are created or updated
+    scanJobsConcurrentLimit: 3
+
+  trivy:
+    # Use filesystem mode for scanning
+    mode: Standalone
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "100Mi"
+      limits:
+        cpu: "500m"
+        memory: "500Mi"

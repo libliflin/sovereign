@@ -1,0 +1,6 @@
+dependencies:
+- name: kiali-operator
+  repository: https://kiali.org/helm-charts
+  version: 2.23.0
+digest: sha256:3a73b16ec9a1bd4c1c682c6f713c4e74f461e9a0c5ebc349a51dd6e8e5c9e57e
+generated: "2026-03-23T19:20:36.885249-04:00"

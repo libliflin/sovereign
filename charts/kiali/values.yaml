@@ -1,0 +1,80 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  imageRegistry: ""
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+
+# kiali-operator subchart values
+kiali-operator:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+# Kiali CR configuration (sovereign-managed, deployed via templates/kiali-cr.yaml)
+kiali:
+  enabled: true
+  namespace: kiali
+  version: "default"
+  auth:
+    strategy: "openid"
+    openid:
+      # issuer_uri is set in the template using .Values.global.keycloak.url
+      client_id: "sovereign-kiali"
+      disable_rbac: false
+      scopes:
+        - "openid"
+        - "profile"
+        - "email"
+      username_claim: "preferred_username"
+  external_services:
+    tracing:
+      enabled: true
+      provider: "tempo"
+      in_cluster_url: "http://tempo.monitoring.svc:3100"
+      use_grpc: false
+    prometheus:
+      url: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc:9090"
+    grafana:
+      enabled: true
+      in_cluster_url: "http://grafana.monitoring.svc:80"
+  deployment:
+    replicas: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    pod_disruption_budget:
+      enabled: true
+    affinity:
+      pod:
+        preferred_during_scheduling_ignored_during_execution:
+          - weight: 100
+            pod_affinity_term:
+              label_selector:
+                match_expressions:
+                  - key: "app.kubernetes.io/name"
+                    operator: "In"
+                    values:
+                      - "kiali"
+              topology_key: "kubernetes.io/hostname"
+  server:
+    port: 20001
+    web_root: "/kiali"
+  istio_namespace: "istio-system"
+
+# Ingress for kiali.<domain>
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "sovereign-ca-issuer"

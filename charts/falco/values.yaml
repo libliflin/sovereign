@@ -1,7 +1,32 @@
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
-  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+# falco subchart values
+falco:
+  # JSON output to stdout for Loki scraping
+  falco:
+    json_output: true
+    log_stderr: true
+    # Disable built-in webserver — we use stdout/Loki only
+    webserver:
+      enabled: false
+
+  # DaemonSet — runs on every node for full coverage
+  # (no replicaCount for DaemonSets — they're inherently HA)
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  # Driver mode: ebpf for modern kernels (no kernel module required)
+  driver:
+    kind: ebpf

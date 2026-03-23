@@ -1,0 +1,16 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sNoPrivilegeEscalation
+metadata:
+  name: no-privilege-escalation
+  labels:
+    {{- include "opa-gatekeeper.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  enforcementAction: {{ .Values.constraintEnforcementAction }}
+  match:
+    kinds:
+      - apiGroups:
+          - ""
+        kinds:
+          - Pod

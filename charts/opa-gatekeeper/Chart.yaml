@@ -1,6 +1,11 @@
 apiVersion: v2
 name: opa-gatekeeper
-description: OPA Gatekeeper policy enforcement
+description: OPA/Gatekeeper policy enforcement with no-privilege-escalation, require-resource-limits, and require-labels constraints
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "v3.22.0"
+dependencies:
+  - name: gatekeeper
+    version: "3.22.0"
+    repository: "https://open-policy-agent.github.io/gatekeeper/charts"
+    alias: gatekeeper
