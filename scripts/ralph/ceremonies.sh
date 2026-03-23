@@ -143,18 +143,96 @@ print(f"  Reset {changed} stories to passes:false.")
 PYEOF
 }
 
+# ── Rate limit handler ────────────────────────────────────────────────────────
+# Detects "You've hit your limit · resets Xam (Timezone)" in output.
+# Sleeps until that time + 5min buffer. Returns 1 if limited, 0 if not.
+handle_rate_limit() {
+  local output="$1"
+  echo "$output" | grep -q "You've hit your limit" || return 0
+
+  log ""
+  log "⏸  Rate limit reached."
+
+  local sleep_secs out_tmp
+  out_tmp=$(mktemp /tmp/sovereign-rl-XXXXXX.txt)
+  echo "$output" > "$out_tmp"
+  sleep_secs=$(python3 - "$out_tmp" 2>/dev/null <<'PYEOF'
+import sys, re
+from datetime import datetime, timedelta
+
+with open(sys.argv[1]) as f:
+    output = f.read()
+
+m = re.search(r'resets (\d{1,2}(?:am|pm)) \(([^)]+)\)', output, re.IGNORECASE)
+
+if not m:
+    print(3600)
+    sys.exit(0)
+
+reset_str = m.group(1).lower()
+tz_name   = m.group(2)
+print(f"   Resets at: {m.group(1)} ({tz_name})", file=sys.stderr)
+
+try:
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo(tz_name)
+    now = datetime.now(tz)
+except Exception:
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    print(f"   Warning: unknown timezone '{tz_name}', falling back to UTC", file=sys.stderr)
+
+is_pm = reset_str.endswith('pm')
+hour  = int(reset_str[:-2])
+if is_pm and hour != 12:
+    hour += 12
+elif not is_pm and hour == 12:
+    hour = 0
+
+target = now.replace(hour=hour, minute=5, second=0, microsecond=0)
+if target <= now:
+    target += timedelta(days=1)
+
+print(int((target - now).total_seconds()))
+PYEOF
+  )
+  rm -f "$out_tmp"
+
+  if [[ -z "$sleep_secs" ]] || ! [[ "$sleep_secs" =~ ^[0-9]+$ ]] || [[ "$sleep_secs" -le 0 ]]; then
+    log "   Could not parse reset time. Sleeping 1 hour."
+    sleep_secs=3600
+  fi
+
+  local h=$(( sleep_secs / 3600 ))
+  local m=$(( (sleep_secs % 3600) / 60 ))
+  log "   Sleeping ${h}h ${m}m (5min buffer after reset)"
+  sleep "$sleep_secs"
+  log ""
+  log "▶  Resuming after rate limit reset."
+  return 1  # signal: was rate limited — caller should retry
+}
+
 # ── Helper: run an AI ceremony (reasoning only — bash verifies outcomes) ───────
+# Retries automatically on rate limit without consuming a ceremony attempt.
 run_ceremony() {
   local name="$1"
   local file="$2"
   log_sep
   log "  AI CEREMONY: $name"
   log_sep
-  if [[ "$TOOL" == "claude" ]]; then
-    claude --dangerously-skip-permissions --print < "$file" 2>&1 | tee -a "$LOG_FILE" || true
-  else
-    amp --dangerously-allow-all < "$file" 2>&1 | tee -a "$LOG_FILE" || true
-  fi
+
+  local output
+  while true; do
+    output=""
+    if [[ "$TOOL" == "claude" ]]; then
+      output=$(claude --dangerously-skip-permissions --print < "$file" 2>&1 | tee -a "$LOG_FILE") || true
+    else
+      output=$(amp --dangerously-allow-all < "$file" 2>&1 | tee -a "$LOG_FILE") || true
+    fi
+
+    handle_rate_limit "$output" && break
+    log "  Retrying ceremony: $name"
+  done
 }
 
 # ── DRY RUN ───────────────────────────────────────────────────────────────────

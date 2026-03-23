@@ -192,6 +192,78 @@ HEADER
 }
 
 # ── Execution loop ────────────────────────────────────────────────────────────
+# ── Rate limit handler ────────────────────────────────────────────────────────
+# Detects "You've hit your limit · resets Xam (Timezone)" in output.
+# Sleeps until that time + 5min buffer. Returns 1 if limited, 0 if not.
+# Callers should retry their claude/amp call after this returns 1.
+handle_rate_limit() {
+  local output="$1"
+  echo "$output" | grep -q "You've hit your limit" || return 0
+
+  echo ""
+  echo "⏸  Rate limit reached."
+
+  # Parse reset time via Python (handles all am/pm + timezone math)
+  local sleep_secs out_tmp
+  out_tmp=$(mktemp /tmp/sovereign-rl-XXXXXX.txt)
+  echo "$output" > "$out_tmp"
+  sleep_secs=$(python3 - "$out_tmp" 2>/dev/null <<'PYEOF'
+import sys, re
+from datetime import datetime, timedelta
+
+with open(sys.argv[1]) as f:
+    output = f.read()
+
+m = re.search(r'resets (\d{1,2}(?:am|pm)) \(([^)]+)\)', output, re.IGNORECASE)
+
+if not m:
+    print(3600)  # fallback: 1 hour
+    sys.exit(0)
+
+reset_str = m.group(1).lower()
+tz_name   = m.group(2)
+print(f"   Resets at: {m.group(1)} ({tz_name})", file=sys.stderr)
+
+try:
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo(tz_name)
+    now = datetime.now(tz)
+except Exception:
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    print(f"   Warning: unknown timezone '{tz_name}', falling back to UTC", file=sys.stderr)
+
+is_pm = reset_str.endswith('pm')
+hour  = int(reset_str[:-2])
+if is_pm and hour != 12:
+    hour += 12
+elif not is_pm and hour == 12:
+    hour = 0
+
+target = now.replace(hour=hour, minute=5, second=0, microsecond=0)  # +5min buffer
+if target <= now:
+    target += timedelta(days=1)
+
+print(int((target - now).total_seconds()))
+PYEOF
+  )
+  rm -f "$out_tmp"
+
+  # Validate — fall back to 1 hour if parse failed
+  if [[ -z "$sleep_secs" ]] || ! [[ "$sleep_secs" =~ ^[0-9]+$ ]] || [[ "$sleep_secs" -le 0 ]]; then
+    echo "   Could not parse reset time. Sleeping 1 hour."
+    sleep_secs=3600
+  fi
+
+  local h=$(( sleep_secs / 3600 ))
+  local m=$(( (sleep_secs % 3600) / 60 ))
+  echo "   Sleeping ${h}h ${m}m (5min buffer after reset)"
+  sleep "$sleep_secs"
+  echo ""
+  echo "▶  Resuming after rate limit reset."
+  return 1  # signal: was rate limited — caller should retry
+}
+
 echo "Starting Ralph — tool: $TOOL — max iterations: $MAX_ITERATIONS"
 
 PROMPT_TMP=$(mktemp /tmp/ralph-prompt-XXXXXX.md)
@@ -216,12 +288,18 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     echo "  ⚠ Failure context injected: ${CONTEXT_LINES} lines of gate failure details"
   fi
 
-  OUTPUT=""
-  if [[ "$TOOL" == "amp" ]]; then
-    OUTPUT=$(amp --dangerously-allow-all < "$PROMPT_TMP" 2>&1 | tee /dev/stderr) || true
-  else
-    OUTPUT=$(claude --dangerously-skip-permissions --print < "$PROMPT_TMP" 2>&1 | tee /dev/stderr) || true
-  fi
+  # Inner loop: retry this iteration if rate limited (does not consume iteration count)
+  while true; do
+    OUTPUT=""
+    if [[ "$TOOL" == "amp" ]]; then
+      OUTPUT=$(amp --dangerously-allow-all < "$PROMPT_TMP" 2>&1 | tee /dev/stderr) || true
+    else
+      OUTPUT=$(claude --dangerously-skip-permissions --print < "$PROMPT_TMP" 2>&1 | tee /dev/stderr) || true
+    fi
+
+    handle_rate_limit "$OUTPUT" && break  # not rate limited — proceed
+    # Was rate limited — handle_rate_limit already slept; retry same iteration
+  done
 
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
     echo ""
