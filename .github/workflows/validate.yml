@@ -12,42 +12,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Job 0: Discover charts that have Chart.yaml ───────────────────────────
+  discover-charts:
+    name: Discover Helm Charts
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.list.outputs.charts }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: List charts with Chart.yaml
+        id: list
+        run: |
+          CHARTS=$(ls charts/*/Chart.yaml 2>/dev/null \
+            | sed 's|charts/||;s|/Chart.yaml||' \
+            | sort \
+            | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().split()))")
+          echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
+          echo "Discovered charts: $CHARTS"
+
   # ── Job 1: Helm chart validation (HA gate) ─────────────────────────────────
   helm-validate:
     name: Helm Validate — ${{ matrix.chart }}
     runs-on: ubuntu-latest
+    needs: [discover-charts]
     strategy:
       fail-fast: false
       matrix:
-        chart:
-          - argocd
-          - backstage
-          - cert-manager
-          - chaos-mesh
-          - cilium
-          - code-server
-          - crossplane
-          - falco
-          - gitlab
-          - harbor
-          - istio
-          - k6-operator
-          - keycloak
-          - loki
-          - mailhog
-          - opa-gatekeeper
-          - prometheus-stack
-          - reportportal
-          - rook-ceph
-          - sealed-secrets
-          - selenium-grid
-          - sonarqube
-          - sovereign-pm
-          - tempo
-          - thanos
-          - trivy-operator
-          - vault
-          - wiremock
+        chart: ${{ fromJson(needs.discover-charts.outputs.charts) }}
 
     steps:
       - uses: actions/checkout@v4
