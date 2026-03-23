@@ -54,13 +54,13 @@
         "helm lint passes",
         "argocd-apps/platform/harbor-app.yaml exists"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm dependency update charts/harbor/ && helm lint charts/harbor/; helm template charts/harbor/ | grep -q 'kind: Deployment'; verify harbor-app.yaml exists; verify values.yaml references global.domain and ceph storage.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 4,
@@ -68,7 +68,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Measurable 4: Ceph storage and Keycloak OIDC ACs are config-verifiable but not live-testable without a cluster."
-      }
+      },
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/7",
+      "notes": "goharbor/harbor 1.15.0 wrapper. Ceph S3 storage, Keycloak OIDC, Trivy enabled. Sovereign wrapper ingress (upstream disabled). PR #7 merged with green CI (15 jobs)."
     }
   ]
 }

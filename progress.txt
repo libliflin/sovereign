@@ -325,3 +325,14 @@
   - bitnami keycloak: `keycloak.pdb.create: false` disables the bitnami PDB; wrapper uses selector `app.kubernetes.io/component: keycloak`
   - Review ceremony AC "file X exists" is literal — even if the functional requirement is met via subchart, the file must exist
 ---
+
+## 2026-03-22 - Phase 3 GitOps Engine (Stories 016 and 017)
+- Story 016 (GitLab): wrapper around gitlab/gitlab 8.5.0; Ceph S3, Keycloak OmniAuth, Runner k8s executor; PR #6 merged CI green
+- Story 017 (Harbor): wrapper around goharbor/harbor 1.15.0; Ceph S3, Trivy enabled; sovereign wrapper ingress (upstream disabled); PR #7 merged CI green
+- **Learnings for future iterations:**
+  - Harbor (goharbor/harbor) does NOT have a `global.hosts.domain` mechanism like GitLab — must disable `expose.type: ingress` and provide a wrapper ingress template
+  - Harbor `externalURL` is a static string — cannot be templated in values.yaml; set default, override via ArgoCD at deploy time
+  - Stale feature branches from prior sessions must be inspected before checkout — `git diff main...<branch> --stat` reveals if they predate CI hardening
+  - Force push with `--force-with-lease` is safe when a stale remote branch needs to be replaced with fresh branch from main
+  - gitlab/gitlab chart v8.5.0: set `global.minio.enabled: false` (top-level AND in gitlab.global); disable `nginx-ingress`, `certmanager`, `prometheus` sub-charts
+---
