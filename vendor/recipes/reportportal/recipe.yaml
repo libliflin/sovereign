@@ -1,0 +1,20 @@
+name: reportportal
+upstream_url: https://github.com/reportportal/reportportal
+version: "23.2"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/java21
+build_tool: docker
+# Build notes: multi-stage Dockerfile per microservice
+#   Stage 1 (builder): eclipse-temurin:21-jdk + Maven to build JAR
+#   Stage 2 (final):   gcr.io/distroless/java21 with the compiled JAR
+# Note: reportportal is a multi-service platform — each service gets its own
+# distroless image: api-service, ui-service, analyzer, migrations.
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: standard

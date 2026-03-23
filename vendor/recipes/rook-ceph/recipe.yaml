@@ -1,0 +1,17 @@
+name: rook-ceph
+upstream_url: https://github.com/rook/rook
+version: "v1.13.0"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/static
+build_tool: ko
+# Build notes: ko builds the Rook operator (Go binary).
+# Ceph daemons run in the official ceph/ceph image — not patched by sovereign build.
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: critical

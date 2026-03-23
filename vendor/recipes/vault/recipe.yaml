@@ -1,0 +1,17 @@
+name: vault
+upstream_url: https://github.com/hashicorp/vault
+version: "v1.15.0"
+license_spdx: BUSL-1.1
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/static
+build_tool: skip
+# DEPRECATED: vault uses BUSL-1.1 (Business Source License) which is not approved
+# for vendoring in the Sovereign Platform. Use openbao (Apache-2.0 fork) instead.
+rollout:
+  strategy: skip
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived

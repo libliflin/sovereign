@@ -1,0 +1,18 @@
+name: grafana
+upstream_url: https://github.com/grafana/grafana
+version: "v10.4.0"
+license_spdx: AGPL-3.0-only
+fetch_method: git_tag
+distroless_base: none
+build_tool: skip
+# DEPRECATED: Grafana OSS uses AGPL-3.0 since 2021. AGPL requires review before vendoring.
+# Also: frontend assets prevent pure distroless build.
+# Alternative: perses (Apache-2.0) — https://github.com/perses/perses
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: standard

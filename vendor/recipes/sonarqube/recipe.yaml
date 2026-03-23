@@ -1,0 +1,19 @@
+name: sonarqube
+upstream_url: https://github.com/SonarSource/sonarqube
+version: "10.5.1"
+license_spdx: LGPL-3.0-only
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/java21
+build_tool: docker
+# Build notes: multi-stage Dockerfile
+#   Stage 1 (builder): eclipse-temurin:21-jdk + Gradle to build sonarqube.zip
+#   Stage 2 (final):   gcr.io/distroless/java21 with extracted distribution
+# Note: embedded Elasticsearch requires JVM heap tuning (-Xms512m -Xmx512m).
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: standard

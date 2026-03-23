@@ -1,0 +1,20 @@
+name: code-server
+upstream_url: https://github.com/coder/code-server
+version: "v4.23.0"
+license_spdx: MIT
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/nodejs
+build_tool: docker
+# Build notes: multi-stage Dockerfile
+#   Stage 1 (builder): node:20-alpine with `npm ci && npm run build`
+#   Stage 2 (final):   gcr.io/distroless/nodejs with compiled out/
+# Note: VS Code extensions containing native binaries must be pre-compiled in
+# the builder stage for the target architecture.
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: standard

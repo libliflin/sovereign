@@ -1,0 +1,19 @@
+name: selenium-grid
+upstream_url: https://github.com/SeleniumHQ/selenium
+version: "4.20.0"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: none
+build_tool: skip
+# Build notes: Selenium Grid requires Chrome, Firefox, and/or Edge browser binaries
+# plus Xvfb virtual display server. Cannot use distroless. Use official Selenium
+# Grid images (selenium/hub, selenium/node-chrome, selenium/node-firefox) pinned
+# to the version above. Pull via sovereign Harbor proxy.
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived

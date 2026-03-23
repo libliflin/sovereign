@@ -1,0 +1,15 @@
+name: cert-manager
+upstream_url: https://github.com/cert-manager/cert-manager
+version: "v1.14.0"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/static
+build_tool: ko
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived
