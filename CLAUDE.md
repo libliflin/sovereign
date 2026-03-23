@@ -474,14 +474,38 @@ git push origin <branchName>      # NON-NEGOTIABLE — if push fails, fix it
 
 If `git push` fails for any reason, DO NOT mark the story done. Fix the push problem.
 
-### 2. Create or verify a PR exists
+### 2. Create a PR, wait for CI, then MERGE it
+
+**A story is not done until the code lands on main.** An open PR is work in progress, not complete.
+
 ```bash
-gh pr create --title "story-NNN: <title>" --base main --head <branchName>
-# or if PR already exists:
-gh pr view --head <branchName>
+# Create the PR
+PR_URL=$(gh pr create --title "story-NNN: <title>" --base main --head <branchName> \
+  --body "Closes story-NNN. See PROOF OF WORK below.")
+echo "PR: $PR_URL"
+
+# Extract PR number
+PR_NUM=$(echo "$PR_URL" | grep -o '[0-9]*$')
+
+# Wait for all CI checks to complete (polls every 10s, exits when done)
+gh pr checks "$PR_NUM" --watch --interval 10
+# If CI fails: fix the issue on the branch, push again, re-run checks
+
+# Merge only after CI passes
+gh pr merge "$PR_NUM" --squash --delete-branch
+# --squash: clean linear history on main
+# --delete-branch: removes the feature branch after merge
+
+# Verify it landed on main
+git checkout main && git pull origin main
+git log --oneline -3  # your story commit should be at the top
 ```
 
-If `gh` is not authenticated, note it as a blocker but still push the branch.
+**If CI fails:** do NOT merge. Read the failure output, fix the issue on the branch, push again,
+and wait for CI to pass. DO NOT mark `passes: true` while CI is red.
+
+**If `gh` is not authenticated:** note it as a blocker. Push the branch but leave a note:
+`"blocker: gh not authenticated — PR must be merged manually before story can be accepted."`
 
 ### 3. Show actual command output
 Every quality gate run MUST be shown verbatim in your response:
@@ -501,11 +525,12 @@ End every story completion response with:
 ```
 ## Proof of Work — story-NNN
 
-git push:  pushed to origin/<branchName> ✓
-PR:        https://github.com/libliflin/sovereign/pull/<N>
-helm lint: exit 0 (output above)
+git push:   pushed to origin/<branchName> ✓
+CI:         all checks passed ✓  (gh pr checks output above)
+PR merged:  https://github.com/libliflin/sovereign/pull/<N> → squash merged to main ✓
+helm lint:  exit 0 (output above)
 shellcheck: exit 0 (output above)
-HA gate:   PDB ✓ | anti-affinity ✓ | replicaCount=2 ✓
+HA gate:    PDB ✓ | anti-affinity ✓ | replicaCount=2 ✓
 ```
 
 ---

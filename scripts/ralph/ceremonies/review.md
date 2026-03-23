@@ -9,28 +9,38 @@ too many "it should work" stories blow up in production. Trust nothing. Verify e
 **This ceremony is idempotent.** It is safe to run multiple times. Stories already `reviewed: true`
 are skipped.
 
-## Step 0 — Verify the work actually reached remote (run this FIRST)
+## Step 0 — Verify the work landed on main (run this FIRST)
 
-Before checking any acceptance criteria, confirm the branch was actually pushed.
-A story that only exists locally is not done.
+A story is not done until the code is on main. An open PR or a pushed branch is
+work-in-progress, not complete. Check in this order:
 
 ```bash
-# For each story being reviewed, check its branchName from the sprint file:
-git ls-remote origin <branchName> 2>&1
-# Expected: a SHA line. Empty output = branch never pushed = INSTANT FAIL.
+# 1. Is the story's work merged to main?
+git fetch origin main
+git log origin/main --oneline | grep "story-NNN"
+# Expected: the story commit appears. If not present — story is NOT done.
 
-# Check a PR exists:
-gh pr list --head <branchName> --json number,title,url 2>&1
-# Expected: JSON array with at least one entry.
+# 2. Was the PR merged (not just created)?
+gh pr list --head <branchName> --state merged --json number,title,url,mergedAt 2>&1
+# Expected: JSON with mergedAt populated. Empty = PR still open or never created.
+
+# 3. Did CI pass before merge?
+gh pr list --head <branchName> --state merged --json number 2>&1 | \
+  python3 -c "import json,sys; prs=json.load(sys.stdin); \
+  [print(f'PR #{p[\"number\"]}') for p in prs]" 2>/dev/null
+gh pr checks <PR_NUM> 2>&1
+# Expected: all checks pass. Any failure = story was merged with broken CI.
 ```
 
-**If `git ls-remote` returns empty for a branch:**
+**If the story commit is NOT on `origin/main`:**
 - Set `passes: false`
-- Add reviewNote: `"Branch <branchName> was never pushed to remote. Work only exists locally."`
-- Skip all other criteria for that story — it is not done.
+- Add reviewNote: `"Work not on main. Branch exists but PR was never merged. Story is not done."`
+- Skip all other criteria — it is not done.
 
-**If no PR exists:** Add to reviewNotes (warning, not instant fail):
-`"No PR found for branch <branchName>. A PR is required per PROOF OF WORK rules."`
+**If CI was failing when merged:** Add to reviewNotes:
+`"PR was merged with failing CI. Fix the CI failures and re-verify."`
+
+**If branch was deleted and commit IS on main:** That is correct — squash merge deleted the branch. ✓
 
 ## Your task
 
