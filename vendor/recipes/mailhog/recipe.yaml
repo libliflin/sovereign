@@ -1,0 +1,15 @@
+name: mailhog
+upstream_url: https://github.com/mailhog/MailHog
+version: "v1.0.1"
+license_spdx: MIT
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/static
+build_tool: ko
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived

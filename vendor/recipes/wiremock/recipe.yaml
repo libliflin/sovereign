@@ -1,0 +1,18 @@
+name: wiremock
+upstream_url: https://github.com/wiremock/wiremock
+version: "3.5.4"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/java21
+build_tool: docker
+# Build notes: multi-stage Dockerfile
+#   Stage 1 (builder): eclipse-temurin:21-jdk + Maven to build wiremock-standalone JAR
+#   Stage 2 (final):   gcr.io/distroless/java21 with the standalone JAR
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived

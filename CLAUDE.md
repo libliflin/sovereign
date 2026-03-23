@@ -173,6 +173,10 @@ must never pull images from external registries (docker.io, quay.io, ghcr.io, gc
 - Any service that cannot run distroless MUST have a `deprecated: true` entry in `vendor/VENDORS.yaml`
   with a `deprecated_reason` and an `alternative` pointing to a distroless-compatible replacement.
 - When writing new code (Sovereign PM, custom operators, etc.) — **use Rust or Go**, build distroless.
+- **PRs adding a non-distroless image are rejected** unless `vendor/VENDORS.yaml` has a `deprecated: true`
+  entry for that service with `deprecated_reason` and `alternative` (migration plan). No exceptions.
+- See `vendor/DISTROLESS.md` for the full compatibility matrix and per-service migration roadmap.
+- `vendor/audit.sh` enforces this automatically — it must exit 0 before any vendor story can pass.
 
 #### License Policy
 - Apache 2.0, MIT, BSD, LGPL → approved for vendoring

@@ -1,0 +1,18 @@
+name: falco
+upstream_url: https://github.com/falcosecurity/falco
+version: "0.37.0"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: none
+build_tool: skip
+# Build notes: Falco requires kernel module or eBPF probes and runs in a privileged
+# container with host PID namespace. Cannot use distroless. Use official Falco image
+# pinned to the version above. Pull via sovereign Harbor proxy.
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived

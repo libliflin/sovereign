@@ -1,0 +1,19 @@
+name: gitlab
+upstream_url: https://gitlab.com/gitlab-org/gitlab
+version: "17.1.0"
+license_spdx: MIT
+fetch_method: git_tag
+distroless_base: none
+build_tool: skip
+# Build notes: GitLab is a monolithic Ruby on Rails application with hundreds of
+# runtime dependencies (Ruby, Node.js, PostgreSQL client libs, etc.).
+# Cannot be made distroless. Use the official GitLab Docker image pinned to the
+# version above. Pull via sovereign Harbor proxy (harbor.<domain>/sovereign/gitlab).
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: critical

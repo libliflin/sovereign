@@ -1,0 +1,19 @@
+name: backstage
+upstream_url: https://github.com/backstage/backstage
+version: "v1.26.0"
+license_spdx: Apache-2.0
+fetch_method: git_tag
+distroless_base: gcr.io/distroless/nodejs
+build_tool: docker
+# Build notes: multi-stage Dockerfile
+#   Stage 1 (builder): node:20-alpine with `yarn install --frozen-lockfile && yarn build`
+#   Stage 2 (final):   gcr.io/distroless/nodejs with compiled dist/
+# Note: plugins with native Node.js addons must be pre-compiled in the builder stage.
+rollout:
+  strategy: rolling
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: standard
