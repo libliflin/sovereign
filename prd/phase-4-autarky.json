@@ -89,7 +89,7 @@
         "vendor/fetch.sh --dry-run prints actions without making API calls",
         "shellcheck passes on all vendor/*.sh"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
@@ -103,7 +103,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/10",
+      "notes": "vendor/fetch.sh (mirrors upstream→GitLab, creates group+project via API, tags pre-update state, --dry-run/--backup), vendor/update-check.sh (GitHub API + git ls-remote fallback, --dry-run/--backup), vendor/pin.sh (Python regex update, validates format, --dry-run/--backup). All 10 fundamental recipes complete. shellcheck -S error clean, CI green, PR #10 merged."
     },
     {
       "id": "021",

@@ -366,3 +366,16 @@
   - Force push with `--force-with-lease` is safe when a stale remote branch needs to be replaced with fresh branch from main
   - gitlab/gitlab chart v8.5.0: set `global.minio.enabled: false` (top-level AND in gitlab.global); disable `nginx-ingress`, `certmanager`, `prometheus` sub-charts
 ---
+
+## 2026-03-23 - Phase 4 Autarky (Story 020)
+- Created vendor/fetch.sh: mirrors upstream repos into internal GitLab vendor group via GitLab REST API; creates group 'vendor' and project via POST /groups + POST /projects if absent; tags sovereign/pre-update-<ts> on existing mirrors before push; supports git_tag, git_commit, tarball fetch methods; --dry-run prints actions without API calls; --backup pushes to SECONDARY_REMOTE
+- Created vendor/update-check.sh: checks pinned version vs upstream for each recipe; uses GitHub releases API (/repos/:slug/releases/latest) with git ls-remote fallback for non-GitHub repos; tabular report with [UPDATE AVAILABLE] flag
+- Created vendor/pin.sh: updates version field in recipe.yaml using Python regex (safe for any token content); validates v-prefixed version format; backs up recipe before update; verifies write succeeded before deleting backup
+- PR #10 merged, CI green (13/13 jobs pass)
+- **Learnings for future iterations:**
+  - bash arrays with `set -u`: `"${ARRAY[@]}"` fails on empty arrays — use `"${ARRAY[@]+"${ARRAY[@]}"}"`  pattern to safely handle empty arrays
+  - GitLab project URL encoding: `vendor%2F<name>` is the encoded path for GET /projects/<path> API
+  - `embed_gitlab_token` using Python is safer than sed for URL manipulation (avoids issues if token contains regex metacharacters)
+  - `python3 -c "... print(url.replace('https://', 'https://oauth2:'+token+'@', 1))" "$url" "$TOKEN"` is the clean pattern for embedding credentials
+  - For `vendor/pin.sh`, Python regex with `re.sub(r'^(version:\s*)"[^"]*"', ..., flags=re.MULTILINE)` is the right approach for updating YAML scalar fields
+---
