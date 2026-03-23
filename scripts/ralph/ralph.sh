@@ -266,6 +266,21 @@ PYEOF
 
 echo "Starting Ralph — tool: $TOOL — max iterations: $MAX_ITERATIONS"
 
+# Pre-flight: check if there is actually anything to implement.
+# If all stories already have passes:true, there is no work for the agent.
+# Signal COMPLETE immediately so ceremonies.sh can move to smoke test.
+if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
+  STORIES_NEEDING_WORK=$(jq '[.stories[] | select(.passes == false)] | length' \
+    "$PRD_FILE" 2>/dev/null || echo "1")
+  if [[ "$STORIES_NEEDING_WORK" -eq 0 ]]; then
+    echo ""
+    echo "All stories already passing — no implementation work needed."
+    echo "<promise>COMPLETE</promise>"
+    exit 0
+  fi
+  echo "  Stories needing work: $STORIES_NEEDING_WORK"
+fi
+
 PROMPT_TMP=$(mktemp /tmp/ralph-prompt-XXXXXX.md)
 trap 'rm -f "$PROMPT_TMP"' EXIT
 

@@ -16,6 +16,7 @@ Architecture: ArgoCD App-of-Apps pattern, Helm charts, Crossplane for infrastruc
    - If `prd/manifest.json` does not exist yet, fall back to reading `prd.json` at repo root
    - The active sprint file contains only the stories for the current phase (~8 stories max)
 2. Find the highest-priority story where `"passes": false` AND `"reviewed": false`
+   - **If ALL stories have `passes: true`**: your work is done. Output exactly `<promise>COMPLETE</promise>` and stop. Do NOT ask what to do next. Do NOT run ceremonies. Do NOT commit or push anything. The ceremonies.sh orchestrator handles the next step.
    - `passes: true` but `reviewed: false` means Ralph marked it done but the review ceremony has not run yet — do NOT re-implement it, leave it for the review ceremony
 3. Read `progress.txt` — study ALL prior learnings, especially the "Codebase Patterns" section
 4. Check which git branch the current story requires (`branchName` in the sprint file)

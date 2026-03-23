@@ -418,18 +418,30 @@ while [[ $RETRY -le $MAX_RETRIES ]]; do
   # ── 3: EXECUTE ──────────────────────────────────────────────────────────────
   log ""
   log "STEP 3/8 — EXECUTE"
-  log "  Clearing stale failure context from previous attempt..."
-  clear_failure_context
 
-  log "  Running ralph.sh --prd $ACTIVE_SPRINT --tool $TOOL $RALPH_MAX_ITER"
-  log "  (ralph.sh will inject current failure context into agent prompt if any)"
-  log ""
-  RALPH_EXIT=0
-  "$SCRIPT_DIR/ralph.sh" --prd "$ACTIVE_SPRINT" --tool "$TOOL" "$RALPH_MAX_ITER" \
-    2>&1 | tee -a "$LOG_FILE" || RALPH_EXIT=$?
-  [[ $RALPH_EXIT -ne 0 ]] && log "  WARNING: ralph.sh exited $RALPH_EXIT (may have hit max iterations)"
-  log ""
-  log "  Stories passing after execute: $(stories_passing) / $(stories_total)"
+  # Check state before calling ralph — if everything already passes, skip execute.
+  # This prevents ralph from running 10 iterations asking "what should I do?"
+  NEEDS_WORK=$(jq '[.stories[] | select(.passes == false)] | length' \
+    "$SPRINT_FILE" 2>/dev/null || echo "1")
+
+  if [[ "$NEEDS_WORK" -eq 0 ]]; then
+    log "  All $(stories_total) stories already passing — skipping execute."
+    log "  Proceeding directly to smoke test."
+  else
+    log "  Stories needing work: $NEEDS_WORK / $(stories_total)"
+    log "  Clearing stale failure context from previous attempt..."
+    clear_failure_context
+
+    log "  Running ralph.sh --prd $ACTIVE_SPRINT --tool $TOOL $RALPH_MAX_ITER"
+    log "  (ralph.sh will inject current failure context into agent prompt if any)"
+    log ""
+    RALPH_EXIT=0
+    "$SCRIPT_DIR/ralph.sh" --prd "$ACTIVE_SPRINT" --tool "$TOOL" "$RALPH_MAX_ITER" \
+      2>&1 | tee -a "$LOG_FILE" || RALPH_EXIT=$?
+    [[ $RALPH_EXIT -ne 0 ]] && log "  WARNING: ralph.sh exited $RALPH_EXIT (may have hit max iterations)"
+    log ""
+    log "  Stories passing after execute: $(stories_passing) / $(stories_total)"
+  fi
 
   # ── 4: SMOKE TEST (bash — no AI) ────────────────────────────────────────────
   log ""
