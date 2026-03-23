@@ -1,0 +1,22 @@
+{{- /*
+  PodDisruptionBudgets for Cilium non-DaemonSet components.
+  Cilium agent runs as a DaemonSet (inherently HA); these PDBs cover the
+  operator and Hubble relay/UI deployments.
+*/ -}}
+{{- $components := list "cilium-operator" "hubble-relay" "hubble-ui" -}}
+{{- range $components }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ . }}-pdb
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "sovereign-cilium.labels" $ | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ . }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+{{- end }}

@@ -17,3 +17,12 @@ sealed-secrets:
   secretName: "sealed-secrets-key"
   # Rotate sealing keys every 30 days
   keyrenewperiod: "720h"
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: sealed-secrets
+            topologyKey: kubernetes.io/hostname

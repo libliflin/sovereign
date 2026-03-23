@@ -1,0 +1,17 @@
+{{- /*
+  PodDisruptionBudget for the Sealed Secrets controller.
+*/ -}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sealed-secrets-controller-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sealed-secrets.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sealed-secrets
+      app.kubernetes.io/instance: {{ .Release.Name }}
