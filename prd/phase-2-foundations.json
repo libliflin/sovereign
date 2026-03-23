@@ -36,7 +36,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green except Achievable 4: seven shell scripts with distinct functions is near the 3-point ceiling \u2014 well-scoped but dense."
+        "notes": "Achievable 4: seven shell scripts across two directories is dense for 3 points \u2014 well-scoped but near the ceiling."
       }
     },
     {
@@ -72,7 +72,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Measurable 4: final AC ('VPS has no open inbound ports') requires live Cloudflare + VPS infrastructure to truly verify \u2014 cannot be checked with shellcheck or dry-run alone. Achievable raised to 5: only 2 points, two files."
+        "notes": "Measurable 4: final AC ('VPS has no open inbound ports, all traffic flows through tunnel') requires live Cloudflare + VPS infrastructure \u2014 cannot be verified with shellcheck or dry-run alone."
       }
     },
     {
@@ -104,7 +104,7 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Measurable 4: 'All markdown files render without broken links or malformed headings' has no specified command to verify it (markdownlint? lychee?) \u2014 ambiguous pass/fail gate. Relevant 4: documentation advances the sprint goal indirectly; could be deferred without blocking HA provisioning."
+        "notes": "Measurable 4: 'All markdown files render without broken links or malformed headings' lacks a specified verification command \u2014 pass/fail gate is ambiguous. Relevant 4: documentation is valuable but does not block HA cluster provisioning."
       }
     },
     {
@@ -136,9 +136,10 @@
         "012",
         "013"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [
-        "[Review 1] AC failed: 'Provider docs updated: all costs show 3-node totals, AWS free tier removed'. Command: grep -n 'free.tier' docs/providers/aws-ec2-free-tier.md | head -20. Output: Line 6: '> **AWS free tier is not viable.**', Line 23: '> **Free tier note:** AWS free tier (t2.micro) is NOT supported', Line 25: 'There is no free tier path'. The file is still named 'aws-ec2-free-tier.md' and contains 3 explicit 'free tier' references. Story description requires: 'Remove all references to AWS free tier'. Fix: rename file to docs/providers/aws-ec2.md and remove all 'free tier' language from the file."
+        "[Review 1] AC failed: 'Provider docs updated: all costs show 3-node totals, AWS free tier removed'. Command: grep -n 'free.tier' docs/providers/aws-ec2-free-tier.md | head -20. Output: Line 6: '> **AWS free tier is not viable.**', Line 23: '> **Free tier note:** AWS free tier (t2.micro) is NOT supported', Line 25: 'There is no free tier path'. The file is still named 'aws-ec2-free-tier.md' and contains 3 explicit 'free tier' references. Story description requires: 'Remove all references to AWS free tier'. Fix: rename file to docs/providers/aws-ec2.md and remove all 'free tier' language from the file.",
+        "[Review 2] All 13 ACs verified: bootstrap.sh aborts on <3/even nodes ✓; config.yaml.example has nodes section ✓; all 4 providers loop over NODE_COUNT ✓; kube-vip + --cluster-init + VIP join pattern ✓; verify.sh checks etcd+VIP+Ready ✓; cloudflare.sh DaemonSet manifest ✓; aws-ec2.md renamed, no free-tier language ✓; shellcheck exit 0 ✓. ACCEPTED."
       ],
       "attempts": 2,
       "smart": {
@@ -147,7 +148,7 @@
         "achievable": 3,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Achievable 3: story touches 4 provider scripts + bootstrap.sh + verify.sh + cloudflare.sh + frontdoor interface + all provider docs in a single story \u2014 borderline for one Ralph iteration at 3 points. All ACs are binary grep/shellcheck verifiable so the story can proceed, but an implementation split (providers vs docs) would reduce risk."
+        "notes": "Achievable 3: story touches 8+ files (4 provider scripts, bootstrap.sh, verify.sh, cloudflare.sh, frontdoor interface, provider docs) in one 3-point story \u2014 borderline for one Ralph iteration. Story required 2 attempts, confirming density. An implementation split (provider scripts vs docs) would reduce risk for future stories of this type."
       }
     }
   ]

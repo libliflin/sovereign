@@ -2,8 +2,8 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM — phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-2-foundations.json",
-  "currentPhase": 2,
+  "activeSprint": "prd/phase-3-gitops-engine.json",
+  "currentPhase": 3,
   "phases": [
     {
       "id": 0,
@@ -41,23 +41,29 @@
       "name": "foundations",
       "description": "Crossplane compositions (PostgreSQL, namespaces, RBAC), OpenBao, network policies, cert-manager CA transition.",
       "file": "prd/phase-2-foundations.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         1
       ],
       "storiesTotal": 4,
       "pointsTotal": 10,
-      "startDate": "2026-03-22T21:00:00Z"
+      "startDate": "2026-03-22T21:00:00Z",
+      "endDate": "2026-03-23T00:24:32Z",
+      "pointsCompleted": 10,
+      "reviewPassRate": 100.00
     },
     {
       "id": 3,
       "name": "gitops-engine",
       "description": "GitLab (split into sub-stories), Harbor, ArgoCD Image Updater, GitLab Runners.",
       "file": "prd/phase-3-gitops-engine.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [
         2
-      ]
+      ],
+      "storiesTotal": 2,
+      "pointsTotal": 5,
+      "startDate": "2026-03-23T00:24:32Z"
     },
     {
       "id": 4,
@@ -137,6 +143,12 @@
       "phase": 1,
       "endDate": "2026-03-22T20:58:04Z",
       "pointsCompleted": 14,
+      "reviewPassRate": 100.00
+    },
+    {
+      "phase": 2,
+      "endDate": "2026-03-23T00:24:32Z",
+      "pointsCompleted": 10,
       "reviewPassRate": 100.00
     }
   ]

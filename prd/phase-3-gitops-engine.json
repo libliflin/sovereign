@@ -1,0 +1,72 @@
+{
+  "phase": 3,
+  "name": "gitops-engine",
+  "description": "GitLab self-hosted and Harbor artifact registry — the two pillars of the autarky build pipeline.",
+  "sprintGoal": "GitLab and Harbor are deployed via ArgoCD with Ceph storage, Keycloak SSO, and all ingresses templated on global.domain — ready to receive vendor mirror pushes.",
+  "capacity": 15,
+  "stories": [
+    {
+      "id": "016",
+      "phase": 3,
+      "priority": 16,
+      "branchName": "feature/helm-gitlab",
+      "title": "Helm chart: GitLab self-hosted",
+      "description": "Create charts/gitlab/ wrapping gitlab/gitlab with opinionated values: external object storage pointing to Ceph (MinIO-compatible), PostgreSQL via Crossplane, Redis via Crossplane, Keycloak OIDC auth, GitLab Runner pre-configured. Ingress at gitlab.{{ .Values.global.domain }}. Registry at registry.{{ .Values.global.domain }}. Initial admin credentials from Sealed Secret. ArgoCD app in argocd-apps/platform/.",
+      "acceptanceCriteria": [
+        "charts/gitlab/ uses Ceph object storage for artifacts/uploads/packages",
+        "Keycloak OIDC configured as auth provider",
+        "GitLab Runner pre-configured with Kubernetes executor",
+        "Ingress uses global.domain for all GitLab subdomains",
+        "Initial root password from Sealed Secret",
+        "helm lint passes",
+        "argocd-apps/platform/gitlab-app.yaml exists"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "helm dependency update charts/gitlab/ && helm lint charts/gitlab/; helm template charts/gitlab/ | grep -E 'kind: (Deployment|StatefulSet|Ingress|PodDisruptionBudget)'; verify Keycloak OIDC values present; verify Ceph storage config; verify ArgoCD app YAML exists.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable 4: GitLab chart has many sub-components (registry, runner, workhorse, gitaly) — dense for 3 points but all toggles can be set via values, no custom templates needed beyond ingress."
+      }
+    },
+    {
+      "id": "017",
+      "phase": 3,
+      "priority": 17,
+      "branchName": "feature/helm-harbor",
+      "title": "Helm chart: Harbor artifact registry",
+      "description": "Create charts/harbor/ wrapping goharbor/harbor. Storage backend: Ceph S3-compatible (ceph-bucket StorageClass). Keycloak OIDC auth. Trivy scanner integration (internal). Ingress at registry.{{ .Values.global.domain }} (or harbor.{{ .Values.global.domain }} for UI). Replication rules stub for syncing public images. ArgoCD app in argocd-apps/platform/.",
+      "acceptanceCriteria": [
+        "charts/harbor/ uses Ceph object storage",
+        "Keycloak OIDC auth configured",
+        "Trivy integration enabled",
+        "Ingress uses global.domain",
+        "helm lint passes",
+        "argocd-apps/platform/harbor-app.yaml exists"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm dependency update charts/harbor/ && helm lint charts/harbor/; helm template charts/harbor/ | grep -E 'kind: (Deployment|Ingress|PodDisruptionBudget)'; verify Ceph storage values; verify Keycloak OIDC values; verify ArgoCD app YAML exists.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All ACs are file or command verifiable. Harbor chart is well-structured and 2 points is appropriate."
+      }
+    }
+  ]
+}
