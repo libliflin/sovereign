@@ -10,7 +10,7 @@
       "phase": 5,
       "priority": 23,
       "branchName": "feature/helm-istio-core",
-      "title": "Helm chart: Istio core — base CRDs, istiod, Gateway, STRICT mTLS",
+      "title": "Helm chart: Istio core \u2014 base CRDs, istiod, Gateway, STRICT mTLS",
       "description": "Create charts/istio/ wrapping istio/base (pin appVersion to 1.21.2) and istio/istiod as subcharts. Deploy a PeerAuthentication in istio-system with mode: STRICT. Create a wildcard Gateway covering *.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/security/.",
       "acceptanceCriteria": [
         "charts/istio/Chart.yaml pins appVersion to a specific Istio release (e.g. 1.21.2)",
@@ -21,20 +21,20 @@
         "helm template charts/istio/ | yq e '.' - passes (valid YAML)",
         "argocd-apps/security/istio-app.yaml exists and passes yq e '.' check"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "helm lint; helm template | yq e '.'; yq e '.' argocd-apps/security/istio-app.yaml",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Scoped to: base CRDs + istiod + PeerAuthentication + Gateway only. Kiali and tracing moved to 023b."
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -56,17 +56,19 @@
       "passes": false,
       "points": 2,
       "testPlan": "helm lint; helm template | grep openid; helm template | grep tempo; yq argocd manifest",
-      "dependencies": ["023a"],
+      "dependencies": [
+        "023a"
+      ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
         "specific": 5,
         "measurable": 5,
-        "achievable": 5,
-        "relevant": 5,
+        "achievable": 4,
+        "relevant": 4,
         "timeBound": 5,
-        "notes": "Single chart. Each AC is verifiable via helm template grep. Split from 023 per SMART check."
+        "notes": "Achievable score 4: depends on 023a being merged first; if 023a is in the same sprint this could block iteration sequencing. Relevant score 4: Kiali is Istio mesh visualization/DevEx, not zero-trust enforcement. Sprint goal (mTLS + OPA + Trivy + Falco) does not mention Kiali \u2014 it is useful but could be deferred to phase-7-devex without blocking any security goal."
       }
     },
     {
@@ -98,7 +100,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Single chart, 3 known policies, count verifiable via grep -c. Split from 024 per SMART check."
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -106,7 +108,7 @@
       "phase": 5,
       "priority": 26,
       "branchName": "feature/helm-trivy-operator",
-      "title": "Helm chart: Trivy Operator — cluster-wide vulnerability scanning",
+      "title": "Helm chart: Trivy Operator \u2014 cluster-wide vulnerability scanning",
       "description": "Create charts/trivy-operator/ wrapping aquasecurity/trivy-operator (pin appVersion). Set targetNamespaces to empty string (scans all namespaces). Enable VulnerabilityReports and ConfigAuditReports. ArgoCD app in argocd-apps/security/trivy-operator-app.yaml.",
       "acceptanceCriteria": [
         "charts/trivy-operator/Chart.yaml pins appVersion to a specific trivy-operator release",
@@ -130,7 +132,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Single chart. targetNamespaces='' is statically verifiable. Split from 024 per SMART check."
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -163,7 +165,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Single chart. json_output:true is statically verifiable via grep. Split from 024 per SMART check."
+        "notes": "All SMART dimensions green."
       }
     }
   ]

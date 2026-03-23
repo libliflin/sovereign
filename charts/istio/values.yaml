@@ -5,3 +5,47 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+# istio/base subchart values (CRD installation)
+base:
+  global:
+    istioNamespace: istio-system
+
+# istio/istiod subchart values (control plane)
+istiod:
+  global:
+    istioNamespace: istio-system
+  pilot:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    autoscaleEnabled: true
+    autoscaleMin: 2
+    autoscaleMax: 5
+  meshConfig:
+    enableTracing: true
+    defaultConfig:
+      tracing:
+        sampling: 100.0
+
+# PeerAuthentication settings (sovereign-managed)
+peerAuthentication:
+  enabled: true
+  # mode: STRICT enforces mTLS on all workloads in the mesh
+  mode: STRICT
+
+# Gateway settings
+gateway:
+  enabled: true
+  name: sovereign-gateway
+  # Covers all subdomains of global.domain
+  hosts:
+    - "*.{{ .Values.global.domain }}"
+  # TLS is terminated by the ingress (Gateway passes through)
+  tls:
+    mode: SIMPLE
+    credentialName: sovereign-wildcard-tls
