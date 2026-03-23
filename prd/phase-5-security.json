@@ -1,0 +1,170 @@
+{
+  "phase": 5,
+  "name": "security",
+  "description": "Istio mTLS, OPA/Gatekeeper, Trivy Operator, Falco.",
+  "sprintGoal": "Establish zero-trust runtime security: Istio mTLS enforced across all namespaces, policy gates via OPA/Gatekeeper, continuous vulnerability scanning via Trivy, and runtime threat detection via Falco.",
+  "capacity": 15,
+  "stories": [
+    {
+      "id": "023a",
+      "phase": 5,
+      "priority": 23,
+      "branchName": "feature/helm-istio-core",
+      "title": "Helm chart: Istio core — base CRDs, istiod, Gateway, STRICT mTLS",
+      "description": "Create charts/istio/ wrapping istio/base (pin appVersion to 1.21.2) and istio/istiod as subcharts. Deploy a PeerAuthentication in istio-system with mode: STRICT. Create a wildcard Gateway covering *.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/security/.",
+      "acceptanceCriteria": [
+        "charts/istio/Chart.yaml pins appVersion to a specific Istio release (e.g. 1.21.2)",
+        "charts/istio/ lists istio/base and istio/istiod as chart dependencies",
+        "templates/peer-authentication.yaml creates PeerAuthentication in istio-system with mtls.mode: STRICT",
+        "templates/gateway.yaml creates a Gateway covering *.{{ .Values.global.domain }}",
+        "helm lint charts/istio/ passes with 0 errors",
+        "helm template charts/istio/ | yq e '.' - passes (valid YAML)",
+        "argocd-apps/security/istio-app.yaml exists and passes yq e '.' check"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "helm lint; helm template | yq e '.'; yq e '.' argocd-apps/security/istio-app.yaml",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Scoped to: base CRDs + istiod + PeerAuthentication + Gateway only. Kiali and tracing moved to 023b."
+      }
+    },
+    {
+      "id": "023b",
+      "phase": 5,
+      "priority": 24,
+      "branchName": "feature/helm-kiali",
+      "title": "Helm chart: Kiali UI with Keycloak OIDC and Tempo tracing",
+      "description": "Create charts/kiali/ wrapping kiali/kiali-operator (pin appVersion). Configure Kiali CR with auth.strategy: openid pointing at Keycloak sovereign realm. Configure external_services.tracing.provider: tempo with URL pointing at tempo.monitoring.svc:3100. Ingress for kiali.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/security/kiali-app.yaml.",
+      "acceptanceCriteria": [
+        "charts/kiali/Chart.yaml pins appVersion to a specific Kiali release",
+        "Kiali CR spec.auth.strategy is openid",
+        "Kiali CR spec.auth.openid.issuer_uri uses {{ .Values.global.keycloak.url }}/realms/sovereign",
+        "Kiali CR spec.external_services.tracing.provider is tempo",
+        "Ingress or VirtualService exists for kiali.{{ .Values.global.domain }}",
+        "helm lint charts/kiali/ passes with 0 errors",
+        "argocd-apps/security/kiali-app.yaml exists and passes yq e '.' check"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint; helm template | grep openid; helm template | grep tempo; yq argocd manifest",
+      "dependencies": ["023a"],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Single chart. Each AC is verifiable via helm template grep. Split from 023 per SMART check."
+      }
+    },
+    {
+      "id": "024a",
+      "phase": 5,
+      "priority": 25,
+      "branchName": "feature/helm-opa-gatekeeper",
+      "title": "Helm chart: OPA/Gatekeeper with 3 ConstraintTemplates",
+      "description": "Create charts/opa-gatekeeper/ wrapping open-policy-agent/gatekeeper (pin appVersion). Include ConstraintTemplates and Constraints for: (1) no-privilege-escalation, (2) require-resource-limits (cpu+memory), (3) require-labels (app+tier on Deployments). ArgoCD app in argocd-apps/security/opa-gatekeeper-app.yaml.",
+      "acceptanceCriteria": [
+        "charts/opa-gatekeeper/Chart.yaml pins appVersion to a specific Gatekeeper release",
+        "templates/ contains 3 ConstraintTemplate resources (one per policy)",
+        "templates/ contains 3 corresponding Constraint resources",
+        "helm lint charts/opa-gatekeeper/ passes with 0 errors",
+        "helm template charts/opa-gatekeeper/ | yq e '.' - passes",
+        "helm template charts/opa-gatekeeper/ | grep -c ConstraintTemplate outputs 3",
+        "argocd-apps/security/opa-gatekeeper-app.yaml exists and passes yq e '.' check"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "helm lint; helm template | yq e '.'; helm template | grep -c ConstraintTemplate = 3; yq argocd manifest",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Single chart, 3 known policies, count verifiable via grep -c. Split from 024 per SMART check."
+      }
+    },
+    {
+      "id": "024b",
+      "phase": 5,
+      "priority": 26,
+      "branchName": "feature/helm-trivy-operator",
+      "title": "Helm chart: Trivy Operator — cluster-wide vulnerability scanning",
+      "description": "Create charts/trivy-operator/ wrapping aquasecurity/trivy-operator (pin appVersion). Set targetNamespaces to empty string (scans all namespaces). Enable VulnerabilityReports and ConfigAuditReports. ArgoCD app in argocd-apps/security/trivy-operator-app.yaml.",
+      "acceptanceCriteria": [
+        "charts/trivy-operator/Chart.yaml pins appVersion to a specific trivy-operator release",
+        "values.yaml sets targetNamespaces: \"\" (empty = all namespaces)",
+        "helm template charts/trivy-operator/ | grep -q 'targetNamespaces' passes",
+        "values.yaml enables vulnerabilityReports and configAuditReports",
+        "helm lint charts/trivy-operator/ passes with 0 errors",
+        "helm template charts/trivy-operator/ | yq e '.' - passes",
+        "argocd-apps/security/trivy-operator-app.yaml exists and passes yq e '.' check"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint; helm template | yq e '.'; helm template | grep targetNamespaces; yq argocd manifest",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Single chart. targetNamespaces='' is statically verifiable. Split from 024 per SMART check."
+      }
+    },
+    {
+      "id": "024c",
+      "phase": 5,
+      "priority": 27,
+      "branchName": "feature/helm-falco",
+      "title": "Helm chart: Falco runtime threat detection with JSON stdout",
+      "description": "Create charts/falco/ wrapping falcosecurity/falco (pin appVersion). Enable JSON output to stdout for Loki scraping. Disable the built-in webserver. ArgoCD app in argocd-apps/security/falco-app.yaml.",
+      "acceptanceCriteria": [
+        "charts/falco/Chart.yaml pins appVersion to a specific Falco release",
+        "values.yaml sets falco.json_output: true",
+        "values.yaml sets falco.log_stderr: true",
+        "values.yaml disables falco.webserver.enabled (set to false)",
+        "helm template charts/falco/ | grep -q 'json_output' passes",
+        "helm lint charts/falco/ passes with 0 errors",
+        "helm template charts/falco/ | yq e '.' - passes",
+        "argocd-apps/security/falco-app.yaml exists and passes yq e '.' check"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint; helm template | yq e '.'; helm template | grep json_output; yq argocd manifest",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Single chart. json_output:true is statically verifiable via grep. Split from 024 per SMART check."
+      }
+    }
+  ]
+}
