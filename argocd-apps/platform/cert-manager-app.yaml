@@ -6,6 +6,10 @@ metadata:
   annotations:
     # Deploy after Crossplane (-90) but before services that need TLS (-80 and above)
     argocd.argoproj.io/sync-wave: "-85"
+    argocd-image-updater.argoproj.io/image-list: "app=harbor.sovereign-autarky.dev/sovereign/cert-manager"
+    argocd-image-updater.argoproj.io/app.update-strategy: semver
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

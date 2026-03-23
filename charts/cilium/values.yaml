@@ -1,5 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
   tls:
     clusterIssuer: "selfsigned"
   ingressClass: "nginx"

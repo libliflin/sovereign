@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sovereign-pm
+description: Sovereign PM AI-native project management
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

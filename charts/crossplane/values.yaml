@@ -1,6 +1,7 @@
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
 
 # Values passed to the upstream crossplane chart
 crossplane:

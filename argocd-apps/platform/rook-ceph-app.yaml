@@ -11,6 +11,10 @@ metadata:
     tier: platform
   annotations:
     argocd.argoproj.io/sync-wave: "-70"
+    argocd-image-updater.argoproj.io/image-list: "app=harbor.sovereign-autarky.dev/sovereign/rook-ceph"
+    argocd-image-updater.argoproj.io/app.update-strategy: semver
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
 spec:
   revisionHistoryLimit: 3
   project: default
