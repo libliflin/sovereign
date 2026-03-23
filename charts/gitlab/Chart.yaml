@@ -1,0 +1,11 @@
+apiVersion: v2
+name: gitlab
+description: GitLab self-hosted wrapper chart for the Sovereign Platform. Wraps the official gitlab/gitlab chart with Ceph object storage, Keycloak OIDC, and GitLab Runner pre-configured.
+type: application
+version: 0.1.0
+appVersion: "17.5.0"
+dependencies:
+  - name: gitlab
+    version: "8.5.0"
+    repository: "https://charts.gitlab.io/"
+    alias: gitlab
