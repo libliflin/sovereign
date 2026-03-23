@@ -1,6 +1,15 @@
 apiVersion: v2
 name: istio
-description: Istio service mesh with mTLS
+description: Istio service mesh — base CRDs, istiod control plane, STRICT mTLS PeerAuthentication, wildcard Gateway
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "1.21.2"
+dependencies:
+  - name: base
+    version: "1.21.2"
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    alias: base
+  - name: istiod
+    version: "1.21.2"
+    repository: "https://istio-release.storage.googleapis.com/charts"
+    alias: istiod
