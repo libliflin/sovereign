@@ -52,7 +52,7 @@
         "helm lint passes",
         "argocd-apps/platform/harbor-app.yaml exists"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm dependency update charts/harbor/ && helm lint charts/harbor/; helm template charts/harbor/ | grep -E 'kind: (Deployment|Ingress|PodDisruptionBudget)'; verify Ceph storage values; verify Keycloak OIDC values; verify ArgoCD app YAML exists.",
       "dependencies": [],
