@@ -21,7 +21,7 @@
         "shellcheck passes on vendor/audit.sh",
         "prd.json story 008 updated to use OpenBao instead of HashiCorp Vault"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
@@ -35,7 +35,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/8",
+      "notes": "vendor/VENDORS.yaml (29 packages), vendor/audit.sh with --dry-run/--backup. AGPL + BSL flagged with alternatives. backlog story 009 updated to require openbao. PR #8 merged CI green."
     },
     {
       "id": "019",

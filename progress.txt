@@ -326,6 +326,19 @@
   - Review ceremony AC "file X exists" is literal — even if the functional requirement is met via subchart, the file must exist
 ---
 
+## 2026-03-23 - Phase 4 Autarky (Story 018)
+- Created vendor/VENDORS.yaml with 29 upstream packages: cilium, crossplane, cert-manager, sealed-secrets, vault (BSL — deprecated, alternative: openbao), openbao, keycloak, rook-ceph, argocd, gitlab, harbor, istio, opa-gatekeeper, trivy-operator, falco, prometheus-stack, loki (AGPL), thanos, tempo (AGPL), grafana (AGPL), backstage, code-server, sonarqube, reportportal, selenium-grid, k6-operator (AGPL), wiremock, mailhog, chaos-mesh
+- Created vendor/audit.sh: reads VENDORS.yaml, prints license issues / distroless status / deprecated entries, exits non-zero if any blocked entry lacks an alternative
+- vendor/audit.sh supports --dry-run and --backup flags (CI requires both on all vendor/*.sh)
+- Updated backlog story 009 to require charts/openbao/ (not charts/vault/) — vault is BUSL-1.1 blocked
+- PR #8 merged, CI green
+- **Learnings for future iterations:**
+  - All vendor/*.sh scripts must have BOTH `--dry-run` AND `--backup` flag handling — CI validate.yml checks for both with grep -qE patterns
+  - Python heredoc inside bash uses `python3 - "$ARG" << 'EOF'` to pass shell variables as argv[1] — do NOT use `__file__` (doesn't exist in heredoc context)
+  - vendor/VENDORS.yaml defaults use the dogfood domain (sovereign-autarky.dev) where needed — this is correct and expected, just like Helm chart values.yaml defaults
+  - AGPL entries should be flagged in VENDORS.yaml with license_allows_vendor: false and an alternative — they don't block, but they require review
+---
+
 ## 2026-03-22 - Phase 3 GitOps Engine (Stories 016 and 017)
 - Story 016 (GitLab): wrapper around gitlab/gitlab 8.5.0; Ceph S3, Keycloak OmniAuth, Runner k8s executor; PR #6 merged CI green
 - Story 017 (Harbor): wrapper around goharbor/harbor 1.15.0; Ceph S3, Trivy enabled; sovereign wrapper ingress (upstream disabled); PR #7 merged CI green
