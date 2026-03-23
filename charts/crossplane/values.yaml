@@ -4,6 +4,16 @@ global:
 
 # Values passed to the upstream crossplane chart
 crossplane:
+  # Pod anti-affinity to spread crossplane replicas across nodes
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: crossplane
+            topologyKey: kubernetes.io/hostname
   # Resource limits for crossplane pods
   resourcesCrossplane:
     limits:

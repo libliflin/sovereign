@@ -20,7 +20,7 @@
 # After bootstrap, manage access via: https://one.dash.cloudflare.com
 # ─────────────────────────────────────────────────────────────────────────────
 # shellcheck source=bootstrap/frontdoor/interface.sh
-# shellcheck source=bootstrap/providers/cloudflare-dns.sh
+# shellcheck source=bootstrap/frontdoor/cloudflare-dns.sh
 
 # State files (written by frontdoor_provision, read by later hooks)
 _CF_STATE_TUNNEL_ID="/tmp/sovereign-frontdoor-tunnel-id"
@@ -66,7 +66,7 @@ _cf_load_config() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   # shellcheck disable=SC1091
-  source "${script_dir}/../providers/cloudflare-dns.sh"
+  source "${script_dir}/cloudflare-dns.sh"
 }
 
 # frontdoor_provision
