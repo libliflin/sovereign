@@ -203,10 +203,40 @@ PYEOF
     sleep_secs=3600
   fi
 
+  # Show the wall-clock resume time in America/Detroit so you know when to come back
+  local resume_time
+  resume_time=$(python3 -c "
+from datetime import datetime, timedelta
+try:
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo('America/Detroit')
+except Exception:
+    from datetime import timezone, timedelta as td
+    tz = timezone(td(hours=-5))
+t = datetime.now(tz) + timedelta(seconds=${sleep_secs})
+print(t.strftime('%I:%M %p %Z  (%a %b %-d)'))
+" 2>/dev/null || echo "unknown")
+
   local h=$(( sleep_secs / 3600 ))
   local m=$(( (sleep_secs % 3600) / 60 ))
-  log "   Sleeping ${h}h ${m}m (5min buffer after reset)"
-  sleep "$sleep_secs"
+  log "   ┌─────────────────────────────────────────────┐"
+  log "   │  Resume at: $resume_time"
+  log "   │  Waiting ${h}h ${m}m — 3-min increments (laptop-sleep safe)"
+  log "   └─────────────────────────────────────────────┘"
+  log ""
+
+  local deadline=$(( $(date +%s) + sleep_secs ))
+  while true; do
+    local now remaining rh rm
+    now=$(date +%s)
+    [[ $now -ge $deadline ]] && break
+    remaining=$(( deadline - now ))
+    rh=$(( remaining / 3600 ))
+    rm=$(( (remaining % 3600) / 60 ))
+    printf "   ⏳ %dh %02dm remaining …\r" "$rh" "$rm"
+    sleep 180
+  done
+
   log ""
   log "▶  Resuming after rate limit reset."
   return 1  # signal: was rate limited — caller should retry
