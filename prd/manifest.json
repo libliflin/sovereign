@@ -2,8 +2,8 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-3-gitops-engine.json",
-  "currentPhase": 3,
+  "activeSprint": "prd/phase-4-autarky.json",
+  "currentPhase": 4,
   "phases": [
     {
       "id": 0,
@@ -69,11 +69,11 @@
         8,
         9
       ],
-      "endDate": "2026-03-23T01:17:26.857383+00:00",
-      "pointsCompleted": 7,
+      "endDate": "2026-03-23T01:36:17Z",
+      "pointsCompleted": 5,
       "storiesTotal": 4,
       "storiesAccepted": 4,
-      "reviewPassRate": 75.0
+      "reviewPassRate": 100.0
     },
     {
       "id": 3,
@@ -86,17 +86,24 @@
       ],
       "startDate": "2026-03-23T01:20:23.182423+00:00",
       "pointsTotal": 5,
-      "storiesTotal": 2
+      "storiesTotal": 2,
+      "endDate": "2026-03-23T01:35:51.550256+00:00",
+      "pointsCompleted": 5,
+      "storiesAccepted": 2,
+      "reviewPassRate": 100.0
     },
     {
       "id": 4,
       "name": "autarky",
       "description": "Vendor system: VENDORS.yaml, fetch, build recipes (ko/docker), deploy/rollback/backup, pipeline wiring.",
       "file": "prd/phase-4-autarky.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [
         3
-      ]
+      ],
+      "startDate": "2026-03-23T01:36:59.364893+00:00",
+      "pointsTotal": 13,
+      "storiesTotal": 5
     },
     {
       "id": 5,
@@ -168,6 +175,13 @@
       "storiesAccepted": 4,
       "reviewPassRate": 75.0,
       "date": "2026-03-23T01:19:05.771367+00:00"
+    },
+    {
+      "phase": 3,
+      "pointsCompleted": 5,
+      "storiesAccepted": 2,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-23T01:35:51.550256+00:00"
     }
   ],
   "sprintHistory": [
@@ -200,6 +214,21 @@
       "storiesTotal": 4,
       "storiesAccepted": 4,
       "reviewPassRate": 75.0
+    },
+    {
+      "phase": 3,
+      "name": "gitops-engine",
+      "endDate": "2026-03-23T01:35:51.550256+00:00",
+      "pointsCompleted": 5,
+      "storiesTotal": 2,
+      "storiesAccepted": 2,
+      "reviewPassRate": 100.0
+    },
+    {
+      "phase": 3,
+      "endDate": "2026-03-23T01:36:17Z",
+      "pointsCompleted": 5,
+      "reviewPassRate": 100.0
     }
   ]
 }
