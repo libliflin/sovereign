@@ -273,6 +273,21 @@ log "  Sprint : $ACTIVE_SPRINT"
 log "  Log    : $LOG_FILE"
 log "══════════════════════════════════════════════════════════════════"
 
+# ── Restore sprint file if previous run left it dirty ────────────────────────
+# ceremonies.sh can exit mid-run (via die()) while the sprint file has been
+# modified by a smoke-test reset (stories set to passes:false). Always restore
+# from committed state so we never inherit stale resets from an aborted run.
+if [[ -f "$SPRINT_FILE" ]]; then
+  if ! git -C "$REPO_ROOT" diff --quiet HEAD -- "$ACTIVE_SPRINT" 2>/dev/null; then
+    log ""
+    log "  ⚠ Sprint file has uncommitted changes — restoring from HEAD."
+    log "    (Previous ceremonies.sh likely exited during a smoke-test reset.)"
+    log "    Commit intentional story updates before running ceremonies.sh."
+    git -C "$REPO_ROOT" restore -- "$ACTIVE_SPRINT" 2>/dev/null || true
+    log "  ✓ Sprint file restored to committed state."
+  fi
+fi
+
 # ── STEP 0: PLAN ──────────────────────────────────────────────────────────────
 PHASE_STATUS=$(jq -r ".phases[] | select(.file == \"$ACTIVE_SPRINT\") | .status" \
   "$MANIFEST" 2>/dev/null || echo "unknown")
