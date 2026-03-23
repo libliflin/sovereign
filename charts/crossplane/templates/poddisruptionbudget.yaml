@@ -1,0 +1,33 @@
+{{- /*
+  PodDisruptionBudgets for Crossplane components.
+  Note: crossplane-rbac-manager uses legacy label selectors (app/release),
+  while the core crossplane deployment uses app.kubernetes.io/* labels.
+*/ -}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crossplane-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "crossplane-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crossplane
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crossplane-rbac-manager-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "crossplane-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: crossplane-rbac-manager
+      release: {{ .Release.Name }}

@@ -1,0 +1,18 @@
+{{- /*
+  PodDisruptionBudgets for Rook-Ceph operator.
+  The Ceph OSDs, MONs, and MGRs are managed by the operator and have their own
+  PDBs created by the Rook operator itself. This PDB covers the operator deployment.
+*/ -}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rook-ceph-operator-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "rook-ceph.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: rook-ceph-operator

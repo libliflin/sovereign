@@ -176,20 +176,20 @@ jobs:
 
       - name: Shellcheck bootstrap scripts
         run: |
-          find bootstrap -name "*.sh" -print0 | xargs -0 shellcheck
+          find bootstrap -name "*.sh" -print0 | xargs -0 shellcheck -S error
 
       - name: Shellcheck prd scripts
         run: |
-          find prd -name "*.sh" -print0 | xargs -0 shellcheck
+          find prd -name "*.sh" -print0 | xargs -0 shellcheck -S error
 
       - name: Shellcheck scripts/ralph
         run: |
-          find scripts/ralph -name "*.sh" -print0 | xargs -0 shellcheck
+          find scripts/ralph -name "*.sh" -print0 | xargs -0 shellcheck -S error
 
       - name: Shellcheck vendor scripts (if any)
         run: |
           if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
-            find vendor -name "*.sh" -print0 | xargs -0 shellcheck
+            find vendor -name "*.sh" -print0 | xargs -0 shellcheck -S error
           else
             echo "No vendor scripts yet — skipping"
           fi
@@ -359,7 +359,7 @@ jobs:
 
       - name: Shellcheck provider scripts
         run: |
-          find bootstrap/providers -name "*.sh" -print0 | xargs -0 shellcheck
+          find bootstrap/providers -name "*.sh" -print0 | xargs -0 shellcheck -S error
 
       - name: Assert node count guard in bootstrap.sh
         run: |

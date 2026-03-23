@@ -1,0 +1,21 @@
+{{- /*
+  PodDisruptionBudgets for ArgoCD components.
+  Ensures rolling upgrades and node drains never take all replicas offline.
+*/ -}}
+{{- $components := list "argocd-server" "argocd-repo-server" "argocd-applicationset-controller" -}}
+{{- range $components }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ . }}-pdb
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "argocd.labels" $ | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ . }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+{{- end }}
