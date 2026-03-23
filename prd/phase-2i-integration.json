@@ -1,0 +1,160 @@
+{
+  "phase": "2i",
+  "name": "integration",
+  "description": "Integration test sprint. Every implemented chart must actually deploy to a kind cluster and reach Running state. No new features until the platform can be smoke-tested end-to-end locally. Cloud (Hetzner) testing is manual-only, gated behind --confirm-charges.",
+  "sprintRules": [
+    "CI may NEVER call cloud provider APIs (Hetzner, AWS, DO, Cloudflare tunnel create). Static validation only.",
+    "Integration tests use kind clusters only \u2014 free, local, reproducible.",
+    "Live cloud tests (bootstrap.sh against real VPS) are manual-only, never triggered by CI.",
+    "A story is not done until `kubectl get pods -n <ns>` shows Running, not just helm lint passes."
+  ],
+  "stories": [
+    {
+      "id": "2I-001",
+      "phase": "2i",
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/kind-setup",
+      "title": "kind cluster setup: sovereign-test (single) and sovereign-ha (3-node) configs",
+      "description": "kind/setup.sh, kind/sovereign-single.yaml, kind/sovereign-ha.yaml already exist (created outside Ralph). This story verifies they work end-to-end and documents the setup in docs/. Run ./kind/setup.sh --dry-run and confirm output. Run ./kind/setup.sh to create sovereign-test cluster with Cilium and local-path storage. Verify all system pods reach Running. Update docs/quickstart.md with a 'Local Testing' section. Add kind/ to CI: the validate.yml argocd-validate job should use a running kind cluster instead of kubectl --dry-run=client where possible.",
+      "acceptanceCriteria": [
+        "kind/setup.sh --dry-run completes without error",
+        "kind/setup.sh creates sovereign-test cluster with Cilium CNI",
+        "kubectl get nodes shows all nodes Ready",
+        "kubectl get pods -n kube-system shows all pods Running",
+        "local-path storage class exists and is default",
+        "shellcheck kind/setup.sh exits 0",
+        "docs/quickstart.md has Local Testing section referencing kind/setup.sh",
+        "PR created, CI green, PR merged to main"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "requiredCapabilities": [
+        "kind",
+        "docker",
+        "helm",
+        "kubectl",
+        "gh"
+      ]
+    },
+    {
+      "id": "2I-002",
+      "phase": "2i",
+      "priority": 2,
+      "points": 3,
+      "branchName": "feature/chart-smoke-tests",
+      "title": "Chart smoke tests: every implemented chart deploys to kind with pods Running",
+      "description": "For each of the 9 implemented charts (argocd, cert-manager, cilium, crossplane, keycloak, rook-ceph, sealed-secrets, vault, gitlab, harbor \u2014 minus those that require Ceph storage), perform a real helm install against the sovereign-test kind cluster and verify pods reach Running state within a timeout. Create kind/smoke-test-charts.sh: for each chart in a list, run helm dependency update, helm install --create-namespace, kubectl wait --for=condition=Ready pods --timeout=3m. If a chart requires Ceph (rook-ceph, gitlab, harbor) skip real install and use helm install --dry-run only \u2014 note this as a known limitation. After each install, run helm uninstall to keep the cluster clean. Charts that use external dependencies (Keycloak needing PostgreSQL, etc.) should use chart-internal stubs or --set flags to make them self-contained for testing. Exit non-zero if any chart fails to reach Running state.",
+      "acceptanceCriteria": [
+        "kind/smoke-test-charts.sh exists and passes shellcheck",
+        "argocd chart: pods Running in kind",
+        "cert-manager chart: pods Running in kind",
+        "crossplane chart: pods Running in kind",
+        "sealed-secrets chart: pods Running in kind",
+        "vault chart: pods Running (dev mode) in kind",
+        "keycloak chart: pods Running (embedded DB) in kind",
+        "rook-ceph, gitlab, harbor: helm install --dry-run passes (Ceph dependency noted as blocker)",
+        "kind/smoke-test-charts.sh --dry-run prints plan without installing",
+        "PR created, CI green, PR merged to main",
+        "CI validate.yml has new job: chart-integration using kind"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "requiredCapabilities": [
+        "kind",
+        "docker",
+        "helm",
+        "kubectl",
+        "gh"
+      ],
+      "blocker": null
+    },
+    {
+      "id": "2I-003",
+      "phase": "2i",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/cost-gate",
+      "title": "Cost gate: bootstrap.sh --estimated-cost prints charges before any cloud API call",
+      "description": "Before bootstrap.sh makes any API call to Hetzner, AWS, or DigitalOcean, it must print an estimated monthly cost and require explicit confirmation. Add --estimated-cost flag: prints cost table and exits 0 without provisioning anything. Add --confirm-charges flag: required for any real provisioning (bootstrap.sh will refuse to provision without it). The cost table must show: provider, node count, node type, cost per node/mo, total/mo, and a running 30-day total. Add to CLAUDE.md quality gates: bootstrap scripts must never be called in CI (add a CI gate that greps for 'bootstrap.sh' in GitHub Actions workflow files and fails if found outside of a --dry-run context).",
+      "acceptanceCriteria": [
+        "bootstrap.sh --estimated-cost prints cost table and exits 0 without any API calls",
+        "bootstrap.sh without --confirm-charges prints warning and exits 1",
+        "bootstrap.sh --dry-run --confirm-charges prints actions without executing",
+        "hetzner.sh: cost table shows CX22=\u20ac4.51/node, CX32=\u20ac7.49/node, 3-node totals",
+        "aws-ec2.sh: cost table shows t3.small=$15/node/mo, t3.medium=$30/node/mo",
+        "CI validate.yml has bootstrap-api-guard job: grep for hcloud/aws/doctl calls in CI files, fail if found",
+        "shellcheck passes on bootstrap.sh",
+        "PR created, CI green, PR merged to main"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "requiredCapabilities": [
+        "shellcheck",
+        "gh"
+      ]
+    },
+    {
+      "id": "2I-004",
+      "phase": "2i",
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/pdb-chaos-test",
+      "title": "Chaos: delete a kind node, verify PDB keeps service alive",
+      "description": "Using the sovereign-ha kind cluster (3 nodes), install a chart with replicaCount=2 and a PDB (minAvailable=1), then delete one worker node and verify the service remains available. Create kind/chaos-test.sh: create sovereign-ha cluster, install sealed-secrets (or vault) with 2 replicas, verify 2 pods Running across 2 different nodes (anti-affinity working), docker stop <worker-node-container> to simulate node failure, kubectl wait for pod rescheduling, verify service still has >= 1 Running pod (PDB held), verify new pod scheduled on surviving node. Exit 0 if PDB protected the service, exit 1 if service went fully down. This test proves the HA architecture actually works, not just that PDB YAML exists.",
+      "acceptanceCriteria": [
+        "kind/chaos-test.sh exists and passes shellcheck",
+        "kind/chaos-test.sh --dry-run prints plan without executing",
+        "With sovereign-ha cluster: 2 replicas spread across 2 different nodes (anti-affinity verified)",
+        "After docker stop on one worker: service maintains >= 1 Running pod",
+        "New pod reschedules on surviving node within 3 minutes",
+        "kind/chaos-test.sh exits 0 (PDB protected service)",
+        "kind/chaos-test.sh cleans up after itself (helm uninstall, node restored)",
+        "PR created, CI green (chaos test runs in CI on sovereign-ha), PR merged to main"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "requiredCapabilities": [
+        "kind",
+        "docker",
+        "helm",
+        "kubectl",
+        "gh"
+      ]
+    },
+    {
+      "id": "2I-005",
+      "phase": "2i",
+      "priority": 5,
+      "points": 1,
+      "branchName": "feature/integration-ci-job",
+      "title": "CI: add chart-integration job to validate.yml using kind",
+      "description": "Add a chart-integration job to .github/workflows/validate.yml that: creates a sovereign-test kind cluster (single node), runs kind/smoke-test-charts.sh against the charts that don't require Ceph, reports pass/fail per chart. This job runs on every PR. It must complete in under 10 minutes. Use GitHub Actions cache for helm chart dependencies. The job must clean up the kind cluster whether it passes or fails (use job: cleanup with if: always()). This closes the loop: PRs now get static lint (Job 1) AND real deployment testing (chart-integration job).",
+      "acceptanceCriteria": [
+        "validate.yml has chart-integration job",
+        "chart-integration creates kind cluster, runs smoke tests, deletes cluster",
+        "cleanup step runs with if: always() \u2014 cluster always deleted even on failure",
+        "Job completes in under 10 minutes",
+        "At least vault, cert-manager, sealed-secrets, crossplane reach Running in CI",
+        "PR created, CI green including chart-integration job, PR merged to main"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "requiredCapabilities": [
+        "kind",
+        "docker",
+        "gh"
+      ]
+    }
+  ]
+}

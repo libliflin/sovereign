@@ -76,6 +76,15 @@
       "reviewPassRate": 100.0
     },
     {
+      "id": "2i",
+      "name": "integration",
+      "file": "prd/phase-2i-integration.json",
+      "status": "pending",
+      "capacity": 10,
+      "description": "Integration tests. Kind-based deployment verification. Cost gate on bootstrap scripts.",
+      "mustPrecedePhase": 3
+    },
+    {
       "id": 3,
       "name": "gitops-engine",
       "description": "GitLab (split into sub-stories), Harbor, ArgoCD Image Updater, GitLab Runners.",

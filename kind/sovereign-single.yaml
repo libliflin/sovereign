@@ -1,0 +1,53 @@
+# kind/sovereign-single.yaml
+# Single-node cluster for fast chart smoke tests.
+# Use this in CI and for quick local validation.
+# Does NOT test HA or PDB behaviour — use sovereign-ha.yaml for that.
+#
+# Memory: ~1.5GB Docker overhead
+# Usage:  kind create cluster --config kind/sovereign-single.yaml --name sovereign-test
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+name: sovereign-test
+
+networking:
+  # Disable kindnet so we can install Cilium as the CNI.
+  # Without this, Cilium and kindnet conflict and pods never become Ready.
+  disableDefaultCNI: true
+  # Disable kube-proxy — Cilium replaces it with eBPF.
+  # Comment this out if you want to skip Cilium and use a simpler CNI for quick tests.
+  kubeProxyMode: "none"
+  # Non-overlapping subnets that don't conflict with typical home/office networks.
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+
+nodes:
+  - role: control-plane
+    # Expose ports so you can hit ingress from your browser on localhost.
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+        listenAddress: "127.0.0.1"
+      - containerPort: 30443
+        hostPort: 8443
+        protocol: TCP
+        listenAddress: "127.0.0.1"
+    # Labels used by node affinity rules in charts.
+    labels:
+      sovereign.autarky/role: "all-in-one"
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            # Allow pods to be scheduled on the control plane node
+            # (single-node cluster — no taints).
+            node-labels: "ingress-ready=true"
+      - |
+        kind: KubeletConfiguration
+        # Generous eviction thresholds — we're memory-constrained on Docker Desktop.
+        evictionHard:
+          memory.available: "200Mi"
+          nodefs.available: "5%"
