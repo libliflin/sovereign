@@ -590,14 +590,24 @@ ${SC_OUT}"
   check_branch_pushed() {
     local branch="$1"
     if [[ -z "$branch" ]]; then return 0; fi
+    # Branch still exists on remote (open PR or not yet deleted)
     if git -C "$REPO_ROOT" ls-remote --heads origin "$branch" 2>/dev/null | grep -q .; then
       log "  ✓ pushed: origin/$branch"
-    else
-      log "  ✗ NOT pushed: $branch"
-      log "    → Fix: git push origin $branch"
-      PROOF_FAILURES+=("{\"type\":\"branch-not-pushed\",\"detail\":\"Branch '${branch}' not found on origin. Run: git push origin ${branch}\"}")
-      PROOF_FAIL=1
+      return 0
     fi
+    # Branch was deleted after squash-merge — check if a merged PR exists for it
+    if command -v gh &>/dev/null; then
+      local merged_pr
+      merged_pr=$(gh pr list --state merged --head "$branch" --json number --jq '.[0].number' 2>/dev/null || echo "")
+      if [[ -n "$merged_pr" && "$merged_pr" != "null" ]]; then
+        log "  ✓ pushed: origin/$branch (branch deleted post-merge — PR #$merged_pr merged)"
+        return 0
+      fi
+    fi
+    log "  ✗ NOT pushed: $branch"
+    log "    → Fix: git push origin $branch"
+    PROOF_FAILURES+=("{\"type\":\"branch-not-pushed\",\"detail\":\"Branch '${branch}' not found on origin. Run: git push origin ${branch}\"}")
+    PROOF_FAIL=1
   }
 
   check_pr_exists() {
@@ -605,7 +615,8 @@ ${SC_OUT}"
     if [[ -z "$branch" ]]; then return 0; fi
     if ! command -v gh &>/dev/null; then return 0; fi
     local pr_num
-    pr_num=$(gh pr list --head "$branch" --json number --jq '.[0].number' 2>/dev/null || echo "")
+    # Check open PRs first, then merged (squash-merge deletes the branch)
+    pr_num=$(gh pr list --state all --head "$branch" --json number --jq '.[0].number' 2>/dev/null || echo "")
     if [[ -n "$pr_num" && "$pr_num" != "null" ]]; then
       log "  ✓ PR #$pr_num exists for $branch"
     else
