@@ -170,3 +170,8 @@ keycloak:
   serviceAccount:
     create: true
     name: keycloak
+
+  # Disable the bitnami-managed PDB — sovereign wrapper provides one instead.
+  # This ensures explicit control over minAvailable and selector labels.
+  pdb:
+    create: false
