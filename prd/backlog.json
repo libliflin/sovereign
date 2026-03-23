@@ -260,22 +260,26 @@
       "priority": 9,
       "branchName": "feature/helm-vault",
       "title": "Helm chart: OpenBao secrets engine (Apache 2.0 Vault fork)",
-      "description": "Create charts/openbao/ wrapping openbao/openbao. Dev mode enabled by default for bootstrap (single pod, in-memory). Production HA mode values documented and togglable. Include: auto-unseal config stub, PKI secrets engine initialization script in templates/jobs/, Kubernetes auth method setup. Ingress at vault.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/platform/.",
+      "description": "Create charts/openbao/ wrapping openbao/openbao (Apache-2.0 fork of HashiCorp Vault). NOTE: charts/vault/ was created using hashicorp/vault (BUSL-1.1 \u2014 BLOCKED). It must be removed and replaced with charts/openbao/. Dev mode enabled by default for bootstrap (single pod, in-memory). Production HA mode values documented and togglable. Include: auto-unseal config stub, PKI secrets engine initialization script in templates/jobs/, Kubernetes auth method setup. Ingress at vault.{{ .Values.global.domain }}. ArgoCD app in argocd-apps/platform/vault-app.yaml.",
       "acceptanceCriteria": [
-        "charts/vault/ dev mode works out of box",
+        "charts/openbao/ exists (NOT charts/vault/ \u2014 HashiCorp Vault is BUSL-1.1 blocked)",
+        "charts/vault/ is REMOVED from the repository",
+        "charts/openbao/ dev mode works out of box (openbao/openbao image)",
         "Production HA values documented in values.yaml with comments",
         "PKI init Job template exists in templates/jobs/",
         "Kubernetes auth method setup Job template exists",
         "Ingress uses global.domain",
         "helm lint passes",
-        "argocd-apps/platform/vault-app.yaml exists"
+        "argocd-apps/platform/vault-app.yaml points to charts/openbao/"
       ],
-      "passes": true,
+      "passes": false,
       "points": 2,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
       "reviewed": false,
-      "reviewNotes": [],
+      "reviewNotes": [
+        "Story was originally implemented with hashicorp/vault (BUSL-1.1 blocked license). Must be reimplemented using openbao/openbao (Apache-2.0). charts/vault/ must be deleted. See VENDORS.yaml: vault entry has license_allows_vendor: false, alternative: openbao."
+      ],
       "attempts": 0,
       "smart": {
         "specific": 0,
@@ -284,7 +288,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "notes": "Re-opened: charts/vault/ used HashiCorp/BUSL-1.1. Must rebuild with openbao/openbao (Apache-2.0)."
     },
     {
       "id": "010",

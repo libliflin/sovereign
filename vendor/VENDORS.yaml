@@ -1,0 +1,375 @@
+# Sovereign Platform — Vendor Manifest
+# Schema per entry:
+#   name:                  string  — package identifier (matches vendor/recipes/<name>/)
+#   upstream_url:          string  — canonical upstream source URL
+#   license_spdx:          string  — SPDX license identifier
+#   license_allows_vendor: bool    — false for BSL/SSPL/AGPL (blocked)
+#   version_pinned:        string  — pinned release version
+#   fetch_method:          enum    — git_tag | tarball | git_commit
+#   distroless_compatible: enum    — yes | partial | no
+#   distroless_base:       string  — gcr.io/distroless/static | java21 | nodejs | none
+#   deprecated:            bool    — true if this entry should not be used as-is
+#   deprecated_reason:     string  — why it is deprecated (BSL violation, runtime concerns)
+#   alternative:           string  — replacement package name when deprecated: true
+
+vendors:
+
+  # ── CNI ─────────────────────────────────────────────────────────────────
+  - name: cilium
+    upstream_url: https://github.com/cilium/cilium
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v1.16.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Infrastructure Composition ──────────────────────────────────────────
+  - name: crossplane
+    upstream_url: https://github.com/crossplane/crossplane
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v1.17.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── TLS / Certificate Management ────────────────────────────────────────
+  - name: cert-manager
+    upstream_url: https://github.com/cert-manager/cert-manager
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v1.14.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Sealed Secrets ───────────────────────────────────────────────────────
+  - name: sealed-secrets
+    upstream_url: https://github.com/bitnami-labs/sealed-secrets
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v0.26.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Secrets Engine ───────────────────────────────────────────────────────
+  - name: vault
+    upstream_url: https://github.com/hashicorp/vault
+    license_spdx: BUSL-1.1
+    license_allows_vendor: false
+    version_pinned: "v1.15.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: true
+    deprecated_reason: "HashiCorp changed license to BUSL-1.1 (Business Source License) in 2023. BSL is not approved for vendoring in the Sovereign Platform. Use OpenBao (Apache-2.0 fork) instead."
+    alternative: openbao
+
+  - name: openbao
+    upstream_url: https://github.com/openbao/openbao
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.0.3"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Identity / SSO ───────────────────────────────────────────────────────
+  - name: keycloak
+    upstream_url: https://github.com/keycloak/keycloak
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v24.0.4"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/java21
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Storage ──────────────────────────────────────────────────────────────
+  - name: rook-ceph
+    upstream_url: https://github.com/rook/rook
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v1.13.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── GitOps Engine ────────────────────────────────────────────────────────
+  - name: argocd
+    upstream_url: https://github.com/argoproj/argo-cd
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.10.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: gitlab
+    upstream_url: https://gitlab.com/gitlab-org/gitlab
+    license_spdx: MIT
+    license_allows_vendor: true
+    version_pinned: "17.1.0"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: none
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: harbor
+    upstream_url: https://github.com/goharbor/harbor
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.10.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Service Mesh & Security ──────────────────────────────────────────────
+  - name: istio
+    upstream_url: https://github.com/istio/istio
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "1.21.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: opa-gatekeeper
+    upstream_url: https://github.com/open-policy-agent/gatekeeper
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v3.17.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: trivy-operator
+    upstream_url: https://github.com/aquasecurity/trivy-operator
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v0.20.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: falco
+    upstream_url: https://github.com/falcosecurity/falco
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "0.37.0"
+    fetch_method: git_tag
+    distroless_compatible: no
+    distroless_base: none
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Observability ────────────────────────────────────────────────────────
+  - name: prometheus-stack
+    upstream_url: https://github.com/prometheus/prometheus
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.51.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: loki
+    upstream_url: https://github.com/grafana/loki
+    license_spdx: AGPL-3.0-only
+    license_allows_vendor: false
+    version_pinned: "v3.0.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: true
+    deprecated_reason: "Grafana Labs changed Loki license to AGPL-3.0 in 2021. AGPL requires review before vendoring. Use VictoriaLogs (Apache-2.0) as an alternative, or obtain legal review for AGPL use."
+    alternative: victorialogs
+
+  - name: thanos
+    upstream_url: https://github.com/thanos-io/thanos
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v0.35.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: tempo
+    upstream_url: https://github.com/grafana/tempo
+    license_spdx: AGPL-3.0-only
+    license_allows_vendor: false
+    version_pinned: "v2.4.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: true
+    deprecated_reason: "Grafana Tempo uses AGPL-3.0 license. AGPL requires review before vendoring. Use Jaeger (Apache-2.0) as an alternative tracing backend."
+    alternative: jaeger
+
+  - name: grafana
+    upstream_url: https://github.com/grafana/grafana
+    license_spdx: AGPL-3.0-only
+    license_allows_vendor: false
+    version_pinned: "v10.4.0"
+    fetch_method: git_tag
+    distroless_compatible: no
+    distroless_base: none
+    deprecated: true
+    deprecated_reason: "Grafana OSS uses AGPL-3.0 license since 2021. AGPL requires review before vendoring. Consider Perses (Apache-2.0) as an alternative dashboard tool."
+    alternative: perses
+
+  # ── Developer Experience ─────────────────────────────────────────────────
+  - name: backstage
+    upstream_url: https://github.com/backstage/backstage
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v1.26.0"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/nodejs
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: code-server
+    upstream_url: https://github.com/coder/code-server
+    license_spdx: MIT
+    license_allows_vendor: true
+    version_pinned: "v4.23.0"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/nodejs
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: sonarqube
+    upstream_url: https://github.com/SonarSource/sonarqube
+    license_spdx: LGPL-3.0-only
+    license_allows_vendor: true
+    version_pinned: "10.5.1"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/java21
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: reportportal
+    upstream_url: https://github.com/reportportal/reportportal
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "23.2"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/java21
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  # ── Testing Infrastructure ───────────────────────────────────────────────
+  - name: selenium-grid
+    upstream_url: https://github.com/SeleniumHQ/selenium
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "4.20.0"
+    fetch_method: git_tag
+    distroless_compatible: no
+    distroless_base: none
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: k6-operator
+    upstream_url: https://github.com/grafana/k6-operator
+    license_spdx: AGPL-3.0-only
+    license_allows_vendor: false
+    version_pinned: "v0.0.15"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: true
+    deprecated_reason: "k6-operator is AGPL-3.0. AGPL requires review before vendoring. The k6 binary itself (MIT) can be run directly in a Job without the operator."
+    alternative: k6-job
+
+  - name: wiremock
+    upstream_url: https://github.com/wiremock/wiremock
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "3.5.4"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/java21
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: mailhog
+    upstream_url: https://github.com/mailhog/MailHog
+    license_spdx: MIT
+    license_allows_vendor: true
+    version_pinned: "v1.0.1"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+
+  - name: chaos-mesh
+    upstream_url: https://github.com/chaos-mesh/chaos-mesh
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.7.0"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
