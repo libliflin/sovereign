@@ -597,6 +597,72 @@ The review ceremony will catch self-certification. Stories re-opened by review w
 
 ---
 
+## TESTING STRATEGY — kind-first, cloud-never-in-CI
+
+### The testing pyramid
+
+```
+Layer 3 — Live cloud (Hetzner/DO/AWS)   MANUAL ONLY, never in CI
+  ./bootstrap/bootstrap.sh --confirm-charges
+  Requires cloud credentials. Costs real money. Run deliberately.
+
+Layer 2 — kind integration tests        kind-first, runs in CI
+  ./kind/setup.sh                        Free, local, reproducible.
+  helm install → kubectl wait → pod Running
+  Proves charts actually deploy, not just lint.
+
+Layer 1 — Static analysis               Always runs in CI
+  helm lint, shellcheck, kubectl dry-run
+  Fast, no cluster needed.
+```
+
+### Rules Ralph MUST follow
+
+1. **Never call cloud APIs in CI or during story implementation.**
+   Do not execute `hcloud`, `doctl`, `aws`, or `cloudflare` commands unless the story
+   explicitly requires live provisioning AND the user has confirmed it.
+
+2. **kind is available for integration tests.** The cluster may already be running.
+   Check with `kind get clusters` before creating one. Use context `kind-sovereign-test`.
+   ```bash
+   kind get clusters                          # check if sovereign-test exists
+   ./kind/setup.sh                            # create it if not
+   ./kind/setup.sh --status                   # check health
+   ```
+
+3. **For Helm chart stories, do a real install into kind** if the chart doesn't require
+   Ceph (rook-ceph, gitlab, harbor need Ceph — use `helm install --dry-run` for those).
+   ```bash
+   helm install test-release charts/<name>/ \
+     --kube-context kind-sovereign-test \
+     --namespace <expected-ns> --create-namespace \
+     --wait --timeout 2m
+   kubectl --context kind-sovereign-test get pods -n <expected-ns>
+   # Must show Running before marking passes:true
+   helm uninstall test-release --kube-context kind-sovereign-test -n <expected-ns>
+   ```
+
+4. **Known chart namespaces** (upstream charts hardcode these — use them exactly):
+   | Chart | Namespace |
+   |-------|-----------|
+   | sealed-secrets | `sealed-secrets` |
+   | cert-manager | `cert-manager` |
+   | crossplane | `crossplane-system` |
+   | argocd | `argocd` |
+   | vault | `vault` |
+   | keycloak | `keycloak` |
+
+5. **Credentials needed for daily work:** only `GITHUB_TOKEN` (for `gh pr create`).
+   Cloud credentials (HETZNER_TOKEN, CLOUDFLARE_API_TOKEN, etc.) are NOT needed
+   for any story until phase-2i story 2I-003 (cost gate) or live provisioning.
+   Do not ask for or block on cloud credentials. Use kind instead.
+
+6. **Bootstrap scripts are tested statically only** (shellcheck + bash -n + --dry-run).
+   Never run `bootstrap.sh` or any provider script in full execution mode during
+   a story. Those are manual steps the human runs when ready to provision real infra.
+
+---
+
 ## QUALITY GATES
 
 Before marking any story `passes: true`, you MUST:
@@ -607,16 +673,21 @@ Before marking any story `passes: true`, you MUST:
 5. For any JS/TS code: `npm run typecheck && npm run lint` — clean
 6. For ArgoCD apps: validate YAML with `kubectl apply --dry-run=client`
 
+**kind integration gate — for Helm chart stories where chart does NOT require Ceph:**
+7. `helm install` into kind-sovereign-test succeeds (exit 0)
+8. `kubectl get pods -n <ns>` shows all pods Running within 2 minutes
+9. `helm uninstall` cleanly removes the release
+
 **HA gate — every Helm chart story MUST also verify:**
-7. `helm template` output contains a `PodDisruptionBudget` resource
-8. `helm template` output contains `podAntiAffinity` in the Deployment/StatefulSet
-9. Default `replicaCount` in values.yaml is >= 2
-10. Every container spec has `readinessProbe`, `livenessProbe`, `resources.requests`, `resources.limits`
+10. `helm template` output contains a `PodDisruptionBudget` resource
+11. `helm template` output contains `podAntiAffinity` in the Deployment/StatefulSet
+12. Default `replicaCount` in values.yaml is >= 2
+13. Every container spec has `readinessProbe`, `livenessProbe`, `resources.requests`, `resources.limits`
 
 **Vendor/build gate — every vendor story MUST also verify:**
-11. `vendor/audit.sh` exits 0 (no license violations, no missing alternatives)
-12. All new recipe.yaml files have `rollout` and `backup` sections
-13. All new vendor/*.sh scripts support `--dry-run` flag
+14. `vendor/audit.sh` exits 0 (no license violations, no missing alternatives)
+15. All new recipe.yaml files have `rollout` and `backup` sections
+16. All new vendor/*.sh scripts support `--dry-run` flag
 
 ---
 

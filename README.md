@@ -104,31 +104,65 @@ SSH goes through `cloudflare access ssh`. Swap in your own front door by impleme
 
 ## Prerequisites
 
-- A domain name you control
-- DNS managed by Cloudflare (default) or your chosen front door provider
-- **3+ VPS nodes or bare-metal servers** running Ubuntu 22.04+ (odd number, minimum 3)
-- A local machine with: `bash`, `ssh`, `kubectl`, `helm` v3+, provider CLI
+### For local development and testing (kind — no cloud account needed)
+- Docker Desktop (running)
+- `brew install kind kubectl helm gh shellcheck`
+- That's it. No cloud account, no domain, no credentials.
 
-> **Why 3 nodes?** etcd needs quorum (3 tolerates 1 failure, 2 loses quorum on any failure).
-> Ceph needs 3 OSDs. These two constraints independently require 3 nodes minimum.
+### For live production deployment (real VPS)
+- A domain name you control, DNS managed by Cloudflare
+- **3+ VPS nodes** running Ubuntu 22.04+ (odd number, minimum 3 — see [why](#high-availability--non-negotiable))
+- A local machine with: `bash`, `ssh`, `kubectl`, `helm` v3+, provider CLI
+- Cloud credentials: see `.env.example` for what each provider needs
 
 ---
 
 ## Quick Start
+
+### Option A — Local testing with kind (start here)
 
 ```bash
 # 1. Clone
 git clone https://github.com/libliflin/sovereign
 cd sovereign
 
-# 2. Configure
+# 2. Start Docker Desktop, then:
+./kind/setup.sh              # creates sovereign-test cluster (~4 minutes)
+./kind/setup.sh --status     # verify it's healthy
+
+# 3. Smoke test a chart
+helm install test-release charts/sealed-secrets/ \
+  --namespace sealed-secrets --create-namespace \
+  --kube-context kind-sovereign-test --wait
+kubectl --context kind-sovereign-test get pods -n sealed-secrets
+
+# 4. Tear down when done
+./kind/setup.sh --destroy
+```
+
+See [kind/README.md](kind/README.md) for full kind documentation.
+
+### Option B — Live provisioning on real VPS
+
+```bash
+# 1. Clone and configure
+git clone https://github.com/libliflin/sovereign
+cd sovereign
 cp bootstrap/config.yaml.example bootstrap/config.yaml
 # Edit: domain, provider, frontDoor, nodes.count (must be odd, >= 3)
 
-# 3. Bootstrap (provisions nodes, hardens, tunnels, installs K3s HA + kube-vip)
-./bootstrap/bootstrap.sh
+# 2. Set credentials (Hetzner + Cloudflare minimum)
+cp .env.example .env
+# Edit .env with your tokens — see .env.example for where to get each one
+source .env
 
-# 4. Verify all nodes healthy
+# 3. Check estimated cost before spending anything
+./bootstrap/bootstrap.sh --estimated-cost
+
+# 4. Provision (requires --confirm-charges — this creates real servers)
+./bootstrap/bootstrap.sh --confirm-charges
+
+# 5. Verify
 ./bootstrap/verify.sh
 ```
 
