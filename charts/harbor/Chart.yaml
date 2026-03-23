@@ -1,0 +1,11 @@
+apiVersion: v2
+name: harbor
+description: Harbor artifact registry wrapper chart for the Sovereign Platform. Wraps the official goharbor/harbor chart with Ceph S3 storage, Keycloak OIDC, and Trivy scanner integration.
+type: application
+version: 0.1.0
+appVersion: "2.11.0"
+dependencies:
+  - name: harbor
+    version: "1.15.0"
+    repository: "https://helm.goharbor.io"
+    alias: harbor

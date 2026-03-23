@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    sovereign/tier: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-55"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/harbor
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: harbor.expose.ingress.hosts.core
+          value: "harbor.sovereign-autarky.dev"
+        - name: harbor.externalURL
+          value: "https://harbor.sovereign-autarky.dev"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: harbor
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+  revisionHistoryLimit: 3
