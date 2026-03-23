@@ -321,6 +321,7 @@ check_tool gh       true "brew install gh && gh auth login --web"
 
 log "  Code quality:"
 check_tool shellcheck true "brew install shellcheck"
+check_tool yq         true "brew install yq"
 
 log "  Kind/Docker:"
 NEEDS_KIND=$(jq -e '[.stories[].requiredCapabilities[]? | select(. == "kind")] | length > 0' \
@@ -512,27 +513,27 @@ ${SC_OUT}"
   done < <(find "$REPO_ROOT/prd" -name "*.json" -not -path "*/.git/*" -print0 2>/dev/null)
   [[ $JSON_FAIL_LOCAL -eq 0 ]] && log "    all JSON files valid"
 
-  # 4d: kubectl dry-run (only if cluster reachable)
-  if command -v kubectl &>/dev/null && kubectl cluster-info &>/dev/null 2>&1; then
-    log "  kubectl apply --dry-run (argocd-apps/):"
-    YAML_FAIL=0
-    while IFS= read -r -d '' yaml_file; do
-      rel="${yaml_file#"$REPO_ROOT/"}"
-      KUBECTL_EXIT=0
-      KUBECTL_OUT=$(kubectl apply --dry-run=client -f "$yaml_file" 2>&1) || KUBECTL_EXIT=$?
-      if [[ $KUBECTL_EXIT -eq 0 ]]; then
-        log "    ✓ $rel"
-      else
-        log "    ✗ FAIL: $rel"
-        OUT_JSON=$(printf '%s' "$KUBECTL_OUT" | head -c 3000 | jq -Rs '.')
-        SMOKE_FAILURES+=("{\"type\":\"kubectl-dry-run\",\"target\":\"${rel}\",\"output\":${OUT_JSON}}")
-        YAML_FAIL=1; SMOKE_FAIL=1
-      fi
-    done < <(find "$REPO_ROOT/argocd-apps" -name "*.yaml" -print0 2>/dev/null)
-    [[ $YAML_FAIL -eq 0 ]] && log "    all ArgoCD manifests valid"
-  else
-    log "  ~ kubectl dry-run skipped (no cluster reachable)"
-  fi
+  # 4d: YAML syntax check for argocd-apps/ manifests
+  # ArgoCD Application/AppProject CRDs may not be installed in the test cluster, so
+  # kubectl dry-run cannot be used. Validate YAML syntax with yq instead — it parses
+  # the YAML without needing any CRD schema, catching malformed manifests at the gate.
+  log "  YAML syntax check (argocd-apps/):"
+  YAML_FAIL=0
+  while IFS= read -r -d '' yaml_file; do
+    rel="${yaml_file#"$REPO_ROOT/"}"
+    YAML_EXIT=0
+    yq e '.' "$yaml_file" > /dev/null 2>&1 || YAML_EXIT=$?
+    if [[ $YAML_EXIT -eq 0 ]]; then
+      log "    ✓ $rel"
+    else
+      YAML_ERR=$(yq e '.' "$yaml_file" 2>&1 | head -c 3000)
+      log "    ✗ FAIL: $rel"
+      OUT_JSON=$(printf '%s' "$YAML_ERR" | jq -Rs '.')
+      SMOKE_FAILURES+=("{\"type\":\"yaml-syntax\",\"target\":\"${rel}\",\"output\":${OUT_JSON}}")
+      YAML_FAIL=1; SMOKE_FAIL=1
+    fi
+  done < <(find "$REPO_ROOT/argocd-apps" -name "*.yaml" -print0 2>/dev/null)
+  [[ $YAML_FAIL -eq 0 ]] && log "    all ArgoCD manifests valid"
 
   # Write smoke test results to sprint file (clears on pass, records specifics on fail)
   SMOKE_TMP=$(mktemp /tmp/sovereign-smoke-XXXXXX.json)
