@@ -1,6 +1,7 @@
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
 
 # ─── Rook Operator (alias: operator) ─────────────────────────────────────────
 # Full values ref: https://rook.io/docs/rook/v1.13/Helm-Charts/operator-chart.md

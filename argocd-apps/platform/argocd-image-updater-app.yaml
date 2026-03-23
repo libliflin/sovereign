@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-image-updater
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    sovereign/tier: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-50"
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argocd-image-updater
+    targetRevision: "0.9.6"
+    helm:
+      values: |
+        config:
+          # Registries: Harbor as primary, plus Docker Hub fallback during bootstrap
+          registries:
+            - name: Harbor Sovereign
+              api_url: https://harbor.sovereign-autarky.dev
+              prefix: harbor.sovereign-autarky.dev
+              credentials: secret:argocd/harbor-credentials#credentials
+              default: true
+            - name: Docker Hub
+              api_url: https://registry-1.docker.io
+              prefix: docker.io
+              insecure: false
+
+          # ArgoCD API endpoint (in-cluster)
+          argocd:
+            server_addr: argocd-server.argocd.svc.cluster.local
+            insecure: true
+
+        # Update strategy: semver for semantic versioning tags
+        updateStrategy: semver
+
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+        # PodDisruptionBudget
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
+
+        replicaCount: 1  # Image Updater is a single-writer; HA via leader election not supported upstream
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # ArgoCD namespace already exists
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+  revisionHistoryLimit: 3

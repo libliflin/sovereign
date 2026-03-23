@@ -11,6 +11,10 @@ metadata:
     # Cilium MUST be deployed before all other apps — it is the CNI.
     # ArgoCD itself will not be healthy until Cilium is running.
     argocd.argoproj.io/sync-wave: "-100"
+    argocd-image-updater.argoproj.io/image-list: "app=harbor.sovereign-autarky.dev/sovereign/cilium"
+    argocd-image-updater.argoproj.io/app.update-strategy: semver
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
 spec:
   revisionHistoryLimit: 3
   project: default

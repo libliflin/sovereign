@@ -19,6 +19,11 @@ global:
     # Client ID prefix. Each service appends its name: sovereign-argocd, sovereign-grafana, etc.
     clientIdPrefix: "sovereign"
 
+  # Image registry prefix for all platform services.
+  # Set to "harbor.<domain>/sovereign" after Harbor is running (Phase 4+).
+  # Leave empty ("") during bootstrap so upstream registries are used.
+  imageRegistry: ""
+
   # Image pull policy for all platform services.
   # Use "IfNotPresent" for production, "Always" for development.
   imagePullPolicy: "IfNotPresent"
