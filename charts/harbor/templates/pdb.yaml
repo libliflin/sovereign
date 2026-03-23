@@ -1,0 +1,67 @@
+{{/*
+PodDisruptionBudgets for Harbor components.
+The upstream harbor/harbor chart does not create PDBs by default.
+We create them here to satisfy the Sovereign HA requirement.
+*/}}
+{{- if .Values.sovereign.createPodDisruptionBudgets }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-harbor-portal-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "harbor-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: "harbor"
+      component: portal
+      release: {{ .Release.Name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-harbor-core-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "harbor-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: "harbor"
+      component: core
+      release: {{ .Release.Name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-harbor-jobservice-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "harbor-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: "harbor"
+      component: jobservice
+      release: {{ .Release.Name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-harbor-registry-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "harbor-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: "harbor"
+      component: registry
+      release: {{ .Release.Name }}
+{{- end }}

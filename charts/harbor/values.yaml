@@ -1,0 +1,208 @@
+## Sovereign Platform — Harbor wrapper chart values
+## All hostnames are derived from global.domain — never hardcode.
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+
+## ── Harbor subchart values (alias: harbor) ──────────────────────────────────
+## https://github.com/goharbor/harbor-helm
+harbor:
+  ## ── Expose — ClusterIP: sovereign wrapper manages the Ingress ───────────
+  ## We disable the upstream chart's ingress and create our own (templates/ingress.yaml)
+  ## so the hostname is always derived from {{ .Values.global.domain }}.
+  expose:
+    type: clusterIP
+    tls:
+      enabled: false  # TLS handled by the wrapper ingress
+    clusterIP:
+      name: harbor
+
+  ## External URL — MUST match harbor.<global.domain>
+  ## Override this at deploy time via ArgoCD application values:
+  ##   harbor.externalURL: "https://harbor.{{ .Values.global.domain }}"
+  ## Default uses the sovereign dogfood domain.
+  externalURL: "https://harbor.sovereign-autarky.dev"
+
+  ## ── Persistence — Ceph storage ─────────────────────────────────────────
+  persistence:
+    enabled: true
+    resourcePolicy: "keep"
+    persistentVolumeClaim:
+      registry:
+        storageClass: "ceph-block"
+        size: "50Gi"
+        accessMode: ReadWriteOnce
+      jobservice:
+        storageClass: "ceph-block"
+        size: "1Gi"
+        accessMode: ReadWriteOnce
+      database:
+        storageClass: "ceph-block"
+        size: "5Gi"
+        accessMode: ReadWriteOnce
+      redis:
+        storageClass: "ceph-block"
+        size: "1Gi"
+        accessMode: ReadWriteOnce
+      trivy:
+        storageClass: "ceph-block"
+        size: "5Gi"
+        accessMode: ReadWriteOnce
+    ## Object storage for artifacts via Ceph S3 (ceph-bucket StorageClass)
+    ## imageChartStorage uses S3-compatible Ceph RGW endpoint
+    imageChartStorage:
+      disableredirect: true
+      type: s3
+      s3:
+        region: us-east-1
+        bucket: harbor-registry
+        regionendpoint: "http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local"
+        accesskey: "REPLACEME"
+        secretkey: "REPLACEME"
+        ## In production, use existingSecret for S3 credentials:
+        ## existingSecret: harbor-s3-credentials
+
+  ## ── High Availability ───────────────────────────────────────────────────
+  portal:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                      - portal
+              topologyKey: kubernetes.io/hostname
+
+  core:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                      - core
+              topologyKey: kubernetes.io/hostname
+
+  jobservice:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                      - jobservice
+              topologyKey: kubernetes.io/hostname
+
+  registry:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: component
+                    operator: In
+                    values:
+                      - registry
+              topologyKey: kubernetes.io/hostname
+
+  ## ── Trivy scanner ─────────────────────────────────────────────────────
+  ## Enabled and uses internal Ceph storage for vulnerability DB cache
+  trivy:
+    enabled: true
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "512Mi"
+      limits:
+        cpu: "1"
+        memory: "1Gi"
+
+  ## ── Authentication — Keycloak OIDC ─────────────────────────────────────
+  ## Harbor OIDC integration: configure after deploy via admin UI or API.
+  ## Settings below are applied via harbor-values ConfigMap and picked up
+  ## by the harbor-core job on first boot.
+  ##
+  ## OIDC provider: Keycloak realm `sovereign`, client `sovereign-harbor`
+  ## Endpoint: https://auth.<domain>/realms/sovereign
+  ##
+  ## To configure programmatically after Harbor is running:
+  ##   curl -u admin:$HARBOR_PASS -X PUT https://harbor.<domain>/api/v2.0/configurations \
+  ##     -H 'Content-Type: application/json' \
+  ##     -d '{"auth_mode":"oidc_auth","oidc_name":"Sovereign SSO",...}'
+  ##
+  ## auth_mode default is "db_auth" (local DB) — switch to "oidc_auth" after Keycloak is up
+
+  ## ── Secrets ─────────────────────────────────────────────────────────────
+  secretKey: "not-a-secure-key-replace-this"  # 16-char AES key — use Sealed Secret in prod
+  harborAdminPassword: "Harbor12345"           # placeholder — use Sealed Secret in prod
+
+  ## ── Database (built-in PostgreSQL) ──────────────────────────────────────
+  database:
+    type: internal
+    internal:
+      password: "changeit"  # placeholder — use Sealed Secret in prod
+
+  ## ── Redis (built-in) ────────────────────────────────────────────────────
+  redis:
+    type: internal
+
+  ## ── Notary — disabled (deprecated in Harbor 2.6+) ──────────────────────
+  notary:
+    enabled: false
+
+## ── Sovereign wrapper config ────────────────────────────────────────────────
+sovereign:
+  ## Whether to create PodDisruptionBudgets (in addition to subchart PDBs)
+  createPodDisruptionBudgets: true

@@ -1,8 +1,8 @@
 {
   "phase": 3,
   "name": "gitops-engine",
-  "description": "GitLab self-hosted and Harbor artifact registry — the core GitOps engine. These are the foundations for the autarky (vendor) system and CI/CD pipeline.",
-  "sprintGoal": "A running self-hosted GitLab and Harbor registry on the cluster, both secured by Keycloak SSO and using Ceph for storage — enabling the platform to host its own source code and container images.",
+  "description": "GitLab self-hosted and Harbor artifact registry \u2014 the core GitOps engine. These are the foundations for the autarky (vendor) system and CI/CD pipeline.",
+  "sprintGoal": "A running self-hosted GitLab and Harbor registry on the cluster, both secured by Keycloak SSO and using Ceph for storage \u2014 enabling the platform to host its own source code and container images.",
   "capacity": 15,
   "stories": [
     {
@@ -21,13 +21,13 @@
         "helm lint passes",
         "argocd-apps/platform/gitlab-app.yaml exists"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "helm dependency update charts/gitlab/ && helm lint charts/gitlab/; helm template charts/gitlab/ | grep -c 'kind:'; verify gitlab-app.yaml exists and is valid YAML; verify values.yaml has global.domain references and ceph storage config.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 4,
@@ -35,7 +35,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Measurable 4: Ceph storage and Keycloak OIDC ACs are verifiable via helm template grep but cannot be live-tested without a cluster. Achievable 4: gitlab chart is complex (many sub-components) but wrapper pattern is well-established."
-      }
+      },
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/6",
+      "notes": "gitlab/gitlab 8.5.0 wrapper. Ceph S3, Keycloak OIDC, Runner k8s executor. PR #6 merged with green CI (14 jobs)."
     },
     {
       "id": "017",
