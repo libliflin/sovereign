@@ -379,3 +379,19 @@
   - `python3 -c "... print(url.replace('https://', 'https://oauth2:'+token+'@', 1))" "$url" "$TOKEN"` is the clean pattern for embedding credentials
   - For `vendor/pin.sh`, Python regex with `re.sub(r'^(version:\s*)"[^"]*"', ..., flags=re.MULTILINE)` is the right approach for updating YAML scalar fields
 ---
+
+## 2026-03-22 - Phase 4 Autarky (Story 021)
+- Created vendor/build.sh: clones from internal GitLab at pinned git_sha, applies patches/*.patch in alphabetical order (find + sort), calls vendor/recipes/<name>/build.sh, tags images as <version>-<short_sha>-p<patch_count>, pushes to sovereign-staging (not production), bakes OCI labels via ko --image-label flags; --dry-run prints all actions without API calls; --backup uses crane or docker tag+push to secondary registry
+- Created vendor/verify-distroless.sh: pulls staging images, runs `docker run --rm --entrypoint /bin/sh <image> -c 'exit 0'` and asserts it FAILS (distroless has no shell), verifies all 4 OCI labels present via docker inspect; --dry-run/--backup supported
+- Updated vendor/fetch.sh: after `git clone --depth 1 --branch $version`, reads git_sha from recipe.yaml and asserts `git rev-parse HEAD == recipe.git_sha`; aborts with clear error if mismatch (tampered tag detection)
+- Created vendor/recipes/{cert-manager,crossplane,argocd,sealed-secrets,openbao}/build.sh: each uses `ko build` with --base-image gcr.io/distroless/static, --platform linux/amd64,linux/arm64, and 4 --image-label OCI annotations; env vars (KO_DOCKER_REPO, IMAGE_TAG, SOVEREIGN_*) set by vendor/build.sh
+- Added git_sha and go_version fields to all 5 recipe.yaml files; SHAs verified via git ls-remote before adding
+- PR #11 merged, CI green (15/15 jobs pass)
+- **Learnings for future iterations:**
+  - `local` and command substitution must be split for shellcheck SC2155: `local image_ref; image_ref=$(cmd)` not `local image_ref=$(cmd)`
+  - `set -u` with variables that may be unset in dry-run: expand env vars only after the dry-run early-return, or use `${VAR:-placeholder}` for display purposes
+  - `find <dir> -maxdepth 1 -name '*.patch' | sort` is the shellcheck-clean way to iterate patches — avoids SC2045 from `for f in dir/*.patch` when glob is empty
+  - In `ko build`, `KO_DOCKER_REPO` must be exported (not just set) — ko reads it from the environment
+  - For recipes without build.sh yet, emit `[SKIP]` with explanation — don't error — allows `--all` mode to work incrementally as recipes are implemented
+  - `git clone --depth 1 --branch <tag>` gives the commit SHA that the tag points to via `git rev-parse HEAD`; for annotated tags this is the tagged commit, for lightweight tags it's the same SHA the tag references
+---
