@@ -104,13 +104,12 @@
         "PR merged to main",
         "gh run list --branch main --limit 1 shows 'completed success'"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
-      "requiredCapabilities": [
-        "gh"
-      ]
+      "attempts": 1,
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/4",
+      "notes": "PR #4 merged. All 13 CI jobs pass on main. gh pr checks 4 = 13 ok. gh run list --branch main --limit 1 = completed success."
     }
   ]
 }
