@@ -1,0 +1,5 @@
+apiVersion: v2
+name: _globals
+description: Shared global values and helpers for all Sovereign Platform Helm charts. Not deployed directly — values are merged by parent charts.
+type: library
+version: 0.1.0
