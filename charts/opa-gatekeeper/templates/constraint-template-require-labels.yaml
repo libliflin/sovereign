@@ -1,0 +1,31 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequirelabels
+  labels:
+    {{- include "opa-gatekeeper.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequirelabels
+
+        violation[{"msg": msg}] {
+          required := input.parameters.labels[_]
+          not input.review.object.metadata.labels[required]
+          msg := sprintf("Deployment %v is missing required label: %v", [input.review.object.metadata.name, required])
+        }

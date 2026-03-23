@@ -1,0 +1,61 @@
+{{- if .Values.kiali.enabled }}
+apiVersion: kiali.io/v1alpha1
+kind: Kiali
+metadata:
+  name: kiali
+  namespace: {{ .Values.kiali.namespace }}
+  labels:
+    {{- include "kiali.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  istio_namespace: {{ .Values.kiali.istio_namespace }}
+  auth:
+    strategy: {{ .Values.kiali.auth.strategy | quote }}
+    openid:
+      issuer_uri: {{ .Values.global.keycloak.url }}/realms/{{ .Values.global.keycloak.realm }}
+      client_id: {{ .Values.kiali.auth.openid.client_id | quote }}
+      disable_rbac: {{ .Values.kiali.auth.openid.disable_rbac }}
+      scopes:
+        {{- range .Values.kiali.auth.openid.scopes }}
+        - {{ . | quote }}
+        {{- end }}
+      username_claim: {{ .Values.kiali.auth.openid.username_claim | quote }}
+  external_services:
+    tracing:
+      enabled: {{ .Values.kiali.external_services.tracing.enabled }}
+      provider: {{ .Values.kiali.external_services.tracing.provider | quote }}
+      in_cluster_url: {{ .Values.kiali.external_services.tracing.in_cluster_url | quote }}
+      use_grpc: {{ .Values.kiali.external_services.tracing.use_grpc }}
+    prometheus:
+      url: {{ .Values.kiali.external_services.prometheus.url | quote }}
+    grafana:
+      enabled: {{ .Values.kiali.external_services.grafana.enabled }}
+      in_cluster_url: {{ .Values.kiali.external_services.grafana.in_cluster_url | quote }}
+  deployment:
+    replicas: {{ .Values.kiali.deployment.replicas }}
+    resources:
+      requests:
+        cpu: {{ .Values.kiali.deployment.resources.requests.cpu | quote }}
+        memory: {{ .Values.kiali.deployment.resources.requests.memory | quote }}
+      limits:
+        cpu: {{ .Values.kiali.deployment.resources.limits.cpu | quote }}
+        memory: {{ .Values.kiali.deployment.resources.limits.memory | quote }}
+    pod_disruption_budget:
+      enabled: {{ .Values.kiali.deployment.pod_disruption_budget.enabled }}
+    affinity:
+      pod:
+        preferred_during_scheduling_ignored_during_execution:
+          - weight: 100
+            pod_affinity_term:
+              label_selector:
+                match_expressions:
+                  - key: "app.kubernetes.io/name"
+                    operator: "In"
+                    values:
+                      - "kiali"
+              topology_key: "kubernetes.io/hostname"
+  server:
+    port: {{ .Values.kiali.server.port }}
+    web_root: {{ .Values.kiali.server.web_root | quote }}
+{{- end }}

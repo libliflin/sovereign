@@ -53,7 +53,7 @@
         "helm lint charts/kiali/ passes with 0 errors",
         "argocd-apps/security/kiali-app.yaml exists and passes yq e '.' check"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint; helm template | grep openid; helm template | grep tempo; yq argocd manifest",
       "dependencies": [
@@ -75,7 +75,7 @@
       "id": "024a",
       "phase": 5,
       "priority": 25,
-      "branchName": "feature/helm-opa-gatekeeper",
+      "branchName": "feature/helm-kiali",
       "title": "Helm chart: OPA/Gatekeeper with 3 ConstraintTemplates",
       "description": "Create charts/opa-gatekeeper/ wrapping open-policy-agent/gatekeeper (pin appVersion). Include ConstraintTemplates and Constraints for: (1) no-privilege-escalation, (2) require-resource-limits (cpu+memory), (3) require-labels (app+tier on Deployments). ArgoCD app in argocd-apps/security/opa-gatekeeper-app.yaml.",
       "acceptanceCriteria": [
@@ -87,13 +87,13 @@
         "helm template charts/opa-gatekeeper/ | grep -c ConstraintTemplate outputs 3",
         "argocd-apps/security/opa-gatekeeper-app.yaml exists and passes yq e '.' check"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "helm lint; helm template | yq e '.'; helm template | grep -c ConstraintTemplate = 3; yq argocd manifest",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -107,7 +107,7 @@
       "id": "024b",
       "phase": 5,
       "priority": 26,
-      "branchName": "feature/helm-trivy-operator",
+      "branchName": "feature/helm-kiali",
       "title": "Helm chart: Trivy Operator \u2014 cluster-wide vulnerability scanning",
       "description": "Create charts/trivy-operator/ wrapping aquasecurity/trivy-operator (pin appVersion). Set targetNamespaces to empty string (scans all namespaces). Enable VulnerabilityReports and ConfigAuditReports. ArgoCD app in argocd-apps/security/trivy-operator-app.yaml.",
       "acceptanceCriteria": [
@@ -119,13 +119,13 @@
         "helm template charts/trivy-operator/ | yq e '.' - passes",
         "argocd-apps/security/trivy-operator-app.yaml exists and passes yq e '.' check"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint; helm template | yq e '.'; helm template | grep targetNamespaces; yq argocd manifest",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -139,7 +139,7 @@
       "id": "024c",
       "phase": 5,
       "priority": 27,
-      "branchName": "feature/helm-falco",
+      "branchName": "feature/helm-kiali",
       "title": "Helm chart: Falco runtime threat detection with JSON stdout",
       "description": "Create charts/falco/ wrapping falcosecurity/falco (pin appVersion). Enable JSON output to stdout for Loki scraping. Disable the built-in webserver. ArgoCD app in argocd-apps/security/falco-app.yaml.",
       "acceptanceCriteria": [
@@ -152,13 +152,13 @@
         "helm template charts/falco/ | yq e '.' - passes",
         "argocd-apps/security/falco-app.yaml exists and passes yq e '.' check"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint; helm template | yq e '.'; helm template | grep json_output; yq argocd manifest",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,

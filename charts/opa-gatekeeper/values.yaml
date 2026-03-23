@@ -1,7 +1,33 @@
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
-  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+# gatekeeper subchart values
+gatekeeper:
+  replicaCount: 2
+  controllerManager:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "512Mi"
+  audit:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "512Mi"
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# Constraint enforcement action: deny | dryrun | warn
+constraintEnforcementAction: deny

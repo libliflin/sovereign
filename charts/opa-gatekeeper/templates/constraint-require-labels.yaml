@@ -1,0 +1,20 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireLabels
+metadata:
+  name: require-labels
+  labels:
+    {{- include "opa-gatekeeper.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  enforcementAction: {{ .Values.constraintEnforcementAction }}
+  match:
+    kinds:
+      - apiGroups:
+          - "apps"
+        kinds:
+          - Deployment
+  parameters:
+    labels:
+      - "app"
+      - "tier"

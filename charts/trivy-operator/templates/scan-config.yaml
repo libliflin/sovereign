@@ -1,0 +1,18 @@
+{{- /* Sovereign scan configuration — surfaces trivy-operator runtime settings for visibility */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sovereign-trivy-scan-config
+  namespace: trivy-system
+  labels:
+    app.kubernetes.io/name: trivy-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+data:
+  # targetNamespaces: empty string means scan ALL namespaces
+  {{- $trivyValues := index .Values "trivy-operator" }}
+  targetNamespaces: {{ $trivyValues.targetNamespaces | quote }}
+  vulnerabilityReports: "enabled"
+  configAuditReports: "enabled"
