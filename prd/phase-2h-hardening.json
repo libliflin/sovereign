@@ -52,14 +52,14 @@
         "PR created and CI helm-validate jobs green for all fixed charts",
         "PR merged to main with green CI"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [
         "[Review 1] AC failed: 'charts/keycloak/templates/poddisruptionbudget.yaml exists'. Command: test -f charts/keycloak/templates/poddisruptionbudget.yaml. Output: file not found. Note: the bitnami/keycloak subchart provides 2 PDBs (keycloak + postgresql) so the CI gate passes, but the AC literally requires a wrapper-level poddisruptionbudget.yaml file. Fix: add charts/keycloak/templates/poddisruptionbudget.yaml (disable bitnami PDB via keycloak.pdb.create=false and add sovereign-controlled PDB in its place, OR add a supplementary PDB for a different selector)."
       ],
       "attempts": 2,
-      "mergedPR": "https://github.com/libliflin/sovereign/pull/3",
-      "notes": "All 7 PDB templates created. Cilium PDB targets non-DaemonSet components (operator, hubble-relay, hubble-ui). Added podAntiAffinity to crossplane and sealed-secrets via values. Included in PR #3. CI run 23417064427 all green."
+      "mergedPR": "https://github.com/libliflin/sovereign/pull/5",
+      "notes": "All 7 PDB templates created. Cilium PDB targets non-DaemonSet components (operator, hubble-relay, hubble-ui). Added podAntiAffinity to crossplane and sealed-secrets via values. Included in PR #3. CI run 23417064427 all green. Fix: added charts/keycloak/templates/poddisruptionbudget.yaml; disabled bitnami pdb.create. PR #5 merged with green CI."
     },
     {
       "id": "2H-003",

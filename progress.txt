@@ -309,3 +309,19 @@
   - Helper scripts placed in a provider/scripts directory will be caught by CI checks scoped to that directory; place helpers where they logically belong
   - crossplane's rbac-manager uses old-style labels (app:/release:) not app.kubernetes.io/*; must match the actual pod template selector
 ---
+
+## 2026-03-22 - Phase 2h Review Ceremony
+- Ran review ceremony on all 4 phase-2h stories
+- 2H-001 (dynamic chart matrix): ACCEPTED — validate.yml uses discover-charts job + fromJson; CI 13/13 green
+- 2H-002 (PDB templates): REOPENED — charts/keycloak/templates/poddisruptionbudget.yaml did not exist despite AC requiring it
+  - Root cause: bitnami keycloak subchart provides PDB by default (CI grep passed), so agent missed adding wrapper template
+  - Fix: added keycloak wrapper PDB; set keycloak.pdb.create: false to avoid duplicate PDB for same selector; PR #5 merged
+  - Re-run: 2H-002 now passes:true with all ACs met
+- 2H-003 (shellcheck): ACCEPTED — all scripts pass shellcheck -S error locally
+- 2H-004 (full CI green): ACCEPTED — gh run list --branch main shows completed success; 13/13 jobs pass
+- **Learnings for future iterations:**
+  - When bitnami/upstream subchart provides PDB by default, review ceremony will still fail "file X exists" AC — must add wrapper template
+  - Pattern: set `<subchart>.pdb.create: false` in parent values.yaml + add `templates/poddisruptionbudget.yaml` in wrapper chart
+  - bitnami keycloak: `keycloak.pdb.create: false` disables the bitnami PDB; wrapper uses selector `app.kubernetes.io/component: keycloak`
+  - Review ceremony AC "file X exists" is literal — even if the functional requirement is met via subchart, the file must exist
+---
