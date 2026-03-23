@@ -287,3 +287,26 @@
   - Self-certification failure pattern: progress.txt said "free tier guidance removed" but the file was still named aws-ec2-free-tier.md with 3 free-tier mentions
   - Review ceremony is adversarial — check the actual files on disk, not the agent's description
 ---
+
+## 2026-03-23 - Phase 2 → Phase 3 Advancement + Stories 016, 017
+
+- Story 015 re-review: all 13 ACs verified (aws-ec2.md renamed, shellcheck exit 0, kube-vip + cluster-init + DaemonSet confirmed); marked reviewed:true
+- Ran prd/advance.sh: phase 2 → phase 3 active
+- Created prd/phase-3-gitops-engine.json with stories 016-017 (5/15 points — only 2 backlog stories for phase 3)
+- Story 016: Created charts/gitlab/ wrapping gitlab/gitlab 8.5.0
+  - Values.yaml: consolidated object storage (Ceph S3), Keycloak OIDC, GitLab Runner, toolbox backup config
+  - Fix: duplicate `global:` YAML key under `gitlab:` alias caused second block to override first (ALL config lost) — must use a single `global:` block under each alias
+  - Fix: certmanager-issuer sub-sub-chart gets global values from TOP-LEVEL chart global (not subchart global) — add `global.ingress.configureCertmanager: false` at root level to propagate
+  - Fix: gitlab chart NOTES.txt runs `checkConfig` which fires on template (not just lint) — helm lint may pass while helm template fails
+  - Fix: toolbox config lives at `gitlab.gitlab.toolbox`, not `gitlab.global.toolbox`
+  - Fix: consolidated object storage requires single `global.appConfig.object_store.connection` secret; per-item entries must have only `bucket:`, no `enabled: true`, no `connection:`
+  - helm lint + helm template both pass (0 failures); 5 PDBs, 8 podAntiAffinity, 18 probes
+- Story 017: Created charts/harbor/ wrapping goharbor/harbor 1.15.0
+  - harbor/harbor chart does NOT create PDBs by default — must add custom PDB template in wrapper
+  - helm lint + helm template both pass; 4 PDBs (from wrapper template), 4 podAntiAffinity
+- **Learnings for future iterations:**
+  - Duplicate YAML keys: when adding new sections to values.yaml, NEVER add a second `global:` block — merge all globals into the single existing block
+  - gitlab/gitlab chart: `helm template` is stricter than `helm lint` — run both, not just lint
+  - Harbor chart needs manual PDB wrapper templates (4: portal, core, jobservice, registry)
+  - Helm global pass-through: top-level `global:` values flow to ALL sub-sub-charts, not just direct subcharts; use this to propagate settings like `global.ingress.configureCertmanager: false`
+---
