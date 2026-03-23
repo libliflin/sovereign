@@ -1,0 +1,236 @@
+## Sovereign Platform — GitLab wrapper chart values
+## All hostnames are derived from global.domain — never hardcode.
+
+## ── Sovereign / top-level global ────────────────────────────────────────────
+## These are the wrapper chart's globals. The gitlab subchart has its own global
+## (under the `gitlab:` key below). Helm propagates these to all sub-sub-charts
+## via the global pass-through mechanism.
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+  ## Propagate to certmanager-issuer sub-sub-chart via Helm global pass-through:
+  ## We use sovereign-ca-issuer (cert-manager phase 1), not ACME.
+  ingress:
+    configureCertmanager: false
+  ## Propagate minio disabled to sub-sub-charts (v8+ way to disable minio)
+  minio:
+    enabled: false
+
+## ── GitLab subchart values (alias: gitlab) ──────────────────────────────────
+## https://docs.gitlab.com/charts/charts/globals
+gitlab:
+  ## ── global section (single block — no duplicate keys) ──────────────────
+  global:
+    hosts:
+      domain: "sovereign-autarky.dev"
+      https: true
+
+    ingress:
+      configureCertmanager: false
+      class: "nginx"
+      annotations:
+        cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
+
+    ## Minio disabled — we use Ceph (must be in global to affect sub-sub-charts)
+    minio:
+      enabled: false
+
+    ## Object storage — Ceph S3-compatible (consolidated mode)
+    ## Single connection secret covers all storage types.
+    appConfig:
+      object_store:
+        enabled: true
+        proxy_download: true
+        connection:
+          secret: gitlab-object-store-credentials
+          key: connection
+      ## Bucket names for each storage type (consolidated mode: no per-item connection)
+      lfs:
+        bucket: gitlab-lfs
+      artifacts:
+        bucket: gitlab-artifacts
+      uploads:
+        bucket: gitlab-uploads
+      packages:
+        bucket: gitlab-packages
+
+      ## Keycloak OIDC (OmniAuth)
+      omniauth:
+        enabled: true
+        allowSingleSignOn:
+          - saml
+        blockAutoCreatedUsers: false
+        autoSignInWithProvider: null
+        providers:
+          - secret: gitlab-keycloak-oidc-secret
+            key: provider
+
+    ## PostgreSQL — external (Crossplane-managed)
+    psql:
+      host: "gitlab-postgresql.gitlab.svc.cluster.local"
+      port: 5432
+      database: gitlabhq_production
+      username: gitlab
+      password:
+        secret: gitlab-postgresql-secret
+        key: password
+
+    ## Redis — bundled sub-chart (Crossplane Redis in a later phase)
+    redis:
+      host: ""
+
+    ## Registry object storage
+    registry:
+      bucket: gitlab-registry
+      connection:
+        secret: gitlab-object-store-credentials
+        key: connection
+
+    ## GitLab KAS disabled
+    kas:
+      enabled: false
+
+    ## SMTP disabled by default
+    smtp:
+      enabled: false
+
+  ## ── Sub-chart component overrides ─────────────────────────────────────
+  gitlab:
+    webservice:
+      replicaCount: 2
+      minReplicas: 2
+      maxReplicas: 5
+      resources:
+        requests:
+          cpu: "300m"
+          memory: "1.5Gi"
+        limits:
+          cpu: "1"
+          memory: "3Gi"
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - webservice
+                topologyKey: kubernetes.io/hostname
+
+    sidekiq:
+      replicaCount: 2
+      minReplicas: 2
+      maxReplicas: 4
+      resources:
+        requests:
+          cpu: "200m"
+          memory: "1Gi"
+        limits:
+          cpu: "500m"
+          memory: "2Gi"
+
+    gitaly:
+      replicaCount: 1  # Gitaly clustering (Praefect) out of scope for phase 3
+      persistence:
+        enabled: true
+        storageClass: "ceph-block"
+        size: "50Gi"
+      resources:
+        requests:
+          cpu: "200m"
+          memory: "512Mi"
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+
+    gitlab-shell:
+      replicaCount: 2
+      minReplicas: 2
+      resources:
+        requests:
+          cpu: "50m"
+          memory: "64Mi"
+        limits:
+          cpu: "200m"
+          memory: "256Mi"
+
+    ## Toolbox backup config — required to satisfy chart validation.
+    ## Uses the same Ceph S3 credentials as object storage.
+    toolbox:
+      backups:
+        objectStorage:
+          config:
+            secret: gitlab-object-store-credentials
+            key: connection
+
+  ## ── GitLab Runner ──────────────────────────────────────────────────────
+  gitlab-runner:
+    install: true
+    concurrent: 10
+    runners:
+      config: |
+        [[runners]]
+          [runners.kubernetes]
+            namespace = "gitlab"
+            image = "ubuntu:22.04"
+            pull_policy = "if-not-present"
+
+  ## ── Registry ───────────────────────────────────────────────────────────
+  registry:
+    enabled: true
+    replicaCount: 2
+    hpa:
+      minReplicas: 2
+      maxReplicas: 4
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+
+  ## ── Built-in sub-charts ────────────────────────────────────────────────
+  ## PostgreSQL — disabled (external via Crossplane)
+  postgresql:
+    install: false
+
+  ## Redis — enabled for bootstrap
+  redis:
+    install: true
+
+  ## Nginx-ingress — disabled (cluster has nginx from bootstrap)
+  nginx-ingress:
+    enabled: false
+
+  ## Cert-manager — disabled (cluster has cert-manager from phase 1)
+  certmanager:
+    install: false
+
+  ## Cert-manager issuer — disabled (sovereign-ca-issuer exists from phase 1)
+  certmanager-issuer:
+    install: false
+
+  ## Prometheus — disabled (cluster has prometheus-stack from phase 6)
+  prometheus:
+    install: false
+
+## ── Sovereign wrapper config ────────────────────────────────────────────────
+## Values used only by our own templates (not the gitlab subchart)
+sovereign:
+  rootPasswordSecret: gitlab-initial-root-password
+  ## Set false in production — secrets must be pre-created via kubeseal
+  createPlaceholderSecrets: true

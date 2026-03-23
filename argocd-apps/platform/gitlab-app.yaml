@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitlab
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    sovereign/tier: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "-60"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/gitlab
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: gitlab.global.hosts.domain
+          value: "sovereign-autarky.dev"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitlab
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+  revisionHistoryLimit: 3
