@@ -2,6 +2,21 @@
 # This file is updated after each Ralph iteration.
 # Claude Code reads this before every iteration to learn from prior work.
 
+## Operating Principles (permanent — do not overwrite)
+
+- **STOP THE LINE**: When any gate fails, fix it before touching anything else.
+  The gate output is ground truth. Your belief about what should work is irrelevant.
+  ceremonies.sh writes the exact failure (helm lint output, shellcheck line, etc.)
+  into sprint._lastSmokeTestFailures / _lastProofOfWorkFailures. ralph.sh injects
+  these into your prompt. You will see exactly what broke. Act on it immediately.
+
+- **Never build on red**: A broken helm lint in charts/cilium blocks ALL chart work,
+  not just cilium. Fix it first. One defect per stop.
+
+- **Gate output is injected automatically**: You do not need to re-run smoke tests
+  manually to discover failures. If ceremonies.sh caught something, the exact error
+  is already in your prompt under "## ⚠ FAILURE CONTEXT". Read it before writing code.
+
 ## Codebase Patterns
 (Updated by Ralph after each iteration — check here first for conventions discovered)
 

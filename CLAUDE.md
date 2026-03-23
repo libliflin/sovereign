@@ -464,6 +464,40 @@ Provider docs (`docs/providers/*.md`) must include:
 
 ---
 
+## STOP THE LINE — THE ONLY RULE THAT MATTERS
+
+In Toyota manufacturing, any worker can pull the **andon cord** to halt the assembly
+line the moment they spot a defect. No new parts get bolted onto broken ones. The line
+restarts only after the root cause is fixed and verified at the source.
+
+**This repository works the same way.**
+
+When any gate fails — smoke test, proof-of-work, CI, review — **all new work stops**.
+You fix the specific failure. You run the same gate again and show its output. Then you
+continue. There are no deferrals, no "I'll fix it in the next story", no "it's a known issue."
+
+**Three corollaries:**
+
+1. **Never build on red.** A failing `helm lint` is not a note for later. Fix it now, in
+   this iteration, before writing anything else.
+
+2. **The gate output is ground truth.** `shellcheck` says line 47 fails. Your belief that
+   it should work is irrelevant. Fix line 47. Show the passing output.
+
+3. **One defect per stop.** The gate tells you exactly what broke. Fix that thing only.
+   Do not refactor unrelated code in the same pass — that introduces new failures.
+
+**The mechanical implementation:**
+`ceremonies.sh` runs the gates as bash commands (not prose, not self-reporting) and writes
+every failure as structured JSON into the sprint file: the exact error output, the exact
+file, the exact gate that caught it. `ralph.sh` reads those failures and injects them into
+your prompt at the start of every iteration. You will see exactly what broke. Act on it.
+
+All the rules that follow — Proof of Work, Blocker Protocol, Never Self-Certify, Quality
+Gates — are just specific applications of this one principle.
+
+---
+
 ## PROOF OF WORK — MANDATORY BEFORE passes:true
 
 **Every completed story MUST do all of the following before setting `passes: true`.**
