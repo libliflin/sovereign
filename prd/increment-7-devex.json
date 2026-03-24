@@ -52,13 +52,13 @@
         "helm lint passes on both",
         "argocd-apps/devex/ has both app manifests"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 0,
         "measurable": 0,

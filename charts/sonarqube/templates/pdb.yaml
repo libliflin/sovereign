@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-sonarqube-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sonarqube-wrapper.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: {{ .Release.Name }}
