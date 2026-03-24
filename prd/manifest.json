@@ -45,6 +45,13 @@
       "reviewPassRate": 100.0,
       "date": "2026-03-24T11:22:30.403757+00:00",
       "increment": 6
+    },
+    {
+      "increment": 7,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "reviewPassRate": 0.0,
+      "date": "2026-03-24T22:30:00+00:00"
     }
   ],
   "sprintHistory": [
@@ -132,6 +139,16 @@
       "storiesIncomplete": 0,
       "reviewPassRate": 100.0,
       "increment": 6
+    },
+    {
+      "increment": 7,
+      "name": "devex",
+      "endDate": "2026-03-24T22:30:00+00:00",
+      "pointsCompleted": 2,
+      "storiesTotal": 2,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 0.0
     }
   ],
   "increments": [
@@ -300,7 +317,7 @@
       "name": "devex",
       "description": "Backstage, code-server, SonarQube, ReportPortal.",
       "file": "prd/increment-7-devex.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         3,
         6
@@ -308,7 +325,12 @@
       "themeGoal": "Developer autonomy: Backstage, code-server, SonarQube, ReportPortal",
       "pointsTotal": 5,
       "storiesTotal": 2,
-      "startDate": "2026-03-24T22:10:24.368316+00:00"
+      "startDate": "2026-03-24T22:10:24.368316+00:00",
+      "endDate": "2026-03-24T22:30:00+00:00",
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 0.0
     },
     {
       "id": 8,

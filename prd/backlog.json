@@ -1067,8 +1067,10 @@
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
+      "reviewNotes": [
+        "[Review 1] HA gate AC failed: 'Default replicaCount in values.yaml is >= 2' (CLAUDE.md quality gate #12). Command: grep -n 'replicaCount' charts/sonarqube/values.yaml \u2014 Output: '33: replicaCount: 1' (nested under sonarqube: subchart key). helm template charts/sonarqube/ | grep 'replicas:' \u2014 Output: 'replicas: 1' (SonarQube pod). SonarQube Community Edition supports only 1 replica. Fix: add ha_exception: true entry in vendor/VENDORS.yaml for sonarqube with ha_exception_reason, AND add top-level replicaCount: 1 with a comment referencing the VENDORS.yaml entry. reportportal chart: replicaCount: 2 \u2014 PASS. All other ACs pass."
+      ],
+      "attempts": 2,
       "smart": {
         "specific": 0,
         "measurable": 0,
@@ -1078,7 +1080,9 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E12",
-      "themeId": "T3"
+      "themeId": "T3",
+      "returnedFromSprint": "prd/increment-7-devex.json",
+      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass."
     },
     {
       "id": "030",
@@ -1454,6 +1458,33 @@
         "timeBound": 0,
         "notes": ""
       }
+    },
+    {
+      "id": "041r",
+      "priority": 1,
+      "branchName": "fix/ha-exception-gate",
+      "title": "Document and enforce HA exception process in quality gate #12",
+      "description": "Some upstream services (SonarQube CE, MailHog, single-node Elasticsearch) architecturally cannot scale horizontally. These services fail HA gate #12 (replicaCount >= 2) even when correctly configured. Add a documented exception pathway: (1) Add ha_exception schema fields to vendor/VENDORS.yaml (ha_exception: bool, ha_exception_reason: string, ha_exception_dce_alternative: string). (2) Add entries for SonarQube CE and any other known single-instance upstreams already in the vendor list. (3) Update the quality gate #12 check description in CLAUDE.md to state: 'Exception: if vendor/VENDORS.yaml has ha_exception: true for this service, replicaCount: 1 is acceptable \u2014 gate passes only if the exception is documented AND the chart has a top-level replicaCount: 1 with a comment referencing it.'",
+      "acceptanceCriteria": [
+        "vendor/VENDORS.yaml schema includes ha_exception and ha_exception_reason fields",
+        "sonarqube entry in vendor/VENDORS.yaml has ha_exception: true with ha_exception_reason explaining CE single-instance architecture",
+        "charts/sonarqube/values.yaml has top-level replicaCount: 1 with a comment referencing the VENDORS.yaml exception",
+        "helm lint passes on charts/sonarqube/",
+        "HA gate #12 documentation in CLAUDE.md updated to reference the exception process (retro-patch-phase7.md contains the proposed wording)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "grep for ha_exception in VENDORS.yaml, helm lint charts/sonarqube/, verify replicaCount comment exists.",
+      "dependencies": [
+        "029"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "epicId": "E12",
+      "themeId": "T3",
+      "returnedFromSprint": "prd/increment-7-devex.json",
+      "returnedReason": "Root cause of story-029 repeated review failure: no documented HA exception process for single-instance upstreams."
     }
   ]
 }

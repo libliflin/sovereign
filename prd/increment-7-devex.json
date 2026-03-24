@@ -61,6 +61,8 @@
         "[Review 1] HA gate AC failed: 'Default replicaCount in values.yaml is >= 2' (CLAUDE.md quality gate #12). Command: grep -n 'replicaCount' charts/sonarqube/values.yaml \u2014 Output: '33: replicaCount: 1' (nested under sonarqube: subchart key). helm template charts/sonarqube/ | grep 'replicas:' \u2014 Output: 'replicas: 1' (SonarQube pod). SonarQube Community Edition supports only 1 replica. Fix options: (a) switch to SonarQube Data Center Edition which supports HA, OR (b) add an approved exception entry in vendor/VENDORS.yaml with 'ha_exception: true' and 'ha_exception_reason: SonarQube CE is single-instance only; DCE required for HA' AND add a top-level replicaCount: 1 with a comment explaining the approved exception so the quality gate check has explicit documentation. reportportal chart: replicaCount: 2 \u2014 PASS. All other ACs pass."
       ],
       "attempts": 2,
+      "returnedToBacklog": true,
+      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass.",
       "smart": {
         "specific": 0,
         "measurable": 0,
