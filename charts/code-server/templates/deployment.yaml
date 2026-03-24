@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "code-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "code-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "code-server.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "code-server.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "code-server.serviceAccountName" . }}
+      automountServiceAccountToken: true
+      # podAntiAffinity: spread replicas across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "code-server.selectorLabels" . | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
+      initContainers:
+        # Install VS Code extensions into the persistent home directory
+        - name: install-extensions
+          image: {{ include "code-server.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              MARKER="/home/coder/.extensions-installed"
+              if [ -f "$MARKER" ]; then
+                echo "Extensions already installed, skipping."
+                exit 0
+              fi
+              {{- range .Values.extensions }}
+              echo "Installing extension: {{ . }}"
+              code-server --install-extension "{{ . }}" --extensions-dir /home/coder/.local/share/code-server/extensions || true
+              {{- end }}
+              touch "$MARKER"
+              echo "Extension installation complete."
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/coder
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+      containers:
+        # code-server: VS Code in the browser
+        - name: code-server
+          image: {{ include "code-server.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --auth=none
+            - --bind-addr=0.0.0.0:{{ .Values.service.codeServerPort }}
+            - --user-data-dir=/home/coder/.config/code-server
+            - --extensions-dir=/home/coder/.local/share/code-server/extensions
+            - /home/coder/project
+          env:
+            - name: HOME
+              value: /home/coder
+            - name: SHELL
+              value: /bin/bash
+            # In-cluster kubeconfig is provided automatically via the mounted ServiceAccount token.
+            # kubectl and helm will use the in-cluster config without any extra configuration.
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.codeServerPort }}
+              protocol: TCP
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/coder
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+
+        # oauth2-proxy sidecar: validates Keycloak OIDC tokens before proxying to code-server
+        - name: oauth2-proxy
+          image: {{ include "code-server.oauth2ProxyImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --provider=keycloak-oidc
+            - --client-id={{ .Values.oauth2Proxy.clientId }}
+            - --oidc-issuer-url={{ include "code-server.oidcIssuerURL" . }}
+            - --upstream=http://localhost:{{ .Values.service.codeServerPort }}
+            - --http-address=0.0.0.0:{{ .Values.service.port }}
+            - --redirect-url=https://{{ include "code-server.host" . }}/oauth2/callback
+            - --email-domain=*
+            - --cookie-secure=true
+            - --cookie-httponly=true
+            - --pass-access-token=true
+            - --set-authorization-header=true
+            - --skip-provider-button=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oauth2Proxy.secretRef }}
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.oauth2Proxy.secretRef }}
+                  key: cookie-secret
+          ports:
+            - name: oauth2-proxy
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.oauth2Proxy.resources | nindent 12 }}
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "code-server.fullname" . }}-workspace
