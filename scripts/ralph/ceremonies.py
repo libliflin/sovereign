@@ -112,6 +112,37 @@ def _ai(tool: str, ceremony: str, log_file: Path) -> str:
     return output
 
 
+def _git_commit(step: str, files: list[str], extra_msg: str = "") -> None:
+    """Stage and commit ceremony outputs so each step leaves a clean git state.
+
+    This is intentional and necessary: AI ceremonies write files but never
+    commit them. Without commits after each step, a restart (rate limit,
+    crash, manual re-run) triggers the sprint-file restore logic and reverts
+    durable state like SMART scores, reviewed:true, and retro writes.
+
+    Only called for durable state changes. Gate failure fields
+    (_lastSmokeTestFailures, _lastProofOfWorkFailures, passes resets) are
+    intentionally NOT committed — they are volatile and should be restored.
+    """
+    if not files:
+        return
+    add_cmd = f"git add {' '.join(files)}"
+    rc1, _ = subprocess.run(add_cmd, shell=True, cwd=REPO_ROOT,
+                             capture_output=True, text=True).returncode, None
+    # Check if there's actually anything to commit
+    rc_diff = subprocess.run("git diff --cached --quiet", shell=True, cwd=REPO_ROOT).returncode
+    if rc_diff == 0:
+        return  # nothing staged, skip commit
+    msg = f"ceremonies: {step} — committed by delivery machine"
+    if extra_msg:
+        msg += f"\n\n{extra_msg}"
+    subprocess.run(
+        f'git commit -m "{msg}"',
+        shell=True, cwd=REPO_ROOT, capture_output=True
+    )
+    print(f"  ✓ git committed: {step}")
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -178,15 +209,28 @@ def main() -> int:
     phase_num = manifest.current_phase
     sprint_file = REPO_ROOT / active_sprint if active_sprint else None
 
-    # Restore sprint file if it has uncommitted gate resets
+    # Restore sprint file only if the uncommitted changes are gate-failure
+    # fields (_lastSmokeTestFailures, _lastProofOfWorkFailures, passes resets).
+    # Durable state (SMART scores, reviewed, retro writes) is committed after
+    # each step so it is never in the "uncommitted changes" bucket on restart.
     if sprint_file and sprint_file.exists() and active_sprint:
-        result = subprocess.run(
-            f"git diff --quiet HEAD -- {active_sprint}",
-            shell=True, cwd=REPO_ROOT
+        diff_result = subprocess.run(
+            f"git diff HEAD -- {active_sprint}",
+            shell=True, cwd=REPO_ROOT, capture_output=True, text=True
         )
-        if result.returncode != 0:
-            print(f"\n  Sprint file has uncommitted gate-reset changes — restoring from HEAD...")
-            subprocess.run(f"git restore -- {active_sprint}", shell=True, cwd=REPO_ROOT)
+        if diff_result.returncode == 0 and diff_result.stdout:
+            diff_text = diff_result.stdout
+            # Only restore if the diff contains gate-failure markers
+            is_gate_noise = (
+                "_lastSmokeTestFailures" in diff_text
+                or "_lastProofOfWorkFailures" in diff_text
+            )
+            if is_gate_noise:
+                print(f"\n  Sprint file has uncommitted gate-reset changes — restoring from HEAD...")
+                subprocess.run(f"git restore -- {active_sprint}", shell=True, cwd=REPO_ROOT)
+            else:
+                print(f"\n  WARNING: sprint file has unexpected uncommitted changes (not gate noise).")
+                print(f"  Inspect with: git diff HEAD -- {active_sprint}")
 
     # -- STEP 1: THEME-REVIEW --------------------------------------------------
     log_step("theme-review")
@@ -195,6 +239,7 @@ def main() -> int:
     else:
         sep("AI CEREMONY: Theme Review")
         _ai(args.tool, "theme-review.md", log_file)
+        _git_commit("theme-review", ["prd/gge.json", "prd/themes.json", "prd/epics.json"])
 
     # -- STEP 2: EPIC-BREAKDOWN ------------------------------------------------
     log_step("epic-breakdown")
@@ -203,6 +248,7 @@ def main() -> int:
     else:
         sep("AI CEREMONY: Epic Breakdown")
         _ai(args.tool, "epic-breakdown.md", log_file)
+        _git_commit("epic-breakdown", ["prd/backlog.json", "prd/epics.json"])
 
     # -- STEP 3: BACKLOG-GROOM -------------------------------------------------
     log_step("backlog-groom")
@@ -211,6 +257,7 @@ def main() -> int:
     else:
         sep("AI CEREMONY: Backlog Grooming")
         _ai(args.tool, "backlog-groom.md", log_file)
+        _git_commit("backlog-groom", ["prd/backlog.json"])
 
     # -- STEP 4: PLAN ----------------------------------------------------------
     log_step("plan")
@@ -235,6 +282,7 @@ def main() -> int:
                 return 1
             sprint = sprint_lib.load(sprint_file)
             print(f"\n  Sprint ready: {active_sprint} ({len(sprint.get('stories', []))} stories)")
+            _git_commit("plan", [str(active_sprint), "prd/manifest.json"])
         else:
             sprint = sprint_lib.load(sprint_file)
             print(f"  skipped (sprint exists, phase={phase_status}, {len(sprint.get('stories', []))} stories)")
@@ -279,6 +327,7 @@ def main() -> int:
                 return 1
             print("  Story split resolved all SMART issues.")
         print(f"\n  SMART passed — {len(sprint.get('stories', []))} stories sprint-ready.")
+        _git_commit("smart", [str(active_sprint), "prd/backlog.json"])
 
     # -- STEPS 7-9: EXECUTE + SMOKE + PROOF (gate retry loop) -----------------
     run_execute = should_run("execute")
@@ -312,6 +361,7 @@ def main() -> int:
                     sprint = sprint_lib.load(sprint_file)
                     passing = sprint_lib.stories_passing(sprint)
                     print(f"\n  Passing: {len(passing)}/{len(sprint.get('stories', []))}")
+                    _git_commit("execute", [str(active_sprint)])
 
             # SMOKE
             log_step("smoke")
@@ -379,6 +429,7 @@ def main() -> int:
             print(f"  Incomplete → retro will return to backlog: {len(incomplete)}")
             for s in incomplete:
                 print(f"    - {s['id']}: {s['title']}")
+        _git_commit("review", [str(active_sprint)])
 
     # -- STEP 11: RETRO --------------------------------------------------------
     log_step("retro")
@@ -387,6 +438,10 @@ def main() -> int:
     else:
         sep("AI CEREMONY: Retrospective")
         _ai(args.tool, "retro.md", log_file)
+        _git_commit("retro", [
+            str(active_sprint), "prd/backlog.json", "prd/manifest.json",
+            "prd/",  # captures retro-patch-*.md new files
+        ])
 
     # -- STEP 12: SYNC ---------------------------------------------------------
     log_step("sync")
@@ -396,6 +451,10 @@ def main() -> int:
         sep("AI CEREMONY: State Sync")
         _ai(args.tool, "sync.md", log_file)
         print("\n  docs/state/architecture.md and docs/state/agent.md rewritten.")
+        _git_commit("sync", [
+            "docs/state/",
+            "prd/backlog.json", "prd/epics.json", "prd/manifest.json", "prd/",
+        ])
 
     # -- STEP 13: ADVANCE ------------------------------------------------------
     log_step("advance")
@@ -405,6 +464,7 @@ def main() -> int:
         rc = advance_lib.run(REPO_ROOT, dry_run=args.dry_run)
         if rc != 0:
             return rc
+        _git_commit("advance", ["prd/manifest.json", str(active_sprint) if active_sprint else "prd/"])
 
     print("\n" + "═" * 66)
     print(f"  CEREMONIES COMPLETE  —  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
