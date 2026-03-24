@@ -25,14 +25,26 @@ echo "=== Phase Advancement ==="
 echo "Active sprint : $ACTIVE_SPRINT"
 echo "Current phase : $CURRENT_PHASE"
 
-# Guard: all stories must be passes:true and reviewed:true
+# Check retro ran: incomplete stories should have returnedToBacklog:true or status:killed.
+# Partial delivery is acceptable — retro owns the honest close, not advance.
 if [[ -f "$REPO_ROOT/$ACTIVE_SPRINT" ]]; then
-  NOT_DONE=$(jq '[.stories[] | select(.passes != true or .reviewed != true)] | length' "$REPO_ROOT/$ACTIVE_SPRINT")
-  if [[ "$NOT_DONE" -gt 0 ]]; then
+  UNRESOLVED=$(jq '
+    [.stories[] |
+      select(
+        .reviewed != true and
+        .returnedToBacklog != true and
+        .status != "killed"
+      )
+    ] | length
+  ' "$REPO_ROOT/$ACTIVE_SPRINT")
+  if [[ "$UNRESOLVED" -gt 0 ]]; then
     echo ""
-    echo "ERROR: Cannot advance — $NOT_DONE stories in the active sprint are not yet accepted." >&2
-    echo "Run the review ceremony first: claude < scripts/ralph/ceremonies/review.md" >&2
-    jq '.stories[] | select(.passes != true or .reviewed != true) | "  - \(.id): passes=\(.passes) reviewed=\(.reviewed)"' "$REPO_ROOT/$ACTIVE_SPRINT" -r >&2
+    echo "ERROR: Cannot advance — $UNRESOLVED stories are neither accepted, returned to backlog, nor killed." >&2
+    echo "Run the retro ceremony first: ./scripts/ralph/ceremonies.sh --start-at retro" >&2
+    jq '.stories[] |
+      select(.reviewed != true and .returnedToBacklog != true and .status != "killed") |
+      "  - \(.id): passes=\(.passes) reviewed=\(.reviewed)"
+    ' "$REPO_ROOT/$ACTIVE_SPRINT" -r >&2
     exit 1
   fi
 fi
