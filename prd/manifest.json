@@ -305,7 +305,10 @@
         3,
         6
       ],
-      "themeGoal": "Developer autonomy: Backstage, code-server, SonarQube, ReportPortal"
+      "themeGoal": "Developer autonomy: Backstage, code-server, SonarQube, ReportPortal",
+      "pointsTotal": 5,
+      "storiesTotal": 2,
+      "startDate": "2026-03-24T22:10:24.368316+00:00"
     },
     {
       "id": 8,

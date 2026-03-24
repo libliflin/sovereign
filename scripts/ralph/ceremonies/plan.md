@@ -2,31 +2,45 @@
 
 You are running the **sprint planning ceremony** for the Sovereign Platform.
 
-This ceremony populates the next pending increment sprint file from the backlog.
+This ceremony creates the sprint file for the current active increment (if its file is missing)
+OR for the next pending increment (if no sprint file is needed).
 
 ## Your task
 
-### Step 1 — Find the next pending increment
+### Step 1 — Determine which increment to plan
 
-Read `prd/manifest.json` and find the next increment with `status: "pending"`:
+Read `prd/manifest.json`:
 
 ```bash
 cat prd/manifest.json
 ```
 
-Look at the `increments` array. Find the first entry where `status` is `"pending"`. Note its `id`,
-`name`, `file`, and `capacity` (default 15 if not set). Call this **NEXT_INCREMENT**.
+**Decision logic (in order):**
 
-If no pending increments exist, print "All increments are active or complete. Nothing to plan." and exit.
+1. Read `currentIncrement` and `activeSprint` from the manifest.
+2. Check whether the `activeSprint` file exists on disk:
+   ```bash
+   ls <activeSprint path>
+   ```
+3. **If the file does NOT exist**: the currently active increment needs its sprint file created.
+   Set `NEXT_INCREMENT` to the increment entry whose `id == currentIncrement`.
+4. **If the file DOES exist**: the active sprint is already populated. Look in `increments[]` for
+   the first entry where `status == "pending"`. Set `NEXT_INCREMENT` to that entry.
+5. If no pending increments exist and the active sprint file exists, print
+   "All increments are active or complete. Nothing to plan." and exit.
+
+> **CRITICAL**: Never plan for increment N+1 when the sprint file for increment N is missing.
+> The file path is defined in `NEXT_INCREMENT.file`. Write that exact file — do not invent a path.
 
 ### Step 2 — Read the backlog
 
 ```bash
 cat prd/backlog.json
+cat prd/epics.json
 ```
 
-Find all stories whose `epicId` maps to an epic targeting `NEXT_INCREMENT.id` (check `prd/epics.json`
-`targetIncrement` field), ordered by `priority` (ascending).
+Find all stories whose `epicId` maps to an epic whose `targetIncrement == NEXT_INCREMENT.id`
+(check `prd/epics.json`), ordered by `priority` (ascending).
 These are the **candidate stories** for this sprint.
 
 ### Step 3 — Assign story points and enforce hard limits
@@ -156,15 +170,17 @@ with open('prd/backlog.json', 'w') as f:
 ### Step 8 — Update manifest.json
 
 Update `prd/manifest.json`:
-- Set `increments[NEXT_INCREMENT.id].status` → `"active"`
-- Set `increments[NEXT_INCREMENT.id].startDate` → current UTC timestamp
-- Set `increments[NEXT_INCREMENT.id].pointsTotal` → total points of selected stories
-- Set `increments[NEXT_INCREMENT.id].storiesTotal` → count of selected stories
+- Set the increment entry for `NEXT_INCREMENT.id`:
+  - `status` → `"active"`
+  - `startDate` → current UTC timestamp (if not already set)
+  - `pointsTotal` → total points of selected stories
+  - `storiesTotal` → count of selected stories
 - Set `activeSprint` → `NEXT_INCREMENT.file`
 - Set `currentIncrement` → `NEXT_INCREMENT.id`
 
-**Only update manifest if the current increment is already `status: "complete"` OR if no increment is
-currently active.** Do not change manifest if an increment is still `status: "active"`.
+**Always update the manifest.** The sprint file just written is not referenced by anything until
+`activeSprint` and `currentIncrement` are set. A sprint file without a manifest pointer is invisible
+to all ceremonies. The manifest update IS the plan's final step.
 
 ### Step 9 — Print sprint planning summary
 
