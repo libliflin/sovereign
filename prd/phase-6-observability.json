@@ -53,7 +53,7 @@
         "grep 'replicaCount' charts/loki/values.yaml shows value >= 2",
         "argocd-apps/observability/loki-app.yaml exists and is valid YAML"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint charts/loki/; helm template charts/loki/ | grep PodDisruptionBudget; helm template charts/loki/ | grep datasource; cat argocd-apps/observability/loki-app.yaml | yq e '.' -",
       "dependencies": [
