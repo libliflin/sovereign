@@ -1,0 +1,72 @@
+{
+  "themes": [
+    {
+      "id": "T1",
+      "name": "Sovereignty",
+      "vision": "The platform has zero dependency on any cloud provider, proprietary service, or single-vendor project that could change terms, revoke access, or alter the roadmap.",
+      "successCriteria": [
+        "All platform components use permissive-licensed (Apache 2.0/MIT/BSD), foundation-governed software",
+        "Platform runs on any bare-metal or VPS without a cloud provider account",
+        "No data leaves the cluster without explicit operator configuration",
+        "Any component whose upstream changes license is replaced within one sprint"
+      ],
+      "status": "active",
+      "relatedDocs": ["docs/governance/sovereignty.md", "docs/governance/license-policy.md"],
+      "notes": "The Vault→OpenBao migration is the reference precedent for this theme."
+    },
+    {
+      "id": "T2",
+      "name": "Zero Trust",
+      "vision": "No implicit trust exists anywhere on the platform — every connection is authenticated, encrypted, and authorized by policy.",
+      "successCriteria": [
+        "All service-to-service traffic uses mTLS (Istio STRICT mode)",
+        "All namespaces have deny-all NetworkPolicy with explicit allow rules",
+        "All workloads are subject to OPA/Gatekeeper policy enforcement",
+        "Runtime anomalies are detected and logged (Falco)",
+        "All container images are scanned for vulnerabilities before admission (Trivy)"
+      ],
+      "status": "active",
+      "relatedDocs": ["docs/governance/cluster-contract.md"]
+    },
+    {
+      "id": "T3",
+      "name": "Developer Autonomy",
+      "vision": "A developer can clone this repo, fill in a config file, and have a complete production-grade platform running in under 30 minutes — with no cloud account required for local development.",
+      "successCriteria": [
+        "kind-based local cluster spins up in under 5 minutes with ./kind/setup.sh",
+        "All charts install cleanly into kind for local development",
+        "Backstage service catalog auto-discovers all platform services",
+        "Browser-based IDE (code-server) gives agents a full development environment",
+        "GitLab + ArgoCD provide complete GitOps workflow without GitHub dependency"
+      ],
+      "status": "active",
+      "relatedDocs": ["docs/quickstart.md"]
+    },
+    {
+      "id": "T4",
+      "name": "Observability",
+      "vision": "Every signal from every component is captured, correlated, and queryable — metrics, logs, traces, and security events — with no data leaving the cluster.",
+      "successCriteria": [
+        "Prometheus scrapes all platform components with <15s staleness",
+        "All logs flow to Loki and are queryable in Grafana",
+        "Distributed traces connect across all services via Tempo + OpenTelemetry",
+        "Long-term metric retention via Thanos (90 days minimum)",
+        "Falco security events appear in Grafana alongside application metrics"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "T5",
+      "name": "Resilience",
+      "vision": "The platform survives node failures, upgrades, and deliberate chaos without data loss or unplanned downtime.",
+      "successCriteria": [
+        "All platform components have PodDisruptionBudgets and podAntiAffinity",
+        "Loss of any single node does not cause service disruption",
+        "All stateful data is backed up daily and restore is tested",
+        "Zero-downtime rolling updates via ArgoCD sync waves",
+        "Chaos Mesh scenarios run weekly without causing SLO breaches"
+      ],
+      "status": "active"
+    }
+  ]
+}

@@ -89,6 +89,8 @@
       "minimum": 0,
       "description": "Number of times this story has been re-opened by the review ceremony"
     },
+    "epicId": { "type": "string", "pattern": "^E[0-9]+$", "description": "Parent epic ID" },
+    "themeId": { "type": "string", "pattern": "^T[0-9]+$", "description": "Grandparent theme ID" },
     "readinessNote": {
       "type": "string",
       "description": "Set by planning ceremony when a story is not-ready for the current sprint"

@@ -1,0 +1,139 @@
+{
+  "epics": [
+    {
+      "id": "E1",
+      "themeId": "T3",
+      "title": "Sprint ceremony infrastructure",
+      "description": "File-based agile PM tooling: ralph loop, ceremonies, SMART check, proof-of-work, smoke test, review, retro. The foundation for all subsequent delivery.",
+      "targetIncrement": 0,
+      "status": "complete",
+      "storyIds": []
+    },
+    {
+      "id": "E2",
+      "themeId": "T1",
+      "title": "Cluster bootstrap — VPS provisioning and K3s HA",
+      "description": "Bootstrap scripts for Hetzner, DigitalOcean, generic VPS. K3s HA with kube-vip. Front door security via Cloudflare tunnel.",
+      "targetIncrement": 1,
+      "status": "complete",
+      "storyIds": []
+    },
+    {
+      "id": "E3",
+      "themeId": "T2",
+      "title": "Cluster foundations — CNI, PKI, policy, secrets bootstrap",
+      "description": "Cilium CNI with deny-all NetworkPolicy. cert-manager with self-signed CA. Sealed Secrets. Crossplane core. OpenBao dev mode.",
+      "targetIncrement": 2,
+      "status": "complete",
+      "storyIds": []
+    },
+    {
+      "id": "E4",
+      "themeId": "T1",
+      "title": "Self-hosted identity — Keycloak SSO",
+      "description": "Keycloak with sovereign realm, OIDC clients for all platform services. Replaces any external identity provider dependency.",
+      "targetIncrement": 2,
+      "status": "complete",
+      "storyIds": []
+    },
+    {
+      "id": "E5",
+      "themeId": "T1",
+      "title": "GitOps engine — GitLab + ArgoCD + Harbor",
+      "description": "Self-hosted Git (GitLab), GitOps (ArgoCD App-of-Apps), container registry (Harbor). No dependency on GitHub, DockerHub, or any external Git host.",
+      "targetIncrement": 3,
+      "status": "complete",
+      "storyIds": []
+    },
+    {
+      "id": "E6",
+      "themeId": "T1",
+      "title": "Autarky vendor system — source-based builds",
+      "description": "VENDORS.yaml manifest, vendor fetch framework, distroless build recipes (ko for Go), ArgoCD Image Updater pipeline. Every image is built from source and pinned by SHA.",
+      "targetIncrement": 4,
+      "status": "complete",
+      "storyIds": ["018", "019", "020", "021", "022"]
+    },
+    {
+      "id": "E7",
+      "themeId": "T2",
+      "title": "Service mesh — Istio mTLS",
+      "description": "Istio base + istiod, STRICT PeerAuthentication, wildcard Gateway. All service-to-service traffic encrypted and authenticated.",
+      "targetIncrement": 5,
+      "status": "active",
+      "storyIds": ["023a", "023b"]
+    },
+    {
+      "id": "E8",
+      "themeId": "T2",
+      "title": "Policy enforcement and runtime security",
+      "description": "OPA/Gatekeeper ConstraintTemplates, Trivy cluster-wide scanning, Falco runtime threat detection.",
+      "targetIncrement": 5,
+      "status": "active",
+      "storyIds": ["024a", "024b", "024c"]
+    },
+    {
+      "id": "E9",
+      "themeId": "T4",
+      "title": "Metrics and dashboards — Prometheus + Grafana",
+      "description": "kube-prometheus-stack, Keycloak OIDC for Grafana, AlertManager, pre-loaded dashboards for all platform components.",
+      "targetIncrement": 6,
+      "status": "backlog",
+      "storyIds": []
+    },
+    {
+      "id": "E10",
+      "themeId": "T4",
+      "title": "Log aggregation and distributed tracing — Loki + Tempo + Thanos",
+      "description": "Loki in simple scalable mode on Ceph, Tempo distributed tracing, Thanos for long-term Prometheus storage. All on self-hosted Ceph object storage.",
+      "targetIncrement": 6,
+      "status": "backlog",
+      "storyIds": []
+    },
+    {
+      "id": "E11",
+      "themeId": "T3",
+      "title": "Developer portal and browser IDE — Backstage + code-server",
+      "description": "Backstage service catalog auto-discovering all platform services. code-server as the primary browser-based IDE for agents and developers.",
+      "targetIncrement": 7,
+      "status": "backlog",
+      "storyIds": []
+    },
+    {
+      "id": "E12",
+      "themeId": "T3",
+      "title": "Code quality history — SonarQube + ReportPortal",
+      "description": "SonarQube for static analysis history. ReportPortal for test result aggregation across all projects.",
+      "targetIncrement": 7,
+      "status": "backlog",
+      "storyIds": []
+    },
+    {
+      "id": "E13",
+      "themeId": "T5",
+      "title": "Testing infrastructure — Selenium, k6, Chaos Mesh, MailHog",
+      "description": "Persistent browser testing (Selenium Grid), load testing (k6 operator), chaos engineering (Chaos Mesh), email testing (MailHog).",
+      "targetIncrement": 8,
+      "status": "backlog",
+      "storyIds": []
+    },
+    {
+      "id": "E14",
+      "themeId": "T3",
+      "title": "Sovereign PM — self-hosted AI-native project management",
+      "description": "The web app that replaces this file-based PM system. Theme/Epic/Story UI, prd.json generation, Ralph trigger, agent run history.",
+      "targetIncrement": 9,
+      "status": "backlog",
+      "storyIds": []
+    },
+    {
+      "id": "E15",
+      "themeId": "T5",
+      "title": "HA validation and integration testing — kind-based",
+      "description": "kind cluster setup, chart smoke tests in kind, cost gate on bootstrap scripts, PDB chaos validation.",
+      "targetIncrement": "2i",
+      "status": "backlog",
+      "storyIds": []
+    }
+  ]
+}
