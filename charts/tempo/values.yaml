@@ -19,9 +19,10 @@ tempo:
         secret_key: ${TEMPO_S3_SECRET_KEY}
         insecure: true
 
-  # Distributor
+  # Distributor — replicaCount: 2 minimum for HA
   distributor:
     replicas: 2
+    replicaCount: 2
     resources:
       requests:
         cpu: 100m
@@ -29,19 +30,11 @@ tempo:
       limits:
         cpu: 500m
         memory: 512Mi
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/component: distributor
-              topologyKey: kubernetes.io/hostname
 
-  # Ingester
+  # Ingester — replicaCount: 2 minimum for HA
   ingester:
     replicas: 2
+    replicaCount: 2
     resources:
       requests:
         cpu: 100m
@@ -49,19 +42,11 @@ tempo:
       limits:
         cpu: 500m
         memory: 1Gi
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/component: ingester
-              topologyKey: kubernetes.io/hostname
 
-  # Querier
+  # Querier — replicaCount: 2 minimum for HA
   querier:
     replicas: 2
+    replicaCount: 2
     resources:
       requests:
         cpu: 100m
@@ -69,19 +54,11 @@ tempo:
       limits:
         cpu: 500m
         memory: 512Mi
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/component: querier
-              topologyKey: kubernetes.io/hostname
 
-  # Query Frontend
+  # Query Frontend — replicaCount: 2 minimum for HA
   queryFrontend:
     replicas: 2
+    replicaCount: 2
     resources:
       requests:
         cpu: 100m
@@ -89,15 +66,6 @@ tempo:
       limits:
         cpu: 500m
         memory: 256Mi
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/component: query-frontend
-              topologyKey: kubernetes.io/hostname
 
   # Compactor
   compactor:

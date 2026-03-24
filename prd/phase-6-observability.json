@@ -34,7 +34,7 @@
         "achievable": 3,
         "relevant": 5,
         "timeBound": 4,
-        "notes": "Specific score 3: no pinned upstream chart version for prometheus-community/kube-prometheus-stack; Keycloak OIDC clientId/realm/secret reference path unspecified; 5 dashboard sources named but no Grafana dashboard IDs provided (1860, 315, etc.) leaving fetch scope open-ended. Measurable score 3: 'Keycloak OIDC auth for Grafana' is not a binary shell command \u2014 must be `helm template | grep genericOAuth` or equivalent; 'AlertManager stub config included' needs `helm template | grep -A5 receivers`; 'charts/prometheus-stack/ with Grafana on global.domain' is a structural description, not a verifiable command. Achievable score 3: sourcing 5 external dashboard JSONs plus OIDC wiring at only 2 story points is at the budget ceiling \u2014 dashboard IDs (e.g. grafana.com/grafana/dashboards/1860) would remove open-ended sourcing work. TimeBound score 4: dashboard sourcing without pinned IDs could expand scope; adding IDs (e.g. 1860, 315, 7249, 2842, 7645) would bring this to 5."
+        "notes": "Specific score 3: upstream chart version (prometheus-community/kube-prometheus-stack) not pinned; Keycloak OIDC clientId/realm/secret reference path unspecified; 5 dashboards named by category only \u2014 no Grafana dashboard IDs (e.g. 1860, 315, 7249, 2842, 7645) leaving fetch scope open-ended. Measurable score 3: 'Keycloak OIDC auth for Grafana' is not a binary shell command \u2014 must be `helm template | grep genericOAuth` or equivalent; 'AlertManager stub config included' needs `helm template | grep -A5 receivers`; 'Dashboard ConfigMaps for Node, K8s, GitLab, Ceph, Istio' is structural, not a verifiable command. Achievable score 3: sourcing 5 external dashboard JSONs plus OIDC wiring and AlertManager at 2 story points is at the budget ceiling \u2014 pinned dashboard IDs would remove open-ended sourcing work. TimeBound score 4: dashboard sourcing without pinned IDs could expand scope; adding IDs would bring this to 5."
       }
     },
     {
@@ -70,7 +70,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: appVersion is given only as an example ('e.g. 3.0.0') rather than a required pinned version \u2014 Ralph must choose a specific release and this should be prescribed to avoid divergence. All other details (Simple Scalable mode, ceph-bucket, datasource ConfigMap location, ArgoCD app path) are fully specified. All other SMART dimensions green."
+        "notes": "Specific score 4: appVersion is given only as an example ('e.g. 3.0.0') rather than a required pinned version \u2014 Ralph must choose a specific release; prescribing a version (e.g. 3.0.0) would remove this ambiguity. All other details (Simple Scalable mode, ceph-bucket, datasource ConfigMap location, ArgoCD app path) are fully specified. All other SMART dimensions green."
       }
     },
     {
@@ -106,7 +106,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: upstream bitnami/thanos version not pinned (only 'pin appVersion' is instructed without a value); sidecar mode requires the Prometheus service endpoint/namespace but this is left for Ralph to infer \u2014 should specify `prometheus-stack.monitoring.svc.cluster.local:9090` or equivalent. Achievable score 4: sidecar cross-chart wiring adds slight complexity but is well-understood; 2 points is tight but viable given the prescriptive ACs. All other SMART dimensions green."
+        "notes": "Specific score 4: upstream bitnami/thanos version not pinned (only 'pin appVersion' instructed without a value); sidecar mode requires the Prometheus service endpoint/namespace but this is left for Ralph to infer \u2014 should specify `prometheus-stack.monitoring.svc.cluster.local:9090` or equivalent. Achievable score 4: sidecar cross-chart wiring adds slight complexity but is well-understood; 2 points is tight but viable given the prescriptive ACs. All other SMART dimensions green."
       }
     },
     {
@@ -125,7 +125,7 @@
         "grep 'replicaCount' charts/tempo/values.yaml shows value >= 2",
         "argocd-apps/observability/tempo-app.yaml exists and is valid YAML"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint charts/tempo/; helm template charts/tempo/ | grep PodDisruptionBudget; helm template charts/tempo/ | grep datasource; cat argocd-apps/observability/tempo-app.yaml | yq e '.' -",
       "dependencies": [
@@ -142,7 +142,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: grafana/tempo-distributed version not pinned (only 'pin appVersion' instructed without a value); ceph-bucket endpoint/bucket name not specified \u2014 Ralph must infer from prior stories. All ACs are precise binary commands and scope is tightly bounded. Achievable score 4: 2-point budget is tight for wrapping a distributed-mode chart but achievable since the pattern mirrors 026a and 026b. All other SMART dimensions green."
+        "notes": "Specific score 4: grafana/tempo-distributed version not pinned (only 'pin appVersion' instructed without a value); ceph-bucket endpoint/bucket name not specified \u2014 Ralph must infer from prior stories (026a pattern). Achievable score 4: 2-point budget is tight for wrapping a distributed-mode chart but achievable since the pattern mirrors 026a and 026b. All other SMART dimensions green."
       }
     }
   ]
