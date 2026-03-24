@@ -5,3 +5,98 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+replicaCount: 2
+
+image:
+  # Short name used when imageRegistry is set (harbor.domain/sovereign/code-server)
+  name: code-server
+  # Full repository used when imageRegistry is empty
+  repository: codercom/code-server
+  tag: "4.22.1"
+  pullPolicy: IfNotPresent
+
+# VS Code extensions to pre-install on first startup
+# Format: publisher.extension-id
+extensions:
+  - eamodio.gitlens
+  - redhat.vscode-yaml
+  - ms-kubernetes-tools.vscode-kubernetes-tools
+  - technosophos.vscode-helm
+  - ms-python.python
+  - dbaeumer.vscode-eslint
+
+# Persistent home directory: workspace + VS Code config + extensions
+workspace:
+  # ceph-filesystem supports ReadWriteMany — required for replicaCount >= 2
+  storageClass: "ceph-filesystem"
+  storageSize: "10Gi"
+  accessModes:
+    - ReadWriteMany
+
+service:
+  type: ClusterIP
+  # oauth2-proxy sidecar port — Ingress routes here; oauth2-proxy proxies to code-server
+  port: 4180
+  # code-server internal port
+  codeServerPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: sovereign-ca-issuer
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  tls: true
+
+# oauth2-proxy sidecar for Keycloak OIDC authentication
+oauth2Proxy:
+  image:
+    name: oauth2-proxy
+    repository: quay.io/oauth2-proxy/oauth2-proxy
+    tag: "v7.6.0"
+  clientId: "sovereign-code-server"
+  # References a Sealed Secret with keys: client-secret, cookie-secret
+  secretRef: "code-server-oidc-secret"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+  limits:
+    cpu: "2000m"
+    memory: "2Gi"
+
+serviceAccount:
+  create: true
+  name: ""
+  # Bind to cluster-admin so agents can run kubectl across all namespaces
+  clusterAdmin: true
+
+podDisruptionBudget:
+  minAvailable: 1
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  failureThreshold: 3

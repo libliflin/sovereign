@@ -1,6 +1,6 @@
 apiVersion: v2
 name: code-server
-description: VS Code in browser via code-server
+description: VS Code in browser — primary interface for Claude Code agents on the Sovereign Platform
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "4.22.1"
