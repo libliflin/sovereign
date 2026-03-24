@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-datasource-thanos
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "thanos-wrapper.labels" . | nindent 4 }}
+    grafana_datasource: "1"
+data:
+  thanos-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Thanos
+        type: prometheus
+        access: proxy
+        url: http://{{ .Release.Name }}-thanos-query.{{ .Release.Namespace }}.svc.cluster.local:9090
+        version: 1
+        editable: false
+        jsonData:
+          queryTimeout: "300s"
+          httpMethod: POST

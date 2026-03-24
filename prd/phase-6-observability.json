@@ -89,7 +89,7 @@
         "grep 'replicaCount' charts/thanos/values.yaml shows value >= 2",
         "argocd-apps/observability/thanos-app.yaml exists and is valid YAML"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint charts/thanos/; helm template charts/thanos/ | grep PodDisruptionBudget; helm template charts/thanos/ | grep sidecar; cat argocd-apps/observability/thanos-app.yaml | yq e '.' -",
       "dependencies": [
