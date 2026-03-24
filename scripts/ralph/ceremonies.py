@@ -36,6 +36,28 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from lib import prd_model, sprint as sprint_lib, gates, ai as ai_lib
 
 
+def _find_not_smart(sprint: dict) -> list[dict]:
+    """Return stories with any SMART dimension < 3 (0 = unscored, skip those)."""
+    result = []
+    for s in sprint.get("stories", []):
+        sm = s.get("smart")
+        if not sm:
+            continue
+        scores = [
+            sm.get("specific", 0),
+            sm.get("measurable", 0),
+            sm.get("achievable", 0),
+            sm.get("relevant", 0),
+            sm.get("timeBound", 0),
+        ]
+        # Skip if all zeros (not yet scored by SMART check)
+        if all(v == 0 for v in scores):
+            continue
+        if min(scores) < 3:
+            result.append(s)
+    return result
+
+
 def sep(label: str = "") -> None:
     line = "=" * 64
     if label:
@@ -178,25 +200,40 @@ def main() -> int:
         output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/smart-check.md", log_file)
 
     sprint = sprint_lib.load(sprint_file)
-    not_smart = [
-        s for s in sprint.get("stories", [])
-        if s.get("smart") and min(
-            s["smart"].get("specific", 5),
-            s["smart"].get("measurable", 5),
-            s["smart"].get("achievable", 5),
-            s["smart"].get("relevant", 5),
-            s["smart"].get("timeBound", 5),
-        ) < 3
-    ]
+    not_smart = _find_not_smart(sprint)
     if not_smart:
         print(f"\nSMART CHECK FAILED: {len(not_smart)} stories scored < 3 on at least one dimension:")
         for s in not_smart:
             sm = s["smart"]
-            low = {k: v for k, v in sm.items() if isinstance(v, int) and v < 3}
             print(f"  - {s['id']}: {s['title']}")
             print(f"    {sm.get('notes', '')}")
-        print("\nFATAL: Refine failing stories and re-run ceremonies.py.")
-        return 1
+        print(f"\n  Auto-invoking story-split ceremony to self-heal...")
+        sep("AI CEREMONY: Story Split")
+        split_output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/story-split.md", log_file)
+        while ai_lib.is_rate_limited(split_output):
+            ai_lib.sleep_until_reset(split_output)
+            split_output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/story-split.md", log_file)
+
+        # Re-score and re-validate SMART on the new sub-stories
+        print(f"\n  Re-scoring split stories with SMART check...")
+        sep("AI CEREMONY: SMART Check (post-split)")
+        rescore_output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/smart-check.md", log_file)
+        while ai_lib.is_rate_limited(rescore_output):
+            ai_lib.sleep_until_reset(rescore_output)
+            rescore_output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/smart-check.md", log_file)
+
+        sprint = sprint_lib.load(sprint_file)
+        not_smart = _find_not_smart(sprint)
+        if not_smart:
+            print(f"\nSMART CHECK STILL FAILING after story split: {len(not_smart)} stories:")
+            for s in not_smart:
+                sm = s["smart"]
+                print(f"  - {s['id']}: {s['title']}")
+                print(f"    {sm.get('notes', '')}")
+            print("\nFATAL: Story split did not resolve SMART failures. Manual intervention required.")
+            return 1
+        print(f"  Story split resolved all SMART issues — sub-stories are sprint-ready.")
+
     print(f"\n  SMART check passed — all {len(sprint.get('stories', []))} stories are sprint-ready.")
 
     # -- EXECUTE + SMOKE + PROOF RETRY LOOP ------------------------------------
