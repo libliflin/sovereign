@@ -70,11 +70,21 @@ def preflight(repo_root: Path, sprint: dict) -> tuple[bool, list[str]]:
     return len(missing) == 0, missing
 
 
+def _git_tracked(repo_root: Path, pattern: str = "") -> list[Path]:
+    """Return tracked files matching pattern using git ls-files (respects .gitignore)."""
+    cmd = f"git ls-files {pattern}" if pattern else "git ls-files"
+    rc, out = _run(cmd, cwd=repo_root)
+    if rc != 0 or not out.strip():
+        return []
+    return [repo_root / f for f in out.splitlines() if f.strip()]
+
+
 def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
-    """Run helm lint, shellcheck, JSON validation, yq on argocd-apps. Returns (passed, failures)."""
+    """Run helm lint, shellcheck, JSON validation, yq on argocd-apps. Returns (passed, failures).
+    All file discovery uses git ls-files — only tracked files, .gitignore respected."""
     failures = []
 
-    # 1. helm lint all charts
+    # 1. helm lint all charts (charts/ is tracked, glob is safe and scoped)
     print("  helm lint:")
     for chart_yaml in sorted((repo_root / "charts").glob("*/Chart.yaml")):
         chart_dir = chart_yaml.parent
@@ -93,12 +103,11 @@ def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
     if not failures:
         print("    all charts passed")
 
-    # 2. bash -n + shellcheck on all .sh files
+    # 2. bash -n + shellcheck — only git-tracked .sh files (respects .gitignore)
     print("  bash syntax + shellcheck:")
     sh_fail = False
-    for script in sorted(repo_root.rglob("*.sh")):
-        if ".git" in str(script):
-            continue
+    scripts = sorted(_git_tracked(repo_root, "'*.sh'"))
+    for script in scripts:
         rel = str(script.relative_to(repo_root))
         rc1, out1 = _run(f"bash -n {script}")
         rc2, out2 = _run(f"shellcheck {script}")
@@ -116,10 +125,11 @@ def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
     if not sh_fail:
         print("    all scripts passed")
 
-    # 3. JSON validation for prd/
+    # 3. JSON validation — only git-tracked .json files under prd/
     print("  JSON validation (prd/):")
     json_fail = False
-    for jf in sorted((repo_root / "prd").rglob("*.json")):
+    json_files = sorted(_git_tracked(repo_root, "'prd/*.json' 'prd/**/*.json'"))
+    for jf in json_files:
         rel = str(jf.relative_to(repo_root))
         rc, out = _run(f"jq empty {jf}")
         if rc == 0:
@@ -131,12 +141,12 @@ def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
     if not json_fail:
         print("    all JSON files valid")
 
-    # 4. yq YAML syntax check on argocd-apps/
+    # 4. yq YAML syntax check — only git-tracked .yaml files under argocd-apps/
     print("  YAML syntax check (argocd-apps/):")
     yaml_fail = False
-    argocd_dir = repo_root / "argocd-apps"
-    if argocd_dir.exists():
-        for yf in sorted(argocd_dir.rglob("*.yaml")):
+    yaml_files = sorted(_git_tracked(repo_root, "'argocd-apps/**/*.yaml' 'argocd-apps/*.yaml'"))
+    if yaml_files:
+        for yf in yaml_files:
             rel = str(yf.relative_to(repo_root))
             rc, out = _run(f"yq e '.' {yf}")
             if rc == 0:
@@ -148,7 +158,7 @@ def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
         if not yaml_fail:
             print("    all ArgoCD manifests valid")
     else:
-        print("    (argocd-apps/ not found, skipping)")
+        print("    (no tracked argocd-apps/ YAML found, skipping)")
 
     return len(failures) == 0, failures
 

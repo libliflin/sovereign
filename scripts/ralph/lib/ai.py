@@ -117,11 +117,13 @@ def _calc_sleep(reset_str: str, tz_name: str) -> int:
 
 
 def _detroit_time(sleep_secs: int) -> str:
+    # Do NOT import timedelta inside this function — it would shadow the module-level
+    # import and cause UnboundLocalError when the except branch doesn't execute.
     try:
         from zoneinfo import ZoneInfo
         tz = ZoneInfo("America/Detroit")
     except Exception:
-        from datetime import timezone, timedelta
-        tz = timezone(timedelta(hours=-5))
+        from datetime import timezone as _tz
+        tz = _tz(timedelta(hours=-5))
     t = datetime.now(tz) + timedelta(seconds=sleep_secs)
     return t.strftime("%I:%M %p %Z  (%a %b %-d)")
