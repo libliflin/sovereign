@@ -10,6 +10,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
+  revisionHistoryLimit: 3
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
