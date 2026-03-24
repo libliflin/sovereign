@@ -357,9 +357,23 @@ def main() -> int:
     else:
         sep("AI CEREMONY: Review")
         _ai(args.tool, "review.md", log_file)
+
+        # The review ceremony's job is adversarial: it reopens stories that fail.
+        # Any story that passes:true and was NOT reopened by the review is accepted.
+        # ceremonies.py enforces this — we do not trust the AI to write reviewed:true.
         sprint = sprint_lib.load(sprint_file)
-        accepted    = [s for s in sprint.get("stories", []) if s.get("reviewed")]
-        incomplete  = [s for s in sprint.get("stories", []) if not s.get("reviewed")]
+        newly_accepted = 0
+        for s in sprint.get("stories", []):
+            if s.get("passes", False) and not s.get("reviewed", False):
+                s["reviewed"] = True
+                newly_accepted += 1
+        if newly_accepted:
+            sprint_lib.save(sprint_file, sprint)
+            print(f"  ceremonies.py set reviewed=True on {newly_accepted} passing stories not reopened by review.")
+
+        sprint = sprint_lib.load(sprint_file)
+        accepted   = [s for s in sprint.get("stories", []) if s.get("reviewed")]
+        incomplete = [s for s in sprint.get("stories", []) if not s.get("reviewed") and not s.get("returnedToBacklog") and s.get("status") != "killed"]
         print(f"\n  Accepted: {len(accepted)}/{len(sprint.get('stories', []))}")
         if incomplete:
             print(f"  Incomplete → retro will return to backlog: {len(incomplete)}")
