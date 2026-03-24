@@ -236,97 +236,120 @@ def main() -> int:
 
     print(f"\n  SMART check passed — all {len(sprint.get('stories', []))} stories are sprint-ready.")
 
-    # -- EXECUTE + SMOKE + PROOF RETRY LOOP ------------------------------------
-    for retry in range(args.max_retries + 1):
-        if retry > 0:
-            print(f"\n{'─' * 20} RETRY {retry} of {args.max_retries} {'─' * 20}")
-
-        # -- STEP 3: EXECUTE ---------------------------------------------------
-        log_step(3, 8, "EXECUTE")
-        sprint = sprint_lib.load(sprint_file)
-        needing_work = sprint_lib.stories_needing_work(sprint)
-
-        if not needing_work:
-            print(f"  All {len(sprint.get('stories', []))} stories already passing — skipping execute.")
-            print("  Proceeding directly to smoke test.")
-        else:
-            print(f"  Stories needing work: {len(needing_work)} / {len(sprint.get('stories', []))}")
-            print("  Clearing stale failure context...")
-            sprint_lib.clear_failures(sprint_file)
-
-            ralph = SCRIPT_DIR / "ralph.sh"
-            print(f"  Running ralph.sh --prd {active_sprint} --tool {args.tool} 10")
-            print()
-            ralph_exit = ai_lib.run_ralph(ralph, sprint_file, args.tool, 10, log_file)
-            if ralph_exit != 0:
-                print(f"  WARNING: ralph.sh exited {ralph_exit}")
-
+    # -- OUTER LOOP: EXECUTE → SMOKE → PROOF → REVIEW (repeats until all reviewed)
+    MAX_IMPLEMENT_ROUNDS = 3
+    for implement_round in range(1, MAX_IMPLEMENT_ROUNDS + 1):
+        if implement_round > 1:
             sprint = sprint_lib.load(sprint_file)
-            passing = sprint_lib.stories_passing(sprint)
-            print(f"\n  Stories passing after execute: {len(passing)} / {len(sprint.get('stories', []))}")
+            still_unreviewed = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
+            print(f"\n{'═' * 66}")
+            print(f"  IMPLEMENT ROUND {implement_round}/{MAX_IMPLEMENT_ROUNDS}")
+            print(f"  {len(still_unreviewed)} stories unimplemented/unreviewed — looping back to execute.")
+            print(f"{'═' * 66}")
 
-        # -- STEP 4: SMOKE TEST ------------------------------------------------
-        log_step(4, 8, "SMOKE TEST (bash-enforced)")
-        sep()
-        smoke_passed, smoke_failures = gates.smoke_test(REPO_ROOT)
-        sprint_lib.write_failures(sprint_file, "_lastSmokeTestFailures", smoke_failures)
+        # -- INNER RETRY LOOP: EXECUTE + SMOKE + PROOF -------------------------
+        for retry in range(args.max_retries + 1):
+            if retry > 0:
+                print(f"\n{'─' * 20} RETRY {retry} of {args.max_retries} {'─' * 20}")
 
-        if not smoke_passed:
-            print(f"\nSMOKE TEST FAILED ({len(smoke_failures)} check(s) failed)")
-            print("  Failure details written to sprint._lastSmokeTestFailures[]")
-            count = sprint_lib.reset_passing_to_false(
-                sprint_file,
-                "[SMOKE-TEST-FAIL] Gates failed — see _lastSmokeTestFailures in sprint file."
-            )
-            print(f"  Reset {count} stories to passes:false.")
-            if retry < args.max_retries:
-                print(f"  Retrying execute (attempt {retry + 1} of {args.max_retries})...")
-                continue
+            # -- STEP 3: EXECUTE -----------------------------------------------
+            log_step(3, 8, "EXECUTE")
+            sprint = sprint_lib.load(sprint_file)
+            needing_work = sprint_lib.stories_needing_work(sprint)
+
+            if not needing_work:
+                print(f"  All {len(sprint.get('stories', []))} stories already passing — skipping execute.")
+                print("  Proceeding directly to smoke test.")
             else:
-                print(f"\nFATAL: Smoke test failed after {args.max_retries} retries. Manual intervention required.")
-                return 1
+                print(f"  Stories needing work: {len(needing_work)} / {len(sprint.get('stories', []))}")
+                print("  Clearing stale failure context...")
+                sprint_lib.clear_failures(sprint_file)
 
-        print("\n  Smoke test passed.")
+                ralph = SCRIPT_DIR / "ralph.sh"
+                print(f"  Running ralph.sh --prd {active_sprint} --tool {args.tool} 10")
+                print()
+                ralph_exit = ai_lib.run_ralph(ralph, sprint_file, args.tool, 10, log_file)
+                if ralph_exit != 0:
+                    print(f"  WARNING: ralph.sh exited {ralph_exit}")
 
-        # -- STEP 5: PROOF OF WORK ---------------------------------------------
-        log_step(5, 8, "PROOF OF WORK (bash-enforced)")
-        sep()
-        sprint = sprint_lib.load(sprint_file)
-        proof_passed, proof_failures = gates.proof_of_work(REPO_ROOT, sprint)
-        sprint_lib.write_failures(sprint_file, "_lastProofOfWorkFailures", proof_failures)
+                sprint = sprint_lib.load(sprint_file)
+                passing = sprint_lib.stories_passing(sprint)
+                print(f"\n  Stories passing after execute: {len(passing)} / {len(sprint.get('stories', []))}")
 
-        if not proof_passed:
-            print(f"\nPROOF OF WORK FAILED ({len(proof_failures)} check(s) failed)")
-            print("  Failure details written to sprint._lastProofOfWorkFailures[]")
-            count = sprint_lib.reset_passing_to_false(
-                sprint_file,
-                "[PROOF-FAIL] Branch not pushed or no PR — see _lastProofOfWorkFailures."
-            )
-            print(f"  Reset {count} stories to passes:false.")
-            if retry < args.max_retries:
-                print(f"  Retrying execute (attempt {retry + 1} of {args.max_retries})...")
-                continue
-            else:
-                print(f"\nFATAL: Proof of work failed after {args.max_retries} retries.")
-                return 1
+            # -- STEP 4: SMOKE TEST --------------------------------------------
+            log_step(4, 8, "SMOKE TEST (bash-enforced)")
+            sep()
+            smoke_passed, smoke_failures = gates.smoke_test(REPO_ROOT)
+            sprint_lib.write_failures(sprint_file, "_lastSmokeTestFailures", smoke_failures)
 
-        print("\n  Proof of work passed.")
-        break  # Both gates passed — exit retry loop
+            if not smoke_passed:
+                print(f"\nSMOKE TEST FAILED ({len(smoke_failures)} check(s) failed)")
+                print("  Failure details written to sprint._lastSmokeTestFailures[]")
+                count = sprint_lib.reset_passing_to_false(
+                    sprint_file,
+                    "[SMOKE-TEST-FAIL] Gates failed — see _lastSmokeTestFailures in sprint file."
+                )
+                print(f"  Reset {count} stories to passes:false.")
+                if retry < args.max_retries:
+                    print(f"  Retrying execute (attempt {retry + 1} of {args.max_retries})...")
+                    continue
+                else:
+                    print(f"\nFATAL: Smoke test failed after {args.max_retries} retries. Manual intervention required.")
+                    return 1
 
-    # -- STEP 6: REVIEW --------------------------------------------------------
-    log_step(6, 8, "REVIEW")
-    sep("AI CEREMONY: Review")
-    output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/review.md", log_file)
-    while ai_lib.is_rate_limited(output):
-        ai_lib.sleep_until_reset(output)
+            print("\n  Smoke test passed.")
+
+            # -- STEP 5: PROOF OF WORK -----------------------------------------
+            log_step(5, 8, "PROOF OF WORK (bash-enforced)")
+            sep()
+            sprint = sprint_lib.load(sprint_file)
+            proof_passed, proof_failures = gates.proof_of_work(REPO_ROOT, sprint)
+            sprint_lib.write_failures(sprint_file, "_lastProofOfWorkFailures", proof_failures)
+
+            if not proof_passed:
+                print(f"\nPROOF OF WORK FAILED ({len(proof_failures)} check(s) failed)")
+                print("  Failure details written to sprint._lastProofOfWorkFailures[]")
+                count = sprint_lib.reset_passing_to_false(
+                    sprint_file,
+                    "[PROOF-FAIL] Branch not pushed or no PR — see _lastProofOfWorkFailures."
+                )
+                print(f"  Reset {count} stories to passes:false.")
+                if retry < args.max_retries:
+                    print(f"  Retrying execute (attempt {retry + 1} of {args.max_retries})...")
+                    continue
+                else:
+                    print(f"\nFATAL: Proof of work failed after {args.max_retries} retries.")
+                    return 1
+
+            print("\n  Proof of work passed.")
+            break  # Both gates passed — exit inner retry loop
+
+        # -- STEP 6: REVIEW ----------------------------------------------------
+        log_step(6, 8, "REVIEW")
+        sep("AI CEREMONY: Review")
         output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/review.md", log_file)
+        while ai_lib.is_rate_limited(output):
+            ai_lib.sleep_until_reset(output)
+            output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/review.md", log_file)
 
-    sprint = sprint_lib.load(sprint_file)
-    not_reviewed = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
-    if not_reviewed:
-        print(f"\n  {len(not_reviewed)} stories not yet reviewed:true after review ceremony.")
+        sprint = sprint_lib.load(sprint_file)
+        not_reviewed = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
 
-    # -- STEP 7: RETRO ---------------------------------------------------------
+        if not not_reviewed:
+            break  # All stories reviewed — exit outer loop, proceed to retro
+
+        print(f"\n  {len(not_reviewed)} stories still unreviewed after review:")
+        for s in not_reviewed:
+            print(f"    - {s['id']}: {s['title']}  (passes={s.get('passes', False)}, reviewed={s.get('reviewed', False)})")
+
+        if implement_round == MAX_IMPLEMENT_ROUNDS:
+            print(f"\nFATAL: {len(not_reviewed)} stories unreviewed after {MAX_IMPLEMENT_ROUNDS} implement rounds.")
+            print("Manual intervention required.")
+            return 1
+
+        print(f"  Looping back to implement remaining stories (round {implement_round + 1}/{MAX_IMPLEMENT_ROUNDS})...")
+
+    # -- STEP 7: RETRO (only reached when all stories are reviewed) ------------
     log_step(7, 8, "RETRO")
     sep("AI CEREMONY: Retrospective")
     output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/retro.md", log_file)
@@ -336,14 +359,6 @@ def main() -> int:
 
     # -- STEP 8: ADVANCE -------------------------------------------------------
     log_step(8, 8, "ADVANCE")
-    sprint = sprint_lib.load(sprint_file)
-    not_accepted = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
-    if not_accepted:
-        print(f"\n  WARNING: {len(not_accepted)} stories not accepted (reviewed:true).")
-        print("  Skipping phase advancement. Fix remaining stories and re-run.")
-        print(f"\nSprint ceremonies complete (with incomplete stories).")
-        print(f"Log: {log_file}")
-        return 0
 
     advance_script = REPO_ROOT / "prd" / "advance.sh"
     if advance_script.exists():
