@@ -180,7 +180,7 @@ jobs:
 
       - name: Shellcheck prd scripts
         run: |
-          find prd -name "*.sh" -print0 | xargs -0 shellcheck -S error
+          find prd -name "*.sh" -print0 | xargs -0 -r shellcheck -S error
 
       - name: Shellcheck scripts/ralph
         run: |
