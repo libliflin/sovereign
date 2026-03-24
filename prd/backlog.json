@@ -1012,7 +1012,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E11",
-      "themeId": "T3"
+      "themeId": "T3",
+      "readinessNote": "AC #3 ('Kubernetes plugin shows cluster resources') and AC #4 ('ArgoCD plugin shows deployment status') require a running Backstage instance and cannot be verified by static analysis or helm template. Replace with checkable alternatives: 'values.yaml has backstage.plugins.kubernetes.enabled: true' and 'values.yaml has backstage.plugins.argocd.url configured'. testPlan is generic \u2014 needs specific commands: helm template charts/backstage/ | grep -i oidc; helm template charts/backstage/ | grep ceph; helm lint charts/backstage/."
     },
     {
       "id": "028",
@@ -1177,7 +1178,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E14",
-      "themeId": "T3"
+      "themeId": "T3",
+      "readinessNote": "testPlan references wrong quality gates (helm lint, kubectl dry-run) for a Node.js backend. Should specify: npm run typecheck && npm run lint && npm test. AC #3 'All CRUD endpoints implemented' is not independently verifiable \u2014 needs 'npm test exits 0 with route-level test coverage for all endpoints listed in openapi.yaml'."
     },
     {
       "id": "033",
@@ -1210,7 +1212,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E14",
-      "themeId": "T3"
+      "themeId": "T3",
+      "readinessNote": "ACs #3 ('Keycloak login flow works'), #4 ('PRD Generator shows formatted prd.json with copy button'), and #5 ('Agent Runs page shows story pass/fail history') require a running application and cannot be verified statically. Replace with file/component existence checks: 'src/client/pages/PrdGenerator.tsx exists with a copy-to-clipboard handler', 'src/client/pages/AgentRuns.tsx exists with pass/fail rendering logic'. testPlan references wrong quality gates \u2014 should specify: npm run typecheck && npm run lint && npm run build."
     },
     {
       "id": "034",
@@ -1275,7 +1278,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E14",
-      "themeId": "T3"
+      "themeId": "T3",
+      "readinessNote": "testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) for a documentation story. Should specify: markdownlint docs/ README.md exits 0. AC #6 already names the correct gate (markdownlint) but testPlan contradicts it."
     },
     {
       "id": "036",
@@ -1313,7 +1317,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E13",
-      "themeId": "T5"
+      "themeId": "T5",
+      "readinessNote": "ACs #4 ('scan-sca creates GitLab issue for each critical CVE'), #5 ('scan-sca deduplicates'), and #11 ('Weekly scheduled pipeline configured') require a running GitLab instance and cannot be verified statically. These should be noted as live-test requirements in the blocker protocol. testPlan is generic \u2014 should specify the statically-verifiable subset: cat vendor/gitlab-ci-template.yml | yq e '.' -; grep -c 'stage:' vendor/gitlab-ci-template.yml; grep kaniko vendor/gitlab-ci-template.yml; helm lint charts/gitlab-runner/; kubectl apply --dry-run=client -f argocd-apps/platform/gitlab-runner-app.yaml."
     },
     {
       "id": "037r",
@@ -1413,7 +1418,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 038 which has passes: false \u2014 blocked"
     },
     {
       "id": "040",
