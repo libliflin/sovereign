@@ -1,15 +1,25 @@
 """
 orient.py — Platform state assessment engine.
 
-Reads objective data (themes, epics, backlog, velocity, retro patches),
+Reads objective data (GGEs, themes, epics, backlog, velocity, retro patches),
 computes KPIs against fixed thresholds, and returns ONE decision: what
 the machine does next and why.
 
 No AI. No options presented. One state, one action, one reason.
+
+Check order (first failing KPI wins):
+  1. GGEs (golden goose eggs) — unhealthy egg → Andon priority-0 story
+  2. GGE count (3-5 required) → theme-review if out of range
+  3. Priority-0 stories → plan immediately
+  4. Retro debt → BLOCKED
+  5. Sprint active → resume
+  6. Epic coverage → epic-breakdown
+  7. Backlog depth → backlog-groom or plan
 """
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -26,6 +36,9 @@ RETRO_DEBT_MAX_SPRINTS = 2    # unresolved retro patches older than this → BLO
 INCREMENT_PACE_MIN = 0.70     # 70% of target velocity required
 SMART_READINESS_MIN = 0.80    # 80% of backlog stories must be SMART-scored
 DEFAULT_SPRINT_SIZE = 4       # stories per sprint when no velocity history exists
+STORY_MAX_POINTS = 8          # stories above this cannot enter planning
+GGE_MIN = 3                   # minimum golden goose eggs
+GGE_MAX = 5                   # maximum golden goose eggs
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +132,24 @@ def _load_json(path: Path) -> dict | list | None:
         return json.load(f)
 
 
+def _check_gge_indicator(repo_root: Path, indicator: dict, all_stories: list[dict]) -> bool:
+    """Return True if the GGE indicator is healthy."""
+    kind = indicator.get("type")
+    if kind == "file_exists":
+        return (repo_root / indicator["path"]).exists()
+    if kind == "files_exist":
+        return all((repo_root / p).exists() for p in indicator.get("paths", []))
+    if kind == "story_complete":
+        sid = indicator.get("storyId")
+        story = next((s for s in all_stories if s["id"] == sid), None)
+        return story is not None and story.get("passes", False)
+    if kind == "gate_passing":
+        cmd = indicator.get("command", "")
+        result = subprocess.run(cmd, shell=True, cwd=repo_root, capture_output=True)
+        return result.returncode == 0
+    return True  # unknown indicator type → assume healthy
+
+
 def _retro_patch_ages(repo_root: Path, velocity: list[dict]) -> list[int]:
     """
     Return ages (in sprints) of retro patches that appear unresolved.
@@ -165,6 +196,8 @@ def assess(repo_root: Path) -> Assessment:
     phases = manifest.get("phases", [])
 
     kpis: list[KPI] = []
+    gge_data = _load_json(prd / "gge.json") or {}
+    eggs = gge_data.get("eggs", [])
 
     # ── KPI 1: EMPTY check ──────────────────────────────────────────────────
     if not themes and not epics and not all_stories:
@@ -176,7 +209,76 @@ def assess(repo_root: Path) -> Assessment:
             kpis=kpis,
         )
 
-    # ── KPI 2: Priority-0 stories (outranks everything including retro debt) ─
+    # ── KPI 2: Golden Goose Eggs ────────────────────────────────────────────
+    # GGE count gate: must have 3-5 eggs or theme-review is required
+    egg_count = len(eggs)
+    if egg_count < GGE_MIN or egg_count > GGE_MAX:
+        kpis.append(KPI(
+            "GGE count",
+            f"{egg_count} eggs",
+            "FAIL",
+            f"must have {GGE_MIN}–{GGE_MAX} eggs (prd/gge.json)"
+        ))
+        return Assessment(
+            state=PlatformState.EMPTY,
+            action=NextAction.THEME_REVIEW,
+            reason=(
+                f"Golden Goose Eggs count is {egg_count}, must be {GGE_MIN}–{GGE_MAX}. "
+                "Run theme-review to define or trim the eggs."
+            ),
+            kpis=kpis,
+        )
+
+    # GGE health: check each egg's indicator
+    broken_eggs = [e for e in eggs if not _check_gge_indicator(repo_root, e.get("indicator", {}), all_stories)]
+    if broken_eggs:
+        kpis.append(KPI(
+            "GGEs healthy",
+            f"{len(broken_eggs)}/{egg_count} broken",
+            "FAIL",
+            f"{', '.join(e['id'] for e in broken_eggs)} — Andon: priority-0 story needed"
+        ))
+        # Andon: create a priority-0 backlog story for the first broken egg
+        # (ceremonies.py will then pick it up immediately in the p0 check)
+        first_broken = broken_eggs[0]
+        backlog_path = prd / "backlog.json"
+        if backlog_path.exists():
+            with open(backlog_path) as f:
+                backlog = json.load(f)
+            andon_id = f"GGE-{first_broken['id']}-andon"
+            existing_ids = {s["id"] for s in backlog.get("stories", [])}
+            if andon_id not in existing_ids:
+                backlog.setdefault("stories", []).insert(0, {
+                    "id": andon_id,
+                    "title": f"ANDON: Restore broken GGE — {first_broken['title']}",
+                    "description": (
+                        f"Golden Goose Egg {first_broken['id']} indicator is failing. "
+                        f"Indicator type: {first_broken.get('indicator', {}).get('type')}. "
+                        f"Restore it immediately. Rationale: {first_broken.get('rationale', '')}"
+                    ),
+                    "acceptanceCriteria": [f"GGE {first_broken['id']} indicator passes in orient"],
+                    "priority": 0,
+                    "points": 2,
+                    "passes": False,
+                    "reviewed": False,
+                    "epicId": "E1",
+                    "themeId": first_broken.get("themeId", "T3"),
+                    "branchName": f"fix/gge-{first_broken['id'].lower()}-andon",
+                    "dependencies": [],
+                    "attempts": 0,
+                })
+                with open(backlog_path, "w") as f:
+                    json.dump(backlog, f, indent=2)
+                print(f"  ⚑  ANDON: created priority-0 story '{andon_id}' for broken GGE {first_broken['id']}")
+    else:
+        kpis.append(KPI(
+            "GGEs healthy",
+            f"{egg_count}/{egg_count} passing",
+            "OK",
+            " | ".join(e["id"] for e in eggs)
+        ))
+
+    # ── KPI 3: Priority-0 stories ───────────────────────────────────────────
     urgent = [
         s for s in all_stories
         if s.get("priority") == 0
@@ -202,7 +304,7 @@ def assess(repo_root: Path) -> Assessment:
             kpis=kpis,
         )
 
-    # ── KPI 3: Retro debt ───────────────────────────────────────────────────
+    # ── KPI 4: Retro debt ───────────────────────────────────────────────────
     patch_ages = _retro_patch_ages(repo_root, velocity)
     old_patches = [a for a in patch_ages if a > RETRO_DEBT_MAX_SPRINTS]
     retro_status = "FAIL" if old_patches else "OK"
@@ -221,7 +323,7 @@ def assess(repo_root: Path) -> Assessment:
             ),
         )
 
-    # ── KPI 3: Sprint active? ───────────────────────────────────────────────
+    # ── KPI 5: Sprint active? ───────────────────────────────────────────────
     active_sprint = None
     if active_sprint_file:
         sprint_path = repo_root / active_sprint_file
@@ -256,7 +358,7 @@ def assess(repo_root: Path) -> Assessment:
                 resume_step=resume,
             )
 
-    # ── KPI 4: Epic coverage ────────────────────────────────────────────────
+    # ── KPI 6: Epic coverage ────────────────────────────────────────────────
     story_epic_ids = {s.get("epicId") for s in all_stories if s.get("epicId")}
     empty_epics = [e for e in epics if e.get("id") not in story_epic_ids]
     epic_status = "FAIL" if empty_epics else "OK"
@@ -278,12 +380,14 @@ def assess(repo_root: Path) -> Assessment:
             kpis=kpis,
         )
 
-    # ── KPI 5: Backlog depth ────────────────────────────────────────────────
+    # ── KPI 7: Backlog depth ────────────────────────────────────────────────
     def is_sprint_ready(s: dict) -> bool:
         if s.get("passes", False) or s.get("reviewed", False):
             return False
         if s.get("status") == "killed":
             return False
+        if isinstance(s.get("points"), int) and s["points"] > STORY_MAX_POINTS:
+            return False  # oversized — must be split before it can be planned
         sm = s.get("smart", {})
         if not sm:
             return False
@@ -304,7 +408,7 @@ def assess(repo_root: Path) -> Assessment:
         f"{len(ready_stories)} ready stories / {avg_sprint_size:.0f} avg sprint size"
     ))
 
-    # ── KPI 6: SMART readiness ──────────────────────────────────────────────
+    # ── KPI 8: SMART readiness ──────────────────────────────────────────────
     open_stories = [
         s for s in all_stories
         if not s.get("passes", False)
@@ -321,7 +425,7 @@ def assess(repo_root: Path) -> Assessment:
         f"{smart_ratio * 100:.0f}% scored (threshold: {SMART_READINESS_MIN * 100:.0f}%)"
     ))
 
-    # ── KPI 7: Increment pace ───────────────────────────────────────────────
+    # ── KPI 9: Increment pace ───────────────────────────────────────────────
     if velocity and len(velocity) >= 2:
         recent = velocity[-3:]
         avg_pts = sum(v.get("pointsCompleted", 0) for v in recent) / len(recent)

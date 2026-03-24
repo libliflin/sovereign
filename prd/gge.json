@@ -1,0 +1,53 @@
+{
+  "_comment": "Golden Goose Eggs — the 3-5 outcomes that matter most right now. Defined and redefined by theme-review. Orient checks these first. A failing GGE triggers an immediate priority-0 backlog story.",
+  "limit": { "min": 3, "max": 5 },
+  "eggs": [
+    {
+      "id": "G1",
+      "title": "Delivery machine is self-orienting and self-healing",
+      "themeId": "T3",
+      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else.",
+      "indicator": {
+        "type": "files_exist",
+        "paths": [
+          "scripts/ralph/lib/orient.py",
+          "scripts/ralph/lib/gates.py",
+          "scripts/ralph/ceremonies.py"
+        ]
+      }
+    },
+    {
+      "id": "G2",
+      "title": "Living state docs answer 'where are we' without reading history",
+      "themeId": "T3",
+      "rationale": "Every agent that touches this repo must be able to orient in under 2 minutes by reading two files. Without this, every session starts with archaeology. Rewritten each sprint by the sync ceremony.",
+      "indicator": {
+        "type": "files_exist",
+        "paths": [
+          "docs/state/architecture.md",
+          "docs/state/agent.md"
+        ]
+      }
+    },
+    {
+      "id": "G3",
+      "title": "Cluster contract is current, enforced, and machine-checked",
+      "themeId": "T1",
+      "rationale": "Sovereignty means nothing if the cluster contract is a document nobody reads. It must be a gate — orient checks it exists and is current, and the bootstrap process references it explicitly.",
+      "indicator": {
+        "type": "file_exists",
+        "path": "docs/governance/cluster-contract.md"
+      }
+    },
+    {
+      "id": "G4",
+      "title": "Mental model is coherent — one vocabulary, one hierarchy",
+      "themeId": "T3",
+      "rationale": "Phase vs increment vs sprint, phase field vs epicId — vocabulary fractures compound into delivery failures. The sync ceremony audits this every sprint. Story 040 (phase→increment migration) is the current active fix.",
+      "indicator": {
+        "type": "story_complete",
+        "storyId": "040"
+      }
+    }
+  ]
+}

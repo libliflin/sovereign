@@ -64,10 +64,48 @@ For each incomplete story, also decide:
 
 ---
 
+## Step 2b — Flow analysis (Heijunka check)
+
+This is not about what didn't finish — it's about **why stories were sized the way they were**.
+Oversized stories are a systemic problem, not an individual failure.
+
+```python
+import json
+from collections import Counter
+
+with open('prd/backlog.json') as f:
+    backlog_fresh = json.load(f)
+
+STORY_MAX_POINTS = 8
+SPLIT_FLAG_POINTS = 5  # flag as split candidate in grooming
+
+# Check for oversized stories that snuck into the sprint
+oversized        = [s for s in stories if isinstance(s.get('points'), int) and s['points'] > STORY_MAX_POINTS]
+split_candidates = [s for s in stories if isinstance(s.get('points'), int) and SPLIT_FLAG_POINTS < s['points'] <= STORY_MAX_POINTS]
+
+dist    = Counter(s.get('points', '?') for s in stories)
+pts_ints = [s.get('points', 0) for s in stories if isinstance(s.get('points'), int)]
+avg_pts  = sum(pts_ints) / len(pts_ints) if pts_ints else 0
+
+print(f"\nFlow Analysis")
+print(f"  Sprint avg story size : {avg_pts:.1f} pts")
+print(f"  Point distribution    : {dict(sorted(dist.items()))}")
+print(f"  Oversized (> {STORY_MAX_POINTS} pts)  : {len(oversized)} — {[s['id'] for s in oversized]}")
+print(f"  Split candidates      : {len(split_candidates)} — {[s['id'] for s in split_candidates]}")
+```
+
+Evaluate:
+
+- **Any oversized story in the sprint** (> 8 pts): this should never happen — planning gate failed. 5-Why it and generate a gate-fix remediation story.
+- **Split candidates (5–8 pts) that failed review**: still too big. Grooming was not aggressive enough. Flag it.
+- **If > 50% of incomplete stories are also split candidates**: the grooming ceremony is under-splitting. Generate a remediation story to tighten the grooming prompt.
+
+---
+
 ## Step 3 — Generate remediation backlog stories
 
-For each distinct root cause identified in Step 2, generate one or more new backlog stories
-that **fix the system**, not just the symptom.
+For each distinct root cause identified in Step 2 and Step 2b, generate one or more new
+backlog stories that **fix the system**, not just the symptom.
 
 These go into `prd/backlog.json`. Each new story needs:
 - A new unique ID (find the current max ID, increment from there — use suffix `r` for

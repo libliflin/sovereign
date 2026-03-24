@@ -3,6 +3,23 @@
   "schema": "prd/schema/story.schema.json",
   "stories": [
     {
+      "id": "GGE-G4-andon",
+      "title": "ANDON: Restore broken GGE \u2014 Mental model is coherent \u2014 one vocabulary, one hierarchy",
+      "description": "Golden Goose Egg G4 indicator is failing. Indicator type: story_complete. Restore it immediately. Rationale: Phase vs increment vs sprint, phase field vs epicId \u2014 vocabulary fractures compound into delivery failures. The sync ceremony audits this every sprint. Story 040 (phase\u2192increment migration) is the current active fix.",
+      "acceptanceCriteria": [
+        "GGE G4 indicator passes in orient"
+      ],
+      "priority": 0,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/gge-g4-andon",
+      "dependencies": [],
+      "attempts": 0
+    },
+    {
       "id": "001",
       "phase": 1,
       "priority": 1,
