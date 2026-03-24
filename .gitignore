@@ -22,3 +22,19 @@ charts/*.tgz
 .idea/
 .vscode/
 *.swp
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# Claude Code
+.claude/
+
+# Ralph runtime artifacts
+prd/logs/
+scripts/ralph/progress.txt
+scripts/ralph/.last-branch
+scripts/ralph/archive/
