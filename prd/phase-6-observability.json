@@ -1,0 +1,72 @@
+{
+  "phase": 6,
+  "name": "observability",
+  "description": "kube-prometheus-stack, Grafana, Loki, Thanos, Tempo, dashboards, AlertManager.",
+  "sprintGoal": "Deploy the full observability stack \u2014 Prometheus, Grafana, Loki, Thanos, and Tempo \u2014 with Ceph-backed storage, Keycloak SSO, and ArgoCD GitOps integration.",
+  "capacity": 15,
+  "stories": [
+    {
+      "id": "025",
+      "phase": 6,
+      "priority": 25,
+      "branchName": "feature/helm-prometheus-stack",
+      "title": "Helm chart: kube-prometheus-stack",
+      "description": "Create charts/prometheus-stack/ wrapping prometheus-community/kube-prometheus-stack. Grafana at grafana.{{ .Values.global.domain }} with Keycloak OIDC. Prometheus retention: 15 days (Thanos handles long-term). AlertManager with a stub for Slack/email routing. Pre-load dashboards: Node Exporter, Kubernetes cluster, GitLab, Ceph (from rook-ceph chart), Istio. Persistent storage on ceph-block.",
+      "acceptanceCriteria": [
+        "charts/prometheus-stack/ with Grafana on global.domain",
+        "Keycloak OIDC auth for Grafana",
+        "AlertManager stub config included",
+        "Dashboard ConfigMaps for Node, K8s, GitLab, Ceph, Istio",
+        "Prometheus uses ceph-block PVC",
+        "helm lint passes",
+        "argocd-apps/observability/prometheus-stack-app.yaml exists"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 3,
+        "measurable": 3,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 3: no pinned upstream chart version for kube-prometheus-stack; Keycloak OIDC clientId/secret reference path unspecified; HA gate requirements (PDB, podAntiAffinity, replicaCount>=2) absent from ACs despite being mandatory per CLAUDE.md. Measurable score 3: 'Keycloak OIDC auth for Grafana' is not a binary shell command \u2014 needs a concrete check such as `helm template | grep genericOAuth`; 'AlertManager stub config included' should be `helm template | grep -A5 receivers`. Achievable score 3: sourcing 5 external dashboard JSONs (Node Exporter, K8s cluster, GitLab, Ceph, Istio) plus OIDC wiring at 2 points is near budget ceiling \u2014 feasible but tight. TimeBound score 4: dashboard sourcing could expand scope; specifying upstream Grafana dashboard IDs (e.g. 1860 for Node Exporter) would tighten the end-state."
+      }
+    },
+    {
+      "id": "026",
+      "phase": 6,
+      "priority": 26,
+      "branchName": "feature/helm-loki-thanos-tempo",
+      "title": "Helm charts: Loki, Thanos, Tempo",
+      "description": "Create charts/loki/ wrapping grafana/loki in Simple Scalable mode, storage on ceph-bucket. Create charts/thanos/ wrapping bitnami/thanos with sidecar mode (connects to Prometheus), storage on ceph-bucket. Create charts/tempo/ wrapping grafana/tempo-distributed, storage on ceph-bucket. All pre-configured as Grafana datasources (via ConfigMap in prometheus-stack chart). ArgoCD apps in argocd-apps/observability/.",
+      "acceptanceCriteria": [
+        "charts/loki/ uses ceph-bucket for storage",
+        "charts/thanos/ connects to Prometheus via sidecar",
+        "charts/tempo/ uses ceph-bucket",
+        "All three auto-registered as Grafana datasources",
+        "helm lint passes on all three",
+        "argocd-apps/observability/ has all three app manifests"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 3,
+        "measurable": 3,
+        "achievable": 2,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Specific score 3: three charts with no pinned upstream versions (grafana/loki, bitnami/thanos, grafana/tempo-distributed); HA requirements (PDB, anti-affinity, replicaCount) absent from ACs. Measurable score 3: 'connects to Prometheus via sidecar' needs `helm template | grep -A3 sidecar`; 'All three auto-registered as Grafana datasources' should be `ls charts/prometheus-stack/templates/datasources-*.yaml | wc -l` equals 3. Achievable score 2 (NOT READY): three full Helm wrappers + three ArgoCD apps + three datasource ConfigMaps is too large for one Ralph iteration \u2014 split into 026a (Loki), 026b (Thanos), 026c (Tempo), each at 1-2 points. TimeBound score 3: placing datasource ConfigMaps 'in prometheus-stack chart' creates a cross-story dependency that can expand story 025 scope mid-iteration; better to place them in each respective chart's own ConfigMap."
+      }
+    }
+  ]
+}

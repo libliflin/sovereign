@@ -180,7 +180,7 @@
       "points": 3,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [
         "[SMOKE-TEST-FAIL] Gates failed \u2014 see _lastSmokeTestFailures in sprint file.",
         "[PROOF-FAIL] Branch not pushed or no PR \u2014 see _lastProofOfWorkFailures.",

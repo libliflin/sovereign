@@ -25,7 +25,7 @@
       "points": 3,
       "testPlan": "helm lint; helm template | yq e '.'; yq e '.' argocd-apps/security/istio-app.yaml",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -59,7 +59,7 @@
       "dependencies": [
         "023a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -91,7 +91,7 @@
       "points": 3,
       "testPlan": "helm lint; helm template | yq e '.'; helm template | grep -c ConstraintTemplate = 3; yq argocd manifest",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -123,7 +123,7 @@
       "points": 2,
       "testPlan": "helm lint; helm template | yq e '.'; helm template | grep targetNamespaces; yq argocd manifest",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -156,7 +156,7 @@
       "points": 2,
       "testPlan": "helm lint; helm template | yq e '.'; helm template | grep json_output; yq argocd manifest",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
