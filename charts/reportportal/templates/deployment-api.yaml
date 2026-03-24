@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "reportportal.fullname" . }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "reportportal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "reportportal.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "reportportal.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      affinity:
+        {{- include "reportportal.podAntiAffinity" . | nindent 8 }}
+      containers:
+        - name: api
+          image: {{ include "reportportal.serviceImage" (dict "root" . "svc" .Values.images.api) }}
+          imagePullPolicy: {{ .Values.images.api.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8585
+              protocol: TCP
+          env:
+            - name: RP_DB_HOST
+              value: {{ .Release.Name }}-postgresql
+            - name: RP_DB_NAME
+              value: "reportportal"
+            - name: RP_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.auth.existingSecret }}
+                  key: {{ .Values.postgresql.auth.secretKeys.userPasswordKey }}
+            - name: RP_AMQP_HOST
+              value: {{ .Release.Name }}-rabbitmq
+            - name: RP_AMQP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rabbitmq.auth.existingPasswordSecret }}
+                  key: {{ .Values.rabbitmq.auth.existingSecretPasswordKey }}
+            - name: RP_ELASTICSEARCH_HOST
+              value: "http://{{ .Release.Name }}-elasticsearch:9200"
+            # Keycloak OIDC SSO
+            - name: RP_AUTH_SAML_ENABLED
+              value: "false"
+            - name: RP_FEATURE_FLAGS
+              value: "ALLOW_DELETE_ACCOUNT"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8585
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8585
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            {{- toYaml .Values.resources.api | nindent 12 }}

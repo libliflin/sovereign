@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sonarqube
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    app.kubernetes.io/component: devex
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  revisionHistoryLimit: 3
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/sonarqube
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
+        - name: sonarqube.sonarProperties.sonar.core.serverBaseURL
+          value: https://sonar.sovereign-autarky.dev
+        - name: sonarqube.sonarProperties.sonar.auth.oidc.issuerUri
+          value: https://auth.sovereign-autarky.dev/realms/sovereign
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sonarqube
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

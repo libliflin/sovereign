@@ -5,3 +5,133 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+replicaCount: 2
+
+# ---------------------------------------------------------------------------
+# ReportPortal service images
+# ---------------------------------------------------------------------------
+images:
+  # API service (Spring Boot — main backend)
+  api:
+    name: reportportal-service-api
+    repository: reportportal/service-api
+    tag: "5.11.1"
+    pullPolicy: IfNotPresent
+  # UI service (nginx serving React SPA)
+  ui:
+    name: reportportal-service-ui
+    repository: reportportal/service-ui
+    tag: "5.11.1"
+    pullPolicy: IfNotPresent
+  # Index/gateway service
+  index:
+    name: reportportal-service-index
+    repository: reportportal/service-index
+    tag: "5.11.1"
+    pullPolicy: IfNotPresent
+  # Auto-analyzer (Python)
+  analyzer:
+    name: reportportal-service-auto-analyzer
+    repository: reportportal/service-auto-analyzer
+    tag: "5.11.1"
+    pullPolicy: IfNotPresent
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: sovereign-ca-issuer
+    nginx.ingress.kubernetes.io/proxy-body-size: "128m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+  tls: true
+
+# ---------------------------------------------------------------------------
+# PodDisruptionBudget
+# ---------------------------------------------------------------------------
+podDisruptionBudget:
+  minAvailable: 1
+
+# ---------------------------------------------------------------------------
+# Resource limits for ReportPortal services
+# ---------------------------------------------------------------------------
+resources:
+  api:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+  ui:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  index:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  analyzer:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+
+# ---------------------------------------------------------------------------
+# Keycloak OIDC configuration
+# ---------------------------------------------------------------------------
+auth:
+  keycloak:
+    clientId: "sovereign-reportportal"
+    # Client secret from Sealed Secret
+    secretRef: "reportportal-oidc-secret"
+    secretKey: "client-secret"
+
+# ---------------------------------------------------------------------------
+# PostgreSQL (bitnami subchart)
+# ---------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  auth:
+    database: "reportportal"
+    existingSecret: "reportportal-postgres-secret"
+    secretKeys:
+      adminPasswordKey: "password"
+      userPasswordKey: "password"
+  primary:
+    persistence:
+      storageClass: "ceph-block"
+      size: "10Gi"
+
+# ---------------------------------------------------------------------------
+# RabbitMQ (bitnami subchart)
+# ---------------------------------------------------------------------------
+rabbitmq:
+  enabled: true
+  auth:
+    existingPasswordSecret: "reportportal-rabbitmq-secret"
+    existingSecretPasswordKey: "password"
+  persistence:
+    storageClass: "ceph-block"
+    size: "5Gi"
+
+# ---------------------------------------------------------------------------
+# Elasticsearch (bitnami subchart)
+# ---------------------------------------------------------------------------
+elasticsearch:
+  enabled: true
+  data:
+    persistence:
+      storageClass: "ceph-block"
+      size: "10Gi"

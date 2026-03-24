@@ -1,0 +1,49 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "reportportal.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "reportportal.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ include "reportportal.host" . }}
+      secretName: {{ include "reportportal.fullname" . }}-tls
+  {{- end }}
+  rules:
+    - host: {{ include "reportportal.host" . }}
+      http:
+        paths:
+          # UI — default route
+          - path: /ui
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "reportportal.fullname" . }}-ui
+                port:
+                  number: 8080
+          # API
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "reportportal.fullname" . }}-api
+                port:
+                  number: 8585
+          # Index / gateway (root redirect)
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "reportportal.fullname" . }}-index
+                port:
+                  number: 8080
+{{- end }}
