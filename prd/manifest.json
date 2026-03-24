@@ -2,8 +2,8 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/phase-6-observability.json",
-  "currentPhase": 6,
+  "activeSprint": "prd/phase-7-devex.json",
+  "currentPhase": 7,
   "phases": [
     {
       "id": 0,
@@ -109,7 +109,7 @@
       "name": "autarky",
       "description": "Vendor system: VENDORS.yaml, fetch, build recipes (ko/docker), deploy/rollback/backup, pipeline wiring.",
       "file": "prd/phase-4-autarky.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         3
       ],
@@ -150,7 +150,7 @@
       "startDate": "2026-03-23T23:40:00Z",
       "pointsTotal": 8,
       "storiesTotal": 4,
-      "endDate": "2026-03-24T11:22:30.403757+00:00",
+      "endDate": "2026-03-24T21:09:34.000656+00:00",
       "pointsCompleted": 8,
       "storiesAccepted": 4,
       "storiesIncomplete": 0,
@@ -161,7 +161,7 @@
       "name": "devex",
       "description": "Backstage, code-server, SonarQube, ReportPortal.",
       "file": "prd/phase-7-devex.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [
         3,
         6

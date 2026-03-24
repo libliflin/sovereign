@@ -20,9 +20,10 @@ Every service is installed by ArgoCD from this repository. Nothing is clicked in
 |---|---|
 | GitOps engine | ArgoCD App-of-Apps. Root app watches `argocd-apps/`. All services are ArgoCD Applications. |
 | Infrastructure composition | Crossplane with Helm + Kubernetes providers. Cloud resources are XRDs, not scripts. |
-| Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. Vault for runtime secret injection. |
+| Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
 | Bootstrapping | `bootstrap.sh` is the only manual step. It installs Phase 1 foundations; ArgoCD takes over. |
-| Helm standards | Every chart must template `{{ .Values.global.domain }}` — no hardcoded domains. |
+| Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
+| ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. |
 
 ---
 
@@ -67,11 +68,14 @@ Realm: `sovereign`. The Keycloak URL is `https://auth.{{ .Values.global.domain }
 
 | Signal | Tool |
 |---|---|
-| Metrics | Prometheus + Alertmanager |
-| Dashboards | Grafana |
-| Logs | Loki |
-| Long-term metrics | Thanos |
-| Traces | Tempo |
+| Metrics | Prometheus (kube-prometheus-stack) + Alertmanager |
+| Dashboards | Grafana with Keycloak OIDC |
+| Logs | Loki (simple scalable mode, Ceph object storage) |
+| Long-term metrics | Thanos (sidecar mode, Ceph object storage) |
+| Traces | Tempo distributed (Ceph object storage) |
+
+All observability charts register their data sources in Grafana via a ConfigMap in the chart's
+`templates/` directory. No manual datasource configuration.
 
 ---
 
@@ -80,9 +84,14 @@ Realm: `sovereign`. The Keycloak URL is `https://auth.{{ .Values.global.domain }
 Every story must pass before `reviewed: true`:
 1. `helm lint charts/<name>/` — zero errors
 2. `helm template | kubectl apply --dry-run=client` — zero errors
-3. `shellcheck` on all `.sh` files — zero errors
-4. `yq e '.'` on all ArgoCD application manifests — valid YAML
-5. Branch pushed to remote + PR open or merged — proof of work
+3. `helm template | grep PodDisruptionBudget` — must match ≥ 1 (≥ 1 per component for distributed-mode charts)
+4. `helm template | grep podAntiAffinity` — must match ≥ 1
+5. `grep replicaCount charts/<name>/values.yaml` — must be ≥ 2
+6. `shellcheck` on all `.sh` files — zero errors
+7. `yq e '.'` on all ArgoCD application manifests — valid YAML
+8. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
+9. `helm template charts/<name>/ | grep -i datasource` — required for all observability charts
+10. Branch pushed to remote + PR merged to main — proof of work
 
 ---
 

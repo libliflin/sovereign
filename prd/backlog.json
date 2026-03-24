@@ -1370,7 +1370,7 @@
       "reviewNotes": [],
       "attempts": 0,
       "epicId": "E1",
-      "themeId": "T0",
+      "themeId": "T3",
       "returnedFromSprint": "prd/phase-6-observability.json",
       "returnedReason": "Root cause: planning ceremony pulled story 026 (achievable=2, NOT READY) into sprint 6 without enforcing split requirement.",
       "smart": {

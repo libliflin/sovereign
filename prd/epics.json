@@ -60,7 +60,7 @@
       "title": "Service mesh — Istio mTLS",
       "description": "Istio base + istiod, STRICT PeerAuthentication, wildcard Gateway. All service-to-service traffic encrypted and authenticated.",
       "targetIncrement": 5,
-      "status": "active",
+      "status": "complete",
       "storyIds": ["023a", "023b"]
     },
     {
@@ -69,7 +69,7 @@
       "title": "Policy enforcement and runtime security",
       "description": "OPA/Gatekeeper ConstraintTemplates, Trivy cluster-wide scanning, Falco runtime threat detection.",
       "targetIncrement": 5,
-      "status": "active",
+      "status": "complete",
       "storyIds": ["024a", "024b", "024c"]
     },
     {
@@ -78,7 +78,7 @@
       "title": "Metrics and dashboards — Prometheus + Grafana",
       "description": "kube-prometheus-stack, Keycloak OIDC for Grafana, AlertManager, pre-loaded dashboards for all platform components.",
       "targetIncrement": 6,
-      "status": "backlog",
+      "status": "complete",
       "storyIds": []
     },
     {
@@ -87,7 +87,7 @@
       "title": "Log aggregation and distributed tracing — Loki + Tempo + Thanos",
       "description": "Loki in simple scalable mode on Ceph, Tempo distributed tracing, Thanos for long-term Prometheus storage. All on self-hosted Ceph object storage.",
       "targetIncrement": 6,
-      "status": "backlog",
+      "status": "complete",
       "storyIds": ["026a", "026b", "026c"]
     },
     {
