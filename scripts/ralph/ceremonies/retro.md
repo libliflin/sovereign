@@ -1,26 +1,19 @@
 # Retrospective Ceremony
 
-You are running the **retrospective ceremony** for the Sovereign Platform.
+You are running the **retrospective ceremony** for the Sovereign Platform sprint.
 
-This ceremony runs after all stories in the active sprint are `reviewed: true`. It extracts
-learnings, generates CLAUDE.md improvement suggestions, and closes out the sprint in the manifest.
+The sprint is closing **now** — regardless of how many stories completed. Partial delivery is
+honest delivery. Your job is to close cleanly, understand why incomplete stories didn't finish,
+generate backlog stories to fix the root causes, and return the incomplete work to the backlog.
 
-## Your task
+---
 
-### Step 1 — Guard: all stories must be reviewed
-
-Read the active sprint file:
-
-```bash
-cat prd/manifest.json
-# Then read activeSprint, e.g.:
-cat prd/phase-0-ceremonies.json
-```
-
-Check if any story has `reviewed: false`:
+## Step 1 — Read the sprint
 
 ```python
-import json
+import json, sys
+from pathlib import Path
+from datetime import datetime, timezone
 
 with open('prd/manifest.json') as f:
     manifest = json.load(f)
@@ -30,173 +23,232 @@ sprint_file = manifest['activeSprint']
 with open(sprint_file) as f:
     sprint = json.load(f)
 
-not_reviewed = [s for s in sprint['stories'] if not s.get('reviewed')]
-if not_reviewed:
-    print("ERROR: Cannot run retro — the following stories are not yet reviewed:")
-    for s in not_reviewed:
-        print(f"  {s['id']}: passes={s.get('passes')} reviewed={s.get('reviewed')}")
-    print("Run the review ceremony first: claude < scripts/ralph/ceremonies/review.md")
-    exit(1)
+stories = sprint['stories']
+accepted  = [s for s in stories if s.get('reviewed', False)]
+incomplete = [s for s in stories if not s.get('reviewed', False)]
+
+print(f"Sprint   : {sprint.get('name', sprint_file)}")
+print(f"Accepted : {len(accepted)} / {len(stories)}")
+print(f"Incomplete: {len(incomplete)}")
 ```
 
-If any story is `reviewed: false`, abort and instruct the user to run the review ceremony first.
+---
 
-### Step 2 — Collect failure patterns
+## Step 2 — 5 Whys for every incomplete story
 
-Gather all `reviewNotes` from stories that were re-opened (stories where `attempts > 0`):
+For each story in `incomplete`, work through the 5 Whys to find the **real** root cause.
+Don't stop at the first "why" — surface the systemic issue, not the symptom.
+
+Example structure:
+```
+Story 026c: Helm chart — Tempo distributed tracing
+  Why 1: Story didn't pass review → acceptance criteria weren't verifiable locally
+  Why 2: AC required a live cluster with Jaeger UI running
+  Why 3: Story scope assumed cluster access that doesn't exist in the test env
+  Why 4: Story was written without checking what the smoke gate can actually validate
+  Why 5: SMART check didn't catch that "measurable" requires a runnable gate, not a live cluster
+
+  Root cause: Stories that need live-cluster validation are systematically not achievable
+              in our environment. The SMART "achievable" scoring doesn't account for this.
+
+  Fix: Add a backlog story to improve the SMART ceremony's achievable scoring prompt to
+       explicitly ask: "can this AC be verified by helm lint + dry-run only?"
+```
+
+Write the 5 Whys analysis to the retro patch file (see Step 4).
+
+For each incomplete story, also decide:
+- **Return to backlog as-is** (worth doing, just needs more time / better environment)
+- **Split into smaller stories** (was too big — use what was learned to right-size)
+- **Kill it** (not worth the effort relative to value delivered — mark as `status: killed`)
+
+---
+
+## Step 3 — Generate remediation backlog stories
+
+For each distinct root cause identified in Step 2, generate one or more new backlog stories
+that **fix the system**, not just the symptom.
+
+These go into `prd/backlog.json`. Each new story needs:
+- A new unique ID (find the current max ID, increment from there — use suffix `r` for
+  remediation, e.g. `028r-smart-achievable-gate`)
+- `title`, `description`, `acceptanceCriteria` (specific and verifiable)
+- `epicId` and `themeId` inherited from the incomplete story
+- `phase` same as current phase or one earlier if it's a process fix
+- `priority` 1 (remediation stories are high priority — fix the system first)
+- `points` ≤ 3
+- `passes`: false
+- `returnedFromSprint`: the sprint file name
+- `returnedReason`: one-sentence root cause summary
 
 ```python
-failures = []
-for story in sprint['stories']:
-    if story.get('attempts', 0) > 0:
-        for note in story.get('reviewNotes', []):
-            failures.append({
-                'storyId': story['id'],
-                'title': story['title'],
-                'note': note
-            })
+with open('prd/backlog.json') as f:
+    backlog = json.load(f)
+
+# Find max numeric ID
+existing_ids = [s['id'] for s in backlog.get('stories', [])]
+# Add new remediation stories...
+backlog['stories'].append({
+    "id": "028r-smart-achievable-gate",
+    "title": "...",
+    ...
+})
+
+with open('prd/backlog.json', 'w') as f:
+    json.dump(backlog, f, indent=2)
 ```
 
-Also read `progress.txt` and extract entries since the sprint's `startDate` (if set in manifest).
-Look for patterns: which types of implementation does Ralph consistently get wrong?
+Also update the incomplete stories themselves in the sprint file — set:
+```python
+story['returnedToBacklog'] = True
+story['returnedReason'] = "<one-sentence root cause>"
+```
 
-Common failure patterns to look for:
-- shellcheck SC2086/SC2001 (unquoted variables, sed vs parameter expansion)
-- Missing HA requirements (replicaCount, PDB, anti-affinity)
-- Hardcoded domains or image registries
-- helm lint failing on missing Chart.lock
-- kubectl dry-run failing due to no live cluster (should be treated as acceptable)
-- Missing `--dry-run` flag on vendor scripts
-- JSON/YAML schema violations
+And add the incomplete stories to `backlog.json` with their `returnedFromSprint` field set,
+so they can be repulled in a future sprint once the system fixes are in place.
 
-### Step 3 — Write CLAUDE.md update suggestions
+---
 
-Write `prd/retro-patch-phase<N>.md` (e.g. `prd/retro-patch-phase0.md`) with suggested updates
-to CLAUDE.md's LEARNINGS FROM PRIOR SESSIONS section.
+## Step 4 — Write retro patch
 
-Format:
+Write `prd/retro-patch-phase<N>.md`:
 
 ```markdown
-# Retro Patch: Phase <N> — <name>
+# Retro Patch: Phase <N> — <sprint name>
 Generated: <ISO timestamp>
 
-## Suggested additions to CLAUDE.md (LEARNINGS section)
+## Delivery summary
 
-### New patterns discovered this sprint
+| Status | Count | Points |
+|--------|-------|--------|
+| Accepted | N | N pts |
+| Incomplete → backlog | N | N pts |
+| Killed | N | — |
 
-- <Specific actionable pattern, e.g.:>
-  "helm dependency update must be run before helm lint when a chart has dependencies —
-   do this automatically at the start of every chart story"
+## 5 Whys: incomplete stories
 
-- <Another pattern, e.g.:>
-  "shellcheck SC2001: use ${var//search/replace} instead of echo | sed for simple substitutions"
+### <story id>: <title>
+- Why 1: ...
+- Why 2: ...
+- Why 3: ...
+- Why 4: ...
+- Why 5: ...
+**Root cause**: ...
+**Decision**: return / split / kill
+**Remediation story**: <new story id> — <title>
 
-## Stories that failed review (re-opened)
+## Patterns discovered (add to CLAUDE.md LEARNINGS section)
 
-| Story | Attempts | Root cause |
-|-------|----------|------------|
-| P0-002 | 2 | Missing prd/schema/ directory — files created in wrong location |
+- <Specific actionable pattern>
+- <Another pattern>
 
-## Quality gate improvements suggested
+## Quality gate improvements
 
-<If any quality gate was consistently missed, suggest making it more explicit in CLAUDE.md>
+<If a gate consistently missed something, propose making it more explicit>
 
-## Velocity note
+## Velocity
 
-Sprint points: <completed> / <planned>
-Review pass rate: <X>% (stories accepted on first review / total stories)
+Sprint points accepted: <N> / <planned>
+First-review pass rate: <X>% (<N> of <total> accepted on first review)
 ```
 
-**Do NOT apply this patch directly to CLAUDE.md.** A human reviews it first.
+**Do NOT modify CLAUDE.md directly.** A human reviews the retro patch first.
 
-### Step 4 — Update manifest.json
+---
 
-Calculate sprint metrics:
-
-```python
-total_stories = len(sprint['stories'])
-accepted_stories = len([s for s in sprint['stories'] if s.get('reviewed')])
-first_review_passes = len([s for s in sprint['stories'] if s.get('reviewed') and s.get('attempts', 0) == 0])
-review_pass_rate = round(first_review_passes / total_stories * 100, 1) if total_stories > 0 else 0
-points_completed = sum(s.get('points', 0) for s in sprint['stories'] if s.get('reviewed'))
-```
-
-Update the manifest:
+## Step 5 — Update manifest.json
 
 ```python
-import json
-from datetime import datetime, timezone
-
 end_date = datetime.now(timezone.utc).isoformat()
 current_phase = manifest['currentPhase']
 
-# Update the phase entry
-for phase in manifest['phases']:
+total = len(stories)
+n_accepted = len(accepted)
+n_incomplete = len(incomplete)
+first_pass = len([s for s in accepted if s.get('attempts', 0) == 0])
+pass_rate = round(first_pass / total * 100, 1) if total > 0 else 0
+points_done = sum(s.get('points', 0) for s in accepted)
+
+for phase in manifest.get('phases', []):
     if phase['id'] == current_phase:
         phase['status'] = 'complete'
         phase['endDate'] = end_date
-        phase['pointsCompleted'] = points_completed
-        phase['storiesAccepted'] = accepted_stories
-        phase['reviewPassRate'] = review_pass_rate
+        phase['pointsCompleted'] = points_done
+        phase['storiesAccepted'] = n_accepted
+        phase['storiesIncomplete'] = n_incomplete
+        phase['reviewPassRate'] = pass_rate
 
-# Append to sprintHistory
-manifest['sprintHistory'].append({
-    'phase': current_phase,
-    'name': sprint.get('name', ''),
-    'endDate': end_date,
-    'pointsCompleted': points_completed,
-    'storiesTotal': total_stories,
-    'storiesAccepted': accepted_stories,
-    'reviewPassRate': review_pass_rate
-})
-
-# Append velocity data point
-manifest['velocity'].append({
-    'phase': current_phase,
-    'pointsCompleted': points_completed,
-    'storiesAccepted': accepted_stories,
-    'reviewPassRate': review_pass_rate,
-    'date': end_date
-})
+# Guard: don't double-append if retro runs twice
+history_phases = [h['phase'] for h in manifest.get('sprintHistory', [])]
+if current_phase not in history_phases:
+    manifest.setdefault('sprintHistory', []).append({
+        'phase': current_phase,
+        'name': sprint.get('name', ''),
+        'endDate': end_date,
+        'pointsCompleted': points_done,
+        'storiesTotal': total,
+        'storiesAccepted': n_accepted,
+        'storiesIncomplete': n_incomplete,
+        'reviewPassRate': pass_rate
+    })
+    manifest.setdefault('velocity', []).append({
+        'phase': current_phase,
+        'pointsCompleted': points_done,
+        'storiesAccepted': n_accepted,
+        'reviewPassRate': pass_rate,
+        'date': end_date
+    })
 
 with open('prd/manifest.json', 'w') as f:
     json.dump(manifest, f, indent=2)
+
+with open(sprint_file, 'w') as f:
+    json.dump(sprint, f, indent=2)
 ```
 
-### Step 5 — Print retrospective summary
+---
+
+## Step 6 — Print retrospective summary
 
 ```
-=== Retrospective: Phase <N> — <name> ===
+════════════════════════════════════════════════════════════════════
+  RETROSPECTIVE: Phase <N> — <sprint name>
+════════════════════════════════════════════════════════════════════
 
-Sprint metrics:
-  Stories accepted  : <accepted> / <total>
-  Points completed  : <points>
-  First-review pass : <X>% (<N> stories accepted on first try)
+  Delivery
+  ─────────────────────────────
+  Accepted     : <N> / <total> stories  (<points> pts)
+  Incomplete   : <N> stories → returned to backlog
+  Killed       : <N> stories
 
-What went well:
-  <List stories that passed review on first attempt with brief note about why>
+  Quality
+  ─────────────────────────────
+  First-review pass rate : <X>%
+  Gate retries           : <N>
 
-Patterns to fix:
-  <List recurring failure patterns with specific fix>
+  Root causes (incomplete stories)
+  ─────────────────────────────
+  <one line per root cause found>
 
-Velocity trend:
-  Phase 0: <N> pts
-  Phase 1: <N> pts   ← if available
-  (trend: improving / stable / declining)
+  Remediation stories added to backlog
+  ─────────────────────────────
+  <id>: <title>
 
-Retro patch written: prd/retro-patch-phase<N>.md
-  Review and apply relevant sections to CLAUDE.md manually.
+  Velocity trend
+  ─────────────────────────────
+  <list prior phases and points>
 
-Next step: run advance.sh to move to the next phase.
-  ./prd/advance.sh
-  (or ./prd/advance.sh --dry-run to preview)
+  Retro patch → prd/retro-patch-phase<N>.md
+════════════════════════════════════════════════════════════════════
 ```
 
-## Important constraints
+---
 
-- Do NOT modify CLAUDE.md directly. Write suggestions to `prd/retro-patch-phase<N>.md` only.
-- Do NOT set `reviewed: false` on any story — retro is read-only for story fields.
-- Update `manifest.json` sprint metrics even if there were no failures (metrics are always useful).
-- The retro ceremony is idempotent: running it twice overwrites the retro-patch file and re-calculates
-  metrics, but does not corrupt sprint history (check if the phase entry already has `status: complete`
-  before appending to `sprintHistory`).
+## Constraints
+
+- **Close the sprint regardless** of how many stories completed. Partial delivery is honest.
+- **Never carry stories forward** by leaving them in the sprint file as-is. Either mark
+  `returnedToBacklog: true` (and add to backlog.json) or `status: killed`.
+- Do NOT modify CLAUDE.md directly — retro patch only.
+- Do NOT set `reviewed: true` on incomplete stories — that would be dishonest.
+- This ceremony is idempotent: check `sprintHistory` before appending.

@@ -9,9 +9,9 @@ Replaces ceremonies.sh. Runs the full sprint lifecycle:
   3. Execute        — ralph.sh: AI implements stories (skipped if all passing)
   4. Smoke Test     — bash: helm lint, shellcheck, yq (hard gate)
   5. Proof of Work  — bash: git ls-remote, gh pr list (hard gate)
-  6. Review         — AI: adversarial AC verification
-  7. Retro          — AI: learnings extraction
-  8. Advance        — close sprint, activate next phase
+  6. Review         — AI: adversarial AC verification (runs once — no retry loop)
+  7. Retro          — AI: 5 Whys on incomplete stories, generates remediation backlog
+  8. Advance        — close sprint cleanly; partial delivery is honest delivery
 
 Usage:
   ./ceremonies.py [--phase N] [--tool claude|amp] [--max-retries 3] [--dry-run] [--skip-plan]
@@ -236,19 +236,8 @@ def main() -> int:
 
     print(f"\n  SMART check passed — all {len(sprint.get('stories', []))} stories are sprint-ready.")
 
-    # -- OUTER LOOP: EXECUTE → SMOKE → PROOF → REVIEW (repeats until all reviewed)
-    MAX_IMPLEMENT_ROUNDS = 3
-    for implement_round in range(1, MAX_IMPLEMENT_ROUNDS + 1):
-        if implement_round > 1:
-            sprint = sprint_lib.load(sprint_file)
-            still_unreviewed = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
-            print(f"\n{'═' * 66}")
-            print(f"  IMPLEMENT ROUND {implement_round}/{MAX_IMPLEMENT_ROUNDS}")
-            print(f"  {len(still_unreviewed)} stories unimplemented/unreviewed — looping back to execute.")
-            print(f"{'═' * 66}")
-
-        # -- INNER RETRY LOOP: EXECUTE + SMOKE + PROOF -------------------------
-        for retry in range(args.max_retries + 1):
+    # -- EXECUTE + SMOKE + PROOF: retry only on gate failures ------------------
+    for retry in range(args.max_retries + 1):
             if retry > 0:
                 print(f"\n{'─' * 20} RETRY {retry} of {args.max_retries} {'─' * 20}")
 
@@ -322,34 +311,27 @@ def main() -> int:
                     return 1
 
             print("\n  Proof of work passed.")
-            break  # Both gates passed — exit inner retry loop
+        break  # Both gates passed — exit retry loop
 
-        # -- STEP 6: REVIEW ----------------------------------------------------
-        log_step(6, 8, "REVIEW")
-        sep("AI CEREMONY: Review")
+    # -- STEP 6: REVIEW --------------------------------------------------------
+    log_step(6, 8, "REVIEW")
+    sep("AI CEREMONY: Review")
+    output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/review.md", log_file)
+    while ai_lib.is_rate_limited(output):
+        ai_lib.sleep_until_reset(output)
         output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/review.md", log_file)
-        while ai_lib.is_rate_limited(output):
-            ai_lib.sleep_until_reset(output)
-            output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/review.md", log_file)
 
-        sprint = sprint_lib.load(sprint_file)
-        not_reviewed = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
-
-        if not not_reviewed:
-            break  # All stories reviewed — exit outer loop, proceed to retro
-
-        print(f"\n  {len(not_reviewed)} stories still unreviewed after review:")
+    # Surface what completed vs what didn't — retro handles the 5 Whys
+    sprint = sprint_lib.load(sprint_file)
+    accepted = [s for s in sprint.get("stories", []) if s.get("reviewed", False)]
+    not_reviewed = [s for s in sprint.get("stories", []) if not s.get("reviewed", False)]
+    print(f"\n  Accepted: {len(accepted)} / {len(sprint.get('stories', []))}")
+    if not_reviewed:
+        print(f"  Incomplete (returning to backlog via retro): {len(not_reviewed)}")
         for s in not_reviewed:
-            print(f"    - {s['id']}: {s['title']}  (passes={s.get('passes', False)}, reviewed={s.get('reviewed', False)})")
+            print(f"    - {s['id']}: {s['title']}")
 
-        if implement_round == MAX_IMPLEMENT_ROUNDS:
-            print(f"\nFATAL: {len(not_reviewed)} stories unreviewed after {MAX_IMPLEMENT_ROUNDS} implement rounds.")
-            print("Manual intervention required.")
-            return 1
-
-        print(f"  Looping back to implement remaining stories (round {implement_round + 1}/{MAX_IMPLEMENT_ROUNDS})...")
-
-    # -- STEP 7: RETRO (only reached when all stories are reviewed) ------------
+    # -- STEP 7: RETRO ---------------------------------------------------------
     log_step(7, 8, "RETRO")
     sep("AI CEREMONY: Retrospective")
     output = ai_lib.run_ceremony(args.tool, SCRIPT_DIR / "ceremonies/retro.md", log_file)
