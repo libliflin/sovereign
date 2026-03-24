@@ -18,10 +18,10 @@ Every service is installed by ArgoCD from this repository. Nothing is clicked in
 
 | Term | Definition |
 |---|---|
-| **Theme** | A strategic outcome (T1 Sovereignty, T2 Zero Trust, T3 Developer Autonomy, T4 Observability, T5 AI-Native PM). Themes never complete — they accrete value. |
+| **Theme** | A strategic outcome (T1 Sovereignty, T2 Zero Trust, T3 Developer Autonomy, T4 Observability, T5 Resilience). Themes never complete — they accrete value. |
 | **Epic** | A capability cluster owned by one theme. Has a `targetIncrement` that says which increment delivers it. |
 | **Story** | A sprint-sized unit of work (≤ 8 points). Belongs to an epic. No standalone `phase` field — sequencing is via `epicId → targetIncrement`. |
-| **Increment** | The execution container for a sprint. Replaces the old "phase" concept. Named after capability milestones, not install order. Stored in `prd/manifest.json` under `increments[]`. |
+| **Increment** | The execution container for a sprint. Named after capability milestones. Stored in `prd/manifest.json` under `increments[]`. |
 | **Sprint file** | `prd/increment-N-<name>.json` — the active story list for one increment. |
 | **currentIncrement** | `manifest.json` field: the ID of the currently active increment. |
 | **activeSprint** | `manifest.json` field: path to the active sprint file. |
@@ -102,7 +102,7 @@ Every story must pass before `reviewed: true`:
 2. `helm template | kubectl apply --dry-run=client` — zero errors
 3. `helm template | grep PodDisruptionBudget` — must match ≥ 1 (≥ 1 per component for distributed-mode charts)
 4. `helm template | grep podAntiAffinity` — must match ≥ 1
-5. `grep replicaCount charts/<name>/values.yaml` — must be ≥ 2
+5. `grep replicaCount charts/<name>/values.yaml` — must be ≥ 2. **Exception**: if `vendor/VENDORS.yaml` has `ha_exception: true` for this service with a documented `ha_exception_reason`, then `replicaCount: 1` is acceptable — but only if the chart has a top-level `replicaCount: 1` with a comment referencing the VENDORS.yaml exception entry. Undocumented `replicaCount: 1` always fails.
 6. `shellcheck` on all `.sh` files — zero errors
 7. `yq e '.'` on all ArgoCD application manifests — valid YAML
 8. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3

@@ -59,6 +59,17 @@ generates one PDB per component (ingester, distributor, querier, etc.). Count mu
 of deployed components, not just >= 1. Use `grep -c PodDisruptionBudget` and verify the count
 is reasonable for the chart's component topology.
 
+**HA exception for single-instance upstreams**: some upstream services (SonarQube CE, MailHog,
+single-node Elasticsearch) architecturally cannot scale horizontally. For these:
+1. Add `ha_exception: true` and `ha_exception_reason: "<reason>"` to the service's entry in `vendor/VENDORS.yaml`
+2. Set a top-level `replicaCount: 1` in `values.yaml` with a comment: `# ha_exception: see vendor/VENDORS.yaml`
+3. HA gate #5 passes only when BOTH conditions are met. Missing the VENDORS.yaml entry always fails.
+
+**Re-attempts after review failure — read reviewNotes first**: when a story has `attempts > 0`,
+the `reviewNotes[]` array contains the exact failure from the previous review. Before writing
+any code on a re-attempt, read and summarize the specific change described in `reviewNotes[0]`.
+Implement only that targeted fix. Do not re-implement the full story.
+
 **Bitnami subchart PDB**: when a bitnami/upstream subchart provides PDB by default, still add a
 wrapper-level `templates/poddisruptionbudget.yaml` and disable the subchart PDB with
 `<subchart>.pdb.create: false` to avoid duplicate PDB selectors.
@@ -87,16 +98,17 @@ Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
 
 1. Read the story from the active sprint file
 2. Check out the branch named in `branchName` (create from `main` if it doesn't exist)
-3. Implement the acceptance criteria — nothing more, nothing less
-4. Run quality gates before marking `passes: true`:
+3. If `attempts > 0`: read `reviewNotes[0]`, summarize the specific change required, implement only that
+4. Implement the acceptance criteria — nothing more, nothing less
+5. Run quality gates before marking `passes: true`:
    - `helm lint charts/<name>/` if you touched a chart
    - HA gate (PDB, podAntiAffinity, replicaCount) if you touched a chart
    - `helm template charts/<name>/ | grep -i datasource` if you added an observability chart
    - `shellcheck -S error <file>.sh` if you touched a shell script
    - `yq e '.' <file>.yaml` if you touched ArgoCD manifests
    - `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
-5. Set `passes: true` in the sprint file
-6. Push the branch, open a PR, wait for CI to pass, merge to main
+6. Set `passes: true` in the sprint file
+7. Push the branch, open a PR, wait for CI to pass, merge to main
 
 Do not mark `passes: true` if any gate fails. Do not self-certify — gates will re-run.
 
@@ -108,7 +120,7 @@ Do not mark `passes: true` if any gate fails. Do not self-certify — gates will
 - **Proof of work**: checks your branch is pushed and PR is merged to main
 - **Review**: adversarially checks your acceptance criteria
 - **Retro**: closes the sprint, returns incomplete work to backlog with 5 Whys
-- **Advance**: moves the phase pointer in manifest.json
+- **Advance**: moves the increment pointer in manifest.json
 
 You implement. Ceremonies verify. Don't conflate the two.
 
@@ -116,25 +128,16 @@ You implement. Ceremonies verify. Don't conflate the two.
 
 ## Current platform state
 
-Phases complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
-2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability)
+Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
+2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex)
 
-Phase active: none (between sprints — advance will activate 7)
+Increment active: none (between sprints — advance will activate 8)
 
-Phases pending: 7 (devex), 8 (testing-and-ha), 9 (sovereign-pm)
+Increments pending: 8 (testing-and-ha), 9 (sovereign-pm)
 
 Epics complete: E1–E10 (all through observability)
-Epics backlog: E11 (developer portal), E12 (code quality), E13 (testing infra),
-               E14 (sovereign-pm), E15 (HA validation)
-
----
-
-## Known model inconsistencies
-
-- `phase` (int) field on stories is redundant with `epicId` — two sources of truth that can drift → story 040 will remove it
-- "phase" and "sprint" and "increment" used interchangeably across ceremonies.py, manifest.json, and sprint files → story 040 will standardize on "increment"
-- `advance.py` uses `int(current_phase) + 1` arithmetic — breaks on non-integer IDs like "2h", "2i" → story 040 will fix to use ordered list position
-- Increment names describe install order ("bootstrap", "foundations") not product capability milestones → story 040 will add `themeGoal` to each increment
+Epics with partial delivery: E11 (developer portal) — code-server chart delivered, Backstage pending
+Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 (HA validation)
 
 ---
 
@@ -146,4 +149,4 @@ Epics backlog: E11 (developer portal), E12 (code quality), E13 (testing infra),
 - A chart hardcodes a domain name or IP address in `templates/` → fix before marking passes: true
 - A shellcheck error is present → fix before marking passes: true
 - An ArgoCD Application is missing `revisionHistoryLimit: 3` → fix before marking passes: true
-- HA gate fails (PDB, podAntiAffinity, or replicaCount < 2) → fix before marking passes: true
+- HA gate fails (PDB, podAntiAffinity, or replicaCount < 2 without a VENDORS.yaml ha_exception) → fix before marking passes: true
