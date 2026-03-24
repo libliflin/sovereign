@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: sovereign-platform
+    app.kubernetes.io/component: observability
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  revisionHistoryLimit: 3
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: charts/prometheus-stack
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
+        - name: kube-prometheus-stack.grafana.grafana\.ini.server.domain
+          value: grafana.sovereign-autarky.dev
+        - name: kube-prometheus-stack.grafana.grafana\.ini.server.root_url
+          value: https://grafana.sovereign-autarky.dev
+        - name: kube-prometheus-stack.grafana.grafana\.ini.auth\.generic_oauth.auth_url
+          value: https://auth.sovereign-autarky.dev/realms/sovereign/protocol/openid-connect/auth
+        - name: kube-prometheus-stack.grafana.grafana\.ini.auth\.generic_oauth.token_url
+          value: https://auth.sovereign-autarky.dev/realms/sovereign/protocol/openid-connect/token
+        - name: kube-prometheus-stack.grafana.grafana\.ini.auth\.generic_oauth.api_url
+          value: https://auth.sovereign-autarky.dev/realms/sovereign/protocol/openid-connect/userinfo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

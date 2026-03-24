@@ -1,6 +1,12 @@
 apiVersion: v2
 name: prometheus-stack
-description: "kube-prometheus-stack: Prometheus, Grafana, Alertmanager"
+description: "kube-prometheus-stack: Prometheus, Grafana, Alertmanager — with Keycloak OIDC and Ceph storage"
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "0.73.2"
+
+dependencies:
+  - name: kube-prometheus-stack
+    version: "58.2.2"
+    repository: "https://prometheus-community.github.io/helm-charts"
+    alias: kube-prometheus-stack
