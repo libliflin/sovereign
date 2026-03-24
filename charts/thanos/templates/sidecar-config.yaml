@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-thanos-sidecar-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "thanos-wrapper.labels" . | nindent 4 }}
+data:
+  # sidecar configuration for connecting Prometheus to Thanos
+  # The Thanos sidecar runs alongside Prometheus and uploads blocks to object storage
+  sidecar-notes: |
+    The Thanos sidecar is deployed as part of the Prometheus StatefulSet
+    (kube-prometheus-stack). It connects to the Thanos Store Gateway and
+    Query components in this namespace.
+    prometheus-url: {{ .Values.thanos.sidecar.prometheus.url | default "http://prometheus-stack-kube-promethe-prometheus.monitoring.svc.cluster.local:9090" }}

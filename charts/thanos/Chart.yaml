@@ -1,6 +1,11 @@
 apiVersion: v2
 name: thanos
-description: Thanos long-term Prometheus storage
+description: "Thanos long-term Prometheus storage with Ceph object store backend"
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "0.35.1"
+dependencies:
+  - name: thanos
+    version: "15.7.19"
+    repository: "https://charts.bitnami.com/bitnami"
+    alias: thanos
