@@ -79,19 +79,26 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
 
     # -- Find next phase -------------------------------------------------------
     phases = manifest.get("phases", [])
+    phase_ids = [str(p.get("id")) for p in phases]
+
     try:
-        next_phase = int(current_phase) + 1
-    except (TypeError, ValueError):
-        print(f"\n  ERROR: currentPhase '{current_phase}' is not numeric.", file=sys.stderr)
+        current_idx = phase_ids.index(str(current_phase))
+    except ValueError:
+        print(f"\n  ERROR: currentPhase '{current_phase}' not found in phases list.", file=sys.stderr)
+        print(f"  Known phase IDs: {phase_ids}", file=sys.stderr)
         return 1
 
-    next_phase_entry = next(
-        (p for p in phases if str(p.get("id")) == str(next_phase)), None
-    )
+    if current_idx + 1 >= len(phases):
+        next_phase_entry = None
+        next_phase = None
+    else:
+        next_phase_entry = phases[current_idx + 1]
+        next_phase = next_phase_entry.get("id")
+
     next_file = next_phase_entry.get("file") if next_phase_entry else None
 
     if not next_file:
-        print(f"\n  All phases complete — no phase {next_phase} found.")
+        print(f"\n  All phases complete — no phase after '{current_phase}' found.")
         if not dry_run:
             _mark_complete(manifest, manifest_path, current_phase, points_done, pass_rate, n_accepted, n_incomplete)
         return 0
