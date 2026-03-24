@@ -176,7 +176,33 @@ def assess(repo_root: Path) -> Assessment:
             kpis=kpis,
         )
 
-    # ── KPI 2: Retro debt ───────────────────────────────────────────────────
+    # ── KPI 2: Priority-0 stories (outranks everything including retro debt) ─
+    urgent = [
+        s for s in all_stories
+        if s.get("priority") == 0
+        and not s.get("passes", False)
+        and not s.get("reviewed", False)
+        and s.get("status") != "killed"
+    ]
+    if urgent:
+        kpis.append(KPI(
+            "Urgent (p0)",
+            f"{len(urgent)} stories",
+            "FAIL",
+            f"{', '.join(s['id'] for s in urgent)} — pull before anything else"
+        ))
+        return Assessment(
+            state=PlatformState.SPRINT_READY,
+            action=NextAction.PLAN,
+            reason=(
+                f"{len(urgent)} priority-0 story/stories must be pulled into the next sprint immediately: "
+                f"{', '.join(s['id'] + ' (' + s['title'] + ')' for s in urgent)}. "
+                "These unblock the delivery system itself."
+            ),
+            kpis=kpis,
+        )
+
+    # ── KPI 3: Retro debt ───────────────────────────────────────────────────
     patch_ages = _retro_patch_ages(repo_root, velocity)
     old_patches = [a for a in patch_ages if a > RETRO_DEBT_MAX_SPRINTS]
     retro_status = "FAIL" if old_patches else "OK"

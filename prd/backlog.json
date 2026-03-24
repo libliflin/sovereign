@@ -1438,7 +1438,7 @@
     {
       "id": "040",
       "phase": 1,
-      "priority": 1,
+      "priority": 0,
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "feature/increment-model",

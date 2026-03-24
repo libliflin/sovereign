@@ -21,8 +21,8 @@
     },
     "priority": {
       "type": "integer",
-      "minimum": 1,
-      "description": "Priority within the sprint (lower = higher priority)"
+      "minimum": 0,
+      "description": "Priority (lower = higher priority). 0 = pull immediately regardless of phase — reserved for system-health and model-coherence stories that unblock everything else."
     },
     "points": {
       "type": "integer",
