@@ -1434,6 +1434,41 @@
         "timeBound": 0,
         "notes": ""
       }
+    },
+    {
+      "id": "040",
+      "phase": 1,
+      "priority": 1,
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "feature/increment-model",
+      "title": "Migrate 'phase' concept to 'increment' \u2014 align vocabulary with product funnel",
+      "description": "The system has two parallel organizing hierarchies: Themes\u2192Epics\u2192Stories (product funnel) and Phases\u2192Sprints (install-order sequencing). These use different vocabulary for the same execution concept. Phases are named after infrastructure install order ('bootstrap', 'foundations') rather than product capability milestones. Standardize on 'increment' as the execution container, align increment names to theme/epic goals, remove the redundant `phase` int field from stories (epicId already implies the increment), and fix advance.py arithmetic which breaks on non-integer phase IDs like '2h' and '2i'.",
+      "acceptanceCriteria": [
+        "manifest.json uses 'increments' and 'currentIncrement' instead of 'phases' and 'currentPhase'",
+        "Each increment entry has a 'themeGoal' field describing what theme capability it advances",
+        "Sprint files renamed from prd/phase-N-*.json to prd/increment-N-*.json",
+        "Stories in backlog.json no longer have a standalone 'phase' int field \u2014 sequencing expressed via story 'dependencies' only",
+        "advance.py handles non-integer increment IDs without arithmetic \u2014 uses ordered list position instead",
+        "ceremonies.py, orient.py, and all lib/ modules use 'increment' not 'phase' consistently",
+        "docs/state/architecture.md vocabulary table updated to reflect the unified model",
+        "All existing sprint history data preserved and migrated correctly"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Run ceremonies.py --dry-run after migration. Verify orient reads increments correctly. Verify advance moves from current to next increment without arithmetic errors.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
     }
   ]
 }

@@ -94,6 +94,15 @@ Backlog epics: E9–E15 — awaiting stories or sprint pull
 
 ---
 
+## Known model inconsistencies
+
+- `phase` (int) field on stories is redundant with `epicId` — two sources of truth that can drift → story 040 will remove it
+- "phase" and "sprint" and "increment" used interchangeably across ceremonies.py, manifest.json, and sprint files → story 040 will standardize on "increment"
+- `advance.py` uses `int(current_phase) + 1` arithmetic — breaks on non-integer IDs like "2h", "2i" → story 040 will fix to use ordered list position
+- Increment names describe install order ("bootstrap", "foundations") not product capability milestones → story 040 will add `themeGoal` to each increment
+
+---
+
 ## Hard stops — do not proceed if any of these are true
 
 - A Tier 1 component (CNI, storage, PKI, secret store, service mesh, policy engine) is sourced

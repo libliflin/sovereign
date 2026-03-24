@@ -165,6 +165,101 @@ or explicitly decided are no longer relevant. Do not delete patches you didn't r
 
 ---
 
+---
+
+## Step 6 — Mental model coherence audit
+
+Every sprint, check whether the system's concepts, vocabulary, and data model are
+internally consistent. The goal is a platform that feels designed, not accumulated.
+
+Run this audit and for each finding, either fix it inline (if trivial) or create a
+backlog story (if it requires migration). Do not leave findings undocumented.
+
+### Checks to run
+
+**Vocabulary consistency**
+- Is the same concept called the same thing everywhere? Check: ceremonies.py, manifest.json,
+  sprint files, backlog.json, CLAUDE.md, docs/state/. A concept with two names is a fracture.
+- Examples to watch: "phase" vs "sprint" vs "increment", "story" vs "task", "passes" vs "reviewed"
+
+**Hierarchy alignment**
+- Does every story have an `epicId` that maps to a real epic in epics.json?
+- Does every epic have a `themeId` that maps to a real theme in themes.json?
+- Does the `phase` field on stories agree with the epic's target increment?
+  If a story says `phase: 7` but its epic targets increment 5, that's drift.
+
+```python
+import json
+backlog = json.load(open('prd/backlog.json'))
+epics   = json.load(open('prd/epics.json'))
+themes  = json.load(open('prd/themes.json'))
+
+epic_ids  = {e['id'] for e in epics.get('epics', [])}
+theme_ids = {t['id'] for t in themes.get('themes', [])}
+
+orphaned_epic  = [s for s in backlog['stories'] if s.get('epicId') and s['epicId'] not in epic_ids]
+orphaned_theme = [s for s in backlog['stories'] if s.get('themeId') and s['themeId'] not in theme_ids]
+no_epic        = [s for s in backlog['stories'] if not s.get('epicId') and not s.get('passes')]
+
+if orphaned_epic:  print(f"DRIFT: stories with missing epicId:  {[s['id'] for s in orphaned_epic]}")
+if orphaned_theme: print(f"DRIFT: stories with missing themeId: {[s['id'] for s in orphaned_theme]}")
+if no_epic:        print(f"UNLINKED: open stories with no epicId: {[s['id'] for s in no_epic]}")
+```
+
+**Data model redundancy**
+- Does any story have two fields that encode the same information and could drift?
+  The known case: stories have both `phase` (int) and `epicId`. If the epic already
+  implies the increment, `phase` is redundant. Flag stories where these disagree.
+- Are there fields that are always null or always the same value? Those are dead schema.
+
+**Naming in code vs naming in data**
+- Does ceremonies.py use the same terms as manifest.json? If the code says "sprint"
+  but the data says "phase", that's a vocabulary fracture that confuses every reader.
+- Check: `grep -r "phase\|sprint\|increment" scripts/ralph/ --include="*.py" -l`
+
+**Advance arithmetic**
+- `advance.py` does `int(current_phase) + 1`. If any phase ID is a non-integer string
+  (e.g. "2h", "2i"), this arithmetic skips or breaks. Verify:
+
+```python
+manifest = json.load(open('prd/manifest.json'))
+for p in manifest.get('phases', []):
+    try:
+        int(str(p['id']))
+    except ValueError:
+        print(f"NON-INTEGER phase id: {p['id']} — advance.py arithmetic will break here")
+```
+
+### What to do with findings
+
+**Trivial fix** (rename a field in one file, update a variable name): fix it inline, note it
+in the retro patch.
+
+**Migration** (rename a concept across multiple files and code): create a backlog story with:
+- `priority: 1`
+- `epicId`: whichever epic owns delivery tooling (E1 for ceremonies/PM tooling)
+- A clear description of what changes and why
+- Acceptance criteria that include updating docs/state/architecture.md vocab table
+
+**Acceptable inconsistency**: if two names coexist for a transitional reason and a migration
+story already exists in the backlog, note it but don't create a duplicate.
+
+### Write findings to agent.md
+
+Add a **Known model inconsistencies** section to `agent.md` (after Hard stops) listing any
+drift that has a backlog story but isn't fixed yet. One line per item:
+
+```markdown
+## Known model inconsistencies
+
+- `phase` field on stories is redundant with `epicId` → story 040 will remove it
+- "phase" and "sprint" used interchangeably in code → story 041 will standardize
+```
+
+Remove items from this section when their migration story is complete.
+
+---
+
 ## Constraints
 
 - Do NOT invent decisions that haven't been made.
@@ -172,3 +267,4 @@ or explicitly decided are no longer relevant. Do not delete patches you didn't r
 - Do NOT add historical context ("previously we used X, now we use Y").
 - Do NOT add aspirational statements ("we plan to").
 - These documents are the chart, not the log. Write what is true now.
+- The coherence audit produces backlog stories or inline fixes — never just observations.
