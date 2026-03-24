@@ -1,6 +1,11 @@
 apiVersion: v2
 name: tempo
-description: Grafana Tempo distributed tracing
+description: "Grafana Tempo distributed tracing with Ceph object storage backend"
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "2.5.0"
+dependencies:
+  - name: tempo-distributed
+    version: "1.9.8"
+    repository: "https://grafana.github.io/helm-charts"
+    alias: tempo
