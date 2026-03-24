@@ -30,7 +30,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "002",
@@ -61,7 +63,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "003",
@@ -91,7 +95,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "004",
@@ -122,7 +128,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E3",
+      "themeId": "T2"
     },
     {
       "id": "005",
@@ -152,7 +160,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E3",
+      "themeId": "T2"
     },
     {
       "id": "006",
@@ -182,7 +192,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E3",
+      "themeId": "T2"
     },
     {
       "id": "007",
@@ -212,7 +224,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "008",
@@ -252,7 +266,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "009",
@@ -289,7 +305,9 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
-      "notes": "Re-opened: charts/vault/ used HashiCorp/BUSL-1.1. Must rebuild with openbao/openbao (Apache-2.0)."
+      "notes": "Re-opened: charts/vault/ used HashiCorp/BUSL-1.1. Must rebuild with openbao/openbao (Apache-2.0).",
+      "epicId": "E3",
+      "themeId": "T2"
     },
     {
       "id": "010",
@@ -321,7 +339,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E4",
+      "themeId": "T1"
     },
     {
       "id": "011",
@@ -354,7 +374,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E3",
+      "themeId": "T2"
     },
     {
       "id": "012",
@@ -389,7 +411,9 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
-      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle.",
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "013",
@@ -424,7 +448,9 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
-      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle.",
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "014",
@@ -455,7 +481,9 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
-      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle.",
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "015",
@@ -494,7 +522,9 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
-      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle."
+      "readinessNote": "Over sprint capacity (14/15 points committed). Pull in next planning cycle.",
+      "epicId": "E2",
+      "themeId": "T1"
     },
     {
       "id": "016",
@@ -526,7 +556,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E5",
+      "themeId": "T1"
     },
     {
       "id": "017",
@@ -557,7 +589,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E5",
+      "themeId": "T1"
     },
     {
       "id": "018",
@@ -589,7 +623,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E6",
+      "themeId": "T1"
     },
     {
       "id": "019",
@@ -620,7 +656,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E6",
+      "themeId": "T1"
     },
     {
       "id": "020",
@@ -653,7 +691,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E6",
+      "themeId": "T1"
     },
     {
       "id": "021",
@@ -692,7 +732,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E6",
+      "themeId": "T1"
     },
     {
       "id": "022",
@@ -725,7 +767,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E6",
+      "themeId": "T1"
     },
     {
       "id": "023",
@@ -757,7 +801,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E7",
+      "themeId": "T2"
     },
     {
       "id": "024",
@@ -787,7 +833,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E8",
+      "themeId": "T2"
     },
     {
       "id": "025",
@@ -819,7 +867,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E9",
+      "themeId": "T4"
     },
     {
       "id": "026",
@@ -850,7 +900,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E10",
+      "themeId": "T4"
     },
     {
       "id": "027",
@@ -883,7 +935,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E11",
+      "themeId": "T3"
     },
     {
       "id": "028",
@@ -915,7 +969,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E11",
+      "themeId": "T3"
     },
     {
       "id": "029",
@@ -946,7 +1002,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E12",
+      "themeId": "T3"
     },
     {
       "id": "030",
@@ -977,7 +1035,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E13",
+      "themeId": "T5"
     },
     {
       "id": "031",
@@ -1010,7 +1070,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E13",
+      "themeId": "T5"
     },
     {
       "id": "032",
@@ -1043,7 +1105,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E14",
+      "themeId": "T3"
     },
     {
       "id": "033",
@@ -1075,7 +1139,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E14",
+      "themeId": "T3"
     },
     {
       "id": "034",
@@ -1107,7 +1173,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E14",
+      "themeId": "T3"
     },
     {
       "id": "035",
@@ -1138,7 +1206,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E14",
+      "themeId": "T3"
     },
     {
       "id": "036",
@@ -1175,7 +1245,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+      },
+      "epicId": "E13",
+      "themeId": "T5"
     }
   ]
 }

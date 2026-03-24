@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Epic",
+  "type": "object",
+  "required": ["id", "themeId", "title", "description", "targetIncrement", "status"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^E[0-9]+$" },
+    "themeId": { "type": "string", "pattern": "^T[0-9]+$" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "targetIncrement": { "description": "Phase number this epic belongs to", "oneOf": [{"type": "integer"}, {"type": "string"}] },
+    "status": { "type": "string", "enum": ["backlog", "active", "complete", "paused"] },
+    "acceptanceCriteria": { "type": "array", "items": { "type": "string" } },
+    "storyIds": { "type": "array", "items": { "type": "string" }, "description": "Story IDs belonging to this epic" },
+    "notes": { "type": "string" }
+  }
+}
