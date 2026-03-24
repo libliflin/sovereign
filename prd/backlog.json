@@ -869,30 +869,37 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E9",
-      "themeId": "T4"
+      "themeId": "T4",
+      "returnedFromSprint": "prd/phase-6-observability.json",
+      "returnedReason": "Sprint closed before implementation. Story is well-formed; pull into next observability sprint."
     },
     {
-      "id": "026",
+      "id": "026a",
       "phase": 6,
       "priority": 26,
-      "branchName": "feature/helm-loki-thanos-tempo",
-      "title": "Helm charts: Loki, Thanos, Tempo",
-      "description": "Create charts/loki/ wrapping grafana/loki in Simple Scalable mode, storage on ceph-bucket. Create charts/thanos/ wrapping bitnami/thanos with sidecar mode (connects to Prometheus), storage on ceph-bucket. Create charts/tempo/ wrapping grafana/tempo-distributed, storage on ceph-bucket. All pre-configured as Grafana datasources (via ConfigMap in prometheus-stack chart). ArgoCD apps in argocd-apps/observability/.",
+      "branchName": "feature/helm-loki",
+      "title": "Helm chart: Loki log aggregation",
+      "description": "Create charts/loki/ wrapping grafana/loki (pin appVersion to a specific release) in Simple Scalable mode with ceph-bucket storage. Include a Grafana datasource ConfigMap in charts/loki/templates/ so Loki auto-registers in Grafana. ArgoCD app in argocd-apps/observability/loki-app.yaml.",
       "acceptanceCriteria": [
-        "charts/loki/ uses ceph-bucket for storage",
-        "charts/thanos/ connects to Prometheus via sidecar",
-        "charts/tempo/ uses ceph-bucket",
-        "All three auto-registered as Grafana datasources",
-        "helm lint passes on all three",
-        "argocd-apps/observability/ has all three app manifests"
+        "charts/loki/Chart.yaml pins appVersion to a specific Loki release (e.g. 3.0.0)",
+        "charts/loki/values.yaml sets storage.type to s3 with ceph-bucket endpoint",
+        "helm lint charts/loki/ exits 0 with 0 chart(s) failed",
+        "helm template charts/loki/ | grep -i 'datasource' exits 0",
+        "helm template charts/loki/ | grep 'PodDisruptionBudget' exits 0",
+        "grep 'replicaCount' charts/loki/values.yaml shows value >= 2",
+        "argocd-apps/observability/loki-app.yaml exists and is valid YAML"
       ],
       "passes": false,
-      "points": 3,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
-      "dependencies": [],
+      "points": 2,
+      "testPlan": "helm lint charts/loki/; helm template charts/loki/ | grep PodDisruptionBudget; helm template charts/loki/ | grep datasource; cat argocd-apps/observability/loki-app.yaml | yq e '.' -",
+      "dependencies": [
+        "025"
+      ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "epicId": "E10",
+      "themeId": "T4",
       "smart": {
         "specific": 0,
         "measurable": 0,
@@ -901,8 +908,84 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
+      "returnedFromSprint": "prd/phase-6-observability.json",
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+    },
+    {
+      "id": "026b",
+      "phase": 6,
+      "priority": 27,
+      "branchName": "feature/helm-thanos",
+      "title": "Helm chart: Thanos long-term Prometheus storage",
+      "description": "Create charts/thanos/ wrapping bitnami/thanos (pin appVersion). Configure sidecar mode connecting to Prometheus with ceph-bucket as the object store backend. Include a Grafana datasource ConfigMap in charts/thanos/templates/ so the Thanos query endpoint auto-registers in Grafana. ArgoCD app in argocd-apps/observability/thanos-app.yaml.",
+      "acceptanceCriteria": [
+        "charts/thanos/Chart.yaml pins appVersion to a specific Thanos release",
+        "charts/thanos/values.yaml configures objstoreConfig pointing to ceph-bucket",
+        "helm lint charts/thanos/ exits 0 with 0 chart(s) failed",
+        "helm template charts/thanos/ | grep -A3 'sidecar' exits 0",
+        "helm template charts/thanos/ | grep 'PodDisruptionBudget' exits 0",
+        "grep 'replicaCount' charts/thanos/values.yaml shows value >= 2",
+        "argocd-apps/observability/thanos-app.yaml exists and is valid YAML"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint charts/thanos/; helm template charts/thanos/ | grep PodDisruptionBudget; helm template charts/thanos/ | grep sidecar; cat argocd-apps/observability/thanos-app.yaml | yq e '.' -",
+      "dependencies": [
+        "026a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
       "epicId": "E10",
-      "themeId": "T4"
+      "themeId": "T4",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      },
+      "returnedFromSprint": "prd/phase-6-observability.json",
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+    },
+    {
+      "id": "026c",
+      "phase": 6,
+      "priority": 28,
+      "branchName": "feature/helm-tempo",
+      "title": "Helm chart: Tempo distributed tracing",
+      "description": "Create charts/tempo/ wrapping grafana/tempo-distributed (pin appVersion). Configure ceph-bucket as the storage backend. Include a Grafana datasource ConfigMap in charts/tempo/templates/ so Tempo auto-registers in Grafana. ArgoCD app in argocd-apps/observability/tempo-app.yaml.",
+      "acceptanceCriteria": [
+        "charts/tempo/Chart.yaml pins appVersion to a specific Tempo release",
+        "charts/tempo/values.yaml sets storage backend to s3 with ceph-bucket endpoint",
+        "helm lint charts/tempo/ exits 0 with 0 chart(s) failed",
+        "helm template charts/tempo/ | grep -i 'datasource' exits 0",
+        "helm template charts/tempo/ | grep 'PodDisruptionBudget' exits 0",
+        "grep 'replicaCount' charts/tempo/values.yaml shows value >= 2",
+        "argocd-apps/observability/tempo-app.yaml exists and is valid YAML"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint charts/tempo/; helm template charts/tempo/ | grep PodDisruptionBudget; helm template charts/tempo/ | grep datasource; cat argocd-apps/observability/tempo-app.yaml | yq e '.' -",
+      "dependencies": [
+        "026b"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "epicId": "E10",
+      "themeId": "T4",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      },
+      "returnedFromSprint": "prd/phase-6-observability.json",
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
     },
     {
       "id": "027",
@@ -1248,6 +1331,109 @@
       },
       "epicId": "E13",
       "themeId": "T5"
+    },
+    {
+      "id": "037r",
+      "phase": 6,
+      "priority": 1,
+      "branchName": "fix/smart-achievable-gate",
+      "title": "Planning ceremony: enforce SMART achievable threshold before sprint pull",
+      "description": "The planning ceremony must reject any story with achievable score < 3 from being pulled into a sprint without first being split. Story 026 entered sprint 6 with achievable=2 and SMART notes saying 'NOT READY \u2014 split into 026a/b/c', yet was pulled anyway. Add an explicit check: if achievable < 3, block the pull and require the story to be split or re-scored with justification.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/plan.py (or plan.md) rejects stories where smart.achievable < 3",
+        "Rejection message names the story ID, current achievable score, and instructs operator to split or rescore",
+        "Test: a mock sprint_candidates list with achievable=2 story triggers the gate and exits non-zero",
+        "Gate can be overridden with --force-achievable flag with a required reason string (audit trail)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "Run the planning ceremony against a fixture with an achievable=2 story; verify it exits non-zero and prints the correct message.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "epicId": "E1",
+      "themeId": "T0",
+      "returnedFromSprint": "prd/phase-6-observability.json",
+      "returnedReason": "Root cause: planning ceremony pulled story 026 (achievable=2, NOT READY) into sprint 6 without enforcing split requirement.",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific: gate logic + override flag fully described. Measurable: exit code + message are binary. Achievable: small script change. Relevant: prevents repeat of sprint 6 waste. TimeBound: bounded by the test fixture criterion."
+      }
+    },
+    {
+      "id": "038",
+      "phase": 8,
+      "priority": 1,
+      "epicId": "E15",
+      "themeId": "T5",
+      "branchName": "feature/ci-pr-gates",
+      "title": "GitHub Actions CI: lint + shellcheck + yq on every PR",
+      "description": "Add a GitHub Actions workflow that runs the same static gates as the smoke test ceremony on every pull request. No commit should be able to merge with a broken chart, invalid shell script, or malformed ArgoCD manifest. The gate must run without a cluster \u2014 pure static analysis.",
+      "acceptanceCriteria": [
+        ".github/workflows/ci.yaml exists and triggers on pull_request to main",
+        "Workflow runs helm lint on every chart in charts/",
+        "Workflow runs shellcheck on every .sh file in the repo",
+        "Workflow runs yq e '.' on every yaml file in argocd-apps/",
+        "A PR with a deliberate helm lint error fails the workflow",
+        "A PR with a shellcheck error fails the workflow",
+        "Workflow completes in under 3 minutes on a cold runner"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "Open a test PR with a deliberate lint error, verify workflow fails. Fix it, verify workflow passes.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "039",
+      "phase": 8,
+      "priority": 1,
+      "epicId": "E15",
+      "themeId": "T5",
+      "branchName": "feature/kind-smoke-test",
+      "title": "Real smoke test: helm install --dry-run against kind cluster",
+      "description": "The current smoke test is static analysis only \u2014 it checks chart syntax but not deployability. Add a ceremony gate that stands up a kind cluster, runs helm install --dry-run for every chart, and tears the cluster down. A chart that passes lint but fails install is a real defect. This gate catches it.",
+      "acceptanceCriteria": [
+        "kind/setup.sh creates a single-node kind cluster with the name 'sovereign-smoke'",
+        "scripts/ralph/lib/gates.py smoke_test() invokes kind install-dry-run after static checks",
+        "helm install --dry-run --generate-name runs for every chart in charts/ against the kind cluster",
+        "Any chart that fails helm install --dry-run is reported as a smoke failure with full output",
+        "kind cluster is torn down after the smoke test regardless of pass/fail",
+        "The gate completes in under 5 minutes",
+        "Existing static analysis checks (helm lint, shellcheck, yq) are preserved and run first"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Introduce a chart with a valid helm lint but broken template (e.g. undefined value reference). Verify smoke gate catches it. Verify kind cluster is cleaned up on failure.",
+      "dependencies": [
+        "038"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
     }
   ]
 }
