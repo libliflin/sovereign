@@ -55,13 +55,16 @@ elif [[ -n "$PHASE_OVERRIDE" ]] && [[ -f "$MANIFEST" ]] && command -v jq &>/dev/
   PRD_FILE="$REPO_ROOT/$PHASE_FILE"
 elif [[ -f "$MANIFEST" ]] && command -v jq &>/dev/null; then
   ACTIVE=$(jq -r '.activeSprint // empty' "$MANIFEST" 2>/dev/null || echo "")
-  [[ -n "$ACTIVE" && "$ACTIVE" != "null" ]] && PRD_FILE="$REPO_ROOT/$ACTIVE" || PRD_FILE="$SCRIPT_DIR/prd.json"
+  if [[ -n "$ACTIVE" && "$ACTIVE" != "null" ]]; then
+    PRD_FILE="$REPO_ROOT/$ACTIVE"
+  else
+    echo "Error: no activeSprint in $MANIFEST — run ceremonies.sh to plan a sprint first" >&2; exit 1
+  fi
 else
-  PRD_FILE="$SCRIPT_DIR/prd.json"
+  echo "Error: $MANIFEST not found — run ceremonies.sh to initialise the project" >&2; exit 1
 fi
 
 echo "PRD file: $PRD_FILE"
-PROGRESS_FILE="$SCRIPT_DIR/progress.txt"
 ARCHIVE_DIR="$SCRIPT_DIR/archive"
 LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
 
@@ -76,23 +79,13 @@ if [[ -f "$PRD_FILE" && -f "$LAST_BRANCH_FILE" ]]; then
     echo "Archiving previous run: $LAST_BRANCH"
     mkdir -p "$ARCHIVE_FOLDER"
     [[ -f "$PRD_FILE" ]]      && cp "$PRD_FILE"      "$ARCHIVE_FOLDER/"
-    [[ -f "$PROGRESS_FILE" ]] && cp "$PROGRESS_FILE" "$ARCHIVE_FOLDER/"
     echo "   Archived to: $ARCHIVE_FOLDER"
-    echo "# Ralph Progress Log" > "$PROGRESS_FILE"
-    echo "Started: $(date)"   >> "$PROGRESS_FILE"
-    echo "---"                >> "$PROGRESS_FILE"
   fi
 fi
 
 if [[ -f "$PRD_FILE" ]]; then
   CURRENT_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
   [[ -n "$CURRENT_BRANCH" ]] && echo "$CURRENT_BRANCH" > "$LAST_BRANCH_FILE"
-fi
-
-if [[ ! -f "$PROGRESS_FILE" ]]; then
-  echo "# Ralph Progress Log" > "$PROGRESS_FILE"
-  echo "Started: $(date)"   >> "$PROGRESS_FILE"
-  echo "---"                >> "$PROGRESS_FILE"
 fi
 
 # ── Layer 2: Build failure context from sprint file ───────────────────────────
@@ -359,5 +352,4 @@ done
 
 echo ""
 echo "Ralph reached max iterations ($MAX_ITERATIONS) without completing all tasks."
-echo "Check $PROGRESS_FILE for status."
 exit 1

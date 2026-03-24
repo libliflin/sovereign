@@ -12,13 +12,12 @@ Architecture: ArgoCD App-of-Apps pattern, Helm charts, Crossplane for infrastruc
 
 ## BEFORE EVERY ITERATION
 
-1. Read `prd/manifest.json` → find `activeSprint` field → read that file (e.g. `prd/phase-0-ceremonies.json`)
-   - If `prd/manifest.json` does not exist yet, fall back to reading `prd.json` at repo root
+1. Read `prd/manifest.json` → find `activeSprint` field → read that file (e.g. `prd/phase-7-devex.json`)
    - The active sprint file contains only the stories for the current phase (~8 stories max)
 2. Find the highest-priority story where `"passes": false` AND `"reviewed": false`
    - **If ALL stories have `passes: true`**: your work is done. Output exactly `<promise>COMPLETE</promise>` and stop. Do NOT ask what to do next. Do NOT run ceremonies. Do NOT commit or push anything. The ceremonies.sh orchestrator handles the next step.
    - `passes: true` but `reviewed: false` means Ralph marked it done but the review ceremony has not run yet — do NOT re-implement it, leave it for the review ceremony
-3. Read `progress.txt` — study ALL prior learnings, especially the "Codebase Patterns" section
+3. Read `docs/state/agent.md` — current platform patterns, hard stops, and state
 4. Check which git branch the current story requires (`branchName` in the sprint file)
 5. Check out that branch (or create from main if it doesn't exist)
 6. Read any `CLAUDE.md` files in subdirectories relevant to your story
@@ -32,7 +31,7 @@ Phases are managed by the ceremony system in `scripts/ralph/ceremonies/`.
 prd/manifest.json          ← source of truth: which phase is active
 prd/phase-N-<name>.json    ← active sprint: only stories for this phase
 prd/backlog.json           ← full backlog: all future stories
-prd/advance.sh             ← marks phase complete, activates next phase
+scripts/ralph/ceremonies.sh ← THE entry point — runs the full delivery machine
 ```
 
 **Story lifecycle:**
