@@ -20,7 +20,7 @@ test is evidence, not just a thumbs up/down.
 ```bash
 cat prd/manifest.json
 # Then read the activeSprint file, e.g.:
-cat prd/phase-0-ceremonies.json
+cat prd/increment-0-ceremonies.json
 ```
 
 Find all stories where `passes: true` AND `reviewed: false`. These are the stories to smoke-test.
@@ -265,7 +265,7 @@ Python. Update the sprint file in place:
 ```python
 import json
 
-sprint_file = "prd/phase-0-ceremonies.json"  # from manifest.json activeSprint
+sprint_file = "prd/increment-0-ceremonies.json"  # from manifest.json activeSprint
 with open(sprint_file) as f:
     sprint = json.load(f)
 
@@ -338,7 +338,7 @@ Print the full report after all tests have run. Use this format exactly:
 
 ```
 === Smoke Test Ceremony ===
-Sprint: prd/phase-0-ceremonies.json
+Sprint: prd/increment-0-ceremonies.json
 Stories tested: <N>
 
 P0-001 scripts/ralph/ralph.sh  [ralph/ceremony scripts]

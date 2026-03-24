@@ -14,6 +14,22 @@ Every service is installed by ArgoCD from this repository. Nothing is clicked in
 
 ---
 
+## Vocabulary (unified model)
+
+| Term | Definition |
+|---|---|
+| **Theme** | A strategic outcome (T1 Sovereignty, T2 Zero Trust, T3 Developer Autonomy, T4 Observability, T5 AI-Native PM). Themes never complete — they accrete value. |
+| **Epic** | A capability cluster owned by one theme. Has a `targetIncrement` that says which increment delivers it. |
+| **Story** | A sprint-sized unit of work (≤ 8 points). Belongs to an epic. No standalone `phase` field — sequencing is via `epicId → targetIncrement`. |
+| **Increment** | The execution container for a sprint. Replaces the old "phase" concept. Named after capability milestones, not install order. Stored in `prd/manifest.json` under `increments[]`. |
+| **Sprint file** | `prd/increment-N-<name>.json` — the active story list for one increment. |
+| **currentIncrement** | `manifest.json` field: the ID of the currently active increment. |
+| **activeSprint** | `manifest.json` field: path to the active sprint file. |
+
+The word "phase" is retired from code and data. If you see it in Python or JSON, it is a bug.
+
+---
+
 ## Delivery model
 
 | Concern | Decision |
@@ -21,7 +37,7 @@ Every service is installed by ArgoCD from this repository. Nothing is clicked in
 | GitOps engine | ArgoCD App-of-Apps. Root app watches `argocd-apps/`. All services are ArgoCD Applications. |
 | Infrastructure composition | Crossplane with Helm + Kubernetes providers. Cloud resources are XRDs, not scripts. |
 | Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
-| Bootstrapping | `bootstrap.sh` is the only manual step. It installs Phase 1 foundations; ArgoCD takes over. |
+| Bootstrapping | `bootstrap.sh` is the only manual step. It installs Increment 1 foundations; ArgoCD takes over. |
 | Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
 | ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. |
 

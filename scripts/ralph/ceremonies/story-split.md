@@ -13,7 +13,7 @@ sub-stories and rewrite the sprint file so that ceremonies can continue.
 ```bash
 cat prd/manifest.json
 # Then read the activeSprint file, e.g.:
-cat prd/phase-6-observability.json
+cat prd/increment-6-observability.json
 ```
 
 ### Step 2 — Identify failing stories
@@ -23,7 +23,7 @@ A story needs splitting if its `smart` object has **any dimension scoring < 3**:
 ```python
 import json
 
-with open('prd/phase-6-observability.json') as f:
+with open('prd/increment-6-observability.json') as f:
     sprint = json.load(f)
 
 failing = [
@@ -111,7 +111,7 @@ same position as the parent (preserving sprint ordering). Remove the original pa
 ```python
 import json
 
-with open('prd/phase-6-observability.json') as f:
+with open('prd/increment-6-observability.json') as f:
     sprint = json.load(f)
 
 # Build a new stories list, replacing failing stories with their splits
@@ -124,7 +124,7 @@ for story in sprint['stories']:
 
 sprint['stories'] = new_stories
 
-with open('prd/phase-6-observability.json', 'w') as f:
+with open('prd/increment-6-observability.json', 'w') as f:
     json.dump(sprint, f, indent=2)
 ```
 
@@ -199,7 +199,7 @@ Split 1 story into 3 sub-stories:
     026c  Helm chart: Tempo distributed tracing backend                  [2 pts]
 
 Files updated:
-  prd/phase-6-observability.json  (sprint file)
+  prd/increment-6-observability.json  (sprint file)
   prd/backlog.json
   prd/epics.json
 
@@ -213,5 +213,5 @@ SMART check will now re-evaluate the new sub-stories.
 - Sub-story IDs must be unique across the entire sprint file and backlog.
 - The `priority` field for sub-stories must be integers that sort correctly within the sprint
   (the sprint is executed in priority order).
-- After writing, verify the sprint file is valid JSON: `python3 -m json.tool prd/phase-6-observability.json > /dev/null`
+- After writing, verify the sprint file is valid JSON: `python3 -m json.tool prd/increment-6-observability.json > /dev/null`
 - After writing, verify backlog.json is valid JSON: `python3 -m json.tool prd/backlog.json > /dev/null`

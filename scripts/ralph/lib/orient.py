@@ -158,19 +158,22 @@ def _retro_patch_ages(repo_root: Path, velocity: list[dict]) -> list[int]:
     Simple heuristic: any retro-patch-phase<N>.md that exists and phase N
     is in the last RETRO_DEBT_MAX_SPRINTS+1 completed phases.
     """
-    patches = list((repo_root / "prd").glob("retro-patch-phase*.md"))
-    completed_phases = {str(v["phase"]) for v in velocity}
+    patches = list((repo_root / "prd").glob("retro-patch-increment*.md"))
+    completed_increments = {str(v.get("increment", v.get("phase", ""))) for v in velocity}
     ages = []
     for p in patches:
-        # Extract phase number from filename
-        stem = p.stem  # e.g. retro-patch-phase6
+        # Extract increment ID from filename: retro-patch-increment6.md → "6"
+        stem = p.stem  # e.g. retro-patch-increment6
         try:
-            phase_str = stem.split("phase")[-1]
-            if phase_str in completed_phases:
+            inc_str = stem.split("increment")[-1]
+            if inc_str in completed_increments:
                 # Find position from end of velocity list
-                phase_positions = [i for i, v in enumerate(velocity) if str(v["phase"]) == phase_str]
-                if phase_positions:
-                    age = len(velocity) - phase_positions[-1]
+                inc_positions = [
+                    i for i, v in enumerate(velocity)
+                    if str(v.get("increment", v.get("phase", ""))) == inc_str
+                ]
+                if inc_positions:
+                    age = len(velocity) - inc_positions[-1]
                     ages.append(age)
         except (ValueError, IndexError):
             pass
@@ -192,8 +195,8 @@ def assess(repo_root: Path) -> Assessment:
     all_stories = backlog_data.get("stories", [])
     velocity = manifest.get("velocity", [])
     active_sprint_file = manifest.get("activeSprint")
-    current_phase = manifest.get("currentPhase")
-    phases = manifest.get("phases", [])
+    current_phase = manifest.get("currentIncrement")
+    phases = manifest.get("increments", [])
 
     kpis: list[KPI] = []
     gge_data = _load_json(prd / "gge.json") or {}

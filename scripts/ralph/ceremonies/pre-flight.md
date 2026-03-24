@@ -121,7 +121,7 @@ Otherwise classify the cluster state as one of:
 cat prd/manifest.json
 ```
 
-Read the `activeSprint` field to get the sprint file path (e.g. `prd/phase-0-ceremonies.json`).
+Read the `activeSprint` field to get the sprint file path (e.g. `prd/increment-0-ceremonies.json`).
 
 If `activeSprint` is null or the file does not exist, print:
 `No active sprint found. Run the plan ceremony first: claude < scripts/ralph/ceremonies/plan.md`

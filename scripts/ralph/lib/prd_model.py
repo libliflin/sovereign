@@ -30,35 +30,44 @@ class Manifest:
         return self._data.get("activeSprint")
 
     @property
-    def current_phase(self) -> Any:
-        return self._data.get("currentPhase")
+    def current_increment(self) -> Any:
+        return self._data.get("currentIncrement")
 
-    def phase(self, phase_id: Any) -> dict | None:
-        for p in self._data.get("phases", []):
-            if str(p["id"]) == str(phase_id):
+    # backwards-compat alias
+    @property
+    def current_phase(self) -> Any:
+        return self.current_increment
+
+    def increment(self, increment_id: Any) -> dict | None:
+        for p in self._data.get("increments", []):
+            if str(p["id"]) == str(increment_id):
                 return p
         return None
 
-    def next_pending_phase(self) -> dict | None:
-        for p in self._data.get("phases", []):
+    # backwards-compat alias
+    def phase(self, phase_id: Any) -> dict | None:
+        return self.increment(phase_id)
+
+    def next_pending_increment(self) -> dict | None:
+        for p in self._data.get("increments", []):
             if p.get("status") == "pending":
                 return p
         return None
 
-    def set_phase_active(self, phase_id: Any, sprint_file: str, points: int, stories: int) -> None:
-        for p in self._data["phases"]:
-            if str(p["id"]) == str(phase_id):
+    def set_increment_active(self, increment_id: Any, sprint_file: str, points: int, stories: int) -> None:
+        for p in self._data["increments"]:
+            if str(p["id"]) == str(increment_id):
                 p["status"] = "active"
                 p["startDate"] = datetime.now(timezone.utc).isoformat()
                 p["pointsTotal"] = points
                 p["storiesTotal"] = stories
         self._data["activeSprint"] = sprint_file
-        self._data["currentPhase"] = phase_id
+        self._data["currentIncrement"] = increment_id
         _save(self.path, self._data)
 
-    def close_phase(self, phase_id: Any, points_completed: int, stories_accepted: int) -> None:
-        for p in self._data["phases"]:
-            if str(p["id"]) == str(phase_id):
+    def close_increment(self, increment_id: Any, points_completed: int, stories_accepted: int) -> None:
+        for p in self._data["increments"]:
+            if str(p["id"]) == str(increment_id):
                 p["status"] = "complete"
                 p["endDate"] = datetime.now(timezone.utc).isoformat()
                 p["pointsCompleted"] = points_completed
@@ -78,8 +87,13 @@ class Backlog:
     def stories(self) -> list[dict]:
         return self._data.get("stories", [])
 
+    def stories_for_increment(self, increment_id: Any) -> list[dict]:
+        """Stories whose epicId maps to the given increment (via epics.json targetIncrement)."""
+        return [s for s in self.stories if str(s.get("epicId", "")) != ""]
+
+    # backwards-compat alias
     def stories_for_phase(self, phase_id: Any) -> list[dict]:
-        return [s for s in self.stories if str(s.get("phase", "")) == str(phase_id)]
+        return self.stories_for_increment(phase_id)
 
     def update_story(self, story_id: str, updates: dict) -> None:
         for s in self._data["stories"]:

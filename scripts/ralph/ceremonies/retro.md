@@ -198,7 +198,7 @@ First-review pass rate: <X>% (<N> of <total> accepted on first review)
 
 ```python
 end_date = datetime.now(timezone.utc).isoformat()
-current_phase = manifest['currentPhase']
+current_increment = manifest['currentIncrement']
 
 total = len(stories)
 n_accepted = len(accepted)
@@ -207,20 +207,20 @@ first_pass = len([s for s in accepted if s.get('attempts', 0) == 0])
 pass_rate = round(first_pass / total * 100, 1) if total > 0 else 0
 points_done = sum(s.get('points', 0) for s in accepted)
 
-for phase in manifest.get('phases', []):
-    if phase['id'] == current_phase:
-        phase['status'] = 'complete'
-        phase['endDate'] = end_date
-        phase['pointsCompleted'] = points_done
-        phase['storiesAccepted'] = n_accepted
-        phase['storiesIncomplete'] = n_incomplete
-        phase['reviewPassRate'] = pass_rate
+for inc in manifest.get('increments', []):
+    if str(inc['id']) == str(current_increment):
+        inc['status'] = 'complete'
+        inc['endDate'] = end_date
+        inc['pointsCompleted'] = points_done
+        inc['storiesAccepted'] = n_accepted
+        inc['storiesIncomplete'] = n_incomplete
+        inc['reviewPassRate'] = pass_rate
 
 # Guard: don't double-append if retro runs twice
-history_phases = [h['phase'] for h in manifest.get('sprintHistory', [])]
-if current_phase not in history_phases:
+history_increments = [str(h.get('increment', h.get('phase', ''))) for h in manifest.get('sprintHistory', [])]
+if str(current_increment) not in history_increments:
     manifest.setdefault('sprintHistory', []).append({
-        'phase': current_phase,
+        'increment': current_increment,
         'name': sprint.get('name', ''),
         'endDate': end_date,
         'pointsCompleted': points_done,
@@ -230,7 +230,7 @@ if current_phase not in history_phases:
         'reviewPassRate': pass_rate
     })
     manifest.setdefault('velocity', []).append({
-        'phase': current_phase,
+        'increment': current_increment,
         'pointsCompleted': points_done,
         'storiesAccepted': n_accepted,
         'reviewPassRate': pass_rate,

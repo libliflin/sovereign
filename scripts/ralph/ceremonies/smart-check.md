@@ -19,7 +19,7 @@ story against the SMART criteria.
 ```bash
 cat prd/manifest.json
 # Then read the file at .activeSprint, e.g.:
-cat prd/phase-0-ceremonies.json
+cat prd/increment-0-ceremonies.json
 ```
 
 ### Step 2 — Score each story
@@ -80,14 +80,14 @@ Use Python or jq to update the sprint file in place. Example with Python:
 ```python
 import json
 
-with open('prd/phase-0-ceremonies.json') as f:
+with open('prd/increment-0-ceremonies.json') as f:
     sprint = json.load(f)
 
 # Update smart fields for each story...
 for story in sprint['stories']:
     story['smart'] = { ... }  # your scores
 
-with open('prd/phase-0-ceremonies.json', 'w') as f:
+with open('prd/increment-0-ceremonies.json', 'w') as f:
     json.dump(sprint, f, indent=2)
 ```
 
@@ -104,7 +104,7 @@ For each not-ready story, add a specific improvement note to `smart.notes` expla
 After updating the sprint file, print this summary to stdout:
 
 ```
-=== SMART Check: prd/phase-0-ceremonies.json ===
+=== SMART Check: prd/increment-0-ceremonies.json ===
 
 Story  | S | M | A | R | T | Status
 -------|---|---|---|---|---|-------

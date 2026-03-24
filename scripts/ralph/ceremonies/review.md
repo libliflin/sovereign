@@ -49,7 +49,7 @@ gh pr checks <PR_NUM> 2>&1
 ```bash
 cat prd/manifest.json
 # Then read the activeSprint file, e.g.:
-cat prd/phase-0-ceremonies.json
+cat prd/increment-0-ceremonies.json
 ```
 
 Find all stories where `passes: true` AND `reviewed: false`. These are the stories to review.
@@ -131,7 +131,7 @@ cd <project_dir> && npm run lint 2>&1 | tail -5
 **"--prd flag overrides PRD file path"** (behavior tests):
 Run the script with the flag and verify the output matches the expected behaviour:
 ```bash
-./scripts/ralph/ralph.sh --prd prd/phase-0-ceremonies.json 2>&1 | head -3 | grep "PRD file:" | grep "phase-0-ceremonies.json" && echo PASS || echo FAIL
+./scripts/ralph/ralph.sh --prd prd/increment-0-ceremonies.json 2>&1 | head -3 | grep "PRD file:" | grep "phase-0-ceremonies.json" && echo PASS || echo FAIL
 ```
 
 **"--dry-run prints plan without executing"**:
@@ -188,7 +188,7 @@ Use Python to update the sprint file in place:
 ```python
 import json
 
-sprint_file = "prd/phase-0-ceremonies.json"  # from manifest.json
+sprint_file = "prd/increment-0-ceremonies.json"  # from manifest.json
 with open(sprint_file) as f:
     sprint = json.load(f)
 
@@ -223,7 +223,7 @@ else:
 ### Step 5 — Print review report
 
 ```
-=== Review Ceremony: prd/phase-0-ceremonies.json ===
+=== Review Ceremony: prd/increment-0-ceremonies.json ===
 
 Stories reviewed: <N>
   ACCEPTED  : <N> stories

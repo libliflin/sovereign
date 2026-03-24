@@ -206,7 +206,7 @@ def main() -> int:
     # -- Resolve sprint --------------------------------------------------------
     manifest = prd_model.Manifest(REPO_ROOT)
     active_sprint = manifest.active_sprint
-    phase_num = manifest.current_phase
+    increment_num = manifest.current_increment
     sprint_file = REPO_ROOT / active_sprint if active_sprint else None
 
     # Restore sprint file only if the uncommitted changes are gate-failure
@@ -267,10 +267,10 @@ def main() -> int:
             print(f"FATAL: Sprint file missing: {sprint_file}", file=sys.stderr)
             return 1
     else:
-        phase_data = manifest.phase(phase_num)
-        phase_status = phase_data.get("status", "unknown") if phase_data else "unknown"
-        if not sprint_file or not sprint_file.exists() or phase_status == "pending":
-            print(f"  Running plan ceremony (phase={phase_status}, sprint={'missing' if not sprint_file or not sprint_file.exists() else 'exists'})...")
+        increment_data = manifest.increment(increment_num)
+        increment_status = increment_data.get("status", "unknown") if increment_data else "unknown"
+        if not sprint_file or not sprint_file.exists() or increment_status == "pending":
+            print(f"  Running plan ceremony (increment={increment_status}, sprint={'missing' if not sprint_file or not sprint_file.exists() else 'exists'})...")
             sep("AI CEREMONY: Sprint Planning")
             _ai(args.tool, "plan.md", log_file)
             # Reload after plan writes the sprint file
@@ -285,7 +285,7 @@ def main() -> int:
             _git_commit("plan", [str(active_sprint), "prd/manifest.json"])
         else:
             sprint = sprint_lib.load(sprint_file)
-            print(f"  skipped (sprint exists, phase={phase_status}, {len(sprint.get('stories', []))} stories)")
+            print(f"  skipped (sprint exists, increment={increment_status}, {len(sprint.get('stories', []))} stories)")
 
     if not sprint_file or not sprint_file.exists():
         print("FATAL: No sprint file available. Cannot continue.", file=sys.stderr)

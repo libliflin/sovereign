@@ -31,10 +31,10 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         manifest = json.load(f)
 
     active_sprint = manifest.get("activeSprint")
-    current_phase = manifest.get("currentPhase")
+    current_phase = manifest.get("currentIncrement")
 
-    print(f"  Active sprint : {active_sprint}")
-    print(f"  Current phase : {current_phase}")
+    print(f"  Active sprint    : {active_sprint}")
+    print(f"  Current increment: {current_phase}")
 
     # -- Guard: retro must have resolved every story ---------------------------
     sprint_path = repo_root / active_sprint if active_sprint else None
@@ -77,8 +77,8 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         n_incomplete = 0
         n_killed = 0
 
-    # -- Find next phase -------------------------------------------------------
-    phases = manifest.get("phases", [])
+    # -- Find next increment ---------------------------------------------------
+    phases = manifest.get("increments", [])
     phase_ids = [str(p.get("id")) for p in phases]
 
     try:
@@ -98,19 +98,19 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
     next_file = next_phase_entry.get("file") if next_phase_entry else None
 
     if not next_file:
-        print(f"\n  All phases complete — no phase after '{current_phase}' found.")
+        print(f"\n  All increments complete — no increment after '{current_phase}' found.")
         if not dry_run:
             _mark_complete(manifest, manifest_path, current_phase, points_done, pass_rate, n_accepted, n_incomplete)
         return 0
 
-    print(f"  Next phase    : {next_phase} → {next_file}")
+    print(f"  Next increment : {next_phase} → {next_file}")
 
     if dry_run:
         print("\n  [DRY RUN] Would:")
-        print(f"    - Phase {current_phase} → complete")
-        print(f"    - Phase {next_phase} → active")
+        print(f"    - Increment {current_phase} → complete")
+        print(f"    - Increment {next_phase} → active")
         print(f"    - activeSprint → {next_file}")
-        print(f"    - currentPhase → {next_phase}")
+        print(f"    - currentIncrement → {next_phase}")
         return 0
 
     # -- Update manifest -------------------------------------------------------
@@ -127,13 +127,13 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
             p["status"] = "active"
 
     manifest["activeSprint"] = next_file
-    manifest["currentPhase"] = next_phase
+    manifest["currentIncrement"] = next_phase
 
     # Guard against duplicate sprintHistory entries
-    history_phases = [str(h.get("phase")) for h in manifest.get("sprintHistory", [])]
-    if str(current_phase) not in history_phases:
+    history_increments = [str(h.get("increment")) for h in manifest.get("sprintHistory", [])]
+    if str(current_phase) not in history_increments:
         manifest.setdefault("sprintHistory", []).append({
-            "phase": current_phase,
+            "increment": current_phase,
             "endDate": end_date,
             "pointsCompleted": points_done,
             "storiesAccepted": n_accepted,
@@ -142,7 +142,7 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
             "reviewPassRate": pass_rate,
         })
         manifest.setdefault("velocity", []).append({
-            "phase": current_phase,
+            "increment": current_phase,
             "pointsCompleted": points_done,
             "storiesAccepted": n_accepted,
             "reviewPassRate": pass_rate,
@@ -152,8 +152,8 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
 
-    print(f"\n  ✓ Phase {current_phase} → complete")
-    print(f"  ✓ Phase {next_phase} → active")
+    print(f"\n  ✓ Increment {current_phase} → complete")
+    print(f"  ✓ Increment {next_phase} → active")
     print(f"  ✓ activeSprint → {next_file}")
     print(f"\n  Next: run planning ceremony to populate {next_file}")
     print(f"    ./scripts/ralph/ceremonies.sh --tool claude --start-at plan")
@@ -161,7 +161,7 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
 
 
 def _mark_complete(manifest, path, phase, points, pass_rate, accepted, incomplete):
-    for p in manifest.get("phases", []):
+    for p in manifest.get("increments", []):
         if str(p.get("id")) == str(phase):
             p["status"] = "complete"
             p["endDate"] = _now()

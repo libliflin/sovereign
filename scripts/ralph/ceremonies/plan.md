@@ -2,22 +2,22 @@
 
 You are running the **sprint planning ceremony** for the Sovereign Platform.
 
-This ceremony populates the next pending phase sprint file from the backlog.
+This ceremony populates the next pending increment sprint file from the backlog.
 
 ## Your task
 
-### Step 1 — Find the next pending phase
+### Step 1 — Find the next pending increment
 
-Read `prd/manifest.json` and find the next phase with `status: "pending"`:
+Read `prd/manifest.json` and find the next increment with `status: "pending"`:
 
 ```bash
 cat prd/manifest.json
 ```
 
-Look at the `phases` array. Find the first entry where `status` is `"pending"`. Note its `id`,
-`name`, `file`, and `capacity` (default 15 if not set). Call this **NEXT_PHASE**.
+Look at the `increments` array. Find the first entry where `status` is `"pending"`. Note its `id`,
+`name`, `file`, and `capacity` (default 15 if not set). Call this **NEXT_INCREMENT**.
 
-If no pending phases exist, print "All phases are active or complete. Nothing to plan." and exit.
+If no pending increments exist, print "All increments are active or complete. Nothing to plan." and exit.
 
 ### Step 2 — Read the backlog
 
@@ -25,7 +25,8 @@ If no pending phases exist, print "All phases are active or complete. Nothing to
 cat prd/backlog.json
 ```
 
-Find all stories where `phase == NEXT_PHASE.id`, ordered by `priority` (ascending).
+Find all stories whose `epicId` maps to an epic targeting `NEXT_INCREMENT.id` (check `prd/epics.json`
+`targetIncrement` field), ordered by `priority` (ascending).
 These are the **candidate stories** for this sprint.
 
 ### Step 3 — Assign story points and enforce hard limits
@@ -112,17 +113,17 @@ Add stories until the next story would exceed `wip_ceiling` total points.
   (a 2-point story may fit even if a 5-point story didn't).
 - Record why each skipped story was not included (over WIP / not ready / oversized).
 
-### Step 6 — Write the phase sprint file
+### Step 6 — Write the increment sprint file
 
-Write the sprint file at the path defined in `NEXT_PHASE.file` (e.g. `prd/phase-1-bootstrap.json`):
+Write the sprint file at the path defined in `NEXT_INCREMENT.file` (e.g. `prd/increment-7-devex.json`):
 
 ```json
 {
-  "phase": <NEXT_PHASE.id>,
-  "name": "<NEXT_PHASE.name>",
-  "description": "<NEXT_PHASE.description>",
+  "increment": <NEXT_INCREMENT.id>,
+  "name": "<NEXT_INCREMENT.name>",
+  "description": "<NEXT_INCREMENT.description>",
   "sprintGoal": "<one sentence: what does 'done' look like for this sprint>",
-  "capacity": <NEXT_PHASE.capacity or 15>,
+  "capacity": <NEXT_INCREMENT.capacity or 15>,
   "stories": [
     <each selected story object, copied verbatim from backlog.json>
   ]
@@ -155,20 +156,20 @@ with open('prd/backlog.json', 'w') as f:
 ### Step 8 — Update manifest.json
 
 Update `prd/manifest.json`:
-- Set `phases[NEXT_PHASE.id].status` → `"active"`
-- Set `phases[NEXT_PHASE.id].startDate` → current UTC timestamp
-- Set `phases[NEXT_PHASE.id].pointsTotal` → total points of selected stories
-- Set `phases[NEXT_PHASE.id].storiesTotal` → count of selected stories
-- Set `activeSprint` → `NEXT_PHASE.file`
-- Set `currentPhase` → `NEXT_PHASE.id`
+- Set `increments[NEXT_INCREMENT.id].status` → `"active"`
+- Set `increments[NEXT_INCREMENT.id].startDate` → current UTC timestamp
+- Set `increments[NEXT_INCREMENT.id].pointsTotal` → total points of selected stories
+- Set `increments[NEXT_INCREMENT.id].storiesTotal` → count of selected stories
+- Set `activeSprint` → `NEXT_INCREMENT.file`
+- Set `currentIncrement` → `NEXT_INCREMENT.id`
 
-**Only update manifest if the current phase is already `status: "complete"` OR if no phase is
-currently active.** Do not change manifest if a phase is still `status: "active"`.
+**Only update manifest if the current increment is already `status: "complete"` OR if no increment is
+currently active.** Do not change manifest if an increment is still `status: "active"`.
 
 ### Step 9 — Print sprint planning summary
 
 ```
-=== Sprint Planning: Phase <N> — <name> ===
+=== Sprint Planning: Increment <N> — <name> ===
 Sprint goal: <one sentence>
 Capacity   : <N> points
 

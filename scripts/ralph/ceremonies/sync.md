@@ -213,22 +213,13 @@ if no_epic:        print(f"UNLINKED: open stories with no epicId: {[s['id'] for 
 - Are there fields that are always null or always the same value? Those are dead schema.
 
 **Naming in code vs naming in data**
-- Does ceremonies.py use the same terms as manifest.json? If the code says "sprint"
-  but the data says "phase", that's a vocabulary fracture that confuses every reader.
-- Check: `grep -r "phase\|sprint\|increment" scripts/ralph/ --include="*.py" -l`
+- Does ceremonies.py use the same terms as manifest.json? Vocabulary must be consistent:
+  manifest uses `increments` / `currentIncrement`, code must match.
+- Check: `grep -r "currentPhase\|\"phases\"" scripts/ralph/ --include="*.py"`
 
-**Advance arithmetic**
-- `advance.py` does `int(current_phase) + 1`. If any phase ID is a non-integer string
-  (e.g. "2h", "2i"), this arithmetic skips or breaks. Verify:
-
-```python
-manifest = json.load(open('prd/manifest.json'))
-for p in manifest.get('phases', []):
-    try:
-        int(str(p['id']))
-    except ValueError:
-        print(f"NON-INTEGER phase id: {p['id']} — advance.py arithmetic will break here")
-```
+**Advance safety check**
+- `advance.py` uses position-based lookup (not arithmetic) to find the next increment.
+  Verify by running: `python3 scripts/ralph/lib/advance.py --dry-run`
 
 ### What to do with findings
 
