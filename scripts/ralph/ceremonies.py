@@ -33,7 +33,7 @@ REPO_ROOT = (SCRIPT_DIR / "../..").resolve()
 
 # Add lib to path
 sys.path.insert(0, str(SCRIPT_DIR))
-from lib import prd_model, sprint as sprint_lib, gates, ai as ai_lib
+from lib import prd_model, sprint as sprint_lib, gates, ai as ai_lib, advance as advance_lib
 
 
 def _find_not_smart(sprint: dict) -> list[dict]:
@@ -387,11 +387,9 @@ def main() -> int:
     if not should_run("advance"):
         print("  skipped (--start-at)")
     else:
-        advance_script = REPO_ROOT / "prd" / "advance.sh"
-        if advance_script.exists():
-            subprocess.run(["bash", str(advance_script)], cwd=REPO_ROOT)
-        else:
-            print("  (prd/advance.sh not found — update manifest manually)")
+        rc = advance_lib.run(REPO_ROOT, dry_run=args.dry_run)
+        if rc != 0:
+            return rc
 
     print("\n" + "=" * 66)
     print(f"  SPRINT COMPLETE — Phase {phase_num} closed")
