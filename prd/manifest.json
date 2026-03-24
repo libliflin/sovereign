@@ -1,6 +1,6 @@
 {
   "projectName": "Sovereign Platform",
-  "description": "File-based agile PM — phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
+  "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
   "activeSprint": "prd/phase-6-observability.json",
   "currentPhase": 6,
@@ -85,7 +85,7 @@
       "mustPrecedePhase": 3,
       "endDate": "2026-03-23T20:20:13Z",
       "pointsCompleted": 13,
-      "reviewPassRate": 100.00
+      "reviewPassRate": 100.0
     },
     {
       "id": 3,
@@ -102,7 +102,7 @@
       "endDate": "2026-03-23T23:36:01Z",
       "pointsCompleted": 12,
       "storiesAccepted": 2,
-      "reviewPassRate": 100.00
+      "reviewPassRate": 100.0
     },
     {
       "id": 4,
@@ -143,13 +143,18 @@
       "name": "observability",
       "description": "kube-prometheus-stack, Grafana, Loki, Thanos, Tempo, dashboards, AlertManager.",
       "file": "prd/phase-6-observability.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         2
       ],
       "startDate": "2026-03-23T23:40:00Z",
       "pointsTotal": 5,
-      "storiesTotal": 2
+      "storiesTotal": 2,
+      "endDate": "2026-03-24T11:22:30.403757+00:00",
+      "pointsCompleted": 0,
+      "storiesAccepted": 0,
+      "storiesIncomplete": 2,
+      "reviewPassRate": 0.0
     },
     {
       "id": 7,
@@ -176,7 +181,7 @@
     {
       "id": 9,
       "name": "sovereign-pm",
-      "description": "Sovereign PM web app (Node.js/React) — replaces this file-based PM system. Self-hosting the sprint tooling.",
+      "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
       "file": "prd/phase-9-sovereign-pm.json",
       "status": "pending",
       "dependsOn": [
@@ -222,6 +227,13 @@
       "storiesAccepted": 5,
       "reviewPassRate": 20.0,
       "date": "2026-03-23T22:00:00Z"
+    },
+    {
+      "phase": 6,
+      "pointsCompleted": 0,
+      "storiesAccepted": 0,
+      "reviewPassRate": 0.0,
+      "date": "2026-03-24T11:22:30.403757+00:00"
     }
   ],
   "sprintHistory": [
@@ -283,7 +295,7 @@
       "phase": 4,
       "endDate": "2026-03-23T20:20:13Z",
       "pointsCompleted": 13,
-      "reviewPassRate": 100.00
+      "reviewPassRate": 100.0
     },
     {
       "phase": 5,
@@ -298,7 +310,17 @@
       "phase": 5,
       "endDate": "2026-03-23T23:36:01Z",
       "pointsCompleted": 12,
-      "reviewPassRate": 100.00
+      "reviewPassRate": 100.0
+    },
+    {
+      "phase": 6,
+      "name": "observability",
+      "endDate": "2026-03-24T11:22:30.403757+00:00",
+      "pointsCompleted": 0,
+      "storiesTotal": 2,
+      "storiesAccepted": 0,
+      "storiesIncomplete": 2,
+      "reviewPassRate": 0.0
     }
   ]
 }

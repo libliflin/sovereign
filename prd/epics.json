@@ -88,7 +88,7 @@
       "description": "Loki in simple scalable mode on Ceph, Tempo distributed tracing, Thanos for long-term Prometheus storage. All on self-hosted Ceph object storage.",
       "targetIncrement": 6,
       "status": "backlog",
-      "storyIds": []
+      "storyIds": ["026a", "026b", "026c"]
     },
     {
       "id": "E11",
