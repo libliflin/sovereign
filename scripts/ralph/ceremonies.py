@@ -21,6 +21,7 @@ Full step sequence:
   proof         — bash: git ls-remote, gh pr list (hard gate)
   review        — AI: adversarial AC verification
   retro         — AI: 5 Whys, backlog remediation, honest close
+  sync          — AI: rewrite docs/state/architecture.md + agent.md (chart, not log)
   advance       — Python: close sprint, activate next phase
 
 Usage:
@@ -60,6 +61,7 @@ STEPS = [
     "proof",
     "review",
     "retro",
+    "sync",
     "advance",
 ]
 
@@ -372,7 +374,16 @@ def main() -> int:
         sep("AI CEREMONY: Retrospective")
         _ai(args.tool, "retro.md", log_file)
 
-    # -- STEP 12: ADVANCE ------------------------------------------------------
+    # -- STEP 12: SYNC ---------------------------------------------------------
+    log_step("sync")
+    if not should_run("sync"):
+        print("  skipped")
+    else:
+        sep("AI CEREMONY: State Sync")
+        _ai(args.tool, "sync.md", log_file)
+        print("\n  docs/state/architecture.md and docs/state/agent.md rewritten.")
+
+    # -- STEP 13: ADVANCE ------------------------------------------------------
     log_step("advance")
     if not should_run("advance"):
         print("  skipped")

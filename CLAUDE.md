@@ -786,6 +786,13 @@ and continues from the first story where `passes: false`.
 
 ---
 
-## LEARNINGS FROM PRIOR SESSIONS
+## CURRENT STATE
 
-(This section is updated by Ralph after each iteration. Check progress.txt for details.)
+Read `docs/state/agent.md` before implementing anything.
+
+That file is the live briefing — rewritten each sprint by the sync ceremony to reflect
+current reality. It contains current patterns, current gotchas, current platform state,
+and hard stops. It is the chart. This file (CLAUDE.md) is the constitution.
+
+`docs/state/architecture.md` contains decisions currently in force — what the system
+is and how it works, without history or aspiration.
