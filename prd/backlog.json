@@ -1114,7 +1114,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E13",
-      "themeId": "T5"
+      "themeId": "T5",
+      "readinessNote": "testPlan references shellcheck but this story creates only Helm charts \u2014 no .sh files; remove that gate. HA gate ACs are missing: CLAUDE.md quality gates #10-12 require all Helm chart stories to verify (1) helm template | grep PodDisruptionBudget exits 0 for each chart, (2) helm template | grep podAntiAffinity exits 0 for each chart, (3) grep replicaCount charts/<name>/values.yaml shows value >= 2 for each chart. Add these as explicit ACs or they will fail at review. Suggested testPlan: for chart in selenium-grid k6-operator wiremock mailhog chaos-mesh; do helm lint charts/$chart/; done; for chart in selenium-grid k6-operator wiremock mailhog chaos-mesh; do helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING in $chart; done; helm template charts/selenium-grid/ | grep -i 'host:'; kubectl apply --dry-run=client -f argocd-apps/testing/."
     },
     {
       "id": "031",
@@ -1250,7 +1251,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E14",
-      "themeId": "T3"
+      "themeId": "T3",
+      "readinessNote": "Missing dependencies: the Dockerfile described is multi-stage (build frontend + backend), which requires story-032 (backend source) and story-033 (frontend source) to be complete first \u2014 add '032' and '033' to dependencies[], both currently have passes: false and readinessNotes blocking sprint entry so this story is transitively blocked. AC #2 ('deploys app with Keycloak OIDC') is not independently verifiable \u2014 replace with 'helm template charts/sovereign-pm/ | grep -i keycloak exits 0'. testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) without including 'docker build sovereign-pm/ exits 0' which is AC #1; update testPlan to: docker build sovereign-pm/ && helm lint charts/sovereign-pm/ && helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f -."
     },
     {
       "id": "035",
