@@ -1155,42 +1155,225 @@
       }
     },
     {
-      "id": "031b",
-      "phase": 8,
-      "priority": 32,
+      "id": "031b-1",
+      "epicId": "E13",
+      "themeId": "T5",
       "branchName": "feature/ha-helm-pass",
-      "title": "HA hardening for data-plane charts (keycloak, gitlab, harbor, argocd, istio, observability, devex, testing) and ArgoCD revisionHistoryLimit pass",
-      "description": "Apply HA standards to all remaining 23 data-plane charts using the helpers from 031a. Charts to update: keycloak (StatefulSet, replicaCount >= 3), gitlab (StatefulSet, replicaCount >= 3), harbor (StatefulSet, replicaCount >= 3), argocd (replicaCount >= 3), istio, kiali, opa-gatekeeper, prometheus-stack, loki, thanos, tempo, backstage, code-server, sonarqube, reportportal, selenium-grid, k6-operator, wiremock, mailhog, chaos-mesh, trivy-operator, falco, sovereign-pm. For each: (1) set replicaCount >= 2 in values.yaml (>= 3 for critical services); (2) add PodDisruptionBudget via _ha-helpers.tpl; (3) add podAntiAffinity; (4) verify readinessProbe, livenessProbe, resources.requests, resources.limits. Also update ALL ArgoCD Application manifests in argocd-apps/ to add revisionHistoryLimit: 3.",
+      "title": "HA hardening: identity tier (keycloak, gitlab, harbor, argocd)",
+      "description": "Apply HA standards from 031a helpers to the 4 identity/gitops charts. For each: replicaCount >= 3 in values.yaml, PodDisruptionBudget via _ha-helpers.tpl, podAntiAffinity, readinessProbe, livenessProbe, resources.requests/limits.",
       "acceptanceCriteria": [
-        "charts/keycloak/values.yaml has replicaCount >= 3; helm template | grep PodDisruptionBudget exits 0",
-        "charts/gitlab/values.yaml has replicaCount >= 3; helm template | grep PodDisruptionBudget exits 0",
-        "charts/harbor/values.yaml has replicaCount >= 3; helm template | grep PodDisruptionBudget exits 0",
-        "charts/argocd/values.yaml has replicaCount >= 3; helm template | grep PodDisruptionBudget exits 0",
-        "All remaining 19 charts (istio, kiali, opa-gatekeeper, prometheus-stack, loki, thanos, tempo, backstage, code-server, sonarqube, reportportal, selenium-grid, k6-operator, wiremock, mailhog, chaos-mesh, trivy-operator, falco, sovereign-pm) have PodDisruptionBudget and podAntiAffinity",
-        "All ArgoCD Application manifests in argocd-apps/ contain revisionHistoryLimit: 3",
-        "helm lint passes on all charts modified in this story (exit 0 for each)",
-        "helm template charts/<name>/ | kubectl apply --dry-run=client -f - passes for each modified chart"
+        "charts/keycloak/values.yaml has replicaCount >= 3",
+        "helm template charts/keycloak/ | grep -q PodDisruptionBudget",
+        "charts/gitlab/values.yaml has replicaCount >= 3",
+        "helm template charts/gitlab/ | grep -q PodDisruptionBudget",
+        "charts/harbor/values.yaml has replicaCount >= 3",
+        "helm template charts/harbor/ | grep -q PodDisruptionBudget",
+        "charts/argocd/values.yaml has replicaCount >= 3",
+        "helm template charts/argocd/ | grep -q PodDisruptionBudget",
+        "helm lint passes on all 4 charts with 0 errors"
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "for chart in keycloak gitlab harbor argocd istio kiali opa-gatekeeper prometheus-stack loki thanos tempo backstage code-server sonarqube reportportal selenium-grid k6-operator wiremock mailhog chaos-mesh trivy-operator falco sovereign-pm; do helm lint charts/$chart/ && helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB in $chart; done; grep -r revisionHistoryLimit argocd-apps/ | grep -c '3'",
+      "testPlan": "for c in keycloak gitlab harbor argocd; do helm lint charts/$c/ && helm template charts/$c/ | grep -q PodDisruptionBudget && grep -q 'replicaCount: [3-9]' charts/$c/values.yaml || echo FAIL-$c; done",
       "dependencies": [
         "031a"
       ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
-      "epicId": "E13",
-      "themeId": "T5",
+      "priority": 32,
       "smart": {
         "specific": 0,
         "measurable": 0,
         "achievable": 0,
         "relevant": 0,
         "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      },
-      "readinessNote": "Ejected from sprint by SMART gate (post-split still failing). Low dimensions: achievable. Achievable < 3 usually means the story is too large \u2014 split further."
+        "notes": ""
+      }
+    },
+    {
+      "id": "031b-2",
+      "epicId": "E13",
+      "themeId": "T5",
+      "branchName": "feature/ha-helm-pass",
+      "title": "HA hardening: service mesh + security tier (istio, kiali, opa-gatekeeper)",
+      "description": "Apply HA standards from 031a helpers to istio, kiali, and opa-gatekeeper. For each: replicaCount >= 2, PDB via _ha-helpers.tpl, podAntiAffinity, probes, resource limits.",
+      "acceptanceCriteria": [
+        "charts/istio/values.yaml has replicaCount >= 2",
+        "helm template charts/istio/ | grep -q PodDisruptionBudget",
+        "charts/kiali/values.yaml has replicaCount >= 2",
+        "helm template charts/kiali/ | grep -q PodDisruptionBudget",
+        "charts/opa-gatekeeper/values.yaml has replicaCount >= 2",
+        "helm template charts/opa-gatekeeper/ | grep -q PodDisruptionBudget",
+        "helm lint passes on all 3 charts with 0 errors"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "for c in istio kiali opa-gatekeeper; do helm lint charts/$c/ && helm template charts/$c/ | grep -q PodDisruptionBudget || echo FAIL-$c; done",
+      "dependencies": [
+        "031a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 33,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "031b-3",
+      "epicId": "E13",
+      "themeId": "T5",
+      "branchName": "feature/ha-helm-pass",
+      "title": "HA hardening: observability tier (prometheus-stack, loki, thanos, tempo)",
+      "description": "Apply HA standards from 031a helpers to prometheus-stack, loki, thanos, and tempo. For each: replicaCount >= 2 for all deployable components in values.yaml, PDB via _ha-helpers.tpl, podAntiAffinity, probes, resource limits.",
+      "acceptanceCriteria": [
+        "charts/prometheus-stack/values.yaml has replica settings >= 2 for alertmanager, prometheus",
+        "helm template charts/prometheus-stack/ | grep -q PodDisruptionBudget",
+        "charts/loki/values.yaml has replicaCount >= 2",
+        "helm template charts/loki/ | grep -q PodDisruptionBudget",
+        "charts/thanos/values.yaml has replicaCount >= 2",
+        "helm template charts/thanos/ | grep -q PodDisruptionBudget",
+        "charts/tempo/values.yaml has replicaCount >= 2",
+        "helm template charts/tempo/ | grep -q PodDisruptionBudget",
+        "helm lint passes on all 4 charts with 0 errors"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "for c in prometheus-stack loki thanos tempo; do helm lint charts/$c/ && helm template charts/$c/ | grep -q PodDisruptionBudget || echo FAIL-$c; done",
+      "dependencies": [
+        "031a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 34,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "031b-4",
+      "epicId": "E13",
+      "themeId": "T5",
+      "branchName": "feature/ha-helm-pass",
+      "title": "HA hardening: devex tier (backstage, code-server, sonarqube, reportportal)",
+      "description": "Apply HA standards from 031a helpers to backstage, code-server, sonarqube, and reportportal. For each: replicaCount >= 2, PDB via _ha-helpers.tpl, podAntiAffinity, probes, resource limits.",
+      "acceptanceCriteria": [
+        "charts/backstage/values.yaml has replicaCount >= 2",
+        "helm template charts/backstage/ | grep -q PodDisruptionBudget",
+        "charts/code-server/values.yaml has replicaCount >= 2",
+        "helm template charts/code-server/ | grep -q PodDisruptionBudget",
+        "charts/sonarqube/values.yaml has replicaCount >= 2",
+        "helm template charts/sonarqube/ | grep -q PodDisruptionBudget",
+        "charts/reportportal/values.yaml has replicaCount >= 2",
+        "helm template charts/reportportal/ | grep -q PodDisruptionBudget",
+        "helm lint passes on all 4 charts with 0 errors"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "for c in backstage code-server sonarqube reportportal; do helm lint charts/$c/ && helm template charts/$c/ | grep -q PodDisruptionBudget || echo FAIL-$c; done",
+      "dependencies": [
+        "031a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 35,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "031b-5",
+      "epicId": "E13",
+      "themeId": "T5",
+      "branchName": "feature/ha-helm-pass",
+      "title": "HA hardening: testing infra tier (selenium-grid, k6-operator, wiremock, mailhog, chaos-mesh)",
+      "description": "Apply HA standards from 031a helpers to selenium-grid, k6-operator, wiremock, mailhog, and chaos-mesh. For each: replicaCount >= 2, PDB via _ha-helpers.tpl, podAntiAffinity, probes, resource limits.",
+      "acceptanceCriteria": [
+        "charts/selenium-grid/values.yaml has replicaCount >= 2",
+        "helm template charts/selenium-grid/ | grep -q PodDisruptionBudget",
+        "charts/k6-operator/values.yaml has replicaCount >= 2",
+        "helm template charts/k6-operator/ | grep -q PodDisruptionBudget",
+        "charts/wiremock/values.yaml has replicaCount >= 2",
+        "helm template charts/wiremock/ | grep -q PodDisruptionBudget",
+        "charts/mailhog/values.yaml has replicaCount >= 2",
+        "helm template charts/mailhog/ | grep -q PodDisruptionBudget",
+        "charts/chaos-mesh/values.yaml has replicaCount >= 2",
+        "helm template charts/chaos-mesh/ | grep -q PodDisruptionBudget",
+        "helm lint passes on all 5 charts with 0 errors"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "for c in selenium-grid k6-operator wiremock mailhog chaos-mesh; do helm lint charts/$c/ && helm template charts/$c/ | grep -q PodDisruptionBudget || echo FAIL-$c; done",
+      "dependencies": [
+        "031a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 36,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "031b-6",
+      "epicId": "E13",
+      "themeId": "T5",
+      "branchName": "feature/ha-helm-pass",
+      "title": "HA hardening: security scanners + sovereign-pm + ArgoCD revisionHistoryLimit pass",
+      "description": "Apply HA standards from 031a helpers to trivy-operator, falco, and sovereign-pm. Then do the ArgoCD manifests pass: add revisionHistoryLimit: 3 to every Application manifest in argocd-apps/.",
+      "acceptanceCriteria": [
+        "charts/trivy-operator/values.yaml has replicaCount >= 2",
+        "helm template charts/trivy-operator/ | grep -q PodDisruptionBudget",
+        "charts/falco/values.yaml has replicaCount >= 2",
+        "helm template charts/falco/ | grep -q PodDisruptionBudget",
+        "charts/sovereign-pm/values.yaml has replicaCount >= 2",
+        "helm template charts/sovereign-pm/ | grep -q PodDisruptionBudget",
+        "grep -r revisionHistoryLimit argocd-apps/ | grep -c ': 3' outputs >= 1",
+        "helm lint passes on trivy-operator, falco, sovereign-pm with 0 errors"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "for c in trivy-operator falco sovereign-pm; do helm lint charts/$c/ && helm template charts/$c/ | grep -q PodDisruptionBudget || echo FAIL-$c; done; grep -r revisionHistoryLimit argocd-apps/ | grep ': 3'",
+      "dependencies": [
+        "031a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 37,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
     },
     {
       "id": "032",
