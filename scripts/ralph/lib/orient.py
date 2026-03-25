@@ -808,8 +808,28 @@ def assess(repo_root: Path) -> Assessment:
         kpis.append(KPI("Increment pace", "no data", "OK", "insufficient velocity history"))
 
     # ── Decision ────────────────────────────────────────────────────────────
-    # All checks passed above — determine whether to groom or plan
+    remaining = [p for p in phases if p.get("status") not in ("complete",)]
+    all_increments_done = not remaining
+
     if depth < BACKLOG_DEPTH_MIN:
+        # PI Planning trigger: when all planned increments are delivered and the
+        # backlog is thin, grooming alone won't help — we need to rethink what
+        # we're building next. Escalate to theme-review (top of the funnel).
+        if all_increments_done:
+            return Assessment(
+                state=PlatformState.THIN_BACKLOG,
+                action=NextAction.THEME_REVIEW,
+                reason=(
+                    f"All planned increments delivered and backlog depth is {depth:.1f} "
+                    f"({len(ready_stories)} ready stories). "
+                    "PI planning needed — run theme-review → epic-breakdown → groom "
+                    "to define the next wave of work before planning."
+                ),
+                kpis=kpis,
+                shi=shi,
+                niti=niti,
+                agent_context=agent_context,
+            )
         return Assessment(
             state=PlatformState.THIN_BACKLOG,
             action=NextAction.BACKLOG_GROOM,
@@ -824,14 +844,53 @@ def assess(repo_root: Path) -> Assessment:
             agent_context=agent_context,
         )
 
-    # Check if all phases are complete
-    remaining = [p for p in phases if p.get("status") not in ("complete",)]
-    if not remaining:
-        kpis.append(KPI("Platform", "complete", "OK", "all phases delivered"))
+    # ── Platform complete? ──────────────────────────────────────────────────
+    # "Complete" only means no more *planned* increments — it does not mean
+    # there is nothing left to do. Check whether the backlog has forward work
+    # before declaring done.
+    if all_increments_done:
+        kpis.append(KPI("Platform", "complete", "OK", "all planned increments delivered"))
+
+        # PI Planning trigger: backlog is thin — the machine needs to ask
+        # "what are we building next?" before it can call itself done.
+        if depth < BACKLOG_DEPTH_MIN:
+            return Assessment(
+                state=PlatformState.THIN_BACKLOG,
+                action=NextAction.THEME_REVIEW,
+                reason=(
+                    f"All planned increments delivered but backlog depth is {depth:.1f} "
+                    f"({len(ready_stories)} ready stories). "
+                    "PI planning needed: run theme-review → epic-breakdown → groom "
+                    "to define the next wave of work."
+                ),
+                kpis=kpis,
+                shi=shi,
+                niti=niti,
+                agent_context=agent_context,
+            )
+
+        # Backlog has forward work but no planned increment to put it in —
+        # plan a new increment.
+        if ready_stories:
+            return Assessment(
+                state=PlatformState.SPRINT_READY,
+                action=NextAction.PLAN,
+                reason=(
+                    f"All planned increments delivered. "
+                    f"{len(ready_stories)} sprint-ready stories available "
+                    f"({depth:.1f} sprints). Plan a new increment to continue."
+                ),
+                kpis=kpis,
+                shi=shi,
+                niti=niti,
+                agent_context=agent_context,
+            )
+
+        # Truly done: no remaining increments, backlog healthy but nothing ready.
         return Assessment(
             state=PlatformState.COMPLETE,
             action=NextAction.DONE,
-            reason="All phases complete. Platform delivered.",
+            reason="All planned increments delivered. Backlog has no sprint-ready stories. Platform delivered.",
             kpis=kpis,
             shi=shi,
             niti=niti,
