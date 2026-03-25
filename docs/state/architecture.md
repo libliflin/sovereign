@@ -69,7 +69,8 @@ Full policy: `docs/governance/sovereignty.md`
 
 Rook/Ceph provides block, filesystem, and object storage. All stateful services use Ceph
 storage classes. StorageClass names flow through `{{ .Values.global.storageClass }}` — never
-hardcoded. Ceph encryption at rest is required.
+hardcoded. Ceph encryption at rest is required. Rook/Ceph is a storage **provider** — it
+creates StorageClasses, it does not consume a pre-existing one for its own StatefulSet PVs.
 
 ---
 
@@ -98,16 +99,18 @@ All observability charts register their data sources in Grafana via a ConfigMap 
 ## Quality gates (non-negotiable)
 
 Every story must pass before `reviewed: true`:
+
 1. `helm lint charts/<name>/` — zero errors
 2. `helm template | kubectl apply --dry-run=client` — zero errors
 3. `helm template | grep PodDisruptionBudget` — must match ≥ 1 (≥ 1 per component for distributed-mode charts)
 4. `helm template | grep podAntiAffinity` — must match ≥ 1
 5. `grep replicaCount charts/<name>/values.yaml` — must be ≥ 2. **Exception**: if `vendor/VENDORS.yaml` has `ha_exception: true` for this service with a documented `ha_exception_reason`, then `replicaCount: 1` is acceptable — but only if the chart has a top-level `replicaCount: 1` with a comment referencing the VENDORS.yaml exception entry. Undocumented `replicaCount: 1` always fails.
-6. `shellcheck` on all `.sh` files — zero errors
-7. `yq e '.'` on all ArgoCD application manifests — valid YAML
-8. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
-9. `helm template charts/<name>/ | grep -i datasource` — required for all observability charts
-10. Branch pushed to remote + PR merged to main — proof of work
+6. `helm template charts/<name>/ | python3 scripts/check-limits.py` — every container and initContainer must have `resources.requests` AND `resources.limits`. Use `check-limits.py`, not `grep -A5 resources:` — grep misses individual containers that lack limits even when others have them.
+7. `shellcheck` on all `.sh` files — zero errors
+8. `yq e '.'` on all ArgoCD application manifests — valid YAML
+9. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
+10. `helm template charts/<name>/ | grep -i datasource` — required for all observability charts
+11. Branch pushed to remote + PR merged to main — proof of work
 
 ---
 

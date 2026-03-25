@@ -281,7 +281,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E2",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan specifies wrong quality gates for a GitHub Actions workflow story \u2014 \"helm lint, shellcheck, kubectl dry-run\" do not test .github/workflows/*.yml. Replace testPlan with: cat .github/workflows/validate.yml | yq e '.' -; cat .github/workflows/release.yml | yq e '.' -; then push a branch with a deliberate helm lint error and verify the helm-validate job fails with a clear message. AC #14 (\"Full CI run completes in under 5 minutes\") is a live-test requirement that cannot be verified statically \u2014 note as blocker."
     },
     {
       "id": "009",
@@ -734,7 +735,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "AC #13 (\"vendor/verify-distroless.sh confirms no shell in built images\") requires building images against a live Harbor registry \u2014 cannot be verified statically. Per blocker protocol this must be flagged: BLOCKER: requires Harbor running and images built. testPlan is generic; static testPlan should specify: shellcheck vendor/build.sh vendor/verify-distroless.sh vendor/recipes/cert-manager/build.sh (and other recipe build.sh); grep -q git_sha vendor/recipes/cert-manager/recipe.yaml; bash -n vendor/build.sh; vendor/build.sh --dry-run cert-manager."
     },
     {
       "id": "022",
@@ -768,7 +770,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "Final AC (\"End-to-end: pinning a new version in recipe.yaml \u2192 fetch \u2192 build \u2192 Harbor \u2192 ArgoCD auto-syncs\") requires a running cluster with GitLab, Harbor, and ArgoCD \u2014 cannot be verified statically. Per blocker protocol: BLOCKER: requires live cluster. Static testPlan should specify: helm lint charts/_globals/; for each chart: grep 'imageRegistry' charts/<name>/values.yaml; kubectl apply --dry-run=client -f argocd-apps/platform/argocd-image-updater-app.yaml; cat vendor/gitlab-ci-template.yml | yq e '.' -; shellcheck vendor/smoke-test.sh."
     },
     {
       "id": "023",
@@ -1119,7 +1122,6 @@
     },
     {
       "id": "031a",
-      "phase": 8,
       "priority": 31,
       "branchName": "feature/ha-helm-pass",
       "title": "HA helpers template and foundation chart hardening (cilium, cert-manager, crossplane, sealed-secrets, vault, rook-ceph)",
@@ -1138,21 +1140,26 @@
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "helm lint charts/_globals/; for chart in cert-manager crossplane sealed-secrets vault rook-ceph; do helm lint charts/$chart/; helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB in $chart; helm template charts/$chart/ | grep podAntiAffinity || echo MISSING-AFFINITY in $chart; done; helm template charts/cilium/ | grep -A5 resources:",
+      "testPlan": "helm lint charts/_globals/; for chart in cert-manager crossplane sealed-secrets vault rook-ceph; do helm lint charts/$chart/; helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB in $chart; helm template charts/$chart/ | grep podAntiAffinity || echo MISSING-AFFINITY in $chart; done; helm template charts/cilium/ | python3 scripts/check-limits.py",
       "dependencies": [],
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
+      "reviewNotes": [
+        "[Review 1] AC failed: 'charts/cilium/ has resource limits on every container (DaemonSet \u2014 no replicaCount change)'. Command: helm template charts/cilium/ | python3 check-limits.py Output: MISSING LIMITS: container 'install-cni-binaries' \u2014 the install-cni-binaries initContainer has resources.requests (cpu: 100m, memory: 10Mi) but no resources.limits. The values.yaml has initResources.limits but the upstream Cilium chart does not apply initResources to this specific initContainer. Fix: add explicit resources with limits for install-cni-binaries in the cilium values.yaml using the correct upstream value key (e.g., cni.resources or installCNIBinariesResources).",
+        "[Review 1] AC failed: 'charts/rook-ceph/ has PodDisruptionBudget; volumeClaimTemplates reference global.storageClass'. PDB: PASS (kind: PodDisruptionBudget found in helm template output). volumeClaimTemplates reference global.storageClass: FAIL. Command: grep -rn 'global.storageClass' charts/rook-ceph/templates/ \u2014 returned no output. The rook-ceph templates directory contains only: _helpers.tpl, grafana-dashboard.yaml, jobs/verify-osds.yaml, poddisruptionbudget.yaml. None contain volumeClaimTemplates or references to .Values.global.storageClass. The storageClass references in values.yaml (lines 66, 92, 124) are for Ceph StorageClass objects (what Ceph creates), not for the upstream rook-ceph chart's own StatefulSet volumeClaimTemplates. Fix: either (a) add a CephCluster CR template that references {{ .Values.global.storageClass }} for mon/mgr volumeClaimTemplates, or (b) document that rook-ceph as a storage provider does not consume a StorageClass and remove/update the AC."
+      ],
+      "attempts": 1,
       "epicId": "E13",
       "themeId": "T5",
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      }
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 3: creating 1 helper template + hardening 6 charts (values.yaml replicaCount, PDB, anti-affinity, probes, resource limits on each) is near the 3-point story budget ceiling for a single Ralph iteration \u2014 but bounded and well-specified."
+      },
+      "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
+      "returnedReason": "Two ACs failed review: (1) Cilium install-cni-binaries initContainer missing resource limits \u2014 correct upstream values.yaml key needed. (2) rook-ceph volumeClaimTemplates AC is architecturally incorrect \u2014 rook-ceph creates StorageClasses, it does not consume them."
     },
     {
       "id": "031b-1",
@@ -1189,7 +1196,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-2",
@@ -1224,7 +1232,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-3",
@@ -1261,7 +1270,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-4",
@@ -1298,7 +1308,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-5",
@@ -1337,7 +1348,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-6",
@@ -1373,7 +1385,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "032",
@@ -1408,7 +1421,7 @@
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "testPlan references wrong quality gates (helm lint, kubectl dry-run) for a Node.js backend. Should specify: npm run typecheck && npm run lint && npm test. AC #3 'All CRUD endpoints implemented' is not independently verifiable \u2014 needs 'npm test exits 0 with route-level test coverage for all endpoints listed in openapi.yaml'."
+      "readinessNote": "testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) for a Node.js backend \u2014 should specify: npm run typecheck && npm run lint && npm test. AC \"All CRUD endpoints implemented\" is not independently verifiable \u2014 needs \"npm test exits 0 with route-level test coverage for all endpoints listed in openapi.yaml\". AC \"POST /api/ralph/trigger creates a K8s Job\" requires a live cluster \u2014 mark as blocker: requires_live_cluster."
     },
     {
       "id": "033",
@@ -1442,7 +1455,7 @@
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "ACs #3 ('Keycloak login flow works'), #4 ('PRD Generator shows formatted prd.json with copy button'), and #5 ('Agent Runs page shows story pass/fail history') require a running application and cannot be verified statically. Replace with file/component existence checks: 'src/client/pages/PrdGenerator.tsx exists with a copy-to-clipboard handler', 'src/client/pages/AgentRuns.tsx exists with pass/fail rendering logic'. testPlan references wrong quality gates \u2014 should specify: npm run typecheck && npm run lint && npm run build."
+      "readinessNote": "ACs \"Keycloak login flow works\", \"PRD Generator shows formatted prd.json with copy button\", and \"Agent Runs page shows story pass/fail history\" require a running application and cannot be verified statically. Replace with file/component existence checks: \"src/client/pages/PrdGenerator.tsx exists with a copy-to-clipboard handler\", \"src/client/pages/AgentRuns.tsx exists with pass/fail rendering logic\". testPlan references wrong quality gates \u2014 should specify: npm run typecheck && npm run lint && npm run build exits 0."
     },
     {
       "id": "034",
@@ -1462,7 +1475,10 @@
       "passes": false,
       "points": 2,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
-      "dependencies": [],
+      "dependencies": [
+        "032",
+        "033"
+      ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -1476,7 +1492,7 @@
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "Missing dependencies: the Dockerfile described is multi-stage (build frontend + backend), which requires story-032 (backend source) and story-033 (frontend source) to be complete first \u2014 add '032' and '033' to dependencies[], both currently have passes: false and readinessNotes blocking sprint entry so this story is transitively blocked. AC #2 ('deploys app with Keycloak OIDC') is not independently verifiable \u2014 replace with 'helm template charts/sovereign-pm/ | grep -i keycloak exits 0'. testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) without including 'docker build sovereign-pm/ exits 0' which is AC #1; update testPlan to: docker build sovereign-pm/ && helm lint charts/sovereign-pm/ && helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f -."
+      "readinessNote": "Missing dependencies on story 032 (backend source) and story 033 (frontend source) \u2014 the multi-stage Dockerfile described cannot be built until both exist. Add \"032\" and \"033\" to dependencies[]. Both are currently not ready. Also: AC \"deploys app with Keycloak OIDC\" is not independently verifiable \u2014 replace with \"helm template charts/sovereign-pm/ | grep -i keycloak exits 0\"."
     },
     {
       "id": "035",
@@ -1494,7 +1510,7 @@
       ],
       "passes": false,
       "points": 2,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "markdownlint docs/ README.md exits 0; verify each file listed in ACs exists with ls -la; grep -i 'cost' docs/providers/*.md to confirm cost estimates are present.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
@@ -1508,8 +1524,7 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E14",
-      "themeId": "T3",
-      "readinessNote": "testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) for a documentation story. Should specify: markdownlint docs/ README.md exits 0. AC #6 already names the correct gate (markdownlint) but testPlan contradicts it."
+      "themeId": "T3"
     },
     {
       "id": "036",
@@ -1710,7 +1725,44 @@
       "epicId": "E12",
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
-      "returnedReason": "Root cause of story-029 repeated review failure: no documented HA exception process for single-instance upstreams."
+      "returnedReason": "Root cause of story-029 repeated review failure: no documented HA exception process for single-instance upstreams.",
+      "readinessNote": "depends on story 029 which has passes: false \u2014 blocked"
+    },
+    {
+      "id": "042r",
+      "priority": 1,
+      "epicId": "E13",
+      "themeId": "T5",
+      "branchName": "fix/rook-ceph-storageclass-ac",
+      "title": "Fix rook-ceph storageClass AC: resolve architectural mismatch for storage provider charts",
+      "description": "Story 031a AC8 states 'volumeClaimTemplates reference global.storageClass' for rook-ceph. Review ceremony found this AC is architecturally incorrect: rook-ceph IS a storage provider that creates StorageClasses (CephBlock, CephFilesystem) \u2014 it does not consume a pre-existing StorageClass for its own mon/mgr StatefulSet PVs. Two valid resolutions: (a) Add a CephCluster CR template in charts/rook-ceph/templates/ that sets the initial bootstrap StorageClass reference for mon/mgr PVs during cluster bootstrapping before Ceph's own classes are ready. OR (b) Replace the AC with a documented explanation in values.yaml that rook-ceph creates StorageClasses and its own PVs are managed by Ceph itself \u2014 no external StorageClass reference is needed or possible. Implement whichever resolution is architecturally correct for rook-ceph. Also update story 031a AC8 in backlog.json to reflect the chosen resolution so the next sprint has a correct AC.",
+      "acceptanceCriteria": [
+        "A resolution decision is documented in charts/rook-ceph/values.yaml as a comment",
+        "If resolution (a): charts/rook-ceph/templates/ceph-cluster.yaml exists and contains {{ .Values.global.storageClass }} reference for mon/mgr volumeClaimTemplates; helm lint charts/rook-ceph/ exits 0",
+        "If resolution (b): AC8 in backlog.json story 031a is updated to a correct verifiable AC for rook-ceph; a comment in values.yaml explains why no external StorageClass reference is needed",
+        "helm lint charts/rook-ceph/ exits 0",
+        "story 031a AC8 is updated in backlog.json to a correct AC that helm template | grep can verify"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "helm lint charts/rook-ceph/; grep -n 'storageClass' charts/rook-ceph/values.yaml; cat backlog.json | python3 -c \"import json,sys; s=[x for x in json.load(sys.stdin)['stories'] if x['id']=='031a'][0]; print(s['acceptanceCriteria'][7])\"",
+      "dependencies": [
+        "031a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
+      "returnedReason": "Root cause of story-031a AC8 failure: standard HA storageClass AC is architecturally inapplicable to storage-provider charts that create (not consume) StorageClasses.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "1-point story: bounded decision + one targeted fix to rook-ceph chart or AC."
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     }
   ]
 }

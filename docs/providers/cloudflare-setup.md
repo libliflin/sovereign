@@ -37,7 +37,8 @@ HTTPS, SSH) flows through the tunnel.
 3. On the right sidebar, scroll to **API** — your **Account ID** is listed there.
 
 Alternatively, from the Cloudflare dashboard URL:
-```
+
+```text
 https://dash.cloudflare.com/<ACCOUNT_ID>/...
 ```
 
@@ -63,10 +64,10 @@ DNS records.
 | Account | Cloudflare Tunnel | Edit |
 | Zone | DNS | Edit |
 
-4. Under **Zone Resources**, select **Specific zone → your domain**.
-5. Under **Account Resources**, select **All accounts** (or the specific account).
-6. Click **Continue to summary**, then **Create Token**.
-7. **Copy the token immediately** — it will not be shown again.
+1. Under **Zone Resources**, select **Specific zone → your domain**.
+1. Under **Account Resources**, select **All accounts** (or the specific account).
+1. Click **Continue to summary**, then **Create Token**.
+1. **Copy the token immediately** — it will not be shown again.
 
 ---
 
@@ -101,6 +102,7 @@ frontDoor: cloudflare                     # activates this provider
 ```
 
 The bootstrap will:
+
 1. Call `frontdoor_provision` — creates the tunnel via Cloudflare API
 2. Install `cloudflared` on every VPS node as a systemd service
 3. Call `frontdoor_configure_dns` — creates `*.<domain>` CNAME record
@@ -128,7 +130,7 @@ sudo dpkg -i /tmp/cloudflared.deb
 
 Add to `~/.ssh/config`:
 
-```
+```text
 Host *.example.com
     ProxyCommand cloudflared access ssh --hostname %h
 ```
@@ -171,6 +173,7 @@ journalctl -u cloudflared -n 50
 ```
 
 Common causes:
+
 - `credentials.json` has wrong permissions (must be 600)
 - `config.yml` has wrong tunnel ID
 - Network egress blocked (some providers block outbound 443 to Cloudflare)

@@ -33,7 +33,7 @@ Sovereign uses permissive licenses only; copyleft licenses are incompatible with
 
 ## Decision Tree
 
-```
+```text
 Is the license on the Permitted list?
   YES → proceed
   NO  → Is it on the Prohibited list?
@@ -57,6 +57,7 @@ This will happen again. The process is:
 5. **Document in VENDORS.yaml** with a `license_change_detected` field and the date it was detected.
 
 Known precedents already resolved in this stack:
+
 - HashiCorp Vault (BSL 2023) → replaced with OpenBao (LF, Apache 2.0)
 - Redis (SSPL 2024) → self-hosted alternative: Valkey (LF, BSD-3-Clause) if Redis is needed
 - Elasticsearch (SSPL 2021) → self-hosted alternative: OpenSearch (Apache 2.0, AWS-stewarded but permissive)

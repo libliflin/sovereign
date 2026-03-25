@@ -8,7 +8,7 @@ Keycloak, Harbor, Backstage, and more — on any cluster of VPS or bare-metal se
 > **Autarky** /ˈɔːtɑːki/ — *complete economic self-sufficiency*. No SaaS. No vendor lock-in.
 > No external image pulls after bootstrap. Every dependency built from vetted, patched source.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                       Sovereign Platform                            │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -67,7 +67,9 @@ Keycloak, Harbor, Backstage, and more — on any cluster of VPS or bare-metal se
 ## Core Principles
 
 ### High Availability — non-negotiable
+
 **Minimum 3 nodes, always.** Two independent requirements enforce this:
+
 - **etcd quorum**: 3 nodes tolerate 1 failure. 2 nodes lose quorum on any failure. 1 node is a SPOF.
 - **Ceph quorum**: Rook/Ceph requires 3 OSDs to form a healthy storage cluster.
 
@@ -76,8 +78,10 @@ kube-vip provides a floating API server VIP across all control plane nodes — n
 load balancer required.
 
 ### Autarky — no external dependencies at runtime
+
 After bootstrap, the cluster never pulls from docker.io, quay.io, ghcr.io, or gcr.io.
 Every image is:
+
 1. **Fetched** from upstream at a pinned git SHA (verified post-clone)
 2. **Patched** with any security fixes from `vendor/recipes/<name>/patches/`
 3. **Built** from source into a distroless OCI image
@@ -85,16 +89,19 @@ Every image is:
 5. **Deployed** by ArgoCD from Harbor
 
 ### Distroless — no shells in production
+
 All container images use [distroless](https://github.com/GoogleContainerTools/distroless) base
 images. No shell, no package manager, minimal attack surface. Any service that cannot run
 distroless is marked deprecated in `vendor/VENDORS.yaml` with a migration path.
 
 ### Zero downtime rollouts
+
 Every image change goes through: `build → staging → smoke test → promote → production`.
 `vendor/rollback.sh <name>` always has a last-known-good SHA to revert to. Rollout strategy
 is declared per-service in `recipe.yaml` (`rolling`, `node_by_node` for CNI, etc.).
 
 ### Zero open ports
+
 The default front door is Cloudflare Tunnel + Zero Trust Access (free tier). The VPS firewall
 drops everything except Cloudflare's published IP ranges. Port 22 is never open.
 SSH goes through `cloudflare access ssh`. Swap in your own front door by implementing the
@@ -105,11 +112,13 @@ SSH goes through `cloudflare access ssh`. Swap in your own front door by impleme
 ## Prerequisites
 
 ### For local development and testing (kind — no cloud account needed)
+
 - Docker Desktop (running)
 - `brew install kind kubectl helm gh shellcheck`
 - That's it. No cloud account, no domain, no credentials.
 
 ### For live production deployment (real VPS)
+
 - A domain name you control, DNS managed by Cloudflare
 - **3+ VPS nodes** running Ubuntu 22.04+ (odd number, minimum 3 — see [why](#high-availability--non-negotiable))
 - A local machine with: `bash`, `ssh`, `kubectl`, `helm` v3+, provider CLI
@@ -187,7 +196,7 @@ supported — see [Core Principles](#high-availability--non-negotiable) for why.
 
 > **AWS free tier is not viable.** t2.micro/t3.micro (1 GB RAM) cannot run a k3s server
 > node with embedded etcd. Minimum AWS instance for this stack is t3.small.
-
+>
 > **Community note:** These costs are best-effort estimates as of early 2026. Prices change.
 > Provider performance varies by region. See [Contributing Providers](#contributing-providers)
 > to add or correct entries.
@@ -209,6 +218,7 @@ To add or update a provider entry:
 4. Submit a PR — CI will validate the shell script with `shellcheck`
 
 **Provider script interface** (what your script must do):
+
 - Read `bootstrap/config.yaml` (domain, node count, node spec, SSH key)
 - Provision `nodes.count` servers at the requested spec
 - Output `~/.kube/config` pointing at the kube-vip VIP
@@ -218,6 +228,7 @@ To add or update a provider entry:
 See `bootstrap/providers/hetzner.sh` for a complete reference implementation.
 
 Providers people have asked about (PRs welcome):
+
 - [ ] Vultr
 - [ ] Linode / Akamai Cloud
 - [ ] OVHcloud
@@ -250,6 +261,7 @@ Once deployed, services are at:
 ## Architecture
 
 Sovereign uses the **ArgoCD App-of-Apps** pattern. After the initial bootstrap:
+
 1. ArgoCD is installed and watches this repo
 2. The root app (`argocd-apps/root-app.yaml`) deploys all service apps
 3. Every service is self-healing and GitOps-managed
@@ -257,6 +269,7 @@ Sovereign uses the **ArgoCD App-of-Apps** pattern. After the initial bootstrap:
 No manual `kubectl apply` after bootstrap. All changes go through Git.
 
 **Build pipeline** (`vendor/`):
+
 1. `vendor/fetch.sh` — SHA-verified mirror of upstream source into internal GitLab
 2. `vendor/build.sh` — builds distroless OCI images from patched source
 3. `vendor/deploy.sh` — stages, smoke tests, promotes to production
@@ -274,7 +287,7 @@ CVE findings create GitLab issues. Patches land in `vendor/recipes/<name>/patche
 - [Quickstart Guide](docs/quickstart.md)
 - [Architecture](docs/architecture.md)
 - [Day-2 Operations](docs/day-2-operations.md)
-- **Providers**: [Hetzner](docs/providers/hetzner.md) · [AWS EC2](docs/providers/aws-ec2-free-tier.md) · [DigitalOcean](docs/providers/digitalocean.md)
+- **Providers**: [Hetzner](docs/providers/hetzner.md) · [AWS EC2](docs/providers/aws-ec2.md) · [DigitalOcean](docs/providers/digitalocean.md) · [Vultr](docs/providers/vultr.md) · [Bare Metal](docs/providers/bare-metal.md)
 - **Security**: [Front Door Setup](docs/providers/cloudflare-setup.md) · [Custom Front Door](docs/providers/front-door-custom.md)
 
 ---

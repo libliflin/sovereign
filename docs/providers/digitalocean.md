@@ -90,6 +90,7 @@ digitalocean:
 ```
 
 **Available regions:**
+
 - `nyc3` — New York 3
 - `sfo3` — San Francisco 3
 - `ams3` — Amsterdam 3
@@ -107,6 +108,7 @@ digitalocean:
 ```
 
 This will:
+
 1. Upload your SSH public key to DigitalOcean (idempotent by fingerprint)
 2. Create a private VPC for inter-node communication
 3. Create `nodes.count` Droplets running Ubuntu 22.04 (sovereign-1, -2, -3) with private networking

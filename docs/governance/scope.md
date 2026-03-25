@@ -9,6 +9,7 @@ Sovereign is a self-hosted, foundation-governed Kubernetes platform that any dev
 Everything that runs on the cluster as a platform service and enables a development team to operate independently:
 
 **Foundation layer:**
+
 - CNI (Cilium)
 - Certificate management (cert-manager)
 - Secret management (OpenBao)
@@ -16,38 +17,46 @@ Everything that runs on the cluster as a platform service and enables a developm
 - Distributed storage (Rook/Ceph)
 
 **Identity and access:**
+
 - Identity and SSO (Keycloak)
 
 **Artifact management:**
+
 - Container registry (Harbor)
 - Source control (GitLab)
 
 **Security:**
+
 - Service mesh (Istio)
 - Policy enforcement (OPA / Gatekeeper)
 - Runtime security (Falco, Trivy)
 
 **Observability:**
+
 - Metrics (Prometheus, Grafana)
 - Logs (Loki)
 - Traces (Tempo)
 
 **Developer experience:**
+
 - Developer portal (Backstage)
 - Browser-based IDE (code-server)
 - Code quality (SonarQube)
 
 **Testing infrastructure:**
+
 - Browser testing (Selenium Grid)
 - Load testing (k6 Operator)
 - Email testing (MailHog)
 - Resilience testing (Chaos Mesh)
 
 **Bootstrap and local development:**
+
 - Bootstrap scripts for common VPS providers (Hetzner, DigitalOcean, generic Ubuntu)
 - kind-based local testing infrastructure
 
 **Platform tooling:**
+
 - The sovereign-pm project management tool (dogfooding: sovereign is built with sovereign)
 
 ---
