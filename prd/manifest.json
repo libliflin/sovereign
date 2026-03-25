@@ -123,7 +123,7 @@
       "name": "sovereign-pm",
       "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
       "file": "prd/increment-9-sovereign-pm.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         3,
         4,
@@ -132,9 +132,35 @@
       ],
       "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product",
       "startDate": "2026-03-25T11:53:26.141679+00:00",
+      "endDate": "2026-03-25T16:50:04+00:00",
       "pointsTotal": 2,
-      "storiesTotal": 1
+      "storiesTotal": 1,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     }
   ],
-  "currentIncrement": 9
+  "currentIncrement": 9,
+  "sprintHistory": [
+    {
+      "increment": 9,
+      "name": "sovereign-pm",
+      "endDate": "2026-03-25T16:50:04+00:00",
+      "pointsCompleted": 2,
+      "storiesTotal": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 9,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-25T16:50:04+00:00"
+    }
+  ]
 }
