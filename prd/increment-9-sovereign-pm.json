@@ -23,7 +23,7 @@
       "points": 2,
       "testPlan": "markdownlint docs/ README.md exits 0; verify each file listed in ACs exists with ls -la; grep -i 'cost' docs/providers/*.md to confirm cost estimates are present.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -37,5 +37,7 @@
       "epicId": "E14",
       "themeId": "T3"
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
