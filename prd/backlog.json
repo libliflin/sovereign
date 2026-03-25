@@ -1763,6 +1763,72 @@
         "notes": "1-point story: bounded decision + one targeted fix to rook-ceph chart or AC."
       },
       "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
+    },
+    {
+      "id": "043r",
+      "title": "Add upstream values-key verification step to HA story grooming checklist",
+      "description": "The grooming ceremony prompt for HA stories that touch upstream chart wrappers (cilium, cert-manager, crossplane, etc.) must require story authors to verify the exact upstream Helm values key before writing a resource-limit AC. Root cause: story 031a Cilium AC used an assumed values key (initResources.limits) that the upstream chart does not wire to the install-cni-binaries initContainer.",
+      "acceptanceCriteria": [
+        "The grooming ceremony script/prompt contains a step: 'For each resource-limit AC on an upstream chart, run helm show values <chart> or inspect charts/<name>/values.yaml and quote the exact values key in the AC text'",
+        "The updated grooming prompt is committed and referenced in docs/state/agent.md",
+        "A LEARNINGS entry is added to docs/state/agent.md documenting the upstream-key verification requirement"
+      ],
+      "epicId": "E13",
+      "themeId": "T5",
+      "phase": 8,
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
+      "returnedReason": "Systemic fix: story 031a Cilium AC used a wrong upstream values key because grooming never required key verification against upstream chart templates.",
+      "branchName": "feature/ha-helm-pass"
+    },
+    {
+      "id": "044r",
+      "title": "Document rook-ceph provider role and add CephCluster CR template referencing global.storageClass",
+      "description": "rook-ceph is a storage *provider* \u2014 it creates StorageClasses for other services to consume. It does not consume global.storageClass for its own pods. This distinction was undocumented, leading to an incorrect AC in story 031a. Fix: (1) add a NOTES.txt to charts/rook-ceph/ documenting this architecture truth, (2) add a CephCluster CR template to charts/rook-ceph/templates/ with spec.storage.storageClassDeviceSets volumeClaimTemplates referencing {{ .Values.global.storageClass }} \u2014 this is the correct place where rook-ceph *uses* a pre-existing block StorageClass for device provisioning.",
+      "acceptanceCriteria": [
+        "charts/rook-ceph/templates/NOTES.txt or charts/rook-ceph/README.md contains an explicit note: 'rook-ceph is a storage provider \u2014 it does not consume .Values.global.storageClass for its own StatefulSet. Instead, it creates StorageClasses for other services.'",
+        "charts/rook-ceph/templates/cephcluster.yaml exists and references {{ .Values.global.storageClass }} in storageClassDeviceSets volumeClaimTemplates",
+        "helm lint charts/rook-ceph/ exits 0",
+        "helm template charts/rook-ceph/ | grep storageClassName exits 0",
+        "docs/state/architecture.md has a rook-ceph section noting its provider (not consumer) role"
+      ],
+      "epicId": "E13",
+      "themeId": "T5",
+      "phase": 8,
+      "priority": 1,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
+      "returnedReason": "Systemic fix: rook-ceph architecture (provider vs consumer) was undocumented, causing an incorrect AC in story 031a and a review failure.",
+      "branchName": "feature/ha-helm-pass"
+    },
+    {
+      "id": "045r",
+      "title": "Sprint planning: enforce >= 75% capacity fill before sprint closes",
+      "description": "Phase 8 sprint closed with 3 pts against a 15-pt capacity (20% fill). A single story failure wiped the entire sprint. The planning ceremony must check that pulled stories fill at least 75% of sprint capacity. If the phase-specific backlog is exhausted, the ceremony should pull the highest-priority stories from adjacent phases or the general backlog.",
+      "acceptanceCriteria": [
+        "The planning ceremony script checks: sum(pulled story points) / sprint.capacity >= 0.75",
+        "If the check fails, the ceremony emits a warning listing how many additional points are needed and suggests pulling from backlog",
+        "The updated planning ceremony script is committed and referenced in scripts/ralph/ceremonies/",
+        "docs/state/agent.md has a note: 'Sprint planning must fill >= 75% capacity; use adjacent-phase backlog stories if the current phase backlog is exhausted'"
+      ],
+      "epicId": "E0",
+      "themeId": "T0",
+      "phase": 8,
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
+      "returnedReason": "Systemic fix: under-loaded sprint (1 story, 3 pts vs 15-pt capacity) meant a single failure wiped 100% of sprint delivery.",
+      "branchName": "feature/process-improvements"
     }
   ]
 }

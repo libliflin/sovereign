@@ -35,7 +35,7 @@
       ],
       "attempts": 1,
       "returnedToBacklog": true,
-      "returnedReason": "Two ACs failed review: (1) Cilium install-cni-binaries initContainer missing resource limits — the correct upstream values.yaml key for this initContainer must be identified (e.g. cni.resources or installCNIBinariesResources) and added to charts/cilium/values.yaml. (2) rook-ceph volumeClaimTemplates AC is architecturally incorrect — rook-ceph creates StorageClasses, it does not consume them; either add a CephCluster CR template referencing global.storageClass or replace the AC with a documented exception.",
+      "returnedReason": "Two ACs failed review: (1) Cilium install-cni-binaries initContainer missing resource limits \u2014 the correct upstream values.yaml key for this initContainer must be identified (e.g. cni.resources or installCNIBinariesResources) and added to charts/cilium/values.yaml. (2) rook-ceph volumeClaimTemplates AC is architecturally incorrect \u2014 rook-ceph creates StorageClasses, it does not consume them; either add a CephCluster CR template referencing global.storageClass or replace the AC with a documented exception.",
       "epicId": "E13",
       "themeId": "T5",
       "smart": {

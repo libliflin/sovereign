@@ -111,12 +111,17 @@
       "name": "testing-and-ha",
       "description": "Selenium Grid, k6, MailHog, Chaos Mesh, HA pass across all charts, GitLab CI vendor builds.",
       "file": "prd/increment-8-testing-and-ha.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         5,
         6
       ],
-      "themeGoal": "Production hardening: Selenium Grid, k6, MailHog, Chaos Mesh, HA validation"
+      "themeGoal": "Production hardening: Selenium Grid, k6, MailHog, Chaos Mesh, HA validation",
+      "endDate": "2026-03-25T11:27:08.022981+00:00",
+      "pointsCompleted": 0,
+      "storiesAccepted": 0,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 0.0
     },
     {
       "id": 9,
@@ -133,5 +138,26 @@
       "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product"
     }
   ],
-  "currentIncrement": 8
+  "currentIncrement": 8,
+  "sprintHistory": [
+    {
+      "increment": 8,
+      "name": "testing-and-ha",
+      "endDate": "2026-03-25T11:27:08.022981+00:00",
+      "pointsCompleted": 0,
+      "storiesTotal": 1,
+      "storiesAccepted": 0,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 0.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 8,
+      "pointsCompleted": 0,
+      "storiesAccepted": 0,
+      "reviewPassRate": 0.0,
+      "date": "2026-03-25T11:27:08.022981+00:00"
+    }
+  ]
 }
