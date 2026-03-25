@@ -103,6 +103,50 @@ def _find_not_smart(sprint: dict) -> list[dict]:
     return result
 
 
+def _eject_not_smart_stories(sprint_file: Path, not_smart: list[dict]) -> None:
+    """Remove still-failing stories from sprint file and return them to backlog
+    with a readinessNote explaining why they were ejected. This keeps the flow
+    moving — no fatal, no carry-over. Toyota: half-finished work = 0 value."""
+    import json
+
+    bad_ids = {s["id"] for s in not_smart}
+
+    # Update sprint file — remove the failing stories
+    with open(sprint_file) as f:
+        sprint = json.load(f)
+    kept = [s for s in sprint.get("stories", []) if s["id"] not in bad_ids]
+    sprint["stories"] = kept
+    with open(sprint_file, "w") as f:
+        json.dump(sprint, f, indent=2)
+
+    # Return them to backlog with a readinessNote
+    backlog_file = REPO_ROOT / "prd" / "backlog.json"
+    with open(backlog_file) as f:
+        backlog = json.load(f)
+
+    backlog_ids = {s["id"] for s in backlog["stories"]}
+    for story in not_smart:
+        sid = story["id"]
+        sm = story.get("smart", {})
+        low_dims = [d for d in ("specific", "measurable", "achievable", "relevant", "timeBound")
+                    if sm.get(d, 0) < 3]
+        note = (f"Ejected from sprint by SMART gate (post-split still failing). "
+                f"Low dimensions: {', '.join(low_dims)}. "
+                f"Achievable < 3 usually means the story is too large — split further.")
+        if sid in backlog_ids:
+            for bs in backlog["stories"]:
+                if bs["id"] == sid:
+                    bs["readinessNote"] = note
+        else:
+            story["readinessNote"] = note
+            backlog["stories"].append(story)
+
+    with open(backlog_file, "w") as f:
+        json.dump(backlog, f, indent=2)
+
+    print(f"  Ejected {len(not_smart)} stories to backlog: {', '.join(sorted(bad_ids))}")
+
+
 def _ai(tool: str, ceremony: str, log_file: Path) -> str:
     """Run an AI ceremony, sleeping on rate limit, returning output."""
     output = ai_lib.run_ceremony(tool, SCRIPT_DIR / "ceremonies" / ceremony, log_file)
@@ -322,10 +366,29 @@ def main() -> int:
             _ai(args.tool, "smart-check.md", log_file)
             sprint = sprint_lib.load(sprint_file)
             not_smart = _find_not_smart(sprint)
-            if not_smart:
-                print("\nFATAL: Story split did not resolve SMART failures. Manual intervention required.")
-                return 1
-            print("  Story split resolved all SMART issues.")
+
+        if not_smart:
+            # Split didn't fully resolve — eject still-failing stories back to
+            # backlog and re-plan rather than fatal.  Half-finished work = 0 value.
+            bad_ids = [s["id"] for s in not_smart]
+            print(f"\n  {len(bad_ids)} stories still not SMART after split "
+                  f"({', '.join(bad_ids)}) — ejecting to backlog and re-planning.")
+            _eject_not_smart_stories(sprint_file, not_smart)
+            _git_commit("smart-eject", [str(active_sprint), "prd/backlog.json"])
+            sprint = sprint_lib.load(sprint_file)
+            if not sprint.get("stories"):
+                print("  Sprint is now empty — returning to plan.")
+                _git_commit("smart-empty-replan", [str(active_sprint), "prd/manifest.json"])
+                sep("AI CEREMONY: Sprint Planning (re-plan after SMART eject)")
+                _ai(args.tool, "plan.md", log_file)
+                sprint = sprint_lib.load(sprint_file)
+                if not sprint.get("stories"):
+                    print("\nFATAL: Re-plan produced an empty sprint. Backlog needs new stories.")
+                    return 1
+                _git_commit("plan-replan", [str(active_sprint), "prd/backlog.json", "prd/manifest.json"])
+            else:
+                print(f"  Continuing with {len(sprint.get('stories', []))} SMART-ready stories.")
+
         print(f"\n  SMART passed — {len(sprint.get('stories', []))} stories sprint-ready.")
         _git_commit("smart", [str(active_sprint), "prd/backlog.json"])
 

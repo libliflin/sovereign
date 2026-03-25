@@ -6,38 +6,41 @@
   "capacity": 15,
   "stories": [
     {
-      "id": "031",
+      "id": "031a",
+      "phase": 8,
       "priority": 31,
       "branchName": "feature/ha-helm-pass",
-      "title": "HA pass: PodDisruptionBudgets, anti-affinity, and replica hardening for all charts",
-      "description": "Audit every Helm chart in charts/ and ensure HA is properly configured. This story is a systematic pass over all charts to enforce the HA standards documented in CLAUDE.md. For each chart: (1) ensure default replicaCount >= 2 in values.yaml (3 for critical: argocd, keycloak, openbao, gitlab, harbor); (2) add PodDisruptionBudget template with minAvailable: 1; (3) add podAntiAffinity \u2014 preferredDuringSchedulingIgnoredDuringExecution for standard services, requiredDuring for critical services to guarantee cross-node spread; (4) verify readinessProbe and livenessProbe are defined for every container; (5) verify resources.requests and resources.limits are set. For StatefulSets (gitlab, keycloak, harbor, openbao, rook-ceph): ensure volumeClaimTemplates use global.storageClass. For DaemonSets (cilium, cloudflared): skip replica count (N/A) but verify resource limits. Create charts/_globals/templates/_ha-helpers.tpl with shared PDB and anti-affinity template helpers to avoid duplication. Update ArgoCD Application manifests to set revisionHistoryLimit: 3 (keep last 3 deployable revisions for rollback). Run helm lint and helm template dry-run on every chart after changes.",
+      "title": "HA helpers template and foundation chart hardening (cilium, cert-manager, crossplane, sealed-secrets, vault, rook-ceph)",
+      "description": "Create charts/_globals/templates/_ha-helpers.tpl with shared Helm template helpers for PodDisruptionBudget and podAntiAffinity to avoid duplication across all charts. Then apply HA standards to the 6 foundation/infrastructure charts: cilium (DaemonSet \u2014 skip replicaCount, verify resource limits), cert-manager, crossplane, sealed-secrets, vault (openbao), rook-ceph (StatefulSet \u2014 verify volumeClaimTemplates use global.storageClass). For each non-DaemonSet chart: (1) set replicaCount >= 2 in values.yaml (3 for vault); (2) add PodDisruptionBudget using the new helper; (3) add podAntiAffinity using the new helper; (4) verify readinessProbe, livenessProbe, resources.requests, resources.limits on every container.",
       "acceptanceCriteria": [
-        "Every chart has replicaCount >= 2 as default (>= 3 for argocd, keycloak, openbao, gitlab, harbor)",
-        "Every chart has a PodDisruptionBudget template",
-        "Every Deployment/StatefulSet has podAntiAffinity configured",
-        "Every container spec has readinessProbe, livenessProbe, resources.requests, resources.limits",
-        "charts/_globals/templates/_ha-helpers.tpl has shared PDB and anti-affinity helpers",
-        "All ArgoCD Application manifests have revisionHistoryLimit: 3",
-        "helm lint passes on all charts",
-        "helm template | kubectl apply --dry-run=client passes on all charts"
+        "charts/_globals/templates/_ha-helpers.tpl exists with a PDB helper and an anti-affinity helper",
+        "helm lint charts/_globals/ passes with 0 errors",
+        "charts/cilium/ has resource limits on every container (DaemonSet \u2014 no replicaCount change)",
+        "charts/cert-manager/values.yaml has replicaCount >= 2; helm template | grep PodDisruptionBudget exits 0",
+        "charts/crossplane/values.yaml has replicaCount >= 2; helm template | grep PodDisruptionBudget exits 0",
+        "charts/sealed-secrets/values.yaml has replicaCount >= 2; helm template | grep PodDisruptionBudget exits 0",
+        "charts/vault/values.yaml has replicaCount >= 3; helm template | grep PodDisruptionBudget exits 0",
+        "charts/rook-ceph/ has PodDisruptionBudget; volumeClaimTemplates reference global.storageClass",
+        "helm lint passes on all 6 charts (exit 0)",
+        "helm template charts/<name>/ | grep podAntiAffinity exits 0 for each non-DaemonSet chart"
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "Run quality gates: helm lint, kubectl dry-run, verify all acceptanceCriteria. For each chart: helm lint charts/<name>/; helm template charts/<name>/ | grep PodDisruptionBudget; helm template charts/<name>/ | grep podAntiAffinity; grep replicaCount charts/<name>/values.yaml; helm template charts/<name>/ | kubectl apply --dry-run=client -f -.",
+      "testPlan": "helm lint charts/_globals/; for chart in cert-manager crossplane sealed-secrets vault rook-ceph; do helm lint charts/$chart/; helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB in $chart; helm template charts/$chart/ | grep podAntiAffinity || echo MISSING-AFFINITY in $chart; done; helm template charts/cilium/ | grep -A5 resources:",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
-      "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      },
       "epicId": "E13",
-      "themeId": "T5"
+      "themeId": "T5",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 3: creating 1 helper template + hardening 6 charts (values.yaml replicaCount, PDB, anti-affinity, probes, resource limits on each) is near the 3-point story budget ceiling for a single Ralph iteration \u2014 but bounded and well-specified."
+      }
     }
   ]
 }
