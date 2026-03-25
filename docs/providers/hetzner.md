@@ -103,6 +103,7 @@ hetzner:
 ```
 
 This will:
+
 1. Create `nodes.count` CX22 servers running Ubuntu 22.04 (sovereign-1, -2, -3)
 2. Install kube-vip on each node for a floating API server VIP
 3. Install K3s with `--cluster-init` + embedded etcd on node-1

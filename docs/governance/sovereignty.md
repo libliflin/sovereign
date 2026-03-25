@@ -82,6 +82,7 @@ Sovereign's response: replace Vault with OpenBao, a Linux Foundation fork that m
 The lesson: do not wait for the official "community fork" announcement before acting. When a vendor changes a license on a Tier 1 component, start tracking the situation immediately. Adopt the community fork as soon as it has its first stable release. The cost of migration grows every week you stay on the vendor-controlled version.
 
 When this happens again — and it will — the response is:
+
 1. Check if a foundation fork exists.
 2. If yes: pin to the last permissive release of the original, schedule migration, adopt the fork.
 3. If no fork yet: pin to the last permissive release, open a story to evaluate alternatives, and monitor the situation weekly.

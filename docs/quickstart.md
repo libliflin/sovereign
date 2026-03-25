@@ -9,7 +9,7 @@ By default, **Sovereign closes all inbound ports** on your VPS.  All traffic
 connection from your server to Cloudflare's edge.  No firewall rules, no open
 ports, no IP whitelisting required.
 
-```
+```text
 User → Cloudflare edge → Cloudflare Tunnel (outbound) → your VPS
 ```
 
@@ -54,6 +54,7 @@ cp bootstrap/config.yaml.example bootstrap/config.yaml
 ```
 
 Open `bootstrap/config.yaml` and fill in:
+
 - `domain` — your domain name
 - `provider` — your cloud provider (`hetzner`, `generic`, `aws-ec2`, `digitalocean`)
 - `frontDoor` — security front door (`cloudflare` recommended; see [Cloudflare Setup](providers/cloudflare-setup.md))
@@ -68,6 +69,7 @@ Open `bootstrap/config.yaml` and fill in:
 ```
 
 This will:
+
 1. Harden all nodes (unattended-upgrades, fail2ban, auditd, CIS sysctl)
 2. Provision a server (or connect to your existing one)
 3. Create a Cloudflare Tunnel and install `cloudflared` on every node
@@ -115,7 +117,7 @@ Default admin credentials are printed by the bootstrap script and stored in Seal
 ## Provider Guides
 
 - [Hetzner Cloud](providers/hetzner.md) — ~€12/mo for 3-node HA cluster, recommended
-- [AWS EC2](providers/aws-ec2-free-tier.md) — ~$60/mo for 3-node HA cluster (t3.small minimum)
+- [AWS EC2](providers/aws-ec2.md) — ~$60/mo for 3-node HA cluster (t3.small minimum)
 - [DigitalOcean](providers/digitalocean.md) — ~$18/mo for 3-node HA cluster
 - [Vultr](providers/vultr.md) — ~$18/mo for 3-node HA cluster
 - [Bare metal / existing cluster](providers/bare-metal.md) — free

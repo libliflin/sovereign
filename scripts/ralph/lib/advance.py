@@ -84,8 +84,8 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
     try:
         current_idx = phase_ids.index(str(current_phase))
     except ValueError:
-        print(f"\n  ERROR: currentPhase '{current_phase}' not found in phases list.", file=sys.stderr)
-        print(f"  Known phase IDs: {phase_ids}", file=sys.stderr)
+        print(f"\n  ERROR: currentIncrement '{current_phase}' not found in increments list.", file=sys.stderr)
+        print(f"  Known increment IDs: {phase_ids}", file=sys.stderr)
         return 1
 
     if current_idx + 1 >= len(phases):

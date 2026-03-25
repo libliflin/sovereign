@@ -9,7 +9,7 @@ Cloudflare Tunnel with any technology that suits your environment.
 Every front door provider is a Bash script that defines exactly 5 functions.
 The bootstrap calls them in order:
 
-```
+```text
 frontdoor_provision        (local)  — create the tunnel / gateway
 frontdoor_install_agent    (remote) — install daemon on every VPS node
 frontdoor_allowed_cidrs    (local)  — print CIDRs to allow through UFW
@@ -78,7 +78,7 @@ WireGuard VPN.
 
 ### Architecture
 
-```
+```text
 User → gateway VPS (public IP) → WireGuard VPN → cluster nodes (private IPs)
 ```
 

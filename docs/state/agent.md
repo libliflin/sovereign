@@ -45,12 +45,14 @@ domain in `templates/`.
 `helm dependency update` before `helm lint` when `Chart.yaml` has dependencies.
 
 **HA gate — run before every `git push` on a chart story:**
+
 ```bash
 helm template charts/<name>/ | grep -c PodDisruptionBudget   # must be >= 1 (>= 1 per component for distributed-mode charts)
 helm template charts/<name>/ | grep -c podAntiAffinity        # must be >= 1
 grep replicaCount charts/<name>/values.yaml                   # must be >= 2
 helm template charts/<name>/ | python3 scripts/check-limits.py  # every container must have requests AND limits
 ```
+
 This applies to upstream wrapper charts too. Setting `affinity` in `values.yaml` is not
 sufficient — verify the rendered output actually contains `podAntiAffinity`. If the upstream
 chart does not propagate it, add a dedicated affinity template that merges the required rule.
@@ -80,6 +82,7 @@ PVs are managed instead.
 
 **HA exception for single-instance upstreams**: some upstream services (SonarQube CE, MailHog,
 single-node Elasticsearch) architecturally cannot scale horizontally. For these:
+
 1. Add `ha_exception: true` and `ha_exception_reason: "<reason>"` to the service's entry in `vendor/VENDORS.yaml`
 2. Set a top-level `replicaCount: 1` in `values.yaml` with a comment: `# ha_exception: see vendor/VENDORS.yaml`
 3. HA gate #5 passes only when BOTH conditions are met. Missing the VENDORS.yaml entry always fails.
@@ -99,6 +102,7 @@ are not installed locally).
 
 **shellcheck**: all `.sh` files must pass `shellcheck -S error` (matches CI's shellcheck 0.10.0).
 Common fixes:
+
 - Quote variables: `"$var"` not `$var`
 - Split `local` + command substitution: `local x; x=$(cmd)` — not `local x=$(cmd)` (SC2155)
 - Empty array safety: `"${ARRAY[@]+"${ARRAY[@]}"}` instead of `"${ARRAY[@]}"` with `set -u`

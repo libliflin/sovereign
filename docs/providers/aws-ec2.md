@@ -98,6 +98,7 @@ aws:
 ```
 
 This will:
+
 1. Auto-detect the latest Ubuntu 22.04 LTS AMI in your region
 2. Import your SSH public key to AWS
 3. Create a security group allowing inter-node communication + SSH

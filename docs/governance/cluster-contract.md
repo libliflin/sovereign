@@ -28,7 +28,7 @@ Managed cloud Kubernetes (EKS, GKE, AKS, DOKS) is intentionally not listed as a 
 
 ## What Sovereign Installs — and What It Doesn't Touch
 
-### Sovereign manages (owns the lifecycle of):
+### Sovereign manages (owns the lifecycle of)
 
 - **CNI: Cilium** — Sovereign replaces whatever CNI was present. This is the one opinionated requirement. Cilium is required for the security model (see "Cilium as the Reference CNI" below).
 - **Certificate management: cert-manager** — manages all TLS certificates in the cluster, including self-signed for bootstrap and ACME/Let's Encrypt for production.
@@ -38,7 +38,7 @@ Managed cloud Kubernetes (EKS, GKE, AKS, DOKS) is intentionally not listed as a 
 - **Ingress / service mesh: Istio** — provides mTLS between all services, ingress gateway, and traffic management.
 - **Observability: Prometheus, Grafana, Loki, Tempo** — full observability stack. Replaces any existing monitoring setup.
 
-### Sovereign does NOT touch:
+### Sovereign does NOT touch
 
 - **Cluster provisioning** — use K3s, kubeadm, Talos, or CAPI. Sovereign's bootstrap scripts provision clusters as a convenience, but the cluster itself is not a sovereign-managed resource.
 - **Node OS management** — use Talos, Flatcar, Ubuntu LTS, or your preferred immutable OS. Sovereign does not manage OS-level configuration after bootstrap hardening runs.
@@ -99,6 +99,7 @@ Sovereign's default for bootstrapped single-node or HA clusters. K3s is lightwei
 ## HA Minimum
 
 For production clusters:
+
 - **Control plane:** 3 nodes (odd number for etcd quorum). 5 nodes for large installations. Even numbers are not supported — etcd requires a majority quorum.
 - **Worker nodes:** 3 or more. Ceph requires at least 3 nodes with raw block devices for replication factor 3. Fewer than 3 workers means Ceph cannot maintain data safety guarantees.
 - **Single-node:** supported for development and testing only (kind). Sovereign will install on a single node but will not enforce PodDisruptionBudget minimums or Ceph replication — it's not a safe configuration for any data you care about.

@@ -99,6 +99,7 @@ All observability charts register their data sources in Grafana via a ConfigMap 
 ## Quality gates (non-negotiable)
 
 Every story must pass before `reviewed: true`:
+
 1. `helm lint charts/<name>/` — zero errors
 2. `helm template | kubectl apply --dry-run=client` — zero errors
 3. `helm template | grep PodDisruptionBudget` — must match ≥ 1 (≥ 1 per component for distributed-mode charts)
