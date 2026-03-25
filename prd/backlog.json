@@ -1096,7 +1096,8 @@
       "epicId": "E12",
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
-      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass."
+      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass.",
+      "readinessNote": "testPlan is generic ('Run quality gates: helm lint, shellcheck, kubectl dry-run') and does not address the specific re-open reason in reviewNotes[0]. The review failure was: SonarQube CE replicaCount: 1 failed HA gate #12. The fix requires: (1) adding ha_exception: true with ha_exception_reason to vendor/VENDORS.yaml for sonarqube, (2) adding top-level replicaCount: 1 with a comment referencing the VENDORS.yaml exception to charts/sonarqube/values.yaml. testPlan must specify: grep 'sonarqube' vendor/VENDORS.yaml | grep ha_exception; grep -n 'replicaCount' charts/sonarqube/values.yaml showing value 1 with comment; helm lint charts/sonarqube/ charts/reportportal/ exits 0; helm template charts/sonarqube/ | grep PodDisruptionBudget; helm template charts/reportportal/ | grep PodDisruptionBudget."
     },
     {
       "id": "030",
@@ -1899,7 +1900,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "AC #1 ('vendor/update-check.sh runs without error') requires vendor/update-check.sh from story 020 (passes: false) \u2014 this is a functional dependency not declared in dependencies[]. Add '020' to dependencies[]. testPlan invokes vendor/update-check.sh which does not exist yet \u2014 story will fail immediately. Also: testPlan should cover the verifiable subset without update-check.sh: for chart in charts/*/; do helm dependency update $chart && helm lint $chart || echo FAIL-$chart; done; test -f docs/operations/version-audit.md."
     },
     {
       "id": "048",
@@ -1928,7 +1930,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "AC #5 ('A comment block is added to backlog.json') is not implementable: JSON does not support comments. Replace with a verifiable alternative: add a 'schema_notes' or 'metadata' key at the top level of backlog.json explaining the backlog/sprint-file relationship, or create docs/backlog-guide.md. testPlan assertion 'assert len(pending) < 31' is not documented with the current pending count as baseline \u2014 should state the count at time of writing to make the delta meaningful."
     },
     {
       "id": "049",
@@ -1963,7 +1966,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "depends on story 027 which has passes: false \u2014 blocked"
     },
     {
       "id": "050",
@@ -1996,7 +2000,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "testPlan only validates hetzner.sh ('bash -n ... && shellcheck ... && bash ... --dry-run --nodes 2'). ACs #5-#6 require the same validation for generic-vps.sh and aws-ec2.sh. Extend testPlan: bash bootstrap/providers/generic-vps.sh --dry-run --nodes 2; echo exit=$? (must be non-zero); bash bootstrap/providers/aws-ec2.sh --dry-run --nodes 4; echo exit=$? (must be non-zero); shellcheck bootstrap/providers/hetzner.sh bootstrap/providers/generic-vps.sh bootstrap/providers/aws-ec2.sh exits 0."
     },
     {
       "id": "051",
@@ -2032,7 +2037,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "depends on story 039 which has passes: false \u2014 blocked"
     },
     {
       "id": "052",
@@ -2067,7 +2073,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "depends on story 029 which has passes: false \u2014 blocked"
     }
   ]
 }
