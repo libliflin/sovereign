@@ -27,12 +27,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: provider guide content ('step-by-step instructions') does not specify which CLI commands or sections are required \u2014 a developer could interpret scope differently across providers. Measurable score 4: 'explains all phases' and 'step-by-step instructions' in ACs are not binary shell-verifiable without explicit grep patterns; testPlan covers existence and markdownlint but not content depth. Achievable score 3: story requires creating/updating 7 documents (quickstart.md, architecture.md, 4 provider docs, README.md) in a single iteration \u2014 at the top of the story-point budget. Consider splitting the 4 provider docs into a separate story if iteration runs long."
       },
       "epicId": "E14",
       "themeId": "T3",
