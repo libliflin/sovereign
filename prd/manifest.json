@@ -129,15 +129,7 @@
         6,
         7
       ],
-      "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product",
-      "startDate": "2026-03-25T11:53:26.141679+00:00",
-      "endDate": "2026-03-25T16:50:04+00:00",
-      "pointsTotal": 2,
-      "storiesTotal": 1,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product"
     },
     {
       "id": 10,
@@ -151,15 +143,7 @@
         4,
         6,
         7
-      ],
-      "startDate": "2026-03-25T22:01:24.245024+00:00",
-      "endDate": "2026-03-25T22:30:00+00:00",
-      "pointsTotal": 8,
-      "storiesTotal": 3,
-      "pointsCompleted": 8,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      ]
     },
     {
       "id": 11,
@@ -168,47 +152,22 @@
       "file": "prd/increment-11-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": [],
-      "startDate": "2026-03-25T00:00:00+00:00",
-      "endDate": "2026-03-25T00:00:00+00:00",
-      "pointsTotal": 2,
-      "storiesTotal": 1,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "dependsOn": []
     },
     {
       "id": 12,
       "name": "developer-portal",
       "description": "Backstage developer portal and code-server (VS Code in browser). Provides service catalog, developer self-service, and the primary interface for Claude Code agents.",
       "file": "prd/increment-12-developer-portal.json",
-      "status": "pending",
-      "dependsOn": [3, 6, 7],
+      "status": "active",
+      "dependsOn": [
+        3,
+        6,
+        7
+      ],
       "themeGoal": "T3 Developer Autonomy \u2014 Backstage (E11) and code-server: service catalog, developer portal, browser-based IDE"
     }
   ],
-  "activeSprint": "prd/increment-11-remediation.json",
-  "currentIncrement": 11,
-  "sprintHistory": [
-    {
-      "increment": 11,
-      "name": "remediation",
-      "endDate": "2026-03-25T00:00:00+00:00",
-      "pointsCompleted": 2,
-      "storiesTotal": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 11,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-25T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-12-developer-portal.json",
+  "currentIncrement": 12
 }
