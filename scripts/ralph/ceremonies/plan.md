@@ -20,17 +20,59 @@ cat prd/manifest.json
 1. Read `currentIncrement` and `activeSprint` from the manifest.
 2. Check whether the `activeSprint` file exists on disk:
    ```bash
-   ls <activeSprint path>
+   ls <activeSprint path>   # will error if missing
    ```
 3. **If the file does NOT exist**: the currently active increment needs its sprint file created.
    Set `NEXT_INCREMENT` to the increment entry whose `id == currentIncrement`.
-4. **If the file DOES exist**: the active sprint is already populated. Look in `increments[]` for
+4. **If the file DOES exist** (or there is no `activeSprint`): Look in `increments[]` for
    the first entry where `status == "pending"`. Set `NEXT_INCREMENT` to that entry.
-5. If no pending increments exist and the active sprint file exists, print
-   "All increments are active or complete. Nothing to plan." and exit.
+5. **If no pending increments exist**: check `prd/backlog.json` for any stories with
+   `priority == 0` and `passes != true`. If any exist, this is a **remediation sprint** —
+   go to **Step 1b** to create a new increment. If none exist, print
+   "All increments complete and no priority-0 stories. Platform delivered." and exit.
 
 > **CRITICAL**: Never plan for increment N+1 when the sprint file for increment N is missing.
 > The file path is defined in `NEXT_INCREMENT.file`. Write that exact file — do not invent a path.
+
+### Step 1b — Create a remediation increment (only if Step 1 finds no pending increment)
+
+When orient pulls the Andon cord (broken GGE, priority-0 story) but all planned increments are
+complete, the machine needs a new increment to carry the remediation work. Create it now.
+
+```python
+import json
+
+with open('prd/manifest.json') as f:
+    manifest = json.load(f)
+
+increments = manifest.get('increments', [])
+
+# Find the highest numeric increment id
+numeric_ids = [i['id'] for i in increments if isinstance(i['id'], int)]
+next_id = max(numeric_ids) + 1 if numeric_ids else 10
+
+# Create the new remediation increment entry
+new_inc = {
+    "id": next_id,
+    "name": "remediation",
+    "description": "Remediation sprint — restores broken GGEs and resolves priority-0 blockers.",
+    "file": f"prd/increment-{next_id}-remediation.json",
+    "status": "active",
+    "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
+    "dependsOn": []
+}
+increments.append(new_inc)
+manifest['increments'] = increments
+manifest['activeSprint'] = new_inc['file']
+manifest['currentIncrement'] = next_id
+
+with open('prd/manifest.json', 'w') as f:
+    json.dump(manifest, f, indent=2)
+
+print(f"Created remediation increment {next_id}: {new_inc['file']}")
+```
+
+Set `NEXT_INCREMENT` to this new entry. Continue to Step 2.
 
 ### Step 2 — Read the backlog
 
@@ -39,9 +81,13 @@ cat prd/backlog.json
 cat prd/epics.json
 ```
 
-Find all stories whose `epicId` maps to an epic whose `targetIncrement == NEXT_INCREMENT.id`
-(check `prd/epics.json`), ordered by `priority` (ascending).
-These are the **candidate stories** for this sprint.
+**Candidate stories:**
+- If this is a remediation sprint (Step 1b): candidate stories are ALL stories with
+  `priority == 0` and `passes != true`, regardless of `epicId`. These take precedence
+  over everything.
+- Otherwise: find all stories whose `epicId` maps to an epic whose
+  `targetIncrement == NEXT_INCREMENT.id` (check `prd/epics.json`), ordered by `priority`
+  (ascending).
 
 ### Step 3 — Assign story points and enforce hard limits
 
