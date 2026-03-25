@@ -3,8 +3,13 @@ global:
   storageClass: "ceph-block"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
 
+# HA gate: replicaCount for crossplane controller
+replicaCount: 2
+
 # Values passed to the upstream crossplane chart
 crossplane:
+  # Replica count for the crossplane controller deployment
+  replicas: 2
   # Pod anti-affinity to spread crossplane replicas across nodes
   affinity:
     podAntiAffinity:

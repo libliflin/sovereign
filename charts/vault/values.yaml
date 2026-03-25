@@ -6,6 +6,9 @@ global:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
 
+# HA gate: replicaCount for vault server (production HA mode uses ha.replicas below)
+replicaCount: 3
+
 # ---------------------------------------------------------------------------
 # Vault operational mode
 # ---------------------------------------------------------------------------
