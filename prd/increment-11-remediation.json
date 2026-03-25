@@ -15,7 +15,7 @@
       "priority": 0,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "fix/gge-g5-andon",
@@ -30,5 +30,7 @@
         "notes": "Specific score 3: the story does not state that the fix is adding a pending increment entry to prd/manifest.json \u2014 a developer must read prd/gge.json to discover the indicator command and infer the required change. Adding one line like \"Add at least one increment with status: pending to prd/manifest.json\" would bring this to 5. Measurable score 4: the AC is binary (GGE G5 passes in orient) but the verification command lives in prd/gge.json rather than in the story itself; referencing the command inline would make it self-contained."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
