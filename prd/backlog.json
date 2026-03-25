@@ -320,7 +320,8 @@
       },
       "notes": "Re-opened: charts/vault/ used HashiCorp/BUSL-1.1. Must rebuild with openbao/openbao (Apache-2.0).",
       "epicId": "E3",
-      "themeId": "T2"
+      "themeId": "T2",
+      "readinessNote": "testPlan is generic ('helm lint, shellcheck, kubectl dry-run') \u2014 replace with specific commands: helm lint charts/openbao/; helm template charts/openbao/ | kubectl apply --dry-run=client -f -; helm template charts/openbao/ | grep PodDisruptionBudget; grep -q 'charts/openbao' argocd-apps/platform/vault-app.yaml. AC 'charts/openbao/ dev mode works out of box (openbao/openbao image)' is not independently verifiable by static analysis \u2014 replace with: 'helm template charts/openbao/ | grep image: | grep openbao/openbao exits 0'. AC 'charts/vault/ is REMOVED' should specify: 'test ! -d charts/vault/ && echo REMOVED'."
     },
     {
       "id": "010",
@@ -564,7 +565,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E5",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan is generic \u2014 replace with specific commands: helm lint charts/gitlab/; helm template charts/gitlab/ | kubectl apply --dry-run=client -f -; helm template charts/gitlab/ | grep PodDisruptionBudget; grep replicaCount charts/gitlab/values.yaml. AC 'uses Ceph object storage for artifacts/uploads/packages' needs a checkable form: 'helm template charts/gitlab/ | grep -i ceph exits 0'. AC 'Initial root password from Sealed Secret' should specify: 'helm template charts/gitlab/ | grep SealedSecret exits 0'."
     },
     {
       "id": "017",
@@ -596,7 +598,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E5",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan is generic \u2014 replace with: helm lint charts/harbor/; helm template charts/harbor/ | kubectl apply --dry-run=client -f -; helm template charts/harbor/ | grep PodDisruptionBudget; grep replicaCount charts/harbor/values.yaml. AC 'Keycloak OIDC auth configured' is not statically verifiable as running \u2014 replace with: 'helm template charts/harbor/ | grep -i keycloak exits 0 OR grep oidcEndpoint charts/harbor/values.yaml shows auth.{{ .Values.global.domain }}'."
     },
     {
       "id": "018",
@@ -629,7 +632,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan is generic \u2014 replace with specific commands: test -f vendor/VENDORS.yaml; grep -A3 'vault' vendor/VENDORS.yaml | grep 'license_allows_vendor: false'; bash vendor/audit.sh; shellcheck vendor/audit.sh. AC 'prd.json story 008 updated to use OpenBao' references prd.json (a legacy artifact replaced by backlog.json and sprint files) \u2014 this AC is unverifiable as stated; replace with: 'grep -i openbao backlog.json | grep -i 008 exits 0' or remove if the intent was only to update story 009 in the backlog."
     },
     {
       "id": "019",
@@ -661,7 +665,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan is generic \u2014 replace with: test -f vendor/DISTROLESS.md; grep -c '|' vendor/DISTROLESS.md; ls vendor/recipes/*/recipe.yaml | wc -l; grep -q 'distroless_base' vendor/recipes/cilium/recipe.yaml; grep -i 'DISTROLESS STANDARD' CLAUDE.md. AC 'CLAUDE.md updated with DISTROLESS STANDARD section' requires human approval before implementation \u2014 CLAUDE.md is the governance document and changes to it should be reviewed by the project owner before merging."
     },
     {
       "id": "020",
@@ -695,7 +700,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan is generic \u2014 replace with: shellcheck vendor/fetch.sh vendor/update-check.sh vendor/pin.sh; bash -n vendor/fetch.sh; vendor/fetch.sh --dry-run cilium (verify dry-run prints actions without API calls); test -f vendor/recipes/cilium/recipe.yaml; grep -q 'git_tag\\|tarball\\|git_commit' vendor/recipes/cilium/recipe.yaml. Description references 'story 014' for the GitLab instance but story 014 is a docs story \u2014 likely a copy error (should reference story 016 for the GitLab chart). ACs requiring live GitLab API calls (group/project creation, mirroring) cannot be verified statically: BLOCKER: requires live GitLab instance. Static verification limited to shellcheck + --dry-run output."
     },
     {
       "id": "021",
@@ -804,7 +810,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E7",
-      "themeId": "T2"
+      "themeId": "T2",
+      "readinessNote": "testPlan is generic \u2014 replace with: helm lint charts/istio/; helm template charts/istio/ | kubectl apply --dry-run=client -f -; helm template charts/istio/ | grep PodDisruptionBudget; helm template charts/istio/ | grep 'STRICT'; helm template charts/istio/ | grep -i kiali. AC 'Tracing integration points to Tempo' is not independently verifiable by static analysis \u2014 replace with: 'helm template charts/istio/ | grep -i tempo exits 0 OR grep tracingEndpoint charts/istio/values.yaml shows tempo service URL'."
     },
     {
       "id": "024",
@@ -835,7 +842,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E8",
-      "themeId": "T2"
+      "themeId": "T2",
+      "readinessNote": "testPlan is generic \u2014 replace with: for c in opa-gatekeeper trivy-operator falco; do helm lint charts/$c/; done; for c in opa-gatekeeper trivy-operator falco; do helm template charts/$c/ | grep PodDisruptionBudget || echo MISSING-PDB-$c; done; kubectl apply --dry-run=client -f argocd-apps/security/. AC 'charts/falco/ outputs JSON to stdout for Loki scraping' is not statically verifiable as runtime behavior \u2014 replace with: 'grep -i json charts/falco/values.yaml shows jsonOutput: true or equivalent Falco config key'."
     },
     {
       "id": "025",
@@ -870,7 +878,8 @@
       "epicId": "E9",
       "themeId": "T4",
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Sprint closed before implementation. Story is well-formed; pull into next observability sprint."
+      "returnedReason": "Sprint closed before implementation. Story is well-formed; pull into next observability sprint.",
+      "readinessNote": "testPlan is generic \u2014 replace with: helm lint charts/prometheus-stack/; helm template charts/prometheus-stack/ | grep PodDisruptionBudget; grep replicaCount charts/prometheus-stack/values.yaml; helm template charts/prometheus-stack/ | grep -i keycloak; kubectl apply --dry-run=client -f argocd-apps/observability/prometheus-stack-app.yaml. AC 'Keycloak OIDC auth for Grafana' should be: 'grep grafana.ini charts/prometheus-stack/values.yaml | grep -i generic_oauth exits 0'. AC 'Dashboard ConfigMaps for Node, K8s, GitLab, Ceph, Istio' needs: 'helm template charts/prometheus-stack/ | grep -c \"kind: ConfigMap\" shows >= 5'."
     },
     {
       "id": "026a",
@@ -907,7 +916,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement.",
+      "readinessNote": "depends on story 025 (Prometheus stack) which has passes: false \u2014 Grafana datasource ConfigMap in this chart is only meaningful once Prometheus/Grafana is deployed; implementation can proceed but cannot be validated end-to-end until 025 passes"
     },
     {
       "id": "026b",
@@ -944,7 +954,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement.",
+      "readinessNote": "depends on story 026a (Loki) which has passes: false \u2014 blocked"
     },
     {
       "id": "026c",
@@ -981,7 +992,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement.",
+      "readinessNote": "depends on story 026b (Thanos) which has passes: false \u2014 blocked"
     },
     {
       "id": "027",
@@ -1049,7 +1061,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E11",
-      "themeId": "T3"
+      "themeId": "T3",
+      "readinessNote": "testPlan is generic \u2014 replace with: helm lint charts/code-server/; helm template charts/code-server/ | kubectl apply --dry-run=client -f -; helm template charts/code-server/ | grep PodDisruptionBudget; grep replicaCount charts/code-server/values.yaml. AC 'kubeconfig mounted from cluster ServiceAccount' should specify: 'helm template charts/code-server/ | grep -A5 serviceAccountName exits 0'. AC 'Workspace PVC on ceph-filesystem' should specify: 'helm template charts/code-server/ | grep ceph-filesystem exits 0'. AC 'Pre-installed extensions listed in values.yaml' is verifiable: 'grep extensions charts/code-server/values.yaml shows >= 5 named extensions'."
     },
     {
       "id": "029",
@@ -1085,7 +1098,8 @@
       "epicId": "E12",
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
-      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass."
+      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass.",
+      "readinessNote": "testPlan is generic \u2014 replace with: helm lint charts/sonarqube/ charts/reportportal/; for c in sonarqube reportportal; do helm template charts/$c/ | grep PodDisruptionBudget || echo MISSING-PDB-$c; grep replicaCount charts/$c/values.yaml; done; grep ha_exception vendor/VENDORS.yaml; kubectl apply --dry-run=client -f argocd-apps/devex/. reviewNote from review-1 specifies the fix: add ha_exception: true for sonarqube in vendor/VENDORS.yaml and replicaCount: 1 with comment in charts/sonarqube/values.yaml. AC 'GitLab CI integration guide in docs/' should specify: 'test -f docs/sonarqube-gitlab-ci.md exits 0'."
     },
     {
       "id": "030",
@@ -1628,7 +1642,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "ACs 'A PR with a deliberate helm lint error fails the workflow', 'A PR with a shellcheck error fails the workflow', and 'Workflow completes in under 3 minutes on a cold runner' require live GitHub Actions runs and cannot be verified statically \u2014 BLOCKER: requires GitHub Actions run. Static verification subset: cat .github/workflows/ci.yaml | yq e '.' - exits 0; grep 'helm lint' .github/workflows/ci.yaml exits 0; grep 'shellcheck' .github/workflows/ci.yaml exits 0; grep 'pull_request' .github/workflows/ci.yaml exits 0. Update testPlan to state static checks first, then note live-test as a post-merge smoke test."
     },
     {
       "id": "039",
