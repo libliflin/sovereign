@@ -11,6 +11,7 @@
 Sovereign is a fully self-hosted, zero-trust Kubernetes platform deployable by any developer
 from a single `bootstrap.sh` invocation. The domain is a runtime variable — never hardcoded.
 Every service is installed by ArgoCD from this repository. Nothing is clicked into existence.
+Documentation is available at `docs/quickstart.md`, `docs/architecture.md`, and `docs/providers/`.
 
 ---
 

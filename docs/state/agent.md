@@ -115,6 +115,15 @@ flags. CI checks for both with grep. Missing either causes CI failure.
 `charts/<name>/templates/`. This is required for the chart to auto-register in Grafana.
 Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
 
+**Sprint goal and increment metadata must match**: the increment's `name`, `description`, and
+`themeGoal` fields must align with the `sprintGoal` text in the sprint file. Mismatches cause
+the SMART ceremony to flag stories as less relevant. Operators must align these fields during
+planning — the delivery machine does not enforce this automatically.
+
+**Documentation stories are first-class delivery**: a sprint that delivers only documentation is
+complete when the docs are the sprint goal. Quality gates for doc stories are `markdownlint`,
+`ls` to confirm files exist, and `grep` to verify required content (e.g. cost estimates).
+
 ---
 
 ## How to implement a story
@@ -154,15 +163,17 @@ You implement. Ceremonies verify. Don't conflate the two.
 
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
-8 (testing-and-ha)
+8 (testing-and-ha), 9 (sovereign-pm/docs)
 
-Increment active: none (advance will activate 9)
+Increment active: none — all planned increments delivered
 
-Increments pending: 9 (sovereign-pm)
+Increments pending: none
 
-Epics complete: E1–E10 (all through observability)
-Epics with partial delivery: E11 (developer portal) — code-server chart delivered, Backstage pending
-Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 (HA validation)
+Epics complete: E1–E10 (ceremonies through observability/tracing)
+Epics backlog: E11 (developer portal — code-server delivered, Backstage pending),
+  E12 (code quality — SonarQube, ReportPortal), E13 (testing infra — Selenium, k6, Chaos Mesh, MailHog),
+  E14 (sovereign-pm web app — documentation delivered, Node.js/React app not yet built),
+  E15 (HA validation — kind-based)
 
 ---
 
@@ -181,4 +192,4 @@ Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 
 
 ## Known model inconsistencies
 
-- `phase` field still present on story `031a` in `backlog.json` — retired vocabulary. Trivial inline fix: remove the field from the story object. No dedicated story needed.
+None. All previously flagged inconsistencies have been resolved.
