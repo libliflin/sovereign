@@ -2,8 +2,8 @@
   "increment": 9,
   "name": "sovereign-pm",
   "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
-  "sprintGoal": "Deliver complete documentation for the Sovereign Platform covering quickstart, architecture, and all provider guides, providing the human-readable foundation for onboarding.",
-  "capacity": 15,
+  "sprintGoal": "Deliver the documentation layer for the Sovereign Platform \u2014 quickstart guide, architecture reference, and all four provider guides \u2014 so any developer can get from zero to running cluster in 15 minutes.",
+  "capacity": 3,
   "stories": [
     {
       "id": "035",
@@ -19,24 +19,25 @@
         "README.md links to all docs",
         "All markdown lints clean (markdownlint)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "markdownlint docs/ README.md exits 0; verify each file listed in ACs exists with ls -la; grep -i 'cost' docs/providers/*.md to confirm cost estimates are present.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
         "specific": 4,
         "measurable": 4,
         "achievable": 3,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: provider guide content ('step-by-step instructions') does not specify which CLI commands or sections are required \u2014 a developer could interpret scope differently across providers. Measurable score 4: 'explains all phases' and 'step-by-step instructions' in ACs are not binary shell-verifiable without explicit grep patterns; testPlan covers existence and markdownlint but not content depth. Achievable score 3: story requires creating/updating 7 documents (quickstart.md, architecture.md, 4 provider docs, README.md) in a single iteration \u2014 at the top of the story-point budget. Consider splitting the 4 provider docs into a separate story if iteration runs long."
+        "relevant": 3,
+        "timeBound": 4,
+        "notes": "Specific 4: All target files are named but content expectations are loosely defined (e.g. 'covers prerequisites' is not a binary-checkable command without subjective reading). Measurable 4: AC 1 ('covers: prerequisites, clone repo...') requires subjective judgement on completeness; markdownlint and grep checks are solid but cannot verify adequacy of step-by-step content. Achievable 3: 7 documentation files including 4 distinct provider guides (each requiring cost estimates and step-by-step instructions) is near the top of a single Ralph iteration budget \u2014 borderline for 2 points. Relevant 3: Story matches the sprintGoal text but conflicts with the increment's declared theme ('sovereign-pm' web app, Node.js/React). Documentation could be deferred without blocking any implementation work; the mismatch between increment metadata and sprintGoal should be resolved. TimeBound 4: Description mentions 'badges' and 'contribution guide' for README.md that are absent from the acceptance criteria, creating minor scope creep risk."
       },
       "epicId": "E14",
-      "themeId": "T3",
-      "phase": 9
+      "themeId": "T3"
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

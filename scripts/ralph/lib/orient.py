@@ -7,6 +7,11 @@ the machine does next and why.
 
 No AI. No options presented. One state, one action, one reason.
 
+OODA loop: Observe (read sprint files, GGEs, agent state) →
+           Orient (KPIs + Shi + Niti) →
+           Decide (single NextAction) →
+           Act (ceremonies execute it)
+
 Check order (first failing KPI wins):
   1. GGEs (golden goose eggs) — unhealthy egg → Andon priority-0 story
   2. GGE count (3-5 required) → theme-review if out of range
@@ -15,11 +20,17 @@ Check order (first failing KPI wins):
   5. Sprint active → resume
   6. Epic coverage → epic-breakdown
   7. Backlog depth → backlog-groom or plan
+
+Field reading (always computed, informs but does not block):
+  Shi (勢)  — propensity: per-theme flow rate from completed sprint files
+  Niti (नीति) — right questions: sprint alignment, stuck stories, next increment fit
+  Agent state — synthesized context from last sync (docs/state/agent.md)
 """
 from __future__ import annotations
 
 import json
 import subprocess
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -86,6 +97,9 @@ class Assessment:
     kpis: list[KPI] = field(default_factory=list)
     blocked_reason: str = ""
     resume_step: Optional[str] = None  # for SPRINT_ACTIVE: which step to resume at
+    shi: list[dict] = field(default_factory=list)       # propensity per theme
+    niti: list[str] = field(default_factory=list)       # right questions
+    agent_context: str = ""                             # from docs/state/agent.md
 
     def start_at(self) -> str:
         """Return the --start-at value ceremonies.py should use."""
@@ -110,6 +124,44 @@ class Assessment:
             flag = {"OK": "✓", "WARN": "▲", "FAIL": "✗"}[kpi.status]
             print(f"  {flag}  {kpi.name:<22} {kpi.value:<14} {kpi.detail}")
         print()
+
+        # ── Field reading ────────────────────────────────────────────────────
+        if self.shi:
+            print(f"  {thin}")
+            print("  Shi (勢) — propensity")
+            icon = {"flowing": "⟶", "neutral": "〜", "blocked": "✗"}
+            for s in self.shi:
+                print(f"    {icon.get(s['momentum'], '?')}  {s['themeId']:<6} {s['themeName'][:28]:<30} {s['detail']}")
+            print()
+
+        if self.niti:
+            print(f"  {thin}")
+            print("  Niti (नीति) — right questions")
+            for q in self.niti:
+                # Wrap long lines
+                words = q.split()
+                line, lines = "", []
+                for w in words:
+                    if len(line) + len(w) + 1 > 58:
+                        lines.append(line)
+                        line = w
+                    else:
+                        line = (line + " " + w).strip()
+                if line:
+                    lines.append(line)
+                print(f"    ?  {lines[0]}")
+                for extra in lines[1:]:
+                    print(f"       {extra}")
+            print()
+
+        if self.agent_context:
+            print(f"  {thin}")
+            print("  Prior synthesis (last sync)")
+            for line in self.agent_context.splitlines()[:6]:
+                if line.strip():
+                    print(f"    {line.strip()[:62]}")
+            print()
+
         print(f"  {thin}")
         print(f"  State   : {self.state.value}")
         if self.is_blocked():
@@ -130,6 +182,34 @@ def _load_json(path: Path) -> dict | list | None:
         return None
     with open(path) as f:
         return json.load(f)
+
+
+def _compute_velocity(repo_root: Path, increments: list[dict]) -> list[dict]:
+    """
+    Derive velocity from completed sprint files — the source of truth.
+    No historical data is stored in the manifest; this function reads it
+    fresh each run from the sprint files themselves.
+    """
+    velocity = []
+    for inc in increments:
+        if inc.get("status") != "complete":
+            continue
+        sprint_file = repo_root / inc.get("file", "")
+        sprint = _load_json(sprint_file) if sprint_file.exists() else None
+        if not sprint:
+            continue
+        stories = sprint.get("stories", [])
+        accepted = [s for s in stories if s.get("passes", False) and s.get("reviewed", False)]
+        pts = sum(s.get("points", 0) for s in accepted)
+        total = len(stories)
+        rate = (len(accepted) / total * 100) if total > 0 else 0.0
+        velocity.append({
+            "increment": inc["id"],
+            "pointsCompleted": pts,
+            "storiesAccepted": len(accepted),
+            "reviewPassRate": rate,
+        })
+    return velocity
 
 
 def _check_gge_indicator(repo_root: Path, indicator: dict, all_stories: list[dict]) -> bool:
@@ -202,6 +282,187 @@ def _retro_patch_ages(repo_root: Path, velocity: list[dict]) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
+# Shi (勢) — propensity / momentum
+# ---------------------------------------------------------------------------
+def _compute_shi(
+    repo_root: Path,
+    increments: list[dict],
+    themes: list[dict],
+    epics: list[dict],
+    all_stories: list[dict],
+) -> list[dict]:
+    """
+    Measure the natural propensity of each theme by reading completed sprint
+    files. Flow rate = accepted_points / total_points_attempted. This is not
+    a judgment — it is a reading of the configuration of forces. Work with
+    the grain, not against it.
+    """
+    theme_names = {t["id"]: t.get("title", t.get("name", t["id"])) for t in themes}
+    epic_theme = {e["id"]: e.get("themeId", "") for e in epics}
+    story_theme = {s["id"]: s.get("themeId") or epic_theme.get(s.get("epicId", ""), "") for s in all_stories}
+
+    accepted: defaultdict[str, int] = defaultdict(int)
+    returned: defaultdict[str, int] = defaultdict(int)
+    total: defaultdict[str, int] = defaultdict(int)
+
+    for inc in increments:
+        if inc.get("status") != "complete":
+            continue
+        sprint_file = repo_root / inc.get("file", "")
+        sprint = _load_json(sprint_file) if sprint_file.exists() else None
+        if not sprint:
+            continue
+        for s in sprint.get("stories", []):
+            tid = s.get("themeId") or epic_theme.get(s.get("epicId", ""), "") or story_theme.get(s["id"], "")
+            if not tid:
+                continue
+            pts = s.get("points", 1)
+            total[tid] += pts
+            if s.get("passes", False) and s.get("reviewed", False):
+                accepted[tid] += pts
+            elif s.get("returnedToBacklog", False):
+                returned[tid] += pts
+
+    results = []
+    for tid in set(list(accepted.keys()) + list(returned.keys()) + list(total.keys())):
+        t = total[tid]
+        if t == 0:
+            continue
+        a, r = accepted[tid], returned[tid]
+        flow = a / t
+        momentum = "flowing" if flow >= 0.70 else ("neutral" if flow >= 0.40 else "blocked")
+        results.append({
+            "themeId": tid,
+            "themeName": theme_names.get(tid, tid),
+            "momentum": momentum,
+            "flowRate": flow,
+            "acceptedPts": a,
+            "returnedPts": r,
+            "detail": f"{flow*100:.0f}% flow — {a}pts accepted, {r}pts returned",
+        })
+
+    order = {"blocked": 0, "neutral": 1, "flowing": 2}
+    results.sort(key=lambda x: order[x["momentum"]])
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Niti (नीति) — right questions / prudent conduct
+# ---------------------------------------------------------------------------
+def _check_niti(
+    manifest: dict,
+    themes: list[dict],
+    epics: list[dict],
+    all_stories: list[dict],
+    shi: list[dict],
+    active_sprint: Optional[dict],
+) -> list[str]:
+    """
+    Niti does not prescribe. It surfaces the questions worth asking before
+    committing to a course of action. Is this the right work? Is the framing
+    correct? Are we solving the actual problem?
+    """
+    questions: list[str] = []
+    epic_map = {e["id"]: e for e in epics}
+    theme_map = {t["id"]: t for t in themes}
+
+    # Q1: Sprint-to-increment alignment
+    current_inc_id = manifest.get("currentIncrement")
+    increments = manifest.get("increments", [])
+    current_inc = next((i for i in increments if str(i["id"]) == str(current_inc_id)), None)
+    if current_inc and active_sprint:
+        sprint_stories = active_sprint.get("stories", [])
+        sprint_themes = {
+            s.get("themeId") or epic_map.get(s.get("epicId", ""), {}).get("themeId", "")
+            for s in sprint_stories
+        } - {""}
+        goal = current_inc.get("themeGoal", "")
+        if sprint_themes and goal:
+            theme_names = [theme_map.get(tid, {}).get("title", tid) for tid in sorted(sprint_themes)]
+            questions.append(
+                f"Sprint themes ({', '.join(theme_names)}) — increment goal: \"{goal[:55]}\". Aligned?"
+            )
+
+    # Q2: Blocked themes — is the friction understood?
+    for b in [s for s in shi if s["momentum"] == "blocked"]:
+        questions.append(
+            f"Theme {b['themeId']} is blocked ({b['detail']}). Root cause understood?"
+        )
+
+    # Q3: Stories stuck across multiple attempts — is the problem correctly framed?
+    stuck = [s for s in all_stories if s.get("attempts", 0) >= 3 and not s.get("passes", False)]
+    for s in stuck[:3]:
+        epic_title = epic_map.get(s.get("epicId", ""), {}).get("title", "")
+        questions.append(
+            f"Story {s['id']} ({s.get('title','')[:35]}) has {s['attempts']} failed attempts "
+            f"— is the problem correctly framed, or does the epic need redefining?"
+        )
+
+    # Q4: Next pending increment — does it head toward flowing or blocked themes?
+    next_pending = next((i for i in increments if i.get("status") == "pending"), None)
+    if next_pending:
+        flowing = {s["themeId"] for s in shi if s["momentum"] == "flowing"}
+        blocked = {s["themeId"] for s in shi if s["momentum"] == "blocked"}
+        goal = next_pending.get("themeGoal", "")
+        if goal:
+            questions.append(
+                f"Next increment \"{next_pending.get('name', next_pending['id'])}\": "
+                f"\"{goal[:50]}\" — "
+                + (f"flowing themes available: {', '.join(sorted(flowing))}." if flowing else "no flowing themes yet.")
+            )
+
+    # Q5: Are we building in the right order? (dependency check across themes)
+    # If a blocked theme is a dependency of a flowing theme's stories, flag it
+    theme_dep_issues = []
+    for s in all_stories:
+        if s.get("passes", False):
+            continue
+        for dep_id in s.get("dependencies", []):
+            dep = next((x for x in all_stories if x["id"] == dep_id), None)
+            if dep and not dep.get("passes", False):
+                dep_tid = dep.get("themeId", "")
+                s_tid = s.get("themeId", "")
+                if dep_tid != s_tid:
+                    dep_shi = next((x for x in shi if x["themeId"] == dep_tid), None)
+                    if dep_shi and dep_shi["momentum"] == "blocked":
+                        theme_dep_issues.append(
+                            f"Story {s['id']} (theme {s_tid}) blocked by {dep_id} (theme {dep_tid}, {dep_shi['momentum']})"
+                        )
+    for issue in theme_dep_issues[:2]:
+        questions.append(issue)
+
+    return questions if questions else ["No alignment concerns detected."]
+
+
+# ---------------------------------------------------------------------------
+# Agent state — synthesized context from last sync
+# ---------------------------------------------------------------------------
+def _read_agent_state(repo_root: Path) -> str:
+    """
+    Read docs/state/agent.md — written by the sync ceremony after each sprint.
+    This closes the OODA loop: the machine's synthesized understanding of where
+    it is feeds directly into the next orientation.
+    """
+    agent_md = repo_root / "docs" / "state" / "agent.md"
+    if not agent_md.exists():
+        return ""
+    text = agent_md.read_text()
+    lines = text.splitlines()
+    # Extract the first substantive section (skip title/blank lines)
+    summary: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("# "):
+            if summary:
+                break  # end of first section
+            continue
+        summary.append(stripped)
+        if len(summary) >= 8:
+            break
+    return "\n".join(summary)
+
+
+# ---------------------------------------------------------------------------
 # Core assessment function
 # ---------------------------------------------------------------------------
 def assess(repo_root: Path) -> Assessment:
@@ -219,6 +480,13 @@ def assess(repo_root: Path) -> Assessment:
     phases = manifest.get("increments", [])
     velocity = _compute_velocity(repo_root, phases)
 
+    # ── OODA: Observe — gather all field readings before any KPI logic ───────
+    velocity = _compute_velocity(repo_root, phases)
+    active_sprint_data = _load_json(repo_root / active_sprint_file) if active_sprint_file else None
+    shi = _compute_shi(repo_root, phases, themes, epics, all_stories)
+    niti = _check_niti(manifest, themes, epics, all_stories, shi, active_sprint_data)
+    agent_context = _read_agent_state(repo_root)
+
     kpis: list[KPI] = []
     gge_data = _load_json(prd / "gge.json") or {}
     eggs = gge_data.get("eggs", [])
@@ -231,6 +499,9 @@ def assess(repo_root: Path) -> Assessment:
             action=NextAction.THEME_REVIEW,
             reason="Platform has no themes yet. Run theme-review to establish strategic direction.",
             kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     # ── KPI 2: Golden Goose Eggs ────────────────────────────────────────────
@@ -251,6 +522,9 @@ def assess(repo_root: Path) -> Assessment:
                 "Run theme-review to define or trim the eggs."
             ),
             kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     # GGE health: check each egg's indicator
@@ -326,6 +600,9 @@ def assess(repo_root: Path) -> Assessment:
                 "These unblock the delivery system itself."
             ),
             kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     # ── KPI 4: Retro debt ───────────────────────────────────────────────────
@@ -345,6 +622,9 @@ def assess(repo_root: Path) -> Assessment:
                 f"{len(old_patches)} retro patch(es) unresolved for > {RETRO_DEBT_MAX_SPRINTS} sprints. "
                 "Apply or explicitly dismiss them in CLAUDE.md before continuing."
             ),
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     # ── KPI 5: Sprint active? ───────────────────────────────────────────────
@@ -380,6 +660,9 @@ def assess(repo_root: Path) -> Assessment:
                 ),
                 kpis=kpis,
                 resume_step=resume,
+                shi=shi,
+                niti=niti,
+                agent_context=agent_context,
             )
         elif stories:
             # Sprint file exists and has stories, but all are reviewed or returnedToBacklog.
@@ -423,6 +706,9 @@ def assess(repo_root: Path) -> Assessment:
                 "Run epic-breakdown to generate sprint-sized stories."
             ),
             kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     # ── KPI 7: Backlog depth ────────────────────────────────────────────────
@@ -499,6 +785,9 @@ def assess(repo_root: Path) -> Assessment:
                 "Run backlog-groom to score and refine stories before planning."
             ),
             kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     # Check if all phases are complete
@@ -510,6 +799,9 @@ def assess(repo_root: Path) -> Assessment:
             action=NextAction.DONE,
             reason="All phases complete. Platform delivered.",
             kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
         )
 
     return Assessment(
@@ -520,4 +812,7 @@ def assess(repo_root: Path) -> Assessment:
             f"({depth:.1f} sprints deep). Ready to plan next sprint."
         ),
         kpis=kpis,
+        shi=shi,
+        niti=niti,
+        agent_context=agent_context,
     )
