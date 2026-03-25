@@ -152,15 +152,7 @@
       "file": "prd/increment-11-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": [],
-      "startDate": "2026-03-25T00:00:00+00:00",
-      "endDate": "2026-03-25T00:00:00+00:00",
-      "pointsTotal": 2,
-      "storiesTotal": 1,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "dependsOn": []
     },
     {
       "id": 12,
