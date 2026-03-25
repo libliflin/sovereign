@@ -1843,6 +1843,231 @@
       "returnedReason": "Systemic fix: under-loaded sprint (1 story, 3 pts vs 15-pt capacity) meant a single failure wiped 100% of sprint delivery.",
       "branchName": "feature/process-improvements",
       "readinessNote": "Missing testPlan field \u2014 no commands specified to verify ACs. Add: grep -E '0\\.75|75%|capacity' scripts/ralph/ceremonies/plan.py exits 0; grep 'Sprint planning must fill' docs/state/agent.md exits 0."
+    },
+    {
+      "id": "046",
+      "title": "Kaizen: Add global.domain parameterization to 14 ArgoCD app manifests",
+      "epicId": "E5",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-app-domain-parameterization",
+      "priority": 11,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "All ArgoCD Application manifests in argocd-apps/ pass global.domain as a Helm value override via spec.source.helm.valuesObject or spec.source.helm.parameters",
+        "grep -rL 'global.domain' argocd-apps/**/*.yaml returns only root-app.yaml (which does not deploy a Helm chart)",
+        "yq e '.' argocd-apps/**/*.yaml exits 0 (all YAML valid)",
+        "All apps still have spec.revisionHistoryLimit: 3"
+      ],
+      "testPlan": "grep -rL 'global.domain' argocd-apps/**/*.yaml | grep -v root-app.yaml | wc -l  # must be 0; yq e '.' argocd-apps/**/*.yaml; grep -rn 'revisionHistoryLimit' argocd-apps/**/*.yaml | grep -v '3$' | wc -l  # must be 0",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "047",
+      "title": "Kaizen: Upstream chart version audit \u2014 update all pinned versions to current stable",
+      "epicId": "E6",
+      "themeId": "T1",
+      "branchName": "kaizen/upstream-chart-version-audit",
+      "priority": 12,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "vendor/update-check.sh runs without error and outputs a report comparing current pinned versions to upstream latest",
+        "All Chart.yaml dependency versions are updated to the current stable release as of the implementation date",
+        "helm dependency update && helm lint passes on all updated charts",
+        "HA gate passes on all updated charts (PDB, podAntiAffinity, replicaCount >= 2)",
+        "A version-audit.md is written to docs/operations/ recording the before/after versions and the date of update"
+      ],
+      "testPlan": "vendor/update-check.sh; for chart in charts/*/; do helm dependency update $chart && helm lint $chart; done; grep -r 'version:' charts/*/Chart.yaml | grep -v '0.1.0'",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "048",
+      "title": "Kaizen: Backlog hygiene \u2014 reconcile passes: false stories implemented via sprint files",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/backlog-hygiene",
+      "priority": 14,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "Every story in backlog.json with passes: false is reviewed against sprint file history",
+        "Stories whose work was delivered via a different sprint story ID are marked passes: true with a reviewNotes entry explaining which sprint story superseded them",
+        "Stories that are genuinely unimplemented remain passes: false",
+        "The count of passes: false stories in backlog.json drops by at least 10 (reflecting superseded stories)",
+        "A comment block is added to backlog.json explaining the backlog/sprint-file relationship"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); pending=[s for s in b['stories'] if not s.get('passes',False)]; print(f'{len(pending)} pending stories'); assert len(pending) < 31, 'Expected at least 10 stories reconciled'\"",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "049",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/backstage-catalog-info",
+      "title": "Add catalog-info.yaml to all platform charts for Backstage auto-discovery",
+      "description": "Backstage discovers platform services via catalog-info.yaml files in each chart directory. Every chart under charts/ must have a valid catalog-info.yaml so Backstage can build a complete service catalog without manual registration.",
+      "acceptanceCriteria": [
+        "Every directory under charts/ contains a catalog-info.yaml with apiVersion: backstage.io/v1alpha1",
+        "Each catalog-info.yaml defines kind: Component with spec.type, spec.lifecycle: production, spec.owner: sovereign-platform",
+        "yq e '.' charts/*/catalog-info.yaml exits 0 (all YAML is valid)",
+        "charts/backstage/templates/configmap.yaml app-config includes a GitLab discovery location pointing to charts/*/catalog-info.yaml",
+        "helm lint charts/backstage/ exits 0 after the configmap change",
+        "At least 10 charts have catalog-info.yaml (cilium, cert-manager, argocd, keycloak, gitlab, harbor, prometheus-stack, loki, backstage, code-server)"
+      ],
+      "testPlan": "for d in charts/*/; do test -f \"$d/catalog-info.yaml\" || (echo MISSING: $d; exit 1); done && yq e '.' charts/*/catalog-info.yaml > /dev/null && helm lint charts/backstage/",
+      "dependencies": [
+        "027"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "050",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": "2i",
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/bootstrap-cost-gate",
+      "title": "Bootstrap cost gate: enforce 3-node minimum and display cost in all provider scripts",
+      "description": "All provider scripts must refuse to proceed with fewer than 3 nodes or an even node count (required for etcd and Ceph quorum). Scripts must also print the estimated 3-node monthly cost before provisioning, giving operators a cost checkpoint.",
+      "acceptanceCriteria": [
+        "bash -n bootstrap/providers/hetzner.sh exits 0 (no syntax errors)",
+        "bash bootstrap/providers/hetzner.sh --dry-run --nodes 2 exits non-zero and prints 'nodes.count must be odd and >= 3'",
+        "bash bootstrap/providers/hetzner.sh --dry-run --nodes 4 exits non-zero and prints even-number error",
+        "bash bootstrap/providers/hetzner.sh --dry-run --nodes 3 prints an estimated 3-node monthly cost in USD before any provisioning",
+        "Same validation logic is present in bootstrap/providers/generic-vps.sh and bootstrap/providers/aws-ec2.sh",
+        "shellcheck bootstrap/providers/hetzner.sh bootstrap/providers/generic-vps.sh bootstrap/providers/aws-ec2.sh exits 0"
+      ],
+      "testPlan": "bash -n bootstrap/providers/hetzner.sh && shellcheck bootstrap/providers/hetzner.sh && bash bootstrap/providers/hetzner.sh --dry-run --nodes 2; echo exit=$?",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "051",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": "2i",
+      "priority": 2,
+      "points": 3,
+      "branchName": "feature/pdb-chaos-kind",
+      "title": "PDB chaos validation: verify PodDisruptionBudgets block unsafe node drains in kind",
+      "description": "Prove that PodDisruptionBudgets actually prevent service disruption during maintenance. Script deploys a test workload with replicaCount: 2 and PDB minAvailable: 1 into kind, then attempts kubectl drain \u2014 the drain must be blocked when it would violate the PDB.",
+      "acceptanceCriteria": [
+        "kind/chaos-drain.sh exists, is executable, and shellcheck passes",
+        "Script creates (or reuses) a multi-node kind cluster named sovereign-chaos",
+        "Script deploys a test Deployment with replicaCount: 2 and a PDB with minAvailable: 1",
+        "kubectl drain on the node hosting both pods is blocked by the PDB (exit non-zero from drain attempt)",
+        "Script exits 0 when PDB correctly prevents the unsafe drain, exits 1 if drain succeeded (PDB not working)",
+        "kind/chaos-drain.sh --teardown removes the sovereign-chaos cluster",
+        "shellcheck kind/chaos-drain.sh exits 0"
+      ],
+      "testPlan": "shellcheck kind/chaos-drain.sh && kind/chaos-drain.sh && kind/chaos-drain.sh --teardown",
+      "dependencies": [
+        "039"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "052",
+      "epicId": "E12",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/sonarqube-gitlab-ci-integration",
+      "title": "SonarQube GitLab CI integration: scanner config and quality gate template",
+      "description": "SonarQube is only valuable if every project scans automatically on push. Add a reusable GitLab CI template that projects can include to run SonarScanner, and provide a reference sonar-project.properties for the sovereign-pm project.",
+      "acceptanceCriteria": [
+        "vendor/gitlab-ci-template.yml includes a sonarqube-scan job that runs SonarScanner CLI",
+        "sovereign-pm/sonar-project.properties exists with projectKey, sources, and exclusions configured",
+        "docs/sonarqube-integration.md explains how to wire a GitLab project to SonarQube (3 steps: add token, include template, set SONAR_HOST_URL)",
+        "helm lint charts/sonarqube/ exits 0",
+        "The SonarQube chart values.yaml includes a sonarProperties.sonar.forceAuthentication: true setting",
+        "yq e '.' vendor/gitlab-ci-template.yml exits 0 (valid YAML)"
+      ],
+      "testPlan": "helm lint charts/sonarqube/ && yq e '.' vendor/gitlab-ci-template.yml && test -f sovereign-pm/sonar-project.properties",
+      "dependencies": [
+        "029"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
     }
   ]
 }

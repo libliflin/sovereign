@@ -114,7 +114,11 @@
       "description": "Backstage service catalog auto-discovering all platform services. code-server as the primary browser-based IDE for agents and developers.",
       "targetIncrement": 7,
       "status": "backlog",
-      "storyIds": []
+      "storyIds": [
+        "027",
+        "028",
+        "049"
+      ]
     },
     {
       "id": "E12",
@@ -123,7 +127,11 @@
       "description": "SonarQube for static analysis history. ReportPortal for test result aggregation across all projects.",
       "targetIncrement": 7,
       "status": "backlog",
-      "storyIds": []
+      "storyIds": [
+        "029",
+        "041r",
+        "052"
+      ]
     },
     {
       "id": "E13",
@@ -149,7 +157,12 @@
       "description": "The web app that replaces this file-based PM system. Theme/Epic/Story UI, prd.json generation, Ralph trigger, agent run history.",
       "targetIncrement": 9,
       "status": "backlog",
-      "storyIds": []
+      "storyIds": [
+        "032",
+        "033",
+        "034",
+        "035"
+      ]
     },
     {
       "id": "E15",
@@ -158,7 +171,12 @@
       "description": "kind cluster setup, chart smoke tests in kind, cost gate on bootstrap scripts, PDB chaos validation.",
       "targetIncrement": "2i",
       "status": "backlog",
-      "storyIds": []
+      "storyIds": [
+        "038",
+        "039",
+        "050",
+        "051"
+      ]
     }
   ]
 }
