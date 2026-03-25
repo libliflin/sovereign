@@ -90,7 +90,7 @@
         "argocd-apps/devex/sovereign-pm-app.yaml exists",
         "helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f - exits 0"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint charts/sovereign-pm/ exits 0; helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f - exits 0; helm template charts/sovereign-pm/ | grep -i keycloak exits 0; helm template charts/sovereign-pm/ | grep PodDisruptionBudget exits 0; ls argocd-apps/devex/sovereign-pm-app.yaml exists; docker build sovereign-pm/ exits 0 (or docker build --no-cache if first run).",
       "dependencies": [
@@ -99,7 +99,7 @@
       ],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 4,
         "measurable": 5,

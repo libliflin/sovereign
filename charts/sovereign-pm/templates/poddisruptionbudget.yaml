@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sovereign-pm.fullname" . }}
+  namespace: sovereign-pm
+  labels:
+    app.kubernetes.io/name: sovereign-pm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sovereign-pm
+      app.kubernetes.io/instance: {{ .Release.Name }}
