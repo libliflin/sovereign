@@ -360,6 +360,27 @@ def assess(repo_root: Path) -> Assessment:
                 kpis=kpis,
                 resume_step=resume,
             )
+        elif stories:
+            # Sprint file exists and has stories, but all are reviewed or returnedToBacklog.
+            # The sprint is done — route to retro so it can be officially closed and advanced.
+            accepted = [s for s in stories if s.get("passes", False) and s.get("reviewed", False)]
+            returned = [s for s in stories if s.get("returnedToBacklog", False)]
+            kpis.append(KPI(
+                "Sprint active",
+                "ready to close",
+                "OK",
+                f"{len(accepted)} accepted, {len(returned)} returned to backlog"
+            ))
+            return Assessment(
+                state=PlatformState.SPRINT_ACTIVE,
+                action=NextAction.RESUME_SPRINT,
+                reason=(
+                    f"Sprint '{active_sprint_file}' is complete: {len(accepted)} accepted, "
+                    f"{len(returned)} returned to backlog. Running retro to close the sprint."
+                ),
+                kpis=kpis,
+                resume_step="retro",
+            )
 
     # ── KPI 6: Epic coverage ────────────────────────────────────────────────
     story_epic_ids = {s.get("epicId") for s in all_stories if s.get("epicId")}

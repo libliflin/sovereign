@@ -1033,11 +1033,11 @@
         "helm lint passes",
         "argocd-apps/devex/code-server-app.yaml exists"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {

@@ -2,7 +2,7 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/increment-9-sovereign-pm.json",
+  "activeSprint": "prd/increment-8-testing-and-ha.json",
   "velocity": [
     {
       "pointsCompleted": 7,
@@ -52,20 +52,6 @@
       "storiesAccepted": 1,
       "reviewPassRate": 0.0,
       "date": "2026-03-24T22:30:00+00:00"
-    },
-    {
-      "increment": 8,
-      "pointsCompleted": 0,
-      "storiesAccepted": 0,
-      "reviewPassRate": 0.0,
-      "date": "2026-03-24T23:00:00+00:00"
-    },
-    {
-      "increment": 9,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-24T00:00:00+00:00"
     }
   ],
   "sprintHistory": [
@@ -163,26 +149,6 @@
       "storiesAccepted": 1,
       "storiesIncomplete": 1,
       "reviewPassRate": 0.0
-    },
-    {
-      "increment": 8,
-      "name": "testing-and-ha",
-      "endDate": "2026-03-24T23:00:00+00:00",
-      "pointsCompleted": 0,
-      "storiesTotal": 1,
-      "storiesAccepted": 0,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
-    },
-    {
-      "increment": 9,
-      "name": "sovereign-pm",
-      "endDate": "2026-03-24T00:00:00+00:00",
-      "pointsCompleted": 2,
-      "storiesTotal": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
     }
   ],
   "increments": [
@@ -371,43 +337,30 @@
       "name": "testing-and-ha",
       "description": "Selenium Grid, k6, MailHog, Chaos Mesh, HA pass across all charts, GitLab CI vendor builds.",
       "file": "prd/increment-8-testing-and-ha.json",
-      "status": "complete",
+      "status": "active",
       "dependsOn": [
         5,
         6
       ],
       "themeGoal": "Production hardening: Selenium Grid, k6, MailHog, Chaos Mesh, HA validation",
-      "startDate": "2026-03-24T22:45:00+00:00",
-      "endDate": "2026-03-25T01:49:42.891219+00:00",
+      "startDate": "2026-03-24T23:00:00+00:00",
       "pointsTotal": 3,
-      "storiesTotal": 1,
-      "pointsCompleted": 0,
-      "storiesAccepted": 0,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      "storiesTotal": 1
     },
     {
       "id": 9,
       "name": "sovereign-pm",
       "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
       "file": "prd/increment-9-sovereign-pm.json",
-      "status": "complete",
+      "status": "pending",
       "dependsOn": [
         3,
         4,
         6,
         7
       ],
-      "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product",
-      "startDate": "2026-03-24T00:00:00Z",
-      "pointsTotal": 2,
-      "storiesTotal": 1,
-      "endDate": "2026-03-25T02:20:52.457058+00:00",
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product"
     }
   ],
-  "currentIncrement": 9
+  "currentIncrement": 8
 }

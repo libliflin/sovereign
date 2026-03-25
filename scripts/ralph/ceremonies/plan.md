@@ -169,18 +169,44 @@ with open('prd/backlog.json', 'w') as f:
 
 ### Step 8 — Update manifest.json
 
-Update `prd/manifest.json`:
-- Set the increment entry for `NEXT_INCREMENT.id`:
-  - `status` → `"active"`
-  - `startDate` → current UTC timestamp (if not already set)
-  - `pointsTotal` → total points of selected stories
-  - `storiesTotal` → count of selected stories
-- Set `activeSprint` → `NEXT_INCREMENT.file`
-- Set `currentIncrement` → `NEXT_INCREMENT.id`
+Update `prd/manifest.json` with exactly these fields — **nothing else**:
+
+```python
+import json, datetime
+
+with open("prd/manifest.json") as f:
+    m = json.load(f)
+
+# Find the increment entry
+for inc in m["increments"]:
+    if str(inc["id"]) == str(NEXT_INCREMENT_ID):
+        inc["status"] = "active"
+        if not inc.get("startDate"):
+            inc["startDate"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        inc["pointsTotal"] = TOTAL_POINTS
+        inc["storiesTotal"] = TOTAL_STORIES
+        break
+
+m["activeSprint"] = NEXT_INCREMENT_FILE
+m["currentIncrement"] = NEXT_INCREMENT_ID
+
+with open("prd/manifest.json", "w") as f:
+    json.dump(m, f, indent=2)
+```
+
+> **HARD CONSTRAINTS — never violate:**
+> - **NEVER set `status: "complete"`** on any increment. Only the **advance ceremony** closes sprints.
+> - **NEVER write to `velocity[]`** — only the advance ceremony adds velocity entries.
+> - **NEVER write to `sprintHistory[]`** — only the advance ceremony adds history entries.
+> - **NEVER set `endDate`, `pointsCompleted`, `storiesAccepted`, `reviewPassRate`** — retro/advance only.
+> - **NEVER plan more than one increment** — write one sprint file and one manifest update, then stop.
+>
+> The plan ceremony creates a sprint. The retro ceremony closes it. The advance ceremony moves the
+> pointer. These are three separate ceremonies and their responsibilities must never be mixed.
 
 **Always update the manifest.** The sprint file just written is not referenced by anything until
 `activeSprint` and `currentIncrement` are set. A sprint file without a manifest pointer is invisible
-to all ceremonies. The manifest update IS the plan's final step.
+to all ceremonies. The manifest update IS the plan's final step — then stop.
 
 ### Step 9 — Print sprint planning summary
 
