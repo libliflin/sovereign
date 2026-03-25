@@ -1421,7 +1421,7 @@
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "testPlan references wrong quality gates (helm lint, kubectl dry-run) for a Node.js backend. Should specify: npm run typecheck && npm run lint && npm test. AC #3 'All CRUD endpoints implemented' is not independently verifiable \u2014 needs 'npm test exits 0 with route-level test coverage for all endpoints listed in openapi.yaml'."
+      "readinessNote": "testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) for a Node.js backend \u2014 should specify: npm run typecheck && npm run lint && npm test. AC \"All CRUD endpoints implemented\" is not independently verifiable \u2014 needs \"npm test exits 0 with route-level test coverage for all endpoints listed in openapi.yaml\". AC \"POST /api/ralph/trigger creates a K8s Job\" requires a live cluster \u2014 mark as blocker: requires_live_cluster."
     },
     {
       "id": "033",
@@ -1455,7 +1455,7 @@
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "ACs #3 ('Keycloak login flow works'), #4 ('PRD Generator shows formatted prd.json with copy button'), and #5 ('Agent Runs page shows story pass/fail history') require a running application and cannot be verified statically. Replace with file/component existence checks: 'src/client/pages/PrdGenerator.tsx exists with a copy-to-clipboard handler', 'src/client/pages/AgentRuns.tsx exists with pass/fail rendering logic'. testPlan references wrong quality gates \u2014 should specify: npm run typecheck && npm run lint && npm run build."
+      "readinessNote": "ACs \"Keycloak login flow works\", \"PRD Generator shows formatted prd.json with copy button\", and \"Agent Runs page shows story pass/fail history\" require a running application and cannot be verified statically. Replace with file/component existence checks: \"src/client/pages/PrdGenerator.tsx exists with a copy-to-clipboard handler\", \"src/client/pages/AgentRuns.tsx exists with pass/fail rendering logic\". testPlan references wrong quality gates \u2014 should specify: npm run typecheck && npm run lint && npm run build exits 0."
     },
     {
       "id": "034",
@@ -1475,7 +1475,10 @@
       "passes": false,
       "points": 2,
       "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
-      "dependencies": [],
+      "dependencies": [
+        "032",
+        "033"
+      ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -1489,7 +1492,7 @@
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "Missing dependencies: the Dockerfile described is multi-stage (build frontend + backend), which requires story-032 (backend source) and story-033 (frontend source) to be complete first \u2014 add '032' and '033' to dependencies[], both currently have passes: false and readinessNotes blocking sprint entry so this story is transitively blocked. AC #2 ('deploys app with Keycloak OIDC') is not independently verifiable \u2014 replace with 'helm template charts/sovereign-pm/ | grep -i keycloak exits 0'. testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) without including 'docker build sovereign-pm/ exits 0' which is AC #1; update testPlan to: docker build sovereign-pm/ && helm lint charts/sovereign-pm/ && helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f -."
+      "readinessNote": "Missing dependencies on story 032 (backend source) and story 033 (frontend source) \u2014 the multi-stage Dockerfile described cannot be built until both exist. Add \"032\" and \"033\" to dependencies[]. Both are currently not ready. Also: AC \"deploys app with Keycloak OIDC\" is not independently verifiable \u2014 replace with \"helm template charts/sovereign-pm/ | grep -i keycloak exits 0\"."
     },
     {
       "id": "035",
@@ -1507,7 +1510,7 @@
       ],
       "passes": false,
       "points": 2,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "markdownlint docs/ README.md exits 0; verify each file listed in ACs exists with ls -la; grep -i 'cost' docs/providers/*.md to confirm cost estimates are present.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
@@ -1521,8 +1524,7 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E14",
-      "themeId": "T3",
-      "readinessNote": "testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) for a documentation story. Should specify: markdownlint docs/ README.md exits 0. AC #6 already names the correct gate (markdownlint) but testPlan contradicts it."
+      "themeId": "T3"
     },
     {
       "id": "036",
