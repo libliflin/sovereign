@@ -153,6 +153,11 @@ option B", the implementer must pick one before writing code. Leaving it open cr
 ambiguity and rework risk. Future grooming should resolve all OR-choices before pulling a
 story into a sprint.
 
+**ANDON stories must inline the verification command**: ANDON remediation stories that reference
+`prd/gge.json` for the failure condition should inline the exact verification command in `acceptanceCriteria`.
+A self-contained AC ("run `python3 scripts/ralph/ceremonies.py orient` and confirm G5 passes") is
+unambiguous. Pointing to an external file requires navigation and reduces the SMART "specific" score.
+
 ---
 
 ## How to implement a story
@@ -193,16 +198,17 @@ You implement. Ceremonies verify. Don't conflate the two.
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
 8 (testing-and-ha), 9 (sovereign-pm — documentation layer: quickstart, architecture, provider guides,
-README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Dockerfile, Helm chart)
+README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Dockerfile, Helm chart),
+11 (remediation — restored GGE G5: planning pipeline guard for pending increment)
 
-Increment active: none — all increments complete through 10.
+Increment pending (next): 12 (developer-portal — Backstage service catalog + code-server Helm chart)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics backlog (not yet started): E11 (developer portal — Backstage + code-server), E12 (code quality
-— SonarQube + ReportPortal), E13 (testing infrastructure + HA validation), E15 (HA integration testing)
+Epics backlog: E11 (developer portal — Backstage + code-server), E12 (code quality — SonarQube +
+ReportPortal), E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
 ---
 
