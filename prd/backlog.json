@@ -2076,6 +2076,35 @@
         "notes": "Not yet SMART-scored."
       },
       "readinessNote": "depends on story 029 which has passes: false \u2014 blocked"
+    },
+    {
+      "id": "053",
+      "title": "Fix attempts field semantics: initialize to 0, increment only on review failure",
+      "description": "The attempts field on stories is currently initialized to 1 after first implementation. This means first-pass rate detection (attempts == 0) always returns 0%, making the advance.py first-pass metric permanently wrong. Fix: initialize to 0 at story creation, increment only when the review ceremony re-opens a story (i.e., on review failure). Update ceremonies code, manifest schema, and existing sprint files.",
+      "acceptanceCriteria": [
+        "New stories in backlog.json initialize with attempts: 0",
+        "Review ceremony increments attempts when it re-opens a story (sets passes: false with reviewNotes)",
+        "advance.py first-pass rate formula uses len(reviewNotes) == 0 (no review failures) as the signal, not attempts == 0",
+        "python3 scripts/ralph/lib/advance.py --dry-run shows a non-zero first-pass rate for increment 10 (all 3 stories had 0 review failures)",
+        "shellcheck passes on all modified shell scripts"
+      ],
+      "priority": 53,
+      "epicId": "E1",
+      "themeId": "T3",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "points": 2,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timebound": 4,
+        "notes": "Well-bounded fix: one field initialization, one formula change, and a dry-run verification."
+      },
+      "readinessNote": ""
     }
   ]
 }
