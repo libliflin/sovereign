@@ -115,6 +115,13 @@ flags. CI checks for both with grep. Missing either causes CI failure.
 `charts/<name>/templates/`. This is required for the chart to auto-register in Grafana.
 Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
 
+**Documentation stories**: use `markdownlint` for lint validation and `grep -i 'cost'` to
+confirm cost estimates are present in provider docs. This is a reusable testPlan pattern.
+
+**Increment description must match sprint goal**: if a story's `themeId` or `epicId` implies
+work different from the increment's `description`, flag it before implementation. Do not
+implement work that contradicts the increment's stated purpose.
+
 ---
 
 ## How to implement a story
@@ -154,11 +161,11 @@ You implement. Ceremonies verify. Don't conflate the two.
 
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
-8 (testing-and-ha)
+8 (testing-and-ha), 9 (sovereign-pm/docs)
 
-Increment active: none (advance will activate 9)
+Increment active: none — all increments complete, advance will activate the next planned increment
 
-Increments pending: 9 (sovereign-pm)
+Increments pending: none declared in manifest
 
 Epics complete: E1–E10 (all through observability)
 Epics with partial delivery: E11 (developer portal) — code-server chart delivered, Backstage pending
@@ -181,4 +188,4 @@ Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 
 
 ## Known model inconsistencies
 
-- `phase` field still present on story `031a` in `backlog.json` — retired vocabulary. Trivial inline fix: remove the field from the story object. No dedicated story needed.
+None outstanding. All previous drift has been resolved.
