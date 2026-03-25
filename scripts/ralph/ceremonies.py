@@ -320,21 +320,33 @@ def main() -> int:
             active_sprint = manifest.active_sprint
             sprint_file = REPO_ROOT / active_sprint if active_sprint else None
             if not sprint_file or not sprint_file.exists():
-                # Plan found nothing to execute (no pending increments, no p0 stories).
-                # This is kaizen mode — re-run orient which will route to theme-review.
-                print(f"\n  Plan found no actionable work. Re-orienting into kaizen cycle...")
-                new_assessment = orient_lib.assess(REPO_ROOT)
-                new_assessment.print_report()
-                if new_assessment.action == orient_lib.NextAction.THEME_REVIEW:
-                    print(f"  Orient decision: kaizen → theme-review")
-                    start_at = "theme-review"
-                    # Don't FATAL — fall through with no sprint; theme-review doesn't need one
-                else:
-                    print(f"FATAL: Plan ceremony ran but sprint file still missing.", file=sys.stderr)
+                # Plan found no pending increment to populate.
+                # Theme-review owns new increment definition — run it now then re-plan.
+                print(f"\n  Plan: no pending increments — kaizen cycle: running theme-review → epic-breakdown → backlog-groom → plan.")
+                sep("AI CEREMONY: Theme Review (kaizen)")
+                _ai(args.tool, "theme-review.md", log_file)
+                _git_commit("theme-review", ["prd/gge.json", "prd/themes.json", "prd/epics.json"])
+                sep("AI CEREMONY: Epic Breakdown (kaizen)")
+                _ai(args.tool, "epic-breakdown.md", log_file)
+                _git_commit("epic-breakdown", ["prd/backlog.json", "prd/epics.json"])
+                sep("AI CEREMONY: Backlog Grooming (kaizen)")
+                _ai(args.tool, "backlog-groom.md", log_file)
+                _git_commit("backlog-groom", ["prd/backlog.json"])
+                sep("AI CEREMONY: Sprint Planning (kaizen)")
+                _ai(args.tool, "plan.md", log_file)
+                manifest = prd_model.Manifest(REPO_ROOT)
+                active_sprint = manifest.active_sprint
+                sprint_file = REPO_ROOT / active_sprint if active_sprint else None
+                if not sprint_file or not sprint_file.exists():
+                    print("FATAL: Kaizen planning cycle completed but still no sprint file. Theme-review must create a new pending increment.", file=sys.stderr)
                     return 1
-            sprint = sprint_lib.load(sprint_file)
-            print(f"\n  Sprint ready: {active_sprint} ({len(sprint.get('stories', []))} stories)")
-            _git_commit("plan", [str(active_sprint), "prd/manifest.json"])
+                sprint = sprint_lib.load(sprint_file)
+                print(f"\n  Sprint ready (kaizen): {active_sprint} ({len(sprint.get('stories', []))} stories)")
+                _git_commit("plan", [str(active_sprint), "prd/manifest.json"])
+            else:
+                sprint = sprint_lib.load(sprint_file)
+                print(f"\n  Sprint ready: {active_sprint} ({len(sprint.get('stories', []))} stories)")
+                _git_commit("plan", [str(active_sprint), "prd/manifest.json"])
         else:
             sprint = sprint_lib.load(sprint_file)
             print(f"  skipped (sprint exists, increment={increment_status}, {len(sprint.get('stories', []))} stories)")

@@ -36,10 +36,10 @@ print(f"Current GGEs ({len(eggs)}):")
 for e in eggs:
     print(f"  {e['id']}: {e['title']}")
 
-velocity = manifest.get('velocity', [])
-phases_complete = [p for p in manifest.get('phases', []) if p.get('status') == 'complete']
-phases_pending  = [p for p in manifest.get('phases', []) if p.get('status') == 'pending']
-print(f"\nPhases complete: {len(phases_complete)}, pending: {len(phases_pending)}")
+increments_complete = [p for p in manifest.get('increments', []) if p.get('status') == 'complete']
+increments_pending  = [p for p in manifest.get('increments', []) if p.get('status') == 'pending']
+increments_active   = [p for p in manifest.get('increments', []) if p.get('status') == 'active']
+print(f"\nIncrements complete: {len(increments_complete)}, active: {len(increments_active)}, pending: {len(increments_pending)}")
 ```
 
 ### Step 1.2 — Validate each existing GGE
@@ -231,6 +231,53 @@ with open('prd/backlog.json', 'w') as f:
 
 ---
 
+## Kaizen mode — create a new increment when all are complete
+
+If `increments_pending` is empty (all increments complete), you **must** create a new pending
+increment in `prd/manifest.json` before this ceremony ends. Without a pending increment, the
+plan ceremony has nowhere to put stories and the machine stalls.
+
+```python
+import json
+
+with open('prd/manifest.json') as f:
+    manifest = json.load(f)
+
+increments = manifest.get('increments', [])
+pending = [i for i in increments if i.get('status') == 'pending']
+
+if not pending:
+    # Find max numeric id to generate the next one
+    numeric_ids = [i['id'] for i in increments if isinstance(i['id'], int)]
+    next_id = max(numeric_ids) + 1 if numeric_ids else 10
+
+    # Pick the theme with the lowest flow (most blocked) from the Shi analysis.
+    # Name the increment after the work that will address it.
+    new_increment = {
+        "id": next_id,
+        "name": "<short-slug>",          # e.g. "resilience-kaizen"
+        "description": "<one sentence>",  # what this increment delivers
+        "themeGoal": "<which theme + what capability moves forward>",
+        "file": f"prd/increment-{next_id}-<short-slug>.json",
+        "status": "pending",
+        "dependsOn": []
+    }
+
+    manifest['increments'].append(new_increment)
+
+    with open('prd/manifest.json', 'w') as f:
+        json.dump(manifest, f, indent=2)
+
+    print(f"Created increment {next_id}: {new_increment['name']}")
+```
+
+**Naming guidance for the new increment:**
+- If T5 (Resilience) has 0% flow → name it `resilience-kaizen`
+- If T3 (Developer Autonomy) is partial → name it `devex-kaizen`
+- If all themes are 100% flow → name it `platform-kaizen` (hardening, dependency updates, deprecations)
+
+---
+
 ## Constraints
 
 - GGE count at end of ceremony: **3–5. This is enforced. The ceremony fails if the constraint is not met.**
@@ -238,4 +285,5 @@ with open('prd/backlog.json', 'w') as f:
 - Theme review is read-only for themes.json/epics.json — propose changes, do not write directly
 - Keep each theme section under 150 words
 - Kaizen stories ARE written directly to backlog.json — this is the expected output
-- End with: GGE summary (what changed and why) + 3-bullet theme executive summary + kaizen story count added
+- **If all increments were complete at ceremony start, a new pending increment MUST exist in manifest.json at ceremony end.** The plan ceremony depends on this.
+- End with: GGE summary (what changed and why) + 3-bullet theme executive summary + kaizen story count added + new increment created (if applicable)
