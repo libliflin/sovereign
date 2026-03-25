@@ -281,7 +281,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E2",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan specifies wrong quality gates for a GitHub Actions workflow story \u2014 \"helm lint, shellcheck, kubectl dry-run\" do not test .github/workflows/*.yml. Replace testPlan with: cat .github/workflows/validate.yml | yq e '.' -; cat .github/workflows/release.yml | yq e '.' -; then push a branch with a deliberate helm lint error and verify the helm-validate job fails with a clear message. AC #14 (\"Full CI run completes in under 5 minutes\") is a live-test requirement that cannot be verified statically \u2014 note as blocker."
     },
     {
       "id": "009",
@@ -734,7 +735,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "AC #13 (\"vendor/verify-distroless.sh confirms no shell in built images\") requires building images against a live Harbor registry \u2014 cannot be verified statically. Per blocker protocol this must be flagged: BLOCKER: requires Harbor running and images built. testPlan is generic; static testPlan should specify: shellcheck vendor/build.sh vendor/verify-distroless.sh vendor/recipes/cert-manager/build.sh (and other recipe build.sh); grep -q git_sha vendor/recipes/cert-manager/recipe.yaml; bash -n vendor/build.sh; vendor/build.sh --dry-run cert-manager."
     },
     {
       "id": "022",
@@ -768,7 +770,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "Final AC (\"End-to-end: pinning a new version in recipe.yaml \u2192 fetch \u2192 build \u2192 Harbor \u2192 ArgoCD auto-syncs\") requires a running cluster with GitLab, Harbor, and ArgoCD \u2014 cannot be verified statically. Per blocker protocol: BLOCKER: requires live cluster. Static testPlan should specify: helm lint charts/_globals/; for each chart: grep 'imageRegistry' charts/<name>/values.yaml; kubectl apply --dry-run=client -f argocd-apps/platform/argocd-image-updater-app.yaml; cat vendor/gitlab-ci-template.yml | yq e '.' -; shellcheck vendor/smoke-test.sh."
     },
     {
       "id": "023",
@@ -1193,7 +1196,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-2",
@@ -1228,7 +1232,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-3",
@@ -1265,7 +1270,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-4",
@@ -1302,7 +1308,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-5",
@@ -1341,7 +1348,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "031b-6",
@@ -1377,7 +1385,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     },
     {
       "id": "032",
@@ -1714,7 +1723,8 @@
       "epicId": "E12",
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
-      "returnedReason": "Root cause of story-029 repeated review failure: no documented HA exception process for single-instance upstreams."
+      "returnedReason": "Root cause of story-029 repeated review failure: no documented HA exception process for single-instance upstreams.",
+      "readinessNote": "depends on story 029 which has passes: false \u2014 blocked"
     },
     {
       "id": "042r",
@@ -1749,7 +1759,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "1-point story: bounded decision + one targeted fix to rook-ceph chart or AC."
-      }
+      },
+      "readinessNote": "depends on story 031a which has passes: false \u2014 blocked"
     }
   ]
 }
