@@ -320,7 +320,8 @@
       },
       "notes": "Re-opened: charts/vault/ used HashiCorp/BUSL-1.1. Must rebuild with openbao/openbao (Apache-2.0).",
       "epicId": "E3",
-      "themeId": "T2"
+      "themeId": "T2",
+      "readinessNote": "testPlan references shellcheck but this story creates only Helm templates and Kubernetes Jobs \u2014 no .sh files. AC #3 ('charts/openbao/ dev mode works out of box') is a live-test requirement that cannot be verified statically \u2014 replace with 'grep openbao/openbao charts/openbao/values.yaml exits 0'. testPlan should specify: helm lint charts/openbao/; helm template charts/openbao/ | kubectl apply --dry-run=client -f -; helm template charts/openbao/ | grep PodDisruptionBudget; helm template charts/openbao/ | grep podAntiAffinity; grep 'openbao/openbao' charts/openbao/values.yaml; kubectl apply --dry-run=client -f argocd-apps/platform/vault-app.yaml."
     },
     {
       "id": "010",
@@ -564,7 +565,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E5",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan references shellcheck but this story creates only a Helm chart \u2014 no .sh files; remove that gate. HA gate commands are missing from testPlan (CLAUDE.md quality gates #10-12 apply to all Helm chart stories). testPlan should specify: helm lint charts/gitlab/; helm template charts/gitlab/ | kubectl apply --dry-run=client -f -; helm template charts/gitlab/ | grep PodDisruptionBudget || echo MISSING-PDB; helm template charts/gitlab/ | grep podAntiAffinity || echo MISSING-AFFINITY; grep replicaCount charts/gitlab/values.yaml; kubectl apply --dry-run=client -f argocd-apps/platform/gitlab-app.yaml."
     },
     {
       "id": "017",
@@ -596,7 +598,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E5",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan references shellcheck but this story creates only a Helm chart \u2014 no .sh files; remove that gate. HA gate commands missing from testPlan (CLAUDE.md quality gates #10-12). testPlan should specify: helm lint charts/harbor/; helm template charts/harbor/ | kubectl apply --dry-run=client -f -; helm template charts/harbor/ | grep PodDisruptionBudget || echo MISSING-PDB; helm template charts/harbor/ | grep podAntiAffinity || echo MISSING-AFFINITY; grep replicaCount charts/harbor/values.yaml; kubectl apply --dry-run=client -f argocd-apps/platform/harbor-app.yaml."
     },
     {
       "id": "018",
@@ -629,7 +632,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan references wrong quality gates (helm lint, kubectl dry-run) \u2014 this story creates VENDORS.yaml and a shell audit script, not Helm charts. testPlan should specify: cat vendor/VENDORS.yaml | yq e '.' -; shellcheck vendor/audit.sh; bash -n vendor/audit.sh; vendor/audit.sh; grep -c 'name:' vendor/VENDORS.yaml showing >= 27 entries; grep -A3 'vault' vendor/VENDORS.yaml showing license_allows_vendor: false."
     },
     {
       "id": "019",
@@ -661,7 +665,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "testPlan references wrong quality gates (helm lint, kubectl dry-run) \u2014 this story creates markdown documentation and recipe stubs, not Helm charts. testPlan should specify: grep -c '|' vendor/DISTROLESS.md showing >= 27 service rows; ls vendor/recipes/*/recipe.yaml | wc -l showing >= 27; grep 'distroless_base' vendor/recipes/cilium/recipe.yaml; grep -i 'DISTROLESS STANDARD' CLAUDE.md exits 0."
     },
     {
       "id": "020",
@@ -695,7 +700,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E6",
-      "themeId": "T1"
+      "themeId": "T1",
+      "readinessNote": "ACs #2 and #3 ('vendor/fetch.sh creates GitLab group via API', 'mirrors upstream at pinned version') require a running GitLab instance and GITLAB_TOKEN \u2014 BLOCKER: requires live cluster with GitLab (story 016) deployed. AC #4 ('vendor/update-check.sh reports available updates') requires external GitHub API access \u2014 BLOCKER: requires external network and API token. Description references 'story 014' as the GitLab dependency but story 014 is documentation \u2014 likely means story 016 (GitLab Helm chart). testPlan should cover the statically-verifiable subset: shellcheck vendor/fetch.sh vendor/update-check.sh vendor/pin.sh; bash -n vendor/fetch.sh; vendor/fetch.sh --dry-run; for f in vendor/recipes/*/recipe.yaml; do yq e '.upstream_url' $f; done."
     },
     {
       "id": "021",
@@ -804,7 +810,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E7",
-      "themeId": "T2"
+      "themeId": "T2",
+      "readinessNote": "testPlan references shellcheck but this story creates only Helm templates \u2014 no .sh files; remove that gate. HA gate commands missing from testPlan (CLAUDE.md quality gates #10-12). testPlan should specify: helm lint charts/istio/; helm template charts/istio/ | kubectl apply --dry-run=client -f -; helm template charts/istio/ | grep PodDisruptionBudget; helm template charts/istio/ | grep podAntiAffinity; grep replicaCount charts/istio/values.yaml; helm template charts/istio/ | grep STRICT; kubectl apply --dry-run=client -f argocd-apps/security/istio-app.yaml."
     },
     {
       "id": "024",
@@ -835,7 +842,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "epicId": "E8",
-      "themeId": "T2"
+      "themeId": "T2",
+      "readinessNote": "testPlan references shellcheck but this story creates only Helm templates \u2014 no .sh files; remove that gate. HA gate commands missing from testPlan (CLAUDE.md quality gates #10-12 apply to all 3 charts). testPlan should specify: for chart in opa-gatekeeper trivy-operator falco; do helm lint charts/$chart/ && helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB-$chart; helm template charts/$chart/ | grep podAntiAffinity || echo MISSING-AFFINITY-$chart; done; kubectl apply --dry-run=client -f argocd-apps/security/."
     },
     {
       "id": "025",
@@ -870,7 +878,8 @@
       "epicId": "E9",
       "themeId": "T4",
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Sprint closed before implementation. Story is well-formed; pull into next observability sprint."
+      "returnedReason": "Sprint closed before implementation. Story is well-formed; pull into next observability sprint.",
+      "readinessNote": "testPlan references shellcheck but this story creates only Helm templates \u2014 no .sh files; remove that gate. HA gate commands missing from testPlan (CLAUDE.md quality gates #10-12). testPlan should specify: helm lint charts/prometheus-stack/; helm template charts/prometheus-stack/ | kubectl apply --dry-run=client -f -; helm template charts/prometheus-stack/ | grep PodDisruptionBudget; helm template charts/prometheus-stack/ | grep podAntiAffinity; grep -E 'replicaCount|replicas' charts/prometheus-stack/values.yaml showing >= 2; kubectl apply --dry-run=client -f argocd-apps/observability/prometheus-stack-app.yaml."
     },
     {
       "id": "026a",
@@ -907,7 +916,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement.",
+      "readinessNote": "depends on story 025 which has passes: false \u2014 blocked"
     },
     {
       "id": "026b",
@@ -944,7 +954,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement.",
+      "readinessNote": "depends on story 026a which has passes: false \u2014 blocked"
     },
     {
       "id": "026c",
@@ -981,7 +992,8 @@
         "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
       },
       "returnedFromSprint": "prd/phase-6-observability.json",
-      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement."
+      "returnedReason": "Derived from sprint 6 story 026 which was killed (SMART achievable=2). These split stories are ready to implement.",
+      "readinessNote": "depends on story 026b which has passes: false \u2014 blocked"
     },
     {
       "id": "027",
@@ -1159,7 +1171,8 @@
         "notes": "Achievable score 3: creating 1 helper template + hardening 6 charts (values.yaml replicaCount, PDB, anti-affinity, probes, resource limits on each) is near the 3-point story budget ceiling for a single Ralph iteration \u2014 but bounded and well-specified."
       },
       "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
-      "returnedReason": "Two ACs failed review: (1) Cilium install-cni-binaries initContainer missing resource limits \u2014 correct upstream values.yaml key needed. (2) rook-ceph volumeClaimTemplates AC is architecturally incorrect \u2014 rook-ceph creates StorageClasses, it does not consume them."
+      "returnedReason": "Two ACs failed review: (1) Cilium install-cni-binaries initContainer missing resource limits \u2014 correct upstream values.yaml key needed. (2) rook-ceph volumeClaimTemplates AC is architecturally incorrect \u2014 rook-ceph creates StorageClasses, it does not consume them.",
+      "readinessNote": "AC #6 references 'charts/vault/values.yaml' but story 009 (currently passes: false) requires charts/vault/ to be removed and replaced with charts/openbao/. The AC must be updated to reference charts/openbao/ before this story can be pulled \u2014 verify story 009 is complete first. Also: testPlan invokes 'python3 scripts/check-limits.py' but this script is not created by this or any dependency story \u2014 verify it exists at that path or replace the testPlan command with an inline Python snippet."
     },
     {
       "id": "031b-1",
@@ -1595,7 +1608,8 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Specific: gate logic + override flag fully described. Measurable: exit code + message are binary. Achievable: small script change. Relevant: prevents repeat of sprint 6 waste. TimeBound: bounded by the test fixture criterion."
-      }
+      },
+      "readinessNote": "testPlan says 'Run the planning ceremony against a fixture' but does not specify: (1) the exact file to invoke (plan.py vs plan.md is ambiguous in the description \u2014 resolve before implementation), (2) the fixture format and file path, (3) how to pass the fixture to the ceremony. testPlan should specify: python3 scripts/ralph/ceremonies/plan.py --test-fixture tests/fixtures/low-achievable.json exits non-zero; the fixture file format should be documented in the story or in tests/fixtures/."
     },
     {
       "id": "038",
@@ -1628,7 +1642,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "ACs #5 ('A PR with a deliberate helm lint error fails the workflow'), #6 ('A PR with a shellcheck error fails the workflow'), and #7 ('Workflow completes in under 3 minutes on a cold runner') all require a live GitHub Actions run \u2014 BLOCKER: requires GitHub Actions to be enabled and a real PR to be opened. testPlan is exclusively a live-test plan with no static verification. Add static testPlan: cat .github/workflows/ci.yaml | yq e '.' -; grep 'pull_request' .github/workflows/ci.yaml exits 0; grep shellcheck .github/workflows/ci.yaml exits 0; grep -c 'helm lint' .github/workflows/ci.yaml shows >= 1."
     },
     {
       "id": "039",
@@ -1783,7 +1798,8 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
       "returnedReason": "Systemic fix: story 031a Cilium AC used a wrong upstream values key because grooming never required key verification against upstream chart templates.",
-      "branchName": "feature/ha-helm-pass"
+      "branchName": "feature/ha-helm-pass",
+      "readinessNote": "Missing testPlan field \u2014 no commands specified to verify ACs. Add: grep -iE 'upstream.*values.*key|values-key' scripts/ralph/ceremonies/groom.* exits 0; grep 'upstream-key' docs/state/agent.md exits 0; grep 'LEARNINGS' docs/state/agent.md exits 0."
     },
     {
       "id": "044r",
@@ -1806,7 +1822,8 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
       "returnedReason": "Systemic fix: rook-ceph architecture (provider vs consumer) was undocumented, causing an incorrect AC in story 031a and a review failure.",
-      "branchName": "feature/ha-helm-pass"
+      "branchName": "feature/ha-helm-pass",
+      "readinessNote": "Missing testPlan field \u2014 no commands specified to verify ACs. Add: helm lint charts/rook-ceph/; helm template charts/rook-ceph/ | grep storageClassName exits 0; grep -i 'storage provider' charts/rook-ceph/values.yaml exits 0; grep 'rook-ceph' docs/state/architecture.md exits 0."
     },
     {
       "id": "045r",
@@ -1828,7 +1845,8 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-8-testing-and-ha.json",
       "returnedReason": "Systemic fix: under-loaded sprint (1 story, 3 pts vs 15-pt capacity) meant a single failure wiped 100% of sprint delivery.",
-      "branchName": "feature/process-improvements"
+      "branchName": "feature/process-improvements",
+      "readinessNote": "Missing testPlan field \u2014 no commands specified to verify ACs. Add: grep -E '0\\.75|75%|capacity' scripts/ralph/ceremonies/plan.py exits 0; grep 'Sprint planning must fill' docs/state/agent.md exits 0."
     }
   ]
 }
