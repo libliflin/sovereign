@@ -14,7 +14,7 @@
       ],
       "priority": 0,
       "points": 2,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "epicId": "E1",
       "themeId": "T3",
