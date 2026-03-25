@@ -1,0 +1,116 @@
+{
+  "increment": 10,
+  "name": "sovereign-pm-webapp",
+  "description": "Build the Sovereign PM web application (Node.js/Express backend, React frontend, Helm chart). Replaces the file-based PM system with a self-hosted product. The documentation layer (story 035) is done; this increment delivers the running app.",
+  "sprintGoal": "Deliver the Sovereign PM web app \u2014 backend API, React UI, Dockerfile, and Helm chart \u2014 deployable into kind and ready to self-host sprint management.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "032",
+      "priority": 32,
+      "branchName": "feature/sovereign-pm-backend",
+      "title": "Sovereign PM: Node.js/Express backend",
+      "description": "Create sovereign-pm/src/server/ \u2014 a Node.js + Express + TypeScript API server. Data model: Project, Epic, Story, AgentRun. PostgreSQL via Sequelize. Endpoints: CRUD for epics/stories, POST /api/prd/generate (outputs prd.json), POST /api/ralph/trigger (creates a Kubernetes Job running ralph.sh), GET /api/ralph/runs (list run history). Keycloak OIDC JWT validation middleware. OpenAPI spec in sovereign-pm/openapi.yaml.",
+      "acceptanceCriteria": [
+        "sovereign-pm/src/server/ TypeScript Express app compiles with npm run typecheck",
+        "Sequelize models for Project, Epic, Story, AgentRun in src/server/models/",
+        "npm test exits 0 with route-level tests covering /api/epics, /api/stories, /api/projects, /api/agent-runs",
+        "POST /api/prd/generate returns JSON matching prd.json schema (unit test verifies shape)",
+        "POST /api/ralph/trigger: src/server/routes/ralph.ts generates a K8s Job manifest spec; unit test verifies Job spec has correct image and command",
+        "Keycloak JWT middleware applied to all routes; unauthenticated request returns 401",
+        "npm run typecheck and npm run lint exit 0",
+        "openapi.yaml documents all endpoints with request/response schemas"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm test exits 0 with route-level test coverage for all endpoints in openapi.yaml; ls sovereign-pm/openapi.yaml; grep -E '(POST|GET|PUT|DELETE)' sovereign-pm/openapi.yaml lists all 8+ endpoints.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Updated during sprint planning: testPlan corrected to Node.js quality gates, vague ACs replaced with command-verifiable checks."
+      },
+      "epicId": "E14",
+      "themeId": "T3",
+      "readinessNote": ""
+    },
+    {
+      "id": "033",
+      "priority": 33,
+      "branchName": "feature/sovereign-pm-frontend",
+      "title": "Sovereign PM: React frontend",
+      "description": "Create sovereign-pm/src/client/ \u2014 a React + TypeScript + Vite frontend. Pages: Dashboard (all projects), Project view (epics/stories kanban), Story editor (title, description, acceptance criteria, priority, phase), PRD Generator (shows generated prd.json, copy button), Agent Runs (history of Ralph loops, pass/fail per story, timestamps). Keycloak OIDC via keycloak-js. Tailwind CSS. Clean, minimal design.",
+      "acceptanceCriteria": [
+        "React + TypeScript + Vite app in sovereign-pm/src/client/",
+        "All 5 pages implemented: Dashboard, ProjectView, StoryEditor, PrdGenerator, AgentRuns \u2014 verified by ls src/client/pages/",
+        "src/client/App.tsx wraps routes in KeycloakProvider; src/client/keycloak.ts initializes keycloak-js with env-sourced OIDC config",
+        "src/client/pages/PrdGenerator.tsx exists and includes a navigator.clipboard or equivalent copy-to-clipboard handler",
+        "src/client/pages/AgentRuns.tsx exists with pass/fail status rendering for each story run",
+        "npm run typecheck and npm run lint exit 0",
+        "npm run build exits 0 (Vite production bundle succeeds)"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm run build exits 0; ls src/client/pages/{Dashboard,ProjectView,StoryEditor,PrdGenerator,AgentRuns}.tsx all exist.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Updated during sprint planning: testPlan corrected to npm quality gates, ACs requiring running application replaced with file existence and static checks."
+      },
+      "epicId": "E14",
+      "themeId": "T3",
+      "readinessNote": ""
+    },
+    {
+      "id": "034",
+      "priority": 34,
+      "branchName": "feature/sovereign-pm-helm",
+      "title": "Sovereign PM: Dockerfile and Helm chart",
+      "description": "Create sovereign-pm/Dockerfile (multi-stage: build frontend, build backend, combined production image). Create charts/sovereign-pm/ Helm chart deploying the PM app. PostgreSQL dependency (or external Crossplane-managed). Keycloak OIDC config from values. Ingress at pm.{{ .Values.global.domain }}. Ralph scripts mounted as a volume (reads prd.json from PVC shared with the K8s Job). ArgoCD app in argocd-apps/devex/sovereign-pm-app.yaml.",
+      "acceptanceCriteria": [
+        "sovereign-pm/Dockerfile builds successfully: docker build sovereign-pm/ exits 0",
+        "charts/sovereign-pm/ Helm chart passes helm lint",
+        "helm template charts/sovereign-pm/ | grep -i keycloak exits 0 (OIDC config present in rendered manifests)",
+        "Ingress resource rendered with host pm.{{ .Values.global.domain }}",
+        "PostgreSQL dependency declared in Chart.yaml (bitnami/postgresql subchart or Crossplane XRC reference)",
+        "charts/sovereign-pm/templates/ralph-job.yaml exists (Job template for on-demand Ralph runs)",
+        "argocd-apps/devex/sovereign-pm-app.yaml exists",
+        "helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f - exits 0"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint charts/sovereign-pm/ exits 0; helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f - exits 0; helm template charts/sovereign-pm/ | grep -i keycloak exits 0; helm template charts/sovereign-pm/ | grep PodDisruptionBudget exits 0; ls argocd-apps/devex/sovereign-pm-app.yaml exists; docker build sovereign-pm/ exits 0 (or docker build --no-cache if first run).",
+      "dependencies": [
+        "032",
+        "033"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Updated during sprint planning: testPlan corrected to helm/docker quality gates, vague ACs replaced with command-verifiable checks. Intra-sprint dependency on 032+033."
+      },
+      "epicId": "E14",
+      "themeId": "T3",
+      "readinessNote": ""
+    }
+  ]
+}
