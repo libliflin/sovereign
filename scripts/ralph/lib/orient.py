@@ -534,19 +534,21 @@ def assess(repo_root: Path) -> Assessment:
             "GGEs healthy",
             f"{len(broken_eggs)}/{egg_count} broken",
             "FAIL",
-            f"{', '.join(e['id'] for e in broken_eggs)} — Andon: priority-0 story needed"
+            f"{', '.join(e['id'] for e in broken_eggs)} — Andon cord pulled"
         ))
-        # Andon: create a priority-0 backlog story for the first broken egg
-        # (ceremonies.py will then pick it up immediately in the p0 check)
+        # Andon cord: create a priority-0 backlog story for the first broken egg,
+        # then return PLAN immediately. A broken GGE stops the line — no other
+        # KPI is allowed to override it, including "platform complete".
         first_broken = broken_eggs[0]
         backlog_path = prd / "backlog.json"
+        andon_story = None
         if backlog_path.exists():
             with open(backlog_path) as f:
                 backlog = json.load(f)
             andon_id = f"GGE-{first_broken['id']}-andon"
             existing_ids = {s["id"] for s in backlog.get("stories", [])}
             if andon_id not in existing_ids:
-                backlog.setdefault("stories", []).insert(0, {
+                andon_story = {
                     "id": andon_id,
                     "title": f"ANDON: Restore broken GGE — {first_broken['title']}",
                     "description": (
@@ -564,10 +566,31 @@ def assess(repo_root: Path) -> Assessment:
                     "branchName": f"fix/gge-{first_broken['id'].lower()}-andon",
                     "dependencies": [],
                     "attempts": 0,
-                })
+                    "smart": {"specific": 0, "measurable": 0, "achievable": 0,
+                              "relevant": 0, "timeBound": 0, "notes": ""},
+                }
+                backlog["stories"].insert(0, andon_story)
                 with open(backlog_path, "w") as f:
                     json.dump(backlog, f, indent=2)
+                # Keep all_stories in sync so downstream checks see it
+                all_stories.insert(0, andon_story)
                 print(f"  ⚑  ANDON: created priority-0 story '{andon_id}' for broken GGE {first_broken['id']}")
+            else:
+                print(f"  ⚑  ANDON: priority-0 story '{andon_id}' already exists")
+
+        return Assessment(
+            state=PlatformState.SPRINT_READY,
+            action=NextAction.PLAN,
+            reason=(
+                f"GGE {first_broken['id']} is broken — Andon cord pulled. "
+                f"Indicator: {first_broken.get('indicator', {}).get('type')}. "
+                "Priority-0 story created. Plan immediately to restore it."
+            ),
+            kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
+        )
     else:
         kpis.append(KPI(
             "GGEs healthy",
