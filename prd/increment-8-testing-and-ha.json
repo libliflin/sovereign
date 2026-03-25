@@ -34,6 +34,8 @@
         "[Review 1] AC failed: 'charts/rook-ceph/ has PodDisruptionBudget; volumeClaimTemplates reference global.storageClass'. PDB: PASS (kind: PodDisruptionBudget found in helm template output). volumeClaimTemplates reference global.storageClass: FAIL. Command: grep -rn 'global.storageClass' charts/rook-ceph/templates/ \u2014 returned no output. The rook-ceph templates directory contains only: _helpers.tpl, grafana-dashboard.yaml, jobs/verify-osds.yaml, poddisruptionbudget.yaml. None contain volumeClaimTemplates or references to .Values.global.storageClass. The storageClass references in values.yaml (lines 66, 92, 124) are for Ceph StorageClass objects (what Ceph creates), not for the upstream rook-ceph chart's own StatefulSet volumeClaimTemplates. Fix: either (a) add a CephCluster CR template that references {{ .Values.global.storageClass }} for mon/mgr volumeClaimTemplates, or (b) document that rook-ceph as a storage provider does not consume a StorageClass and remove/update the AC."
       ],
       "attempts": 1,
+      "returnedToBacklog": true,
+      "returnedReason": "Two ACs failed review: (1) Cilium install-cni-binaries initContainer missing resource limits — the correct upstream values.yaml key for this initContainer must be identified (e.g. cni.resources or installCNIBinariesResources) and added to charts/cilium/values.yaml. (2) rook-ceph volumeClaimTemplates AC is architecturally incorrect — rook-ceph creates StorageClasses, it does not consume them; either add a CephCluster CR template referencing global.storageClass or replace the AC with a documented exception.",
       "epicId": "E13",
       "themeId": "T5",
       "smart": {
