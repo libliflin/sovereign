@@ -113,41 +113,24 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         print(f"    - currentIncrement → {next_phase}")
         return 0
 
-    # -- Update manifest -------------------------------------------------------
-    end_date = _now()
-
+    # -- Update manifest — current state only, no historical log ---------------
     for p in phases:
         if str(p.get("id")) == str(current_phase):
             p["status"] = "complete"
-            p["endDate"] = end_date
-            p["pointsCompleted"] = points_done
-            p["storiesAccepted"] = n_accepted
-            p["reviewPassRate"] = pass_rate
         if str(p.get("id")) == str(next_phase):
             p["status"] = "active"
 
     manifest["activeSprint"] = next_file
     manifest["currentIncrement"] = next_phase
 
-    # Guard against duplicate sprintHistory entries
-    history_increments = [str(h.get("increment")) for h in manifest.get("sprintHistory", [])]
-    if str(current_phase) not in history_increments:
-        manifest.setdefault("sprintHistory", []).append({
-            "increment": current_phase,
-            "endDate": end_date,
-            "pointsCompleted": points_done,
-            "storiesAccepted": n_accepted,
-            "storiesIncomplete": n_incomplete,
-            "storiesKilled": n_killed,
-            "reviewPassRate": pass_rate,
-        })
-        manifest.setdefault("velocity", []).append({
-            "increment": current_phase,
-            "pointsCompleted": points_done,
-            "storiesAccepted": n_accepted,
-            "reviewPassRate": pass_rate,
-            "date": end_date,
-        })
+    # Strip any historical fields that may have been written by older versions
+    manifest.pop("velocity", None)
+    manifest.pop("sprintHistory", None)
+    for p in phases:
+        for field in ("endDate", "startDate", "pointsCompleted", "storiesAccepted",
+                      "storiesIncomplete", "storiesKilled", "reviewPassRate",
+                      "pointsTotal", "storiesTotal"):
+            p.pop(field, None)
 
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
@@ -164,10 +147,9 @@ def _mark_complete(manifest, path, phase, points, pass_rate, accepted, incomplet
     for p in manifest.get("increments", []):
         if str(p.get("id")) == str(phase):
             p["status"] = "complete"
-            p["endDate"] = _now()
-            p["pointsCompleted"] = points
-            p["storiesAccepted"] = accepted
-            p["reviewPassRate"] = pass_rate
+    # Strip any historical fields
+    manifest.pop("velocity", None)
+    manifest.pop("sprintHistory", None)
     with open(path, "w") as f:
         json.dump(manifest, f, indent=2)
 

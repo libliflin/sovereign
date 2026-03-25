@@ -3,154 +3,6 @@
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
   "activeSprint": "prd/increment-8-testing-and-ha.json",
-  "velocity": [
-    {
-      "pointsCompleted": 7,
-      "storiesAccepted": 4,
-      "reviewPassRate": 75.0,
-      "date": "2026-03-23T01:17:26.857383+00:00",
-      "increment": "2h"
-    },
-    {
-      "pointsCompleted": 10,
-      "storiesAccepted": 4,
-      "reviewPassRate": 75.0,
-      "date": "2026-03-23T01:19:05.771367+00:00",
-      "increment": 2
-    },
-    {
-      "pointsCompleted": 5,
-      "storiesAccepted": 2,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-23T01:35:51.550256+00:00",
-      "increment": 3
-    },
-    {
-      "pointsCompleted": 13,
-      "storiesAccepted": 5,
-      "reviewPassRate": 80.0,
-      "date": "2026-03-23T02:00:00.000000+00:00",
-      "increment": 4
-    },
-    {
-      "pointsCompleted": 12,
-      "storiesAccepted": 5,
-      "reviewPassRate": 20.0,
-      "date": "2026-03-23T22:00:00Z",
-      "increment": 5
-    },
-    {
-      "pointsCompleted": 8,
-      "storiesAccepted": 4,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-24T11:22:30.403757+00:00",
-      "increment": 6
-    },
-    {
-      "increment": 7,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "reviewPassRate": 0.0,
-      "date": "2026-03-24T22:30:00+00:00"
-    }
-  ],
-  "sprintHistory": [
-    {
-      "endDate": "2026-03-22T20:46:45Z",
-      "pointsCompleted": 15,
-      "reviewPassRate": 100.0,
-      "increment": 0
-    },
-    {
-      "endDate": "2026-03-22T20:58:04Z",
-      "pointsCompleted": 14,
-      "reviewPassRate": 100.0,
-      "increment": 1
-    },
-    {
-      "name": "ci-hardening",
-      "endDate": "2026-03-23T01:17:26.857383+00:00",
-      "pointsCompleted": 7,
-      "storiesTotal": 4,
-      "storiesAccepted": 4,
-      "reviewPassRate": 75.0,
-      "increment": "2h"
-    },
-    {
-      "name": "foundations",
-      "endDate": "2026-03-23T01:19:05.771367+00:00",
-      "pointsCompleted": 10,
-      "storiesTotal": 4,
-      "storiesAccepted": 4,
-      "reviewPassRate": 75.0,
-      "increment": 2
-    },
-    {
-      "name": "gitops-engine",
-      "endDate": "2026-03-23T01:35:51.550256+00:00",
-      "pointsCompleted": 5,
-      "storiesTotal": 2,
-      "storiesAccepted": 2,
-      "reviewPassRate": 100.0,
-      "increment": 3
-    },
-    {
-      "endDate": "2026-03-23T01:36:17Z",
-      "pointsCompleted": 5,
-      "reviewPassRate": 100.0,
-      "increment": 3
-    },
-    {
-      "name": "autarky",
-      "endDate": "2026-03-23T02:00:00.000000+00:00",
-      "pointsCompleted": 13,
-      "storiesTotal": 5,
-      "storiesAccepted": 5,
-      "reviewPassRate": 80.0,
-      "increment": 4
-    },
-    {
-      "endDate": "2026-03-23T20:20:13Z",
-      "pointsCompleted": 13,
-      "reviewPassRate": 100.0,
-      "increment": 4
-    },
-    {
-      "name": "security",
-      "endDate": "2026-03-23T22:00:00Z",
-      "pointsCompleted": 12,
-      "storiesTotal": 5,
-      "storiesAccepted": 5,
-      "reviewPassRate": 20.0,
-      "increment": 5
-    },
-    {
-      "endDate": "2026-03-23T23:36:01Z",
-      "pointsCompleted": 12,
-      "reviewPassRate": 100.0,
-      "increment": 5
-    },
-    {
-      "name": "observability",
-      "endDate": "2026-03-24T11:22:30.403757+00:00",
-      "pointsCompleted": 8,
-      "storiesTotal": 4,
-      "storiesAccepted": 4,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0,
-      "increment": 6
-    },
-    {
-      "increment": 7,
-      "name": "devex",
-      "endDate": "2026-03-24T22:30:00+00:00",
-      "pointsCompleted": 2,
-      "storiesTotal": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
-    }
-  ],
   "increments": [
     {
       "id": 0,
@@ -158,14 +10,6 @@
       "description": "Build the sprint ceremony infrastructure that manages all subsequent phases. Dogfooding: the PM tooling is the first thing built.",
       "file": "prd/increment-0-ceremonies.json",
       "status": "complete",
-      "startDate": null,
-      "endDate": "2026-03-22T20:46:45Z",
-      "pointsTotal": 15,
-      "pointsCompleted": 15,
-      "storiesTotal": 7,
-      "storiesAccepted": 0,
-      "reviewPassRate": 100.0,
-      "retro": null,
       "themeGoal": "Bootstrap the delivery machine itself \u2014 ceremonies, ceremonies, ralph loop, quality gates"
     },
     {
@@ -177,12 +21,6 @@
       "dependsOn": [
         0
       ],
-      "storiesTotal": 6,
-      "pointsTotal": 14,
-      "startDate": "2026-03-22T20:48:24Z",
-      "endDate": "2026-03-22T20:58:04Z",
-      "pointsCompleted": 14,
-      "reviewPassRate": 100.0,
       "themeGoal": "Provision VPS/bare-metal cluster and install foundation services (Cilium, cert-manager, Sealed Secrets)"
     },
     {
@@ -194,13 +32,6 @@
       "dependsOn": [
         1
       ],
-      "storiesTotal": 4,
-      "pointsTotal": 10,
-      "startDate": "2026-03-23T01:18:03.746704+00:00",
-      "endDate": "2026-03-23T01:19:05.771367+00:00",
-      "pointsCompleted": 10,
-      "storiesAccepted": 4,
-      "reviewPassRate": 75.0,
       "themeGoal": "Crossplane compositions, OpenBao secrets, network policies, cert-manager CA transition"
     },
     {
@@ -208,22 +39,7 @@
       "name": "ci-hardening",
       "file": "prd/increment-2h-hardening.json",
       "status": "complete",
-      "capacity": 8,
       "description": "Tech debt sprint. No new work until CI is fully green.",
-      "blockedPhases": [
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9
-      ],
-      "endDate": "2026-03-23T01:36:17Z",
-      "pointsCompleted": 5,
-      "storiesTotal": 4,
-      "storiesAccepted": 4,
-      "reviewPassRate": 100.0,
       "themeGoal": "CI hardening \u2014 all quality gates green before any feature work proceeds"
     },
     {
@@ -231,12 +47,7 @@
       "name": "integration",
       "file": "prd/increment-2i-integration.json",
       "status": "complete",
-      "capacity": 10,
       "description": "Integration tests. Kind-based deployment verification. Cost gate on bootstrap scripts.",
-      "mustPrecedePhase": 3,
-      "endDate": "2026-03-23T20:20:13Z",
-      "pointsCompleted": 13,
-      "reviewPassRate": 100.0,
       "themeGoal": "Integration tests, kind-based deployment verification, cost gate on bootstrap scripts"
     },
     {
@@ -248,13 +59,6 @@
       "dependsOn": [
         2
       ],
-      "startDate": "2026-03-23T01:20:23.182423+00:00",
-      "pointsTotal": 5,
-      "storiesTotal": 2,
-      "endDate": "2026-03-23T23:36:01Z",
-      "pointsCompleted": 12,
-      "storiesAccepted": 2,
-      "reviewPassRate": 100.0,
       "themeGoal": "GitOps engine live: GitLab, Harbor, ArgoCD, Image Updater, Runners"
     },
     {
@@ -266,13 +70,6 @@
       "dependsOn": [
         3
       ],
-      "startDate": "2026-03-23T01:36:59.364893+00:00",
-      "endDate": "2026-03-23T02:00:00.000000+00:00",
-      "pointsTotal": 13,
-      "pointsCompleted": 13,
-      "storiesTotal": 5,
-      "storiesAccepted": 5,
-      "reviewPassRate": 80.0,
       "themeGoal": "Vendor autarky: VENDORS.yaml, fetch, build, deploy, rollback, backup pipeline"
     },
     {
@@ -284,13 +81,6 @@
       "dependsOn": [
         2
       ],
-      "startDate": "2026-03-23T00:00:00Z",
-      "endDate": "2026-03-23T22:00:00Z",
-      "pointsTotal": 12,
-      "pointsCompleted": 12,
-      "storiesTotal": 5,
-      "storiesAccepted": 5,
-      "reviewPassRate": 20.0,
       "themeGoal": "Zero-trust security: Istio mTLS, OPA/Gatekeeper, Trivy, Falco, OWASP ZAP"
     },
     {
@@ -302,14 +92,6 @@
       "dependsOn": [
         2
       ],
-      "startDate": "2026-03-23T23:40:00Z",
-      "pointsTotal": 8,
-      "storiesTotal": 4,
-      "endDate": "2026-03-24T21:09:34.000656+00:00",
-      "pointsCompleted": 8,
-      "storiesAccepted": 4,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0,
       "themeGoal": "Full observability: Prometheus, Grafana, Loki, Thanos, Tempo, alerting"
     },
     {
@@ -322,15 +104,7 @@
         3,
         6
       ],
-      "themeGoal": "Developer autonomy: Backstage, code-server, SonarQube, ReportPortal",
-      "pointsTotal": 5,
-      "storiesTotal": 2,
-      "startDate": "2026-03-24T22:10:24.368316+00:00",
-      "endDate": "2026-03-24T22:37:24.713288+00:00",
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      "themeGoal": "Developer autonomy: Backstage, code-server, SonarQube, ReportPortal"
     },
     {
       "id": 8,
@@ -342,10 +116,7 @@
         5,
         6
       ],
-      "themeGoal": "Production hardening: Selenium Grid, k6, MailHog, Chaos Mesh, HA validation",
-      "startDate": "2026-03-24T23:00:00+00:00",
-      "pointsTotal": 3,
-      "storiesTotal": 1
+      "themeGoal": "Production hardening: Selenium Grid, k6, MailHog, Chaos Mesh, HA validation"
     },
     {
       "id": 9,

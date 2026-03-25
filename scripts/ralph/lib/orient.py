@@ -150,31 +150,52 @@ def _check_gge_indicator(repo_root: Path, indicator: dict, all_stories: list[dic
     return True  # unknown indicator type → assume healthy
 
 
+def _compute_velocity(repo_root: Path, increments: list[dict]) -> list[dict]:
+    """
+    Compute velocity on the fly from completed sprint files.
+    The manifest is the authoritative list of increments; the sprint files
+    are the authoritative source of what was accepted. No historical data
+    is stored in the manifest — this function derives it fresh each run.
+    """
+    velocity = []
+    for inc in increments:
+        if inc.get("status") != "complete":
+            continue
+        sprint_file = repo_root / inc.get("file", "")
+        sprint = _load_json(sprint_file) if sprint_file.exists() else None
+        if not sprint:
+            continue
+        stories = sprint.get("stories", [])
+        accepted = [s for s in stories if s.get("passes", False) and s.get("reviewed", False)]
+        points_done = sum(s.get("points", 0) for s in accepted)
+        total = len(stories)
+        review_pass_rate = (len(accepted) / total * 100) if total > 0 else 0.0
+        velocity.append({
+            "increment": inc["id"],
+            "pointsCompleted": points_done,
+            "storiesAccepted": len(accepted),
+            "reviewPassRate": review_pass_rate,
+        })
+    return velocity
+
+
 def _retro_patch_ages(repo_root: Path, velocity: list[dict]) -> list[int]:
     """
     Return ages (in sprints) of retro patches that appear unresolved.
-    A patch is 'unresolved' if its file still exists and the phase it covers
-    is not in the velocity history with a reviewPassRate >= 50.
-    Simple heuristic: any retro-patch-phase<N>.md that exists and phase N
-    is in the last RETRO_DEBT_MAX_SPRINTS+1 completed phases.
+    A patch file retro-patch-increment<N>.md is 'unresolved' if it still
+    exists on disk. Age = number of completed increments since increment N.
     """
     patches = list((repo_root / "prd").glob("retro-patch-increment*.md"))
-    completed_increments = {str(v.get("increment", v.get("phase", ""))) for v in velocity}
+    completed_ids = [str(v.get("increment", "")) for v in velocity]
     ages = []
     for p in patches:
-        # Extract increment ID from filename: retro-patch-increment6.md → "6"
         stem = p.stem  # e.g. retro-patch-increment6
         try:
             inc_str = stem.split("increment")[-1]
-            if inc_str in completed_increments:
-                # Find position from end of velocity list
-                inc_positions = [
-                    i for i, v in enumerate(velocity)
-                    if str(v.get("increment", v.get("phase", ""))) == inc_str
-                ]
-                if inc_positions:
-                    age = len(velocity) - inc_positions[-1]
-                    ages.append(age)
+            if inc_str in completed_ids:
+                idx = completed_ids.index(inc_str)
+                age = len(completed_ids) - idx
+                ages.append(age)
         except (ValueError, IndexError):
             pass
     return ages
@@ -193,10 +214,10 @@ def assess(repo_root: Path) -> Assessment:
     themes = themes_data.get("themes", [])
     epics = epics_data.get("epics", [])
     all_stories = backlog_data.get("stories", [])
-    velocity = manifest.get("velocity", [])
     active_sprint_file = manifest.get("activeSprint")
     current_phase = manifest.get("currentIncrement")
     phases = manifest.get("increments", [])
+    velocity = _compute_velocity(repo_root, phases)
 
     kpis: list[KPI] = []
     gge_data = _load_json(prd / "gge.json") or {}
