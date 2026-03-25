@@ -228,9 +228,7 @@ def main() -> int:
     if assessment.is_blocked():
         return 1
 
-    if assessment.action == orient_lib.NextAction.DONE:
-        print("  Platform complete. Nothing to do.")
-        return 0
+    # DONE is intentionally unreachable — the machine never stops improving.
 
     # Orient sets start_at unless the user explicitly overrode it
     if not user_overrode_start:

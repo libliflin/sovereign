@@ -62,7 +62,7 @@ class PlatformState(Enum):
     RETRO_DEBT    = "retro_debt"     # unresolved patterns too old → blocked
     SPRINT_ACTIVE = "sprint_active"  # sprint file exists with incomplete stories
     SPRINT_READY  = "sprint_ready"   # all KPIs green, ready to plan + execute
-    COMPLETE      = "complete"       # all phases done
+    KAIZEN        = "kaizen"         # all planned increments delivered — continuous improvement
 
 
 class NextAction(Enum):
@@ -72,7 +72,9 @@ class NextAction(Enum):
     PLAN            = "plan"
     RESUME_SPRINT   = "execute"      # maps to --start-at execute
     BLOCKED         = "blocked"
-    DONE            = "done"
+    # NOTE: DONE is intentionally absent. The machine never stops improving.
+    # When all planned work is delivered, it returns to theme-review to ask:
+    # what drifted? what deprecated? what hardened? what refined?
 
 
 # ---------------------------------------------------------------------------
@@ -849,7 +851,7 @@ def assess(repo_root: Path) -> Assessment:
     # there is nothing left to do. Check whether the backlog has forward work
     # before declaring done.
     if all_increments_done:
-        kpis.append(KPI("Platform", "complete", "OK", "all planned increments delivered"))
+        kpis.append(KPI("Platform", "kaizen", "OK", "all planned increments delivered — continuous improvement"))
 
         # PI Planning trigger: backlog is thin — the machine needs to ask
         # "what are we building next?" before it can call itself done.
@@ -886,11 +888,16 @@ def assess(repo_root: Path) -> Assessment:
                 agent_context=agent_context,
             )
 
-        # Truly done: no remaining increments, backlog healthy but nothing ready.
+        # All planned work delivered and no ready stories — but we never stop.
+        # Kaizen: look for drift, deprecation, hardening, refinement opportunities.
         return Assessment(
-            state=PlatformState.COMPLETE,
-            action=NextAction.DONE,
-            reason="All planned increments delivered. Backlog has no sprint-ready stories. Platform delivered.",
+            state=PlatformState.KAIZEN,
+            action=NextAction.THEME_REVIEW,
+            reason=(
+                "All planned increments delivered. Entering Kaizen cycle — "
+                "review themes for drift, deprecated dependencies, hardening "
+                "opportunities, and refinements. There is always something to improve."
+            ),
             kpis=kpis,
             shi=shi,
             niti=niti,

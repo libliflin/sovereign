@@ -143,10 +143,99 @@ Do NOT write directly to themes.json — propose the change for human review.
 
 ---
 
+---
+
+## PART 3 — Kaizen scan (always run; not optional)
+
+The machine has no terminal state. Even when all planned increments are delivered,
+there is always something to refine, reforge, or reconsider. This part runs every
+theme-review regardless of whether new strategic direction is needed.
+
+### Step 3.1 — Drift audit
+
+Check for work that has silently gone stale:
+
+```bash
+# Helm chart dependencies — are any pinned versions outdated?
+grep -r "version:" charts/*/Chart.yaml | grep -v "^#" | head -40
+
+# Deprecated Kubernetes API versions in chart templates
+grep -r "apiVersion:" charts/*/templates/*.yaml | grep -E "v1beta1|v1alpha1|extensions/" | head -20
+
+# Shell scripts not following current patterns
+git ls-files 'bootstrap/**/*.sh' 'scripts/**/*.sh' | head -20
+
+# ArgoCD apps not yet referencing the standard global values
+grep -rL "global.domain" argocd-apps/**/*.yaml 2>/dev/null | head -10
+```
+
+For each finding: is it a known acceptable state, or a candidate for a refinement story?
+
+### Step 3.2 — Hardening opportunities
+
+For each delivered theme, ask: *if this ran in production today, what would break first?*
+
+| Theme | What could fail | Hardening candidate? |
+|---|---|---|
+| T1 Sovereignty | bootstrap scripts untested on fresh VPS | yes/no |
+| T2 Zero Trust | cert rotation not automated | yes/no |
+| T3 Developer Autonomy | code-server has no resource limits | yes/no |
+| T4 Observability | alerting rules not tested | yes/no |
+| T5 Resilience | HA stories returned 3pts — root cause? | yes/no |
+
+### Step 3.3 — Refinement candidates
+
+Review the backlog for stories that were accepted but could be done better:
+
+- Any story accepted with `reviewPassRate < 100%` in its sprint
+- Any story with `attempts > 1` before passing (fragile implementation?)
+- Any chart/script that was "good enough" but has known shortcuts
+
+### Step 3.4 — Write Kaizen stories
+
+For each finding from Steps 3.1–3.3 that warrants action, add a story to `prd/backlog.json`
+with:
+- `epicId` pointing to the most relevant epic
+- `priority` between 10–20 (below urgent, above routine)
+- `branchName`: `kaizen/<short-description>`
+- Title starting with `Kaizen:` to distinguish from new feature work
+- At least one concrete, machine-verifiable acceptance criterion
+
+```python
+import json
+
+with open('prd/backlog.json') as f:
+    backlog = json.load(f)
+
+kaizen_story = {
+    "id": "<next available id>",
+    "title": "Kaizen: <specific improvement>",
+    "epicId": "<most relevant epic>",
+    "themeId": "<theme>",
+    "branchName": "kaizen/<slug>",
+    "priority": 15,
+    "points": 2,
+    "passes": False,
+    "reviewed": False,
+    "attempts": 0,
+    "dependencies": [],
+    "acceptanceCriteria": ["<concrete, verifiable criterion>"],
+    "testPlan": "<exact commands to verify>",
+    "smart": {"specific": 0, "measurable": 0, "achievable": 0, "relevant": 0, "timeBound": 0, "notes": ""}
+}
+
+backlog['stories'].append(kaizen_story)
+with open('prd/backlog.json', 'w') as f:
+    json.dump(backlog, f, indent=2)
+```
+
+---
+
 ## Constraints
 
 - GGE count at end of ceremony: **3–5. This is enforced. The ceremony fails if the constraint is not met.**
 - Do not add GGEs that cannot be machine-checked (no "I'll know it when I see it" indicators)
-- Theme review is read-only — propose changes, do not write to themes.json or epics.json
+- Theme review is read-only for themes.json/epics.json — propose changes, do not write directly
 - Keep each theme section under 150 words
-- End with: GGE summary (what changed and why) + 3-bullet theme executive summary
+- Kaizen stories ARE written directly to backlog.json — this is the expected output
+- End with: GGE summary (what changed and why) + 3-bullet theme executive summary + kaizen story count added
