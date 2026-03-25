@@ -2,7 +2,6 @@
   "projectName": "Sovereign Platform",
   "description": "File-based agile PM \u2014 phases are sprints, ceremonies are Claude prompts, this manifest is the source of truth.",
   "version": "1.0.0",
-  "activeSprint": "prd/increment-9-sovereign-pm.json",
   "increments": [
     {
       "id": 0,
@@ -140,6 +139,5 @@
       "storiesIncomplete": 0,
       "reviewPassRate": 100.0
     }
-  ],
-  "currentIncrement": 9
+  ]
 }

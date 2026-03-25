@@ -101,6 +101,13 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         print(f"\n  All increments complete — no increment after '{current_phase}' found.")
         if not dry_run:
             _mark_complete(manifest, manifest_path, current_phase, points_done, pass_rate, n_accepted, n_incomplete)
+            # Clear activeSprint so orient does not loop back to retro on the next run.
+            # The sprint file is preserved for history; the pointer is cleared.
+            manifest.pop("activeSprint", None)
+            manifest.pop("currentIncrement", None)
+            with open(manifest_path, "w") as f:
+                json.dump(manifest, f, indent=2)
+            print("  ✓ activeSprint cleared — orient will report platform complete.")
         return 0
 
     print(f"  Next increment : {next_phase} → {next_file}")

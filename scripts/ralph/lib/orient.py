@@ -666,25 +666,36 @@ def assess(repo_root: Path) -> Assessment:
             )
         elif stories:
             # Sprint file exists and has stories, but all are reviewed or returnedToBacklog.
-            # The sprint is done — route to retro so it can be officially closed and advanced.
-            accepted = [s for s in stories if s.get("passes", False) and s.get("reviewed", False)]
-            returned = [s for s in stories if s.get("returnedToBacklog", False)]
-            kpis.append(KPI(
-                "Sprint active",
-                "ready to close",
-                "OK",
-                f"{len(accepted)} accepted, {len(returned)} returned to backlog"
-            ))
-            return Assessment(
-                state=PlatformState.SPRINT_ACTIVE,
-                action=NextAction.RESUME_SPRINT,
-                reason=(
-                    f"Sprint '{active_sprint_file}' is complete: {len(accepted)} accepted, "
-                    f"{len(returned)} returned to backlog. Running retro to close the sprint."
-                ),
-                kpis=kpis,
-                resume_step="retro",
+            # Only route to retro if the increment is NOT already marked complete —
+            # if it is, advance already ran and the machine is in a done state.
+            current_inc_entry = next(
+                (p for p in phases if str(p.get("id")) == str(current_phase)), None
             )
+            if current_inc_entry and current_inc_entry.get("status") == "complete":
+                # Advance already closed this sprint. Fall through to COMPLETE check.
+                pass
+            else:
+                accepted = [s for s in stories if s.get("passes", False) and s.get("reviewed", False)]
+                returned = [s for s in stories if s.get("returnedToBacklog", False)]
+                kpis.append(KPI(
+                    "Sprint active",
+                    "ready to close",
+                    "OK",
+                    f"{len(accepted)} accepted, {len(returned)} returned to backlog"
+                ))
+                return Assessment(
+                    state=PlatformState.SPRINT_ACTIVE,
+                    action=NextAction.RESUME_SPRINT,
+                    reason=(
+                        f"Sprint '{active_sprint_file}' is complete: {len(accepted)} accepted, "
+                        f"{len(returned)} returned to backlog. Running retro to close the sprint."
+                    ),
+                    kpis=kpis,
+                    resume_step="retro",
+                    shi=shi,
+                    niti=niti,
+                    agent_context=agent_context,
+                )
 
     # ── KPI 6: Epic coverage ────────────────────────────────────────────────
     story_epic_ids = {s.get("epicId") for s in all_stories if s.get("epicId")}
