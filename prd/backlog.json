@@ -1119,7 +1119,6 @@
     },
     {
       "id": "031a",
-      "phase": 8,
       "priority": 31,
       "branchName": "feature/ha-helm-pass",
       "title": "HA helpers template and foundation chart hardening (cilium, cert-manager, crossplane, sealed-secrets, vault, rook-ceph)",
@@ -1716,8 +1715,8 @@
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
       "returnedReason": "Root cause of story-029 repeated review failure: no documented HA exception process for single-instance upstreams."
-    }
-    ,{
+    },
+    {
       "id": "042r",
       "priority": 1,
       "epicId": "E13",
@@ -1735,7 +1734,9 @@
       "passes": false,
       "points": 1,
       "testPlan": "helm lint charts/rook-ceph/; grep -n 'storageClass' charts/rook-ceph/values.yaml; cat backlog.json | python3 -c \"import json,sys; s=[x for x in json.load(sys.stdin)['stories'] if x['id']=='031a'][0]; print(s['acceptanceCriteria'][7])\"",
-      "dependencies": ["031a"],
+      "dependencies": [
+        "031a"
+      ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,

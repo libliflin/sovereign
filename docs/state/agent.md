@@ -49,6 +49,7 @@ domain in `templates/`.
 helm template charts/<name>/ | grep -c PodDisruptionBudget   # must be >= 1 (>= 1 per component for distributed-mode charts)
 helm template charts/<name>/ | grep -c podAntiAffinity        # must be >= 1
 grep replicaCount charts/<name>/values.yaml                   # must be >= 2
+helm template charts/<name>/ | python3 scripts/check-limits.py  # every container must have requests AND limits
 ```
 This applies to upstream wrapper charts too. Setting `affinity` in `values.yaml` is not
 sufficient — verify the rendered output actually contains `podAntiAffinity`. If the upstream
@@ -58,6 +59,24 @@ For distributed-mode charts (Loki Simple Scalable, Tempo distributed), the upstr
 generates one PDB per component (ingester, distributor, querier, etc.). Count must be >= number
 of deployed components, not just >= 1. Use `grep -c PodDisruptionBudget` and verify the count
 is reasonable for the chart's component topology.
+
+**Resource limits — use check-limits.py, not grep**: `grep -A5 resources:` is insufficient for
+verifying resource limits on every container. It passes even when one initContainer is missing
+limits. Always use `helm template charts/<name>/ | python3 scripts/check-limits.py` which
+exhaustively enumerates every container and initContainer spec. This is quality gate #6.
+
+**Upstream wrapper charts need values-schema research before implementation**: when an HA story
+covers a chart that wraps an upstream Helm chart (cilium, cert-manager, crossplane, etc.), identify
+the specific upstream `values.yaml` key for each container and initContainer's resource limits
+before writing any code. Do not assume a generic key (e.g., `initResources`) applies to all
+initContainers. Cross-reference the upstream chart's values schema and confirm the exact key for
+each container in your implementation.
+
+**Storage-provider charts require different HA ACs**: charts that ARE storage providers
+(rook-ceph, etcd) create StorageClasses — they do not consume a pre-existing StorageClass for
+their own StatefulSet PVs. The standard AC "volumeClaimTemplates reference global.storageClass"
+is inapplicable for these charts. Write a custom HA AC describing how the provider's own mon/mgr
+PVs are managed instead.
 
 **HA exception for single-instance upstreams**: some upstream services (SonarQube CE, MailHog,
 single-node Elasticsearch) architecturally cannot scale horizontally. For these:
@@ -103,6 +122,7 @@ Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
 5. Run quality gates before marking `passes: true`:
    - `helm lint charts/<name>/` if you touched a chart
    - HA gate (PDB, podAntiAffinity, replicaCount) if you touched a chart
+   - `helm template charts/<name>/ | python3 scripts/check-limits.py` if you touched a chart
    - `helm template charts/<name>/ | grep -i datasource` if you added an observability chart
    - `shellcheck -S error <file>.sh` if you touched a shell script
    - `yq e '.' <file>.yaml` if you touched ArgoCD manifests
@@ -129,11 +149,12 @@ You implement. Ceremonies verify. Don't conflate the two.
 ## Current platform state
 
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
-2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex)
+2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
+8 (testing-and-ha)
 
-Increment active: none (between sprints — advance will activate 8)
+Increment active: none (advance will activate 9)
 
-Increments pending: 8 (testing-and-ha), 9 (sovereign-pm)
+Increments pending: 9 (sovereign-pm)
 
 Epics complete: E1–E10 (all through observability)
 Epics with partial delivery: E11 (developer portal) — code-server chart delivered, Backstage pending
@@ -150,3 +171,10 @@ Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 
 - A shellcheck error is present → fix before marking passes: true
 - An ArgoCD Application is missing `revisionHistoryLimit: 3` → fix before marking passes: true
 - HA gate fails (PDB, podAntiAffinity, or replicaCount < 2 without a VENDORS.yaml ha_exception) → fix before marking passes: true
+- `check-limits.py` reports any container or initContainer missing `resources.requests` or `resources.limits` → fix before marking passes: true
+
+---
+
+## Known model inconsistencies
+
+- `phase` field still present on story `031a` in `backlog.json` — retired vocabulary. Trivial inline fix: remove the field from the story object. No dedicated story needed.
