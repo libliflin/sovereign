@@ -24,7 +24,7 @@
         "helm lint passes on all 6 charts (exit 0)",
         "helm template charts/<name>/ | grep podAntiAffinity exits 0 for each non-DaemonSet chart"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "helm lint charts/_globals/; for chart in cert-manager crossplane sealed-secrets vault rook-ceph; do helm lint charts/$chart/; helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB in $chart; helm template charts/$chart/ | grep podAntiAffinity || echo MISSING-AFFINITY in $chart; done; helm template charts/cilium/ | grep -A5 resources:",
       "dependencies": [],
