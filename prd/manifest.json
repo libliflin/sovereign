@@ -381,7 +381,10 @@
         6,
         7
       ],
-      "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product"
+      "themeGoal": "Sovereign PM web app \u2014 replace this file-based PM with a self-hosted product",
+      "startDate": "2026-03-24T00:00:00Z",
+      "pointsTotal": 2,
+      "storiesTotal": 1
     }
   ],
   "currentIncrement": 9
