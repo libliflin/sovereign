@@ -161,28 +161,5 @@
       "storiesIncomplete": 0,
       "reviewPassRate": 100.0
     }
-  ],
-  "activeSprint": "prd/increment-10-sovereign-pm-webapp.json",
-  "currentIncrement": 10,
-  "sprintHistory": [
-    {
-      "increment": 10,
-      "name": "sovereign-pm-webapp",
-      "endDate": "2026-03-25T22:30:00+00:00",
-      "pointsCompleted": 8,
-      "storiesTotal": 3,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 10,
-      "pointsCompleted": 8,
-      "storiesAccepted": 3,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-25T22:30:00+00:00"
-    }
   ]
 }
