@@ -31,10 +31,10 @@
       "smart": {
         "specific": 4,
         "measurable": 4,
-        "achievable": 4,
+        "achievable": 3,
         "relevant": 5,
-        "timeBound": 3,
-        "notes": "Updated during sprint planning: testPlan corrected to Node.js quality gates, vague ACs replaced with command-verifiable checks."
+        "timeBound": 4,
+        "notes": "Specific 4: JWT middleware library not specified (keycloak-connect? passport-jwt? express-jwt?). Measurable 4: '8+ endpoints' threshold in testPlan is arbitrary; ACs are otherwise binary. Achievable 3: Full backend with 4 Sequelize models, 8+ endpoints, JWT middleware, OpenAPI spec, and route-level test coverage is ambitious for a single 3-point iteration \u2014 near the top of the budget. TimeBound 4: acceptance criteria are binary and scope is well-defined; no open-ended extensions."
       },
       "epicId": "E14",
       "themeId": "T3",
@@ -65,10 +65,10 @@
       "smart": {
         "specific": 4,
         "measurable": 4,
-        "achievable": 4,
+        "achievable": 3,
         "relevant": 5,
-        "timeBound": 3,
-        "notes": "Updated during sprint planning: testPlan corrected to npm quality gates, ACs requiring running application replaced with file existence and static checks."
+        "timeBound": 4,
+        "notes": "Specific 4: 'Clean, minimal design' is subjective; state management approach and API client library are unspecified. Measurable 4: 'pass/fail status rendering for each story run' in AgentRuns AC is not verifiable by shell command \u2014 a grep or snapshot test would make it binary. Achievable 3: 5 pages + Keycloak auth integration + Vite build setup in one 3-point iteration is ambitious. TimeBound 4: well-bounded by specific file existence checks; the design phrase is the only scope-creep risk."
       },
       "epicId": "E14",
       "themeId": "T3",
@@ -105,8 +105,8 @@
         "measurable": 5,
         "achievable": 4,
         "relevant": 5,
-        "timeBound": 3,
-        "notes": "Updated during sprint planning: testPlan corrected to helm/docker quality gates, vague ACs replaced with command-verifiable checks. Intra-sprint dependency on 032+033."
+        "timeBound": 4,
+        "notes": "Specific 4: PostgreSQL dependency has two options ('bitnami/postgresql subchart OR Crossplane XRC reference') \u2014 implementer must choose; pick one in the story before implementing to avoid rework. TimeBound 4: the 'or' in the PostgreSQL dependency is the only scope ambiguity; all other ACs are binary and well-scoped."
       },
       "epicId": "E14",
       "themeId": "T3",
