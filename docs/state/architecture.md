@@ -22,13 +22,14 @@ User-facing documentation lives in `docs/quickstart.md`, `docs/architecture.md`,
 |---|---|
 | **Theme** | A strategic outcome (T1 Sovereignty, T2 Zero Trust, T3 Developer Autonomy, T4 Observability, T5 Resilience). Themes never complete — they accrete value. |
 | **Epic** | A capability cluster owned by one theme. Has a `targetIncrement` that says which increment delivers it. |
-| **Story** | A sprint-sized unit of work (≤ 8 points). Belongs to an epic. No standalone `phase` field — sequencing is via `epicId → targetIncrement`. |
+| **Story** | A sprint-sized unit of work (≤ 8 points). Belongs to an epic. Sequencing is via `epicId → targetIncrement`. |
 | **Increment** | The execution container for a sprint. Named after capability milestones. Stored in `prd/manifest.json` under `increments[]`. |
 | **Sprint file** | `prd/increment-N-<name>.json` — the active story list for one increment. |
 | **currentIncrement** | `manifest.json` field: the ID of the currently active increment. |
 | **activeSprint** | `manifest.json` field: path to the active sprint file. |
 
 The word "phase" is retired from code and data. If you see it in Python or JSON, it is a bug.
+Migration story 040 tracks the cleanup of residual `phase` fields in backlog stories.
 
 ---
 
@@ -71,8 +72,13 @@ Full policy: `docs/governance/sovereignty.md`
 
 Rook/Ceph provides block, filesystem, and object storage. All stateful services use Ceph
 storage classes. StorageClass names flow through `{{ .Values.global.storageClass }}` — never
-hardcoded. Ceph encryption at rest is required. Rook/Ceph is a storage **provider** — it
-creates StorageClasses, it does not consume a pre-existing one for its own StatefulSet PVs.
+hardcoded. Ceph encryption at rest is required.
+
+Rook/Ceph is a storage **provider** — it creates StorageClasses, it does not consume a
+pre-existing StorageClass for its own StatefulSet PVs. The standard HA acceptance criterion
+"volumeClaimTemplates reference global.storageClass" does not apply to the rook-ceph chart.
+For mon/mgr storage, add a CephCluster CR template with `spec.storage.storageClassDeviceSets`
+referencing `{{ .Values.global.storageClass }}`.
 
 ---
 

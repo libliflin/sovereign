@@ -72,13 +72,14 @@ covers a chart that wraps an upstream Helm chart (cilium, cert-manager, crosspla
 the specific upstream `values.yaml` key for each container and initContainer's resource limits
 before writing any code. Do not assume a generic key (e.g., `initResources`) applies to all
 initContainers. Cross-reference the upstream chart's values schema and confirm the exact key for
-each container in your implementation.
+each container in your implementation. Quote the exact key in the acceptance criteria.
 
 **Storage-provider charts require different HA ACs**: charts that ARE storage providers
 (rook-ceph, etcd) create StorageClasses — they do not consume a pre-existing StorageClass for
 their own StatefulSet PVs. The standard AC "volumeClaimTemplates reference global.storageClass"
-is inapplicable for these charts. Write a custom HA AC describing how the provider's own mon/mgr
-PVs are managed instead.
+is inapplicable for these charts. Instead, add a CephCluster CR template with
+`spec.storage.storageClassDeviceSets` referencing `{{ .Values.global.storageClass }}`. This is
+the correct way to satisfy the original AC intent for operator charts.
 
 **HA exception for single-instance upstreams**: some upstream services (SonarQube CE, MailHog,
 single-node Elasticsearch) architecturally cannot scale horizontally. For these:
@@ -122,6 +123,10 @@ confirm cost estimates are present in provider docs. This is a reusable testPlan
 work different from the increment's `description`, flag it before implementation. Do not
 implement work that contradicts the increment's stated purpose.
 
+**Sprint planning must fill >= 75% capacity**: a sprint with fewer stories than its capacity
+allows is a planning failure. If the current increment's backlog is exhausted, pull the
+highest-priority stories from adjacent increments or the general backlog.
+
 ---
 
 ## How to implement a story
@@ -161,15 +166,18 @@ You implement. Ceremonies verify. Don't conflate the two.
 
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
-8 (testing-and-ha), 9 (sovereign-pm/docs)
+8 (testing-and-ha — closed with 0 stories accepted; story 031a returned to backlog with reviewNotes)
 
-Increment active: none — all increments complete, advance will activate the next planned increment
+Increment active: none — increment 8 closed by retro, advance will activate increment 9 (sovereign-pm)
 
-Increments pending: none declared in manifest
+Increments pending: 9 (sovereign-pm)
 
-Epics complete: E1–E10 (all through observability)
-Epics with partial delivery: E11 (developer portal) — code-server chart delivered, Backstage pending
-Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 (HA validation)
+Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
+E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
+E10 (logs + traces)
+
+Epics backlog (not yet started): E11 (developer portal — Backstage + code-server), E12 (code quality),
+E13 (testing infrastructure + HA validation), E14 (sovereign-pm), E15 (HA integration testing)
 
 ---
 
@@ -188,4 +196,4 @@ Epics backlog: E12 (code quality), E13 (testing infra), E14 (sovereign-pm), E15 
 
 ## Known model inconsistencies
 
-None outstanding. All previous drift has been resolved.
+- `phase` field on backlog stories 043r, 044r, 045r still set to `8` (integer) — residual from auto-generation. Story 040 will remove the `phase` field from all backlog stories and retire it from the schema.

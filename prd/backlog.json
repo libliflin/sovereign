@@ -1818,8 +1818,8 @@
         "The updated planning ceremony script is committed and referenced in scripts/ralph/ceremonies/",
         "docs/state/agent.md has a note: 'Sprint planning must fill >= 75% capacity; use adjacent-phase backlog stories if the current phase backlog is exhausted'"
       ],
-      "epicId": "E0",
-      "themeId": "T0",
+      "epicId": "E1",
+      "themeId": "T3",
       "phase": 8,
       "priority": 1,
       "points": 1,
