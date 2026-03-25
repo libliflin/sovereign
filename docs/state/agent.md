@@ -115,14 +115,15 @@ flags. CI checks for both with grep. Missing either causes CI failure.
 `charts/<name>/templates/`. This is required for the chart to auto-register in Grafana.
 Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
 
-**Sprint goal and increment metadata must match**: the increment's `name`, `description`, and
-`themeGoal` fields must align with the `sprintGoal` text in the sprint file. Mismatches cause
-the SMART ceremony to flag stories as less relevant. Operators must align these fields during
-planning — the delivery machine does not enforce this automatically.
+**Documentation stories require command-verifiable ACs**: every acceptance criterion in a
+documentation story must be tied to a runnable gate (`markdownlint`, `ls`, `grep`). Subjective
+prose checks ("covers prerequisites") do not count as verifiable. If an AC cannot be verified
+with a command, rewrite it or split it into a testable sub-criterion before implementing.
 
-**Documentation stories are first-class delivery**: a sprint that delivers only documentation is
-complete when the docs are the sprint goal. Quality gates for doc stories are `markdownlint`,
-`ls` to confirm files exist, and `grep` to verify required content (e.g. cost estimates).
+**Sprint/increment naming must align**: the increment's `name`, `description`, and `themeGoal`
+fields in `manifest.json` must match the `sprintGoal` in the sprint file. A story whose `epicId`
+or `themeId` contradicts the increment's declared `themeGoal` will score Relevant: 3 in SMART
+review. Grooming must reject these misalignments before sprint start.
 
 ---
 
@@ -140,6 +141,7 @@ complete when the docs are the sprint goal. Quality gates for doc stories are `m
    - `shellcheck -S error <file>.sh` if you touched a shell script
    - `yq e '.' <file>.yaml` if you touched ArgoCD manifests
    - `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
+   - `markdownlint docs/ README.md` if you touched any `.md` files
 6. Set `passes: true` in the sprint file
 7. Push the branch, open a PR, wait for CI to pass, merge to main
 
@@ -169,10 +171,12 @@ Increment active: none — all planned increments delivered
 
 Increments pending: none
 
-Epics complete: E1–E10 (ceremonies through observability/tracing)
+Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (keycloak), E5 (gitops-engine),
+  E6 (autarky), E7 (istio), E8 (policy/security), E9 (prometheus/grafana), E10 (loki/tempo/thanos)
+
 Epics backlog: E11 (developer portal — code-server delivered, Backstage pending),
   E12 (code quality — SonarQube, ReportPortal), E13 (testing infra — Selenium, k6, Chaos Mesh, MailHog),
-  E14 (sovereign-pm web app — documentation delivered, Node.js/React app not yet built),
+  E14 (sovereign-pm web app — documentation delivered via story 035, Node.js/React app not yet built),
   E15 (HA validation — kind-based)
 
 ---

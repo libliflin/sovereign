@@ -111,7 +111,8 @@ Every story must pass before `reviewed: true`:
 8. `yq e '.'` on all ArgoCD application manifests — valid YAML
 9. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
 10. `helm template charts/<name>/ | grep -i datasource` — required for all observability charts
-11. Branch pushed to remote + PR merged to main — proof of work
+11. For documentation stories: `markdownlint docs/ README.md` — zero errors
+12. Branch pushed to remote + PR merged to main — proof of work
 
 ---
 
