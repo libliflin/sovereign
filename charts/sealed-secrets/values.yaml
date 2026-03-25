@@ -3,6 +3,9 @@ global:
   storageClass: "ceph-block"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
 
+# HA gate: replicaCount for sealed-secrets controller
+replicaCount: 2
+
 # sealed-secrets upstream chart values
 sealed-secrets:
   fullnameOverride: "sealed-secrets-controller"
