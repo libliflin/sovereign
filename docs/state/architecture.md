@@ -85,6 +85,23 @@ referencing `{{ .Values.global.storageClass }}`.
 
 Keycloak is the SSO provider. All user-facing services authenticate through Keycloak OIDC.
 Realm: `sovereign`. The Keycloak URL is `https://auth.{{ .Values.global.domain }}`.
+In-cluster applications must declare `KEYCLOAK_URL` explicitly in their Helm values — do not
+rely on DNS resolution working before Keycloak is fully provisioned.
+
+---
+
+## Developer experience
+
+| Service | Role |
+|---|---|
+| Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
+| code-server | Browser-based VS Code IDE for agents and developers. |
+| Backstage | Service catalog — Helm chart exists; catalog-info.yaml integration pending. |
+| SonarQube | Static analysis history — Helm chart pending. |
+
+Sovereign PM uses a multi-stage Dockerfile: Vite builds the React frontend, tsc builds the
+Express backend, combined in a single production image. Database: bitnami/postgresql subchart
+(quick-start); Crossplane XRC is the production path once foundations are running.
 
 ---
 

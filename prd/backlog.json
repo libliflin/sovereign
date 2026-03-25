@@ -3,6 +3,32 @@
   "schema": "prd/schema/story.schema.json",
   "stories": [
     {
+      "id": "GGE-G5-andon",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment to execute",
+      "description": "Golden Goose Egg G5 indicator is failing. Indicator type: gate_passing. Restore it immediately. Rationale: The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently \u2014 no error, no alert, just nothing to plan. This egg catches that stall state immediately. First triggered when increment 9 completed with no successor increment defined.",
+      "acceptanceCriteria": [
+        "GGE G5 indicator passes in orient"
+      ],
+      "priority": 0,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/gge-g5-andon",
+      "dependencies": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      },
+      "readinessNote": "Missing testPlan field — pulled into sprint-11 remediation as priority-0 ANDON override. Implementer should run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; print(len(pending), 'pending')\" to verify GGE G5 passes after fix."
+    },
+    {
       "id": "GGE-G4-andon",
       "title": "ANDON: Restore broken GGE \u2014 Mental model is coherent \u2014 one vocabulary, one hierarchy",
       "description": "Golden Goose Egg G4 indicator is failing. Indicator type: story_complete. Restore it immediately. Rationale: Phase vs increment vs sprint, phase field vs epicId \u2014 vocabulary fractures compound into delivery failures. The sync ceremony audits this every sprint. Story 040 (phase\u2192increment migration) is the current active fix.",
@@ -2076,6 +2102,35 @@
         "notes": "Not yet SMART-scored."
       },
       "readinessNote": "depends on story 029 which has passes: false \u2014 blocked"
+    },
+    {
+      "id": "053",
+      "title": "Fix attempts field semantics: initialize to 0, increment only on review failure",
+      "description": "The attempts field on stories is currently initialized to 1 after first implementation. This means first-pass rate detection (attempts == 0) always returns 0%, making the advance.py first-pass metric permanently wrong. Fix: initialize to 0 at story creation, increment only when the review ceremony re-opens a story (i.e., on review failure). Update ceremonies code, manifest schema, and existing sprint files.",
+      "acceptanceCriteria": [
+        "New stories in backlog.json initialize with attempts: 0",
+        "Review ceremony increments attempts when it re-opens a story (sets passes: false with reviewNotes)",
+        "advance.py first-pass rate formula uses len(reviewNotes) == 0 (no review failures) as the signal, not attempts == 0",
+        "python3 scripts/ralph/lib/advance.py --dry-run shows a non-zero first-pass rate for increment 10 (all 3 stories had 0 review failures)",
+        "shellcheck passes on all modified shell scripts"
+      ],
+      "priority": 53,
+      "epicId": "E1",
+      "themeId": "T3",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "points": 2,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timebound": 4,
+        "notes": "Well-bounded fix: one field initialization, one formula change, and a dry-run verification."
+      },
+      "readinessNote": ""
     }
   ]
 }

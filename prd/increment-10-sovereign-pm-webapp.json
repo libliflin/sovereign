@@ -25,7 +25,7 @@
       "points": 3,
       "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm test exits 0 with route-level test coverage for all endpoints in openapi.yaml; ls sovereign-pm/openapi.yaml; grep -E '(POST|GET|PUT|DELETE)' sovereign-pm/openapi.yaml lists all 8+ endpoints.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -59,7 +59,7 @@
       "points": 3,
       "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm run build exits 0; ls src/client/pages/{Dashboard,ProjectView,StoryEditor,PrdGenerator,AgentRuns}.tsx all exist.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -97,7 +97,7 @@
         "032",
         "033"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -112,5 +112,7 @@
       "themeId": "T3",
       "readinessNote": ""
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

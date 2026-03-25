@@ -145,7 +145,7 @@
       "description": "Build the Sovereign PM web application (Node.js/Express backend, React frontend, Helm chart). Replaces the file-based PM system with a self-hosted product. The documentation layer (story 035) is done; this increment delivers the running app.",
       "themeGoal": "T3 Developer Autonomy \u2014 sovereign-pm web app (E14): backend API, React UI, Dockerfile, and Helm chart deployed into kind",
       "file": "prd/increment-10-sovereign-pm-webapp.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         3,
         4,
@@ -153,10 +153,36 @@
         7
       ],
       "startDate": "2026-03-25T22:01:24.245024+00:00",
+      "endDate": "2026-03-25T22:30:00+00:00",
       "pointsTotal": 8,
-      "storiesTotal": 3
+      "storiesTotal": 3,
+      "pointsCompleted": 8,
+      "storiesAccepted": 3,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    },
+    {
+      "id": 11,
+      "name": "remediation",
+      "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
+      "file": "prd/increment-11-remediation.json",
+      "status": "active",
+      "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
+      "dependsOn": [],
+      "startDate": "2026-03-25T00:00:00+00:00",
+      "pointsTotal": 2,
+      "storiesTotal": 1
+    },
+    {
+      "id": 12,
+      "name": "developer-portal",
+      "description": "Backstage developer portal and code-server (VS Code in browser). Provides service catalog, developer self-service, and the primary interface for Claude Code agents.",
+      "file": "prd/increment-12-developer-portal.json",
+      "status": "pending",
+      "dependsOn": [3, 6, 7],
+      "themeGoal": "T3 Developer Autonomy \u2014 Backstage (E11) and code-server: service catalog, developer portal, browser-based IDE"
     }
   ],
-  "activeSprint": "prd/increment-10-sovereign-pm-webapp.json",
-  "currentIncrement": 10
+  "activeSprint": "prd/increment-11-remediation.json",
+  "currentIncrement": 11
 }

@@ -155,8 +155,8 @@
       "themeId": "T3",
       "title": "Sovereign PM \u2014 self-hosted AI-native project management",
       "description": "The web app that replaces this file-based PM system. Theme/Epic/Story UI, prd.json generation, Ralph trigger, agent run history.",
-      "targetIncrement": 9,
-      "status": "backlog",
+      "targetIncrement": 10,
+      "status": "complete",
       "storyIds": [
         "032",
         "033",

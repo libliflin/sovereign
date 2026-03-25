@@ -133,6 +133,26 @@ even when one is a stretch goal.
 allows is a planning failure. If the current increment's backlog is exhausted, pull the
 highest-priority stories from adjacent increments or the general backlog.
 
+**Multi-stage Dockerfile for Node.js + React**: build the React frontend with `vite build`,
+build the Express/Node backend with `tsc`, combine both artifacts in a single distroless-style
+production image. This pattern is used by Sovereign PM and should be reused for any future
+Node/React services.
+
+**Keycloak OIDC env vars must be explicit**: in-cluster apps using `keycloak-js` or JWT
+middleware need `KEYCLOAK_URL` (and realm, client ID) as explicit Helm values with clear
+placeholders in `values.yaml`. Do not assume DNS resolution of the Keycloak service will work
+in local kind clusters.
+
+**bitnami/postgresql subchart vs Crossplane XRC**: for in-cluster apps that need PostgreSQL,
+use `bitnami/postgresql` as a Helm subchart dependency (quick-start path). The Crossplane XRC
+path is correct for production once foundations are running — but do not block a story on
+Crossplane readiness when bitnami works. Resolve this OR-choice in the story before implementation.
+
+**OR-choices must be resolved at grooming, not implementation**: when a story says "option A OR
+option B", the implementer must pick one before writing code. Leaving it open creates scope
+ambiguity and rework risk. Future grooming should resolve all OR-choices before pulling a
+story into a sprint.
+
 ---
 
 ## How to implement a story
@@ -172,23 +192,17 @@ You implement. Ceremonies verify. Don't conflate the two.
 
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
-8 (testing-and-ha), 9 (sovereign-pm — documentation layer: quickstart, architecture, all four
-provider guides, README)
+8 (testing-and-ha), 9 (sovereign-pm — documentation layer: quickstart, architecture, provider guides,
+README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Dockerfile, Helm chart)
 
-Increment active: none — all increments complete through 9. Advance ceremony must create increment 10.
-
-Increments pending: none — backlog contains work for a future increment 10 (sovereign-pm web app,
-HA hardening, testing infrastructure, developer portal).
+Increment active: none — all increments complete through 10.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
-E10 (logs + traces)
+E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics backlog (not yet started): E11 (developer portal — Backstage + code-server), E12 (code quality),
-E13 (testing infrastructure + HA validation), E14 (sovereign-pm web app), E15 (HA integration testing)
-
-Note: increment 9 delivered documentation (story 035), not the sovereign-pm web app. The web app
-stories (032, 033, 034) remain in the backlog under E14 and should be the core of increment 10.
+Epics backlog (not yet started): E11 (developer portal — Backstage + code-server), E12 (code quality
+— SonarQube + ReportPortal), E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
 ---
 
@@ -203,3 +217,11 @@ stories (032, 033, 034) remain in the backlog under E14 and should be the core o
 - HA gate fails (PDB, podAntiAffinity, or replicaCount < 2 without a VENDORS.yaml ha_exception) → fix before marking passes: true
 - `check-limits.py` reports any container or initContainer missing `resources.requests` or `resources.limits` → fix before marking passes: true
 - The word "phase" appears in new Python or JSON you are writing → use "increment" instead
+
+---
+
+## Known model inconsistencies
+
+- `attempts` field is initialized to 1 after first implementation, so `attempts == 0` in advance.py
+  always reports 0% first-pass rate. Story 053 will fix: initialize to 0, increment only on review
+  re-open, update formula to use `len(reviewNotes) == 0`.
