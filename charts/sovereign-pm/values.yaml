@@ -5,3 +5,99 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+# Number of sovereign-pm replicas (must be >= 2 for HA)
+replicaCount: 2
+
+image:
+  repository: sovereign-pm
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  tls: true
+
+# Keycloak OIDC configuration (passed to the app as environment variables)
+keycloak:
+  clientId: "sovereign-pm"
+
+# PVC for shared PRD data (read by Ralph Jobs)
+prdPvc:
+  storageRequest: "1Gi"
+  accessMode: ReadWriteMany
+
+# PostgreSQL subchart configuration
+postgresql:
+  enabled: true
+  auth:
+    username: "sovereign_pm"
+    password: "sovereign_pm_change_me"
+    database: "sovereign_pm"
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""  # uses global.storageClass via volume provisioner
+      size: "8Gi"
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+  # Disable subchart PDB — wrapper chart manages its own PDB
+  pdb:
+    create: false
+
+# Application resource limits
+resources:
+  requests:
+    cpu: "100m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# Probes
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  failureThreshold: 3
+
+# Pod anti-affinity (prefer different nodes)
+podAntiAffinity:
+  enabled: true
+
+# Ralph Job defaults
+ralphJob:
+  image:
+    repository: sovereign-pm
+    tag: "0.1.0"
+  iterations: 10
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"

@@ -1,0 +1,53 @@
+{{- /*
+  Ralph Job template — rendered at Job creation time by the sovereign-pm API.
+  This manifest specifies the default Ralph Job structure.
+  The API generates individual Job names dynamically by appending the run ID.
+  This chart-managed template is validated by helm lint / dry-run and
+  version-controlled alongside the application.
+*/}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "sovereign-pm.fullname" . }}-ralph
+  namespace: sovereign-pm
+  labels:
+    app.kubernetes.io/name: ralph
+    app.kubernetes.io/part-of: sovereign-pm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    sovereign-pm/purpose: "on-demand-ralph-run-template"
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "sovereign-pm.fullname" . }}
+      volumes:
+        - name: prd-data
+          persistentVolumeClaim:
+            claimName: {{ include "sovereign-pm.fullname" . }}-prd
+      containers:
+        - name: ralph
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.ralphJob.image.repository }}:{{ .Values.ralphJob.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/app/scripts/ralph/ralph.sh"]
+          args:
+            - "--tool"
+            - "claude"
+            - "{{ .Values.ralphJob.iterations }}"
+          env:
+            - name: KEYCLOAK_URL
+              value: "{{ .Values.global.keycloak.url }}"
+            - name: KEYCLOAK_REALM
+              value: "{{ .Values.global.keycloak.realm }}"
+          volumeMounts:
+            - name: prd-data
+              mountPath: /app/prd
+          resources:
+            requests:
+              cpu: {{ .Values.ralphJob.resources.requests.cpu }}
+              memory: {{ .Values.ralphJob.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.ralphJob.resources.limits.cpu }}
+              memory: {{ .Values.ralphJob.resources.limits.memory }}

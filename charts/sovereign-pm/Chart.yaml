@@ -1,6 +1,12 @@
 apiVersion: v2
 name: sovereign-pm
-description: Sovereign PM AI-native project management
+description: Sovereign PM — AI-native project management web app for the Sovereign Platform
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
+
+dependencies:
+  - name: postgresql
+    version: "13.4.4"
+    repository: "https://charts.bitnami.com/bitnami"
+    alias: postgresql

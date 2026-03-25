@@ -1,0 +1,33 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "sovereign-pm.fullname" . }}
+  namespace: sovereign-pm
+  labels:
+    app.kubernetes.io/name: sovereign-pm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    - hosts:
+        - "pm.{{ .Values.global.domain }}"
+      secretName: sovereign-pm-tls
+  {{- end }}
+  rules:
+    - host: "pm.{{ .Values.global.domain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "sovereign-pm.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}
