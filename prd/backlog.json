@@ -1096,7 +1096,8 @@
       "epicId": "E12",
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
-      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass."
+      "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass.",
+      "readinessNote": "testPlan is generic ('Run quality gates: helm lint, shellcheck, kubectl dry-run') and does not address the specific re-open reason in reviewNotes[0]. The review failure was: SonarQube CE replicaCount: 1 failed HA gate #12. The fix requires: (1) adding ha_exception: true with ha_exception_reason to vendor/VENDORS.yaml for sonarqube, (2) adding top-level replicaCount: 1 with a comment referencing the VENDORS.yaml exception to charts/sonarqube/values.yaml. testPlan must specify: grep 'sonarqube' vendor/VENDORS.yaml | grep ha_exception; grep -n 'replicaCount' charts/sonarqube/values.yaml showing value 1 with comment; helm lint charts/sonarqube/ charts/reportportal/ exits 0; helm template charts/sonarqube/ | grep PodDisruptionBudget; helm template charts/reportportal/ | grep PodDisruptionBudget."
     },
     {
       "id": "030",
@@ -1407,33 +1408,33 @@
       "title": "Sovereign PM: Node.js/Express backend",
       "description": "Create sovereign-pm/src/server/ \u2014 a Node.js + Express + TypeScript API server. Data model: Project, Epic, Story, AgentRun. PostgreSQL via Sequelize. Endpoints: CRUD for epics/stories, POST /api/prd/generate (outputs prd.json), POST /api/ralph/trigger (creates a Kubernetes Job running ralph.sh), GET /api/ralph/runs (list run history). Keycloak OIDC JWT validation middleware. OpenAPI spec in sovereign-pm/openapi.yaml.",
       "acceptanceCriteria": [
-        "sovereign-pm/src/server/ TypeScript Express app",
-        "Sequelize models for Project, Epic, Story, AgentRun",
-        "All CRUD endpoints implemented",
-        "POST /api/prd/generate returns valid prd.json",
-        "POST /api/ralph/trigger creates a K8s Job",
-        "Keycloak JWT middleware on all routes",
-        "npm run typecheck and npm run lint pass",
-        "openapi.yaml documents all endpoints"
+        "sovereign-pm/src/server/ TypeScript Express app compiles with npm run typecheck",
+        "Sequelize models for Project, Epic, Story, AgentRun in src/server/models/",
+        "npm test exits 0 with route-level tests covering /api/epics, /api/stories, /api/projects, /api/agent-runs",
+        "POST /api/prd/generate returns JSON matching prd.json schema (unit test verifies shape)",
+        "POST /api/ralph/trigger: src/server/routes/ralph.ts generates a K8s Job manifest spec; unit test verifies Job spec has correct image and command",
+        "Keycloak JWT middleware applied to all routes; unauthenticated request returns 401",
+        "npm run typecheck and npm run lint exit 0",
+        "openapi.yaml documents all endpoints with request/response schemas"
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm test exits 0 with route-level test coverage for all endpoints in openapi.yaml; ls sovereign-pm/openapi.yaml; grep -E '(POST|GET|PUT|DELETE)' sovereign-pm/openapi.yaml lists all 8+ endpoints.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Updated during sprint planning: testPlan corrected to Node.js quality gates, vague ACs replaced with command-verifiable checks."
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "testPlan references wrong quality gates (helm lint, shellcheck, kubectl dry-run) for a Node.js backend \u2014 should specify: npm run typecheck && npm run lint && npm test. AC \"All CRUD endpoints implemented\" is not independently verifiable \u2014 needs \"npm test exits 0 with route-level test coverage for all endpoints listed in openapi.yaml\". AC \"POST /api/ralph/trigger creates a K8s Job\" requires a live cluster \u2014 mark as blocker: requires_live_cluster."
+      "readinessNote": ""
     },
     {
       "id": "033",
@@ -1443,31 +1444,31 @@
       "description": "Create sovereign-pm/src/client/ \u2014 a React + TypeScript + Vite frontend. Pages: Dashboard (all projects), Project view (epics/stories kanban), Story editor (title, description, acceptance criteria, priority, phase), PRD Generator (shows generated prd.json, copy button), Agent Runs (history of Ralph loops, pass/fail per story, timestamps). Keycloak OIDC via keycloak-js. Tailwind CSS. Clean, minimal design.",
       "acceptanceCriteria": [
         "React + TypeScript + Vite app in sovereign-pm/src/client/",
-        "All 5 pages implemented",
-        "Keycloak login flow works",
-        "PRD Generator shows formatted prd.json with copy button",
-        "Agent Runs page shows story pass/fail history",
-        "npm run typecheck and npm run lint pass",
-        "npm run build succeeds"
+        "All 5 pages implemented: Dashboard, ProjectView, StoryEditor, PrdGenerator, AgentRuns \u2014 verified by ls src/client/pages/",
+        "src/client/App.tsx wraps routes in KeycloakProvider; src/client/keycloak.ts initializes keycloak-js with env-sourced OIDC config",
+        "src/client/pages/PrdGenerator.tsx exists and includes a navigator.clipboard or equivalent copy-to-clipboard handler",
+        "src/client/pages/AgentRuns.tsx exists with pass/fail status rendering for each story run",
+        "npm run typecheck and npm run lint exit 0",
+        "npm run build exits 0 (Vite production bundle succeeds)"
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm run build exits 0; ls src/client/pages/{Dashboard,ProjectView,StoryEditor,PrdGenerator,AgentRuns}.tsx all exist.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Updated during sprint planning: testPlan corrected to npm quality gates, ACs requiring running application replaced with file existence and static checks."
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "ACs \"Keycloak login flow works\", \"PRD Generator shows formatted prd.json with copy button\", and \"Agent Runs page shows story pass/fail history\" require a running application and cannot be verified statically. Replace with file/component existence checks: \"src/client/pages/PrdGenerator.tsx exists with a copy-to-clipboard handler\", \"src/client/pages/AgentRuns.tsx exists with pass/fail rendering logic\". testPlan references wrong quality gates \u2014 should specify: npm run typecheck && npm run lint && npm run build exits 0."
+      "readinessNote": ""
     },
     {
       "id": "034",
@@ -1476,17 +1477,18 @@
       "title": "Sovereign PM: Dockerfile and Helm chart",
       "description": "Create sovereign-pm/Dockerfile (multi-stage: build frontend, build backend, combined production image). Create charts/sovereign-pm/ Helm chart deploying the PM app. PostgreSQL dependency (or external Crossplane-managed). Keycloak OIDC config from values. Ingress at pm.{{ .Values.global.domain }}. Ralph scripts mounted as a volume (reads prd.json from PVC shared with the K8s Job). ArgoCD app in argocd-apps/devex/sovereign-pm-app.yaml.",
       "acceptanceCriteria": [
-        "Dockerfile builds successfully (docker build .)",
-        "charts/sovereign-pm/ deploys app with Keycloak OIDC",
-        "Ingress at pm.global.domain",
-        "PostgreSQL dependency in chart",
-        "Ralph Job template in chart templates/",
-        "helm lint passes",
-        "argocd-apps/devex/sovereign-pm-app.yaml exists"
+        "sovereign-pm/Dockerfile builds successfully: docker build sovereign-pm/ exits 0",
+        "charts/sovereign-pm/ Helm chart passes helm lint",
+        "helm template charts/sovereign-pm/ | grep -i keycloak exits 0 (OIDC config present in rendered manifests)",
+        "Ingress resource rendered with host pm.{{ .Values.global.domain }}",
+        "PostgreSQL dependency declared in Chart.yaml (bitnami/postgresql subchart or Crossplane XRC reference)",
+        "charts/sovereign-pm/templates/ralph-job.yaml exists (Job template for on-demand Ralph runs)",
+        "argocd-apps/devex/sovereign-pm-app.yaml exists",
+        "helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f - exits 0"
       ],
       "passes": false,
       "points": 2,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "helm lint charts/sovereign-pm/ exits 0; helm template charts/sovereign-pm/ | kubectl apply --dry-run=client -f - exits 0; helm template charts/sovereign-pm/ | grep -i keycloak exits 0; helm template charts/sovereign-pm/ | grep PodDisruptionBudget exits 0; ls argocd-apps/devex/sovereign-pm-app.yaml exists; docker build sovereign-pm/ exits 0 (or docker build --no-cache if first run).",
       "dependencies": [
         "032",
         "033"
@@ -1495,16 +1497,16 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Updated during sprint planning: testPlan corrected to helm/docker quality gates, vague ACs replaced with command-verifiable checks. Intra-sprint dependency on 032+033."
       },
       "epicId": "E14",
       "themeId": "T3",
-      "readinessNote": "Missing dependencies on story 032 (backend source) and story 033 (frontend source) \u2014 the multi-stage Dockerfile described cannot be built until both exist. Add \"032\" and \"033\" to dependencies[]. Both are currently not ready. Also: AC \"deploys app with Keycloak OIDC\" is not independently verifiable \u2014 replace with \"helm template charts/sovereign-pm/ | grep -i keycloak exits 0\"."
+      "readinessNote": ""
     },
     {
       "id": "035",
@@ -1843,6 +1845,237 @@
       "returnedReason": "Systemic fix: under-loaded sprint (1 story, 3 pts vs 15-pt capacity) meant a single failure wiped 100% of sprint delivery.",
       "branchName": "feature/process-improvements",
       "readinessNote": "Missing testPlan field \u2014 no commands specified to verify ACs. Add: grep -E '0\\.75|75%|capacity' scripts/ralph/ceremonies/plan.py exits 0; grep 'Sprint planning must fill' docs/state/agent.md exits 0."
+    },
+    {
+      "id": "046",
+      "title": "Kaizen: Add global.domain parameterization to 14 ArgoCD app manifests",
+      "epicId": "E5",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-app-domain-parameterization",
+      "priority": 11,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "All ArgoCD Application manifests in argocd-apps/ pass global.domain as a Helm value override via spec.source.helm.valuesObject or spec.source.helm.parameters",
+        "grep -rL 'global.domain' argocd-apps/**/*.yaml returns only root-app.yaml (which does not deploy a Helm chart)",
+        "yq e '.' argocd-apps/**/*.yaml exits 0 (all YAML valid)",
+        "All apps still have spec.revisionHistoryLimit: 3"
+      ],
+      "testPlan": "grep -rL 'global.domain' argocd-apps/**/*.yaml | grep -v root-app.yaml | wc -l  # must be 0; yq e '.' argocd-apps/**/*.yaml; grep -rn 'revisionHistoryLimit' argocd-apps/**/*.yaml | grep -v '3$' | wc -l  # must be 0",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "047",
+      "title": "Kaizen: Upstream chart version audit \u2014 update all pinned versions to current stable",
+      "epicId": "E6",
+      "themeId": "T1",
+      "branchName": "kaizen/upstream-chart-version-audit",
+      "priority": 12,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "vendor/update-check.sh runs without error and outputs a report comparing current pinned versions to upstream latest",
+        "All Chart.yaml dependency versions are updated to the current stable release as of the implementation date",
+        "helm dependency update && helm lint passes on all updated charts",
+        "HA gate passes on all updated charts (PDB, podAntiAffinity, replicaCount >= 2)",
+        "A version-audit.md is written to docs/operations/ recording the before/after versions and the date of update"
+      ],
+      "testPlan": "vendor/update-check.sh; for chart in charts/*/; do helm dependency update $chart && helm lint $chart; done; grep -r 'version:' charts/*/Chart.yaml | grep -v '0.1.0'",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "AC #1 ('vendor/update-check.sh runs without error') requires vendor/update-check.sh from story 020 (passes: false) \u2014 this is a functional dependency not declared in dependencies[]. Add '020' to dependencies[]. testPlan invokes vendor/update-check.sh which does not exist yet \u2014 story will fail immediately. Also: testPlan should cover the verifiable subset without update-check.sh: for chart in charts/*/; do helm dependency update $chart && helm lint $chart || echo FAIL-$chart; done; test -f docs/operations/version-audit.md."
+    },
+    {
+      "id": "048",
+      "title": "Kaizen: Backlog hygiene \u2014 reconcile passes: false stories implemented via sprint files",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/backlog-hygiene",
+      "priority": 14,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "Every story in backlog.json with passes: false is reviewed against sprint file history",
+        "Stories whose work was delivered via a different sprint story ID are marked passes: true with a reviewNotes entry explaining which sprint story superseded them",
+        "Stories that are genuinely unimplemented remain passes: false",
+        "The count of passes: false stories in backlog.json drops by at least 10 (reflecting superseded stories)",
+        "A comment block is added to backlog.json explaining the backlog/sprint-file relationship"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); pending=[s for s in b['stories'] if not s.get('passes',False)]; print(f'{len(pending)} pending stories'); assert len(pending) < 31, 'Expected at least 10 stories reconciled'\"",
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "AC #5 ('A comment block is added to backlog.json') is not implementable: JSON does not support comments. Replace with a verifiable alternative: add a 'schema_notes' or 'metadata' key at the top level of backlog.json explaining the backlog/sprint-file relationship, or create docs/backlog-guide.md. testPlan assertion 'assert len(pending) < 31' is not documented with the current pending count as baseline \u2014 should state the count at time of writing to make the delta meaningful."
+    },
+    {
+      "id": "049",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/backstage-catalog-info",
+      "title": "Add catalog-info.yaml to all platform charts for Backstage auto-discovery",
+      "description": "Backstage discovers platform services via catalog-info.yaml files in each chart directory. Every chart under charts/ must have a valid catalog-info.yaml so Backstage can build a complete service catalog without manual registration.",
+      "acceptanceCriteria": [
+        "Every directory under charts/ contains a catalog-info.yaml with apiVersion: backstage.io/v1alpha1",
+        "Each catalog-info.yaml defines kind: Component with spec.type, spec.lifecycle: production, spec.owner: sovereign-platform",
+        "yq e '.' charts/*/catalog-info.yaml exits 0 (all YAML is valid)",
+        "charts/backstage/templates/configmap.yaml app-config includes a GitLab discovery location pointing to charts/*/catalog-info.yaml",
+        "helm lint charts/backstage/ exits 0 after the configmap change",
+        "At least 10 charts have catalog-info.yaml (cilium, cert-manager, argocd, keycloak, gitlab, harbor, prometheus-stack, loki, backstage, code-server)"
+      ],
+      "testPlan": "for d in charts/*/; do test -f \"$d/catalog-info.yaml\" || (echo MISSING: $d; exit 1); done && yq e '.' charts/*/catalog-info.yaml > /dev/null && helm lint charts/backstage/",
+      "dependencies": [
+        "027"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "depends on story 027 which has passes: false \u2014 blocked"
+    },
+    {
+      "id": "050",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": "2i",
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/bootstrap-cost-gate",
+      "title": "Bootstrap cost gate: enforce 3-node minimum and display cost in all provider scripts",
+      "description": "All provider scripts must refuse to proceed with fewer than 3 nodes or an even node count (required for etcd and Ceph quorum). Scripts must also print the estimated 3-node monthly cost before provisioning, giving operators a cost checkpoint.",
+      "acceptanceCriteria": [
+        "bash -n bootstrap/providers/hetzner.sh exits 0 (no syntax errors)",
+        "bash bootstrap/providers/hetzner.sh --dry-run --nodes 2 exits non-zero and prints 'nodes.count must be odd and >= 3'",
+        "bash bootstrap/providers/hetzner.sh --dry-run --nodes 4 exits non-zero and prints even-number error",
+        "bash bootstrap/providers/hetzner.sh --dry-run --nodes 3 prints an estimated 3-node monthly cost in USD before any provisioning",
+        "Same validation logic is present in bootstrap/providers/generic-vps.sh and bootstrap/providers/aws-ec2.sh",
+        "shellcheck bootstrap/providers/hetzner.sh bootstrap/providers/generic-vps.sh bootstrap/providers/aws-ec2.sh exits 0"
+      ],
+      "testPlan": "bash -n bootstrap/providers/hetzner.sh && shellcheck bootstrap/providers/hetzner.sh && bash bootstrap/providers/hetzner.sh --dry-run --nodes 2; echo exit=$?",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "testPlan only validates hetzner.sh ('bash -n ... && shellcheck ... && bash ... --dry-run --nodes 2'). ACs #5-#6 require the same validation for generic-vps.sh and aws-ec2.sh. Extend testPlan: bash bootstrap/providers/generic-vps.sh --dry-run --nodes 2; echo exit=$? (must be non-zero); bash bootstrap/providers/aws-ec2.sh --dry-run --nodes 4; echo exit=$? (must be non-zero); shellcheck bootstrap/providers/hetzner.sh bootstrap/providers/generic-vps.sh bootstrap/providers/aws-ec2.sh exits 0."
+    },
+    {
+      "id": "051",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": "2i",
+      "priority": 2,
+      "points": 3,
+      "branchName": "feature/pdb-chaos-kind",
+      "title": "PDB chaos validation: verify PodDisruptionBudgets block unsafe node drains in kind",
+      "description": "Prove that PodDisruptionBudgets actually prevent service disruption during maintenance. Script deploys a test workload with replicaCount: 2 and PDB minAvailable: 1 into kind, then attempts kubectl drain \u2014 the drain must be blocked when it would violate the PDB.",
+      "acceptanceCriteria": [
+        "kind/chaos-drain.sh exists, is executable, and shellcheck passes",
+        "Script creates (or reuses) a multi-node kind cluster named sovereign-chaos",
+        "Script deploys a test Deployment with replicaCount: 2 and a PDB with minAvailable: 1",
+        "kubectl drain on the node hosting both pods is blocked by the PDB (exit non-zero from drain attempt)",
+        "Script exits 0 when PDB correctly prevents the unsafe drain, exits 1 if drain succeeded (PDB not working)",
+        "kind/chaos-drain.sh --teardown removes the sovereign-chaos cluster",
+        "shellcheck kind/chaos-drain.sh exits 0"
+      ],
+      "testPlan": "shellcheck kind/chaos-drain.sh && kind/chaos-drain.sh && kind/chaos-drain.sh --teardown",
+      "dependencies": [
+        "039"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "depends on story 039 which has passes: false \u2014 blocked"
+    },
+    {
+      "id": "052",
+      "epicId": "E12",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/sonarqube-gitlab-ci-integration",
+      "title": "SonarQube GitLab CI integration: scanner config and quality gate template",
+      "description": "SonarQube is only valuable if every project scans automatically on push. Add a reusable GitLab CI template that projects can include to run SonarScanner, and provide a reference sonar-project.properties for the sovereign-pm project.",
+      "acceptanceCriteria": [
+        "vendor/gitlab-ci-template.yml includes a sonarqube-scan job that runs SonarScanner CLI",
+        "sovereign-pm/sonar-project.properties exists with projectKey, sources, and exclusions configured",
+        "docs/sonarqube-integration.md explains how to wire a GitLab project to SonarQube (3 steps: add token, include template, set SONAR_HOST_URL)",
+        "helm lint charts/sonarqube/ exits 0",
+        "The SonarQube chart values.yaml includes a sonarProperties.sonar.forceAuthentication: true setting",
+        "yq e '.' vendor/gitlab-ci-template.yml exits 0 (valid YAML)"
+      ],
+      "testPlan": "helm lint charts/sonarqube/ && yq e '.' vendor/gitlab-ci-template.yml && test -f sovereign-pm/sonar-project.properties",
+      "dependencies": [
+        "029"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "depends on story 029 which has passes: false \u2014 blocked"
     }
   ]
 }

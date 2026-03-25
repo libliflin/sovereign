@@ -1,5 +1,5 @@
 {
-  "_comment": "Golden Goose Eggs \u2014 the 3-5 outcomes that matter most right now. Defined and redefined by theme-review. Orient checks these first. A failing GGE triggers an immediate priority-0 backlog story.",
+  "_comment": "Golden Goose Eggs — the 3-5 outcomes that matter most right now. Defined and redefined by theme-review. Orient checks these first. A failing GGE triggers an immediate priority-0 backlog story.",
   "limit": {
     "min": 3,
     "max": 5
@@ -36,7 +36,7 @@
       "id": "G3",
       "title": "Cluster contract is current, enforced, and machine-checked",
       "themeId": "T1",
-      "rationale": "Sovereignty means nothing if the cluster contract is a document nobody reads. It must be a gate \u2014 orient checks it exists and is current, and the bootstrap process references it explicitly.",
+      "rationale": "Sovereignty means nothing if the cluster contract is a document nobody reads. It must be a gate — orient checks it exists and is current, and the bootstrap process references it explicitly. Healthy for 10 consecutive sprints — approaching table stakes, but retained because CLAUDE.md governance section references it as a hard gate for all cluster-level architectural decisions.",
       "indicator": {
         "type": "file_exists",
         "path": "docs/governance/cluster-contract.md"
@@ -44,12 +44,22 @@
     },
     {
       "id": "G4",
-      "title": "Mental model is coherent \u2014 one vocabulary, one hierarchy",
+      "title": "Mental model is coherent — one vocabulary, one hierarchy",
       "themeId": "T3",
-      "rationale": "Phase vs increment vs sprint \u2014 vocabulary fractures compound into delivery failures. Migration complete: manifest uses 'increments'/'currentIncrement', stories have no standalone phase field, sprint files are increment-N-*.json. The sync ceremony re-checks this each sprint.",
+      "rationale": "Phase vs increment vs sprint — vocabulary fractures compound into delivery failures. Migration complete: manifest uses 'increments'/'currentIncrement', stories have no standalone phase field, sprint files are increment-N-*.json. The sync ceremony re-checks this each sprint.",
       "indicator": {
         "type": "gate_passing",
-        "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); assert 'increments' in m, 'increments key missing'; assert 'phases' not in m, 'old phases key still present \u2014 vocabulary migration incomplete'; print('vocabulary OK')\""
+        "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); assert 'increments' in m, 'increments key missing'; assert 'phases' not in m, 'old phases key still present — vocabulary migration incomplete'; print('vocabulary OK')\""
+      }
+    },
+    {
+      "id": "G5",
+      "title": "Planning pipeline always has a pending increment to execute",
+      "themeId": "T3",
+      "rationale": "The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently — no error, no alert, just nothing to plan. This egg catches that stall state immediately. First triggered when increment 9 completed with no successor increment defined.",
+      "indicator": {
+        "type": "gate_passing",
+        "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1, f'No pending increments — plan ceremony will stall. Run theme-review to create one.'; print(f'{len(pending)} pending increment(s) — OK')\""
       }
     }
   ]
