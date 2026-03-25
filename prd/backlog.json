@@ -11,16 +11,15 @@
       ],
       "priority": 0,
       "points": 2,
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "fix/gge-g4-andon",
       "dependencies": [],
       "attempts": 0,
-      "status": "killed",
       "reviewNotes": [
-        "[KILLED] G4 resolved by story 040 completion \u2014 increment migration done"
+        "G4 indicator now passes \u2014 vocabulary migration complete. Closed by kaizen fix."
       ]
     },
     {

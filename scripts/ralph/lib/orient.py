@@ -548,8 +548,23 @@ def assess(repo_root: Path) -> Assessment:
             with open(backlog_path) as f:
                 backlog = json.load(f)
             andon_id = f"GGE-{first_broken['id']}-andon"
-            existing_ids = {s["id"] for s in backlog.get("stories", [])}
-            if andon_id not in existing_ids:
+            existing = next((s for s in backlog.get("stories", []) if s["id"] == andon_id), None)
+
+            # If the andon was killed but GGE is still broken, revive it.
+            # Only a passing GGE indicator justifies closing an andon story.
+            if existing and existing.get("status") == "killed":
+                existing.pop("status", None)
+                existing["passes"] = False
+                existing["reviewed"] = False
+                with open(backlog_path, "w") as f:
+                    json.dump(backlog, f, indent=2)
+                all_stories_entry = next((s for s in all_stories if s["id"] == andon_id), None)
+                if all_stories_entry:
+                    all_stories_entry.pop("status", None)
+                    all_stories_entry["passes"] = False
+                print(f"  ⚑  ANDON: revived killed story '{andon_id}' — GGE still broken")
+
+            if not existing:
                 andon_story = {
                     "id": andon_id,
                     "title": f"ANDON: Restore broken GGE — {first_broken['title']}",

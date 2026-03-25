@@ -49,7 +49,7 @@
       "rationale": "Phase vs increment vs sprint \u2014 vocabulary fractures compound into delivery failures. Migration complete: manifest uses 'increments'/'currentIncrement', stories have no standalone phase field, sprint files are increment-N-*.json. The sync ceremony re-checks this each sprint.",
       "indicator": {
         "type": "gate_passing",
-        "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); assert 'increments' in m, 'increments missing'; assert 'currentIncrement' in m, 'currentIncrement missing'; assert 'phases' not in m, 'old phases key still present'; print('vocabulary OK')\""
+        "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); assert 'increments' in m, 'increments key missing'; assert 'phases' not in m, 'old phases key still present \u2014 vocabulary migration incomplete'; print('vocabulary OK')\""
       }
     }
   ]

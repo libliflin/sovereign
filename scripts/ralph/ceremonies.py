@@ -320,8 +320,18 @@ def main() -> int:
             active_sprint = manifest.active_sprint
             sprint_file = REPO_ROOT / active_sprint if active_sprint else None
             if not sprint_file or not sprint_file.exists():
-                print(f"FATAL: Plan ceremony ran but sprint file still missing.", file=sys.stderr)
-                return 1
+                # Plan found nothing to execute (no pending increments, no p0 stories).
+                # This is kaizen mode — re-run orient which will route to theme-review.
+                print(f"\n  Plan found no actionable work. Re-orienting into kaizen cycle...")
+                new_assessment = orient_lib.assess(REPO_ROOT)
+                new_assessment.print_report()
+                if new_assessment.action == orient_lib.NextAction.THEME_REVIEW:
+                    print(f"  Orient decision: kaizen → theme-review")
+                    start_at = "theme-review"
+                    # Don't FATAL — fall through with no sprint; theme-review doesn't need one
+                else:
+                    print(f"FATAL: Plan ceremony ran but sprint file still missing.", file=sys.stderr)
+                    return 1
             sprint = sprint_lib.load(sprint_file)
             print(f"\n  Sprint ready: {active_sprint} ({len(sprint.get('stories', []))} stories)")
             _git_commit("plan", [str(active_sprint), "prd/manifest.json"])
