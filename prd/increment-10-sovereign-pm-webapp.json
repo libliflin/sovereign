@@ -55,13 +55,13 @@
         "npm run typecheck and npm run lint exit 0",
         "npm run build exits 0 (Vite production bundle succeeds)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm run build exits 0; ls src/client/pages/{Dashboard,ProjectView,StoryEditor,PrdGenerator,AgentRuns}.tsx all exist.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 4,
         "measurable": 4,
