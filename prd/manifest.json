@@ -152,7 +152,15 @@
       "file": "prd/increment-11-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": []
+      "dependsOn": [],
+      "startDate": "2026-03-25T00:00:00+00:00",
+      "endDate": "2026-03-25T00:00:00+00:00",
+      "pointsTotal": 2,
+      "storiesTotal": 1,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 12,
@@ -172,5 +180,26 @@
     }
   ],
   "activeSprint": "prd/increment-12-developer-portal.json",
-  "currentIncrement": 12
+  "currentIncrement": 12,
+  "sprintHistory": [
+    {
+      "increment": 11,
+      "name": "remediation",
+      "endDate": "2026-03-25T00:00:00+00:00",
+      "pointsCompleted": 2,
+      "storiesTotal": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 11,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-25T00:00:00+00:00"
+    }
+  ]
 }
