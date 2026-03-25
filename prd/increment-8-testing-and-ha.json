@@ -1,0 +1,43 @@
+{
+  "increment": 8,
+  "name": "testing-and-ha",
+  "description": "Selenium Grid, k6, MailHog, Chaos Mesh, HA pass across all charts, GitLab CI vendor builds.",
+  "sprintGoal": "Harden all platform Helm charts with HA primitives (PDB, anti-affinity, replica minima) so every deployment survives a node failure.",
+  "capacity": 15,
+  "stories": [
+    {
+      "id": "031",
+      "priority": 31,
+      "branchName": "feature/ha-helm-pass",
+      "title": "HA pass: PodDisruptionBudgets, anti-affinity, and replica hardening for all charts",
+      "description": "Audit every Helm chart in charts/ and ensure HA is properly configured. This story is a systematic pass over all charts to enforce the HA standards documented in CLAUDE.md. For each chart: (1) ensure default replicaCount >= 2 in values.yaml (3 for critical: argocd, keycloak, openbao, gitlab, harbor); (2) add PodDisruptionBudget template with minAvailable: 1; (3) add podAntiAffinity \u2014 preferredDuringSchedulingIgnoredDuringExecution for standard services, requiredDuring for critical services to guarantee cross-node spread; (4) verify readinessProbe and livenessProbe are defined for every container; (5) verify resources.requests and resources.limits are set. For StatefulSets (gitlab, keycloak, harbor, openbao, rook-ceph): ensure volumeClaimTemplates use global.storageClass. For DaemonSets (cilium, cloudflared): skip replica count (N/A) but verify resource limits. Create charts/_globals/templates/_ha-helpers.tpl with shared PDB and anti-affinity template helpers to avoid duplication. Update ArgoCD Application manifests to set revisionHistoryLimit: 3 (keep last 3 deployable revisions for rollback). Run helm lint and helm template dry-run on every chart after changes.",
+      "acceptanceCriteria": [
+        "Every chart has replicaCount >= 2 as default (>= 3 for argocd, keycloak, openbao, gitlab, harbor)",
+        "Every chart has a PodDisruptionBudget template",
+        "Every Deployment/StatefulSet has podAntiAffinity configured",
+        "Every container spec has readinessProbe, livenessProbe, resources.requests, resources.limits",
+        "charts/_globals/templates/_ha-helpers.tpl has shared PDB and anti-affinity helpers",
+        "All ArgoCD Application manifests have revisionHistoryLimit: 3",
+        "helm lint passes on all charts",
+        "helm template | kubectl apply --dry-run=client passes on all charts"
+      ],
+      "passes": false,
+      "points": 3,
+      "testPlan": "Run quality gates: helm lint, kubectl dry-run, verify all acceptanceCriteria. For each chart: helm lint charts/<name>/; helm template charts/<name>/ | grep PodDisruptionBudget; helm template charts/<name>/ | grep podAntiAffinity; grep replicaCount charts/<name>/values.yaml; helm template charts/<name>/ | kubectl apply --dry-run=client -f -.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      },
+      "epicId": "E13",
+      "themeId": "T5"
+    }
+  ]
+}
