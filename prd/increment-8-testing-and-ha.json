@@ -24,13 +24,16 @@
         "helm lint passes on all 6 charts (exit 0)",
         "helm template charts/<name>/ | grep podAntiAffinity exits 0 for each non-DaemonSet chart"
       ],
-      "passes": true,
+      "passes": false,
       "points": 3,
       "testPlan": "helm lint charts/_globals/; for chart in cert-manager crossplane sealed-secrets vault rook-ceph; do helm lint charts/$chart/; helm template charts/$chart/ | grep PodDisruptionBudget || echo MISSING-PDB in $chart; helm template charts/$chart/ | grep podAntiAffinity || echo MISSING-AFFINITY in $chart; done; helm template charts/cilium/ | grep -A5 resources:",
       "dependencies": [],
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
+      "reviewNotes": [
+        "[Review 1] AC failed: 'charts/cilium/ has resource limits on every container (DaemonSet \u2014 no replicaCount change)'. Command: helm template charts/cilium/ | python3 check-limits.py Output: MISSING LIMITS: container 'install-cni-binaries' \u2014 the install-cni-binaries initContainer has resources.requests (cpu: 100m, memory: 10Mi) but no resources.limits. The values.yaml has initResources.limits but the upstream Cilium chart does not apply initResources to this specific initContainer. Fix: add explicit resources with limits for install-cni-binaries in the cilium values.yaml using the correct upstream value key (e.g., cni.resources or installCNIBinariesResources).",
+        "[Review 1] AC failed: 'charts/rook-ceph/ has PodDisruptionBudget; volumeClaimTemplates reference global.storageClass'. PDB: PASS (kind: PodDisruptionBudget found in helm template output). volumeClaimTemplates reference global.storageClass: FAIL. Command: grep -rn 'global.storageClass' charts/rook-ceph/templates/ \u2014 returned no output. The rook-ceph templates directory contains only: _helpers.tpl, grafana-dashboard.yaml, jobs/verify-osds.yaml, poddisruptionbudget.yaml. None contain volumeClaimTemplates or references to .Values.global.storageClass. The storageClass references in values.yaml (lines 66, 92, 124) are for Ceph StorageClass objects (what Ceph creates), not for the upstream rook-ceph chart's own StatefulSet volumeClaimTemplates. Fix: either (a) add a CephCluster CR template that references {{ .Values.global.storageClass }} for mon/mgr volumeClaimTemplates, or (b) document that rook-ceph as a storage provider does not consume a StorageClass and remove/update the AC."
+      ],
+      "attempts": 1,
       "epicId": "E13",
       "themeId": "T5",
       "smart": {
@@ -42,5 +45,7 @@
         "notes": "Achievable score 3: creating 1 helper template + hardening 6 charts (values.yaml replicaCount, PDB, anti-affinity, probes, resource limits on each) is near the 3-point story budget ceiling for a single Ralph iteration \u2014 but bounded and well-specified."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
