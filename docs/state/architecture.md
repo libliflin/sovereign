@@ -29,7 +29,6 @@ User-facing documentation lives in `docs/quickstart.md`, `docs/architecture.md`,
 | **activeSprint** | `manifest.json` field: path to the active sprint file. |
 
 The word "phase" is retired from code and data. If you see it in Python or JSON, it is a bug.
-Migration story 040 tracks the cleanup of residual `phase` fields in backlog stories.
 
 ---
 
@@ -40,7 +39,7 @@ Migration story 040 tracks the cleanup of residual `phase` fields in backlog sto
 | GitOps engine | ArgoCD App-of-Apps. Root app watches `argocd-apps/`. All services are ArgoCD Applications. |
 | Infrastructure composition | Crossplane with Helm + Kubernetes providers. Cloud resources are XRDs, not scripts. |
 | Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
-| Bootstrapping | `bootstrap.sh` is the only manual step. It installs Increment 1 foundations; ArgoCD takes over. |
+| Bootstrapping | `bootstrap.sh` is the only manual step. It installs increment 1 foundations; ArgoCD takes over. |
 | Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
 | ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. |
 

@@ -119,9 +119,15 @@ Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
 **Documentation stories**: use `markdownlint` for lint validation and `grep -i 'cost'` to
 confirm cost estimates are present in provider docs. This is a reusable testPlan pattern.
 
-**Increment description must match sprint goal**: if a story's `themeId` or `epicId` implies
-work different from the increment's `description`, flag it before implementation. Do not
-implement work that contradicts the increment's stated purpose.
+**Sprint goal must match increment themeGoal**: when the planning ceremony populates a sprint,
+verify that every story's `epicId`/`themeId` aligns with the increment's declared `themeGoal`.
+A story whose theme contradicts the increment's purpose creates SMART scoring noise and velocity
+drift. If the sprint goal diverges from the increment `themeGoal`, flag it before accepting
+stories — do not implement work that contradicts the increment's stated purpose.
+
+**Single-story sprints are a planning smell**: if capacity ≥ 3 and only one story fills the
+sprint, pull from adjacent increments or the backlog. Two to three stories per sprint is preferred
+even when one is a stretch goal.
 
 **Sprint planning must fill >= 75% capacity**: a sprint with fewer stories than its capacity
 allows is a planning failure. If the current increment's backlog is exhausted, pull the
@@ -166,18 +172,23 @@ You implement. Ceremonies verify. Don't conflate the two.
 
 Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hardening),
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
-8 (testing-and-ha — closed with 0 stories accepted; story 031a returned to backlog with reviewNotes)
+8 (testing-and-ha), 9 (sovereign-pm — documentation layer: quickstart, architecture, all four
+provider guides, README)
 
-Increment active: none — increment 8 closed by retro, advance will activate increment 9 (sovereign-pm)
+Increment active: none — all increments complete through 9. Advance ceremony must create increment 10.
 
-Increments pending: 9 (sovereign-pm)
+Increments pending: none — backlog contains work for a future increment 10 (sovereign-pm web app,
+HA hardening, testing infrastructure, developer portal).
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces)
 
 Epics backlog (not yet started): E11 (developer portal — Backstage + code-server), E12 (code quality),
-E13 (testing infrastructure + HA validation), E14 (sovereign-pm), E15 (HA integration testing)
+E13 (testing infrastructure + HA validation), E14 (sovereign-pm web app), E15 (HA integration testing)
+
+Note: increment 9 delivered documentation (story 035), not the sovereign-pm web app. The web app
+stories (032, 033, 034) remain in the backlog under E14 and should be the core of increment 10.
 
 ---
 
@@ -191,9 +202,4 @@ E13 (testing infrastructure + HA validation), E14 (sovereign-pm), E15 (HA integr
 - An ArgoCD Application is missing `revisionHistoryLimit: 3` → fix before marking passes: true
 - HA gate fails (PDB, podAntiAffinity, or replicaCount < 2 without a VENDORS.yaml ha_exception) → fix before marking passes: true
 - `check-limits.py` reports any container or initContainer missing `resources.requests` or `resources.limits` → fix before marking passes: true
-
----
-
-## Known model inconsistencies
-
-- `phase` field on backlog stories 043r, 044r, 045r still set to `8` (integer) — residual from auto-generation. Story 040 will remove the `phase` field from all backlog stories and retire it from the schema.
+- The word "phase" appears in new Python or JSON you are writing → use "increment" instead
