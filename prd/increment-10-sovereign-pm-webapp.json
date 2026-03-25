@@ -21,13 +21,13 @@
         "npm run typecheck and npm run lint exit 0",
         "openapi.yaml documents all endpoints with request/response schemas"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "npm run typecheck exits 0; npm run lint exits 0; npm test exits 0 with route-level test coverage for all endpoints in openapi.yaml; ls sovereign-pm/openapi.yaml; grep -E '(POST|GET|PUT|DELETE)' sovereign-pm/openapi.yaml lists all 8+ endpoints.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 4,
         "measurable": 4,

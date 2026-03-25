@@ -1,0 +1,676 @@
+openapi: "3.0.3"
+info:
+  title: Sovereign PM API
+  version: "1.0.0"
+  description: |
+    AI-native project management API for the Sovereign Platform.
+    Manages Projects, Epics, Stories, and AgentRuns. Generates prd.json
+    for Ralph consumption and triggers on-demand Ralph loop runs via K8s Jobs.
+  license:
+    name: Apache-2.0
+
+servers:
+  - url: /api
+    description: API base path
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Keycloak OIDC JWT (RS256) or HS256 test token
+
+  schemas:
+    Project:
+      type: object
+      required: [id, name, description, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    Epic:
+      type: object
+      required: [id, projectId, title, description, priority, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EpicCreate:
+      type: object
+      required: [projectId, title]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+          minimum: 1
+
+    Story:
+      type: object
+      required: [id, epicId, title, description, acceptanceCriteria, priority, increment, branchName, passes, points, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        epicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        acceptanceCriteria:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
+          minimum: 1
+        increment:
+          type: integer
+          minimum: 1
+        branchName:
+          type: string
+        passes:
+          type: boolean
+        points:
+          type: integer
+          minimum: 1
+          maximum: 5
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    StoryCreate:
+      type: object
+      required: [epicId, title]
+      properties:
+        epicId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        acceptanceCriteria:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
+          minimum: 1
+        increment:
+          type: integer
+          minimum: 1
+        branchName:
+          type: string
+        points:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    AgentRun:
+      type: object
+      required: [id, storyId, status, logs, startedAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        storyId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [running, pass, fail]
+        logs:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AgentRunCreate:
+      type: object
+      required: [storyId]
+      properties:
+        storyId:
+          type: string
+          format: uuid
+        logs:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+
+    PrdStory:
+      type: object
+      required: [id, title, description, acceptanceCriteria, increment, priority, passes, branchName, points]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        acceptanceCriteria:
+          type: array
+          items:
+            type: string
+        increment:
+          type: integer
+        priority:
+          type: integer
+        passes:
+          type: boolean
+        branchName:
+          type: string
+        points:
+          type: integer
+
+    PrdDocument:
+      type: object
+      required: [branchName, stories]
+      properties:
+        branchName:
+          type: string
+        stories:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrdStory'
+
+    PrdGenerateRequest:
+      type: object
+      properties:
+        epicId:
+          type: string
+          format: uuid
+          description: Scope PRD generation to a specific epic. Omit to include all stories.
+
+    RalphTriggerRequest:
+      type: object
+      required: [storyId]
+      properties:
+        storyId:
+          type: string
+          format: uuid
+        iterations:
+          type: integer
+          minimum: 1
+          default: 10
+
+    RalphTriggerResponse:
+      type: object
+      required: [runId, message, jobSpec]
+      properties:
+        runId:
+          type: string
+          format: uuid
+        message:
+          type: string
+        jobSpec:
+          type: object
+          description: Kubernetes batch/v1 Job manifest for the Ralph run
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /projects:
+    get:
+      summary: List all projects
+      operationId: listProjects
+      tags: [Projects]
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a project
+      operationId: createProject
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "401":
+          description: Unauthorized
+
+  /projects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a project by ID
+      operationId: getProject
+      tags: [Projects]
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        "404":
+          description: Not found
+    put:
+      summary: Update a project
+      operationId: updateProject
+      tags: [Projects]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        "404":
+          description: Not found
+    delete:
+      summary: Delete a project
+      operationId: deleteProject
+      tags: [Projects]
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /epics:
+    get:
+      summary: List all epics
+      operationId: listEpics
+      tags: [Epics]
+      responses:
+        "200":
+          description: List of epics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Epic'
+        "401":
+          description: Unauthorized
+    post:
+      summary: Create an epic
+      operationId: createEpic
+      tags: [Epics]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EpicCreate'
+      responses:
+        "201":
+          description: Epic created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Epic'
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+
+  /epics/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get an epic by ID
+      operationId: getEpic
+      tags: [Epics]
+      responses:
+        "200":
+          description: Epic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Epic'
+        "404":
+          description: Not found
+    put:
+      summary: Update an epic
+      operationId: updateEpic
+      tags: [Epics]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EpicCreate'
+      responses:
+        "200":
+          description: Updated epic
+    delete:
+      summary: Delete an epic
+      operationId: deleteEpic
+      tags: [Epics]
+      responses:
+        "204":
+          description: Deleted
+
+  /stories:
+    get:
+      summary: List all stories
+      operationId: listStories
+      tags: [Stories]
+      responses:
+        "200":
+          description: List of stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Story'
+        "401":
+          description: Unauthorized
+    post:
+      summary: Create a story
+      operationId: createStory
+      tags: [Stories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryCreate'
+      responses:
+        "201":
+          description: Story created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+
+  /stories/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get a story by ID
+      operationId: getStory
+      tags: [Stories]
+      responses:
+        "200":
+          description: Story
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+        "404":
+          description: Not found
+    put:
+      summary: Update a story
+      operationId: updateStory
+      tags: [Stories]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoryCreate'
+      responses:
+        "200":
+          description: Updated story
+    delete:
+      summary: Delete a story
+      operationId: deleteStory
+      tags: [Stories]
+      responses:
+        "204":
+          description: Deleted
+
+  /agent-runs:
+    get:
+      summary: List all agent runs
+      operationId: listAgentRuns
+      tags: [AgentRuns]
+      responses:
+        "200":
+          description: List of agent runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentRun'
+        "401":
+          description: Unauthorized
+    post:
+      summary: Create an agent run record
+      operationId: createAgentRun
+      tags: [AgentRuns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentRunCreate'
+      responses:
+        "201":
+          description: AgentRun created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRun'
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+
+  /agent-runs/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Get an agent run by ID
+      operationId: getAgentRun
+      tags: [AgentRuns]
+      responses:
+        "200":
+          description: AgentRun
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRun'
+        "404":
+          description: Not found
+    put:
+      summary: Update an agent run (mark pass/fail, append logs)
+      operationId: updateAgentRun
+      tags: [AgentRuns]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [running, pass, fail]
+                logs:
+                  type: string
+                completedAt:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Updated agent run
+
+  /prd/generate:
+    post:
+      summary: Generate a prd.json document from stored stories
+      operationId: generatePrd
+      tags: [PRD]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrdGenerateRequest'
+      responses:
+        "200":
+          description: Generated PRD document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrdDocument'
+        "401":
+          description: Unauthorized
+        "404":
+          description: No stories found
+
+  /ralph/trigger:
+    post:
+      summary: Trigger an on-demand Ralph loop run via a Kubernetes Job
+      operationId: triggerRalph
+      tags: [Ralph]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RalphTriggerRequest'
+      responses:
+        "202":
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RalphTriggerResponse'
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+
+  /ralph/runs:
+    get:
+      summary: List all Ralph run history
+      operationId: listRalphRuns
+      tags: [Ralph]
+      responses:
+        "200":
+          description: List of agent runs ordered by startedAt desc
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentRun'
+        "401":
+          description: Unauthorized
