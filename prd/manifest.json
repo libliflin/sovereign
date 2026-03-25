@@ -141,26 +141,5 @@
       "reviewPassRate": 100.0
     }
   ],
-  "currentIncrement": 9,
-  "sprintHistory": [
-    {
-      "increment": 9,
-      "name": "sovereign-pm",
-      "endDate": "2026-03-25T16:50:04+00:00",
-      "pointsCompleted": 2,
-      "storiesTotal": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 9,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-25T16:50:04+00:00"
-    }
-  ]
+  "currentIncrement": 9
 }
