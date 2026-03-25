@@ -1,0 +1,42 @@
+{
+  "increment": 9,
+  "name": "sovereign-pm",
+  "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
+  "sprintGoal": "Deliver complete documentation for the Sovereign Platform covering quickstart, architecture, and all provider guides, providing the human-readable foundation for onboarding.",
+  "capacity": 15,
+  "stories": [
+    {
+      "id": "035",
+      "priority": 35,
+      "branchName": "feature/docs-and-quickstart",
+      "title": "Documentation: quickstart, architecture, and all provider guides",
+      "description": "Write docs/quickstart.md (15 minute path from zero to running cluster). Write docs/architecture.md (explains the bootstrap sequence, App-of-Apps pattern, namespace layout, security model, all services with their ingress URLs). Write docs/providers/aws-ec2-free-tier.md, docs/providers/digitalocean.md, docs/providers/vultr.md, docs/providers/bare-metal.md. Update README.md with badges, architecture diagram (ASCII), and contribution guide.",
+      "acceptanceCriteria": [
+        "docs/quickstart.md covers: prerequisites, clone repo, fill config.yaml, run bootstrap.sh, verify",
+        "docs/architecture.md explains all phases and includes service URL table",
+        "All 4 provider docs exist with cost estimates and step-by-step instructions",
+        "README.md has ASCII architecture diagram showing service relationships",
+        "README.md links to all docs",
+        "All markdown lints clean (markdownlint)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "markdownlint docs/ README.md exits 0; verify each file listed in ACs exists with ls -la; grep -i 'cost' docs/providers/*.md to confirm cost estimates are present.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+      },
+      "epicId": "E14",
+      "themeId": "T3",
+      "phase": 9
+    }
+  ]
+}
