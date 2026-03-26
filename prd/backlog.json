@@ -26,7 +26,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "Missing testPlan field — pulled into sprint-11 remediation as priority-0 ANDON override. Implementer should run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; print(len(pending), 'pending')\" to verify GGE G5 passes after fix."
+      "readinessNote": "Ejected from sprint by SMART gate (post-split still failing). Low dimensions: measurable. Achievable < 3 usually means the story is too large \u2014 split further."
     },
     {
       "id": "GGE-G4-andon",
@@ -1021,39 +1021,73 @@
       "readinessNote": "depends on story 026b which has passes: false \u2014 blocked"
     },
     {
-      "id": "027",
-      "priority": 27,
-      "branchName": "feature/helm-backstage",
-      "title": "Helm chart: Backstage developer portal",
-      "description": "Create charts/backstage/ using a custom Dockerfile-based deployment (backstage/backstage base image). Pre-configure plugins: GitLab catalog, Kubernetes plugin, ArgoCD plugin, TechDocs (stored on ceph-bucket). Keycloak OIDC auth. Ingress at backstage.{{ .Values.global.domain }}. Service catalog auto-discovers GitLab repos via catalog-info.yaml. ArgoCD app in argocd-apps/devex/.",
+      "id": "027a",
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "feature/helm-backstage-scaffold",
+      "title": "Helm chart: Backstage scaffold with Keycloak OIDC and ArgoCD app",
+      "description": "Create charts/backstage/ with all standard Helm templates: Chart.yaml, values.yaml, Deployment, Service, Ingress, PodDisruptionBudget. Configure Keycloak OIDC auth fields in values.yaml (keycloak.url, keycloak.clientId, keycloak.realm). Ingress hostname at backstage.{{ .Values.global.domain }}. replicaCount: 2 with podAntiAffinity. Create argocd-apps/devex/backstage-app.yaml ArgoCD Application manifest pointing to charts/backstage/.",
       "acceptanceCriteria": [
-        "charts/backstage/ deploys Backstage with Keycloak OIDC",
-        "GitLab integration configured (reads catalog-info.yaml from repos)",
-        "Kubernetes plugin shows cluster resources",
-        "ArgoCD plugin shows deployment status",
-        "TechDocs storage on ceph-bucket",
-        "Ingress at backstage.global.domain",
-        "helm lint passes",
-        "argocd-apps/devex/backstage-app.yaml exists"
+        "charts/backstage/Chart.yaml exists with apiVersion: v2 and name: backstage",
+        "grep replicaCount charts/backstage/values.yaml shows value >= 2",
+        "charts/backstage/values.yaml has keycloak.url and keycloak.clientId fields",
+        "helm template charts/backstage/ | grep hostname confirms ingress uses global.domain variable",
+        "helm lint charts/backstage/ exits 0",
+        "helm template charts/backstage/ | grep -q 'kind: PodDisruptionBudget'",
+        "helm template charts/backstage/ | grep -q 'podAntiAffinity'",
+        "argocd-apps/devex/backstage-app.yaml exists",
+        "kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml exits 0"
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "helm lint charts/backstage/; helm template charts/backstage/ | grep 'kind: PodDisruptionBudget'; helm template charts/backstage/ | grep podAntiAffinity; grep replicaCount charts/backstage/values.yaml; grep keycloak charts/backstage/values.yaml; kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "priority": 27,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      },
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Scope is exactly 1 chart scaffold + 1 ArgoCD app manifest. Every AC is verifiable with helm lint, grep, or kubectl dry-run \u2014 no live cluster needed."
+      }
+    },
+    {
+      "id": "027b",
       "epicId": "E11",
       "themeId": "T3",
-      "readinessNote": "AC #3 ('Kubernetes plugin shows cluster resources') and AC #4 ('ArgoCD plugin shows deployment status') require a running Backstage instance and cannot be verified by static analysis or helm template. Replace with checkable alternatives: 'values.yaml has backstage.plugins.kubernetes.enabled: true' and 'values.yaml has backstage.plugins.argocd.url configured'. testPlan is generic \u2014 needs specific commands: helm template charts/backstage/ | grep -i oidc; helm template charts/backstage/ | grep ceph; helm lint charts/backstage/."
+      "branchName": "feature/helm-backstage-plugins",
+      "title": "Backstage plugin config: GitLab catalog, Kubernetes, ArgoCD, TechDocs",
+      "description": "Extend charts/backstage/values.yaml (created in 027a) with plugin configuration sections: (1) backstage.appConfig.catalog.providers.gitlab with host field for catalog-info.yaml auto-discovery; (2) backstage.appConfig.kubernetes.clusterLocatorMethods for Kubernetes plugin; (3) backstage.appConfig.argocd.appLocatorMethods for ArgoCD plugin; (4) backstage.appConfig.techdocs.builder and techdocs.publisher with type: awsS3 pointing to ceph-bucket. All values are config-only \u2014 no new templates required. helm lint must still pass after additions.",
+      "acceptanceCriteria": [
+        "grep -A3 'catalog:' charts/backstage/values.yaml shows providers.gitlab section with host field",
+        "grep -A3 'kubernetes:' charts/backstage/values.yaml shows clusterLocatorMethods section",
+        "grep -A3 'argocd:' charts/backstage/values.yaml shows appLocatorMethods section",
+        "grep -A3 'techdocs:' charts/backstage/values.yaml shows builder and publisher.type: awsS3",
+        "helm lint charts/backstage/ exits 0 after plugin config additions",
+        "helm template charts/backstage/ | grep -q 'catalog'"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "grep -A5 'catalog:' charts/backstage/values.yaml; grep -A5 'kubernetes:' charts/backstage/values.yaml; grep -A5 'argocd:' charts/backstage/values.yaml; grep -A5 'techdocs:' charts/backstage/values.yaml; helm lint charts/backstage/; helm template charts/backstage/ | grep catalog",
+      "dependencies": [
+        "027a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 28,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Scope is exactly 1 file modified (values.yaml). All 4 plugins are named explicitly. Every AC is a grep or helm lint \u2014 no live cluster needed. Live verification of plugin UI behavior is explicitly out of scope per testing pyramid (static analysis only)."
+      }
     },
     {
       "id": "028",
@@ -1123,7 +1157,7 @@
       "themeId": "T3",
       "returnedFromSprint": "prd/increment-7-devex.json",
       "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass.",
-      "readinessNote": "testPlan is generic ('Run quality gates: helm lint, shellcheck, kubectl dry-run') and does not address the specific re-open reason in reviewNotes[0]. The review failure was: SonarQube CE replicaCount: 1 failed HA gate #12. The fix requires: (1) adding ha_exception: true with ha_exception_reason to vendor/VENDORS.yaml for sonarqube, (2) adding top-level replicaCount: 1 with a comment referencing the VENDORS.yaml exception to charts/sonarqube/values.yaml. testPlan must specify: grep 'sonarqube' vendor/VENDORS.yaml | grep ha_exception; grep -n 'replicaCount' charts/sonarqube/values.yaml showing value 1 with comment; helm lint charts/sonarqube/ charts/reportportal/ exits 0; helm template charts/sonarqube/ | grep PodDisruptionBudget; helm template charts/reportportal/ | grep PodDisruptionBudget."
+      "readinessNote": "Pulled into increment-12-developer-portal sprint. Fix: (1) add ha_exception: true with ha_exception_reason to vendor/VENDORS.yaml for sonarqube, (2) add top-level replicaCount: 1 with comment referencing VENDORS.yaml exception. testPlan updated in sprint file to verify specifically."
     },
     {
       "id": "030",

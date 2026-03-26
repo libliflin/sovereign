@@ -6,65 +6,73 @@
   "capacity": 12,
   "stories": [
     {
-      "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment to execute",
-      "description": "Golden Goose Egg G5 indicator is failing. Indicator type: gate_passing. Restore it immediately. Rationale: The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently \u2014 no error, no alert, just nothing to plan. This egg catches that stall state immediately. First triggered when increment 9 completed with no successor increment defined.",
-      "acceptanceCriteria": [
-        "GGE G5 indicator passes in orient"
-      ],
-      "priority": 0,
-      "points": 2,
-      "passes": false,
-      "reviewed": false,
-      "epicId": "E1",
+      "id": "027a",
+      "epicId": "E11",
       "themeId": "T3",
-      "branchName": "fix/gge-g5-andon",
-      "dependencies": [],
-      "attempts": 0,
-      "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
-      },
-      "readinessNote": "Missing testPlan field \u2014 pulled into sprint-11 remediation as priority-0 ANDON override. Implementer should run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; print(len(pending), 'pending')\" to verify GGE G5 passes after fix."
-    },
-    {
-      "id": "027",
-      "priority": 27,
-      "branchName": "feature/helm-backstage",
-      "title": "Helm chart: Backstage developer portal",
-      "description": "Create charts/backstage/ using a custom Dockerfile-based deployment (backstage/backstage base image). Pre-configure plugins: GitLab catalog, Kubernetes plugin, ArgoCD plugin, TechDocs (stored on ceph-bucket). Keycloak OIDC auth. Ingress at backstage.{{ .Values.global.domain }}. Service catalog auto-discovers GitLab repos via catalog-info.yaml. ArgoCD app in argocd-apps/devex/.",
+      "branchName": "feature/helm-backstage-scaffold",
+      "title": "Helm chart: Backstage scaffold with Keycloak OIDC and ArgoCD app",
+      "description": "Create charts/backstage/ with all standard Helm templates: Chart.yaml, values.yaml, Deployment, Service, Ingress, PodDisruptionBudget. Configure Keycloak OIDC auth fields in values.yaml (keycloak.url, keycloak.clientId, keycloak.realm). Ingress hostname at backstage.{{ .Values.global.domain }}. replicaCount: 2 with podAntiAffinity. Create argocd-apps/devex/backstage-app.yaml ArgoCD Application manifest pointing to charts/backstage/.",
       "acceptanceCriteria": [
-        "charts/backstage/ deploys Backstage with Keycloak OIDC",
-        "GitLab integration configured (reads catalog-info.yaml from repos)",
-        "Kubernetes plugin shows cluster resources",
-        "ArgoCD plugin shows deployment status",
-        "TechDocs storage on ceph-bucket",
-        "Ingress at backstage.global.domain",
-        "helm lint passes",
-        "argocd-apps/devex/backstage-app.yaml exists"
+        "charts/backstage/Chart.yaml exists with apiVersion: v2 and name: backstage",
+        "grep replicaCount charts/backstage/values.yaml shows value >= 2",
+        "charts/backstage/values.yaml has keycloak.url and keycloak.clientId fields",
+        "helm template charts/backstage/ | grep hostname confirms ingress uses global.domain variable",
+        "helm lint charts/backstage/ exits 0",
+        "helm template charts/backstage/ | grep -q 'kind: PodDisruptionBudget'",
+        "helm template charts/backstage/ | grep -q 'podAntiAffinity'",
+        "argocd-apps/devex/backstage-app.yaml exists",
+        "kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml exits 0"
       ],
       "passes": false,
       "points": 3,
-      "testPlan": "Run quality gates: helm lint, shellcheck, kubectl dry-run, verify all acceptanceCriteria.",
+      "testPlan": "helm lint charts/backstage/; helm template charts/backstage/ | grep 'kind: PodDisruptionBudget'; helm template charts/backstage/ | grep podAntiAffinity; grep replicaCount charts/backstage/values.yaml; grep keycloak charts/backstage/values.yaml; kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "priority": 27,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
-      },
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable 4: creating 8+ Helm template files plus an ArgoCD Application manifest is at the top of the 3-point budget, but every file is well-defined so scope is fixed."
+      }
+    },
+    {
+      "id": "027b",
       "epicId": "E11",
       "themeId": "T3",
-      "readinessNote": "testPlan is generic. Implementer must run: helm lint charts/backstage/; helm template charts/backstage/ | grep PodDisruptionBudget; helm template charts/backstage/ | grep podAntiAffinity; grep replicaCount charts/backstage/values.yaml; kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml."
+      "branchName": "feature/helm-backstage-plugins",
+      "title": "Backstage plugin config: GitLab catalog, Kubernetes, ArgoCD, TechDocs",
+      "description": "Extend charts/backstage/values.yaml (created in 027a) with plugin configuration sections: (1) backstage.appConfig.catalog.providers.gitlab with host field for catalog-info.yaml auto-discovery; (2) backstage.appConfig.kubernetes.clusterLocatorMethods for Kubernetes plugin; (3) backstage.appConfig.argocd.appLocatorMethods for ArgoCD plugin; (4) backstage.appConfig.techdocs.builder and techdocs.publisher with type: awsS3 pointing to ceph-bucket. All values are config-only \u2014 no new templates required. helm lint must still pass after additions.",
+      "acceptanceCriteria": [
+        "grep -A3 'catalog:' charts/backstage/values.yaml shows providers.gitlab section with host field",
+        "grep -A3 'kubernetes:' charts/backstage/values.yaml shows clusterLocatorMethods section",
+        "grep -A3 'argocd:' charts/backstage/values.yaml shows appLocatorMethods section",
+        "grep -A3 'techdocs:' charts/backstage/values.yaml shows builder and publisher.type: awsS3",
+        "helm lint charts/backstage/ exits 0 after plugin config additions",
+        "helm template charts/backstage/ | grep -q 'catalog'"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "grep -A5 'catalog:' charts/backstage/values.yaml; grep -A5 'kubernetes:' charts/backstage/values.yaml; grep -A5 'argocd:' charts/backstage/values.yaml; grep -A5 'techdocs:' charts/backstage/values.yaml; helm lint charts/backstage/; helm template charts/backstage/ | grep catalog",
+      "dependencies": [
+        "027a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 28,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     },
     {
       "id": "029",
@@ -90,12 +98,12 @@
       ],
       "attempts": 2,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored. Run smart-check ceremony before pulling into a sprint."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific 4: the ha_exception fix from reviewNotes is precise, but 'GitLab CI integration guide in docs/' specifies neither a filename nor a content outline. Measurable 4: ACs like 'charts/sonarqube/ with Keycloak OIDC and ceph-block storage' are descriptions rather than runnable commands \u2014 testPlan is more rigorous than the ACs. Achievable 3: two charts (ReportPortal pulls in PostgreSQL + Elasticsearch + RabbitMQ subchart dependencies) plus a docs file is at the ceiling of a 3-point story. TimeBound 4: 'GitLab CI integration guide in docs/' scope is open-ended without a content checklist."
       },
       "epicId": "E12",
       "themeId": "T3",
