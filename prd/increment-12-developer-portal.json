@@ -23,7 +23,7 @@
         "argocd-apps/devex/backstage-app.yaml exists",
         "kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml exits 0"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "helm lint charts/backstage/; helm template charts/backstage/ | grep 'kind: PodDisruptionBudget'; helm template charts/backstage/ | grep podAntiAffinity; grep replicaCount charts/backstage/values.yaml; grep keycloak charts/backstage/values.yaml; kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml",
       "dependencies": [],

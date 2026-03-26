@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "backstage.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "backstage.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "backstage.selectorLabels" . | nindent 8 }}
+    spec:
+      # podAntiAffinity: spread replicas across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "backstage.selectorLabels" . | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: backstage
+          image: {{ include "backstage.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: APP_CONFIG_app_baseUrl
+              value: "https://{{ include "backstage.host" . }}"
+            - name: APP_CONFIG_backend_baseUrl
+              value: "https://{{ include "backstage.host" . }}"
+            - name: APP_CONFIG_auth_providers_oidc_production_clientId
+              value: {{ .Values.keycloak.clientId | quote }}
+            - name: APP_CONFIG_auth_providers_oidc_production_metadataUrl
+              value: "{{ include "backstage.oidcIssuerURL" . }}/.well-known/openid-configuration"
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
