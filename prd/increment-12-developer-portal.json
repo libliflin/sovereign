@@ -23,13 +23,15 @@
         "argocd-apps/devex/backstage-app.yaml exists",
         "kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml exits 0"
       ],
-      "passes": true,
+      "passes": false,
       "points": 3,
       "testPlan": "helm lint charts/backstage/; helm template charts/backstage/ | grep 'kind: PodDisruptionBudget'; helm template charts/backstage/ | grep podAntiAffinity; grep replicaCount charts/backstage/values.yaml; grep keycloak charts/backstage/values.yaml; kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml",
       "dependencies": [],
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
+      "reviewNotes": [
+        "[Review 1] AC failed: 'kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml exits 0'. Command: kubectl apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml. Output: 'error: resource mapping not found for name: \"backstage\" namespace: \"argocd\" from \"argocd-apps/devex/backstage-app.yaml\": no matches for kind \"Application\" in version \"argoproj.io/v1alpha1\" -- ensure CRDs are installed first'. Exit code: 1. Fix: install ArgoCD CRDs into kind-sovereign-test before running this check (e.g. kubectl --context kind-sovereign-test apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/crds/application-crd.yaml), OR update the AC to validate YAML only (python3 yaml.safe_load) since kubectl dry-run for CRDs requires the operator to be installed. All other ACs (1-8) verified and pass."
+      ],
+      "attempts": 1,
       "priority": 27,
       "smart": {
         "specific": 5,
@@ -61,7 +63,7 @@
       "dependencies": [
         "027a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 28,
@@ -92,7 +94,7 @@
       "points": 3,
       "testPlan": "grep 'sonarqube' vendor/VENDORS.yaml | grep ha_exception; grep -n 'replicaCount' charts/sonarqube/values.yaml; helm lint charts/sonarqube/ charts/reportportal/; helm template charts/sonarqube/ | grep PodDisruptionBudget; helm template charts/reportportal/ | grep PodDisruptionBudget.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [
         "[Review 1] HA gate AC failed: 'Default replicaCount in values.yaml is >= 2' (CLAUDE.md quality gate #12). Command: grep -n 'replicaCount' charts/sonarqube/values.yaml \u2014 Output: '33: replicaCount: 1' (nested under sonarqube: subchart key). helm template charts/sonarqube/ | grep 'replicas:' \u2014 Output: 'replicas: 1' (SonarQube pod). SonarQube Community Edition supports only 1 replica. Fix: add ha_exception: true entry in vendor/VENDORS.yaml for sonarqube with ha_exception_reason, AND add top-level replicaCount: 1 with a comment referencing the VENDORS.yaml entry. reportportal chart: replicaCount: 2 \u2014 PASS. All other ACs pass."
       ],
@@ -111,5 +113,7 @@
       "returnedReason": "SonarQube CE is single-instance; ha_exception entry must be added to vendor/VENDORS.yaml and replicaCount: 1 documented at chart top-level before HA gate #12 will pass.",
       "readinessNote": "Re-opened with specific fix: (1) add ha_exception: true with ha_exception_reason to vendor/VENDORS.yaml for sonarqube; (2) add top-level replicaCount: 1 with a comment referencing the VENDORS.yaml exception to charts/sonarqube/values.yaml. testPlan updated to verify these specifically."
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
