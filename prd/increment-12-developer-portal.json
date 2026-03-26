@@ -40,7 +40,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Achievable 4: creating 8+ Helm template files plus an ArgoCD Application manifest is at the top of the 3-point budget, but every file is well-defined so scope is fixed."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "kind-sovereign-test lacks ArgoCD CRDs, so kubectl dry-run on Application manifests always fails; fix requires installing CRDs in kind setup before AC #9 can pass"
     },
     {
       "id": "027b",
