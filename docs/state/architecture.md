@@ -95,9 +95,9 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 | Service | Role |
 |---|---|
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
-| code-server | Browser-based VS Code IDE for agents and developers. |
-| Backstage | Service catalog — Helm chart exists; catalog-info.yaml integration pending. |
-| SonarQube | Static analysis history — Helm chart pending. |
+| code-server | Browser-based VS Code IDE for agents and developers. Helm chart deployed. |
+| Backstage | Service catalog — full deployment pending (E11, story 027). |
+| SonarQube | Static analysis history — Helm chart pending (E12). |
 
 Sovereign PM uses a multi-stage Dockerfile: Vite builds the React frontend, tsc builds the
 Express backend, combined in a single production image. Database: bitnami/postgresql subchart

@@ -5,3 +5,53 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+replicaCount: 2
+
+image:
+  repository: "ghcr.io/backstage/backstage"
+  name: "backstage/backstage"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+keycloak:
+  url: "https://auth.sovereign-autarky.dev"
+  realm: "sovereign"
+  clientId: "backstage"
+
+service:
+  type: ClusterIP
+  port: 7007
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  tls: true
+
+podDisruptionBudget:
+  minAvailable: 1
+
+readinessProbe:
+  httpGet:
+    path: /healthcheck
+    port: 7007
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /healthcheck
+    port: 7007
+  initialDelaySeconds: 30
+  periodSeconds: 30
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
