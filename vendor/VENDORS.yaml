@@ -300,6 +300,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "SonarQube Community Edition is architecturally single-instance. HA clustering requires the Data Center Edition (commercial). replicaCount is set to 1 in charts/sonarqube/values.yaml per the ha_exception pattern."
 
   - name: reportportal
     upstream_url: https://github.com/reportportal/reportportal

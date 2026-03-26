@@ -88,7 +88,7 @@
         "helm lint passes on both",
         "argocd-apps/devex/ has both app manifests"
       ],
-      "passes": false,
+      "passes": true,
       "points": 3,
       "testPlan": "grep 'sonarqube' vendor/VENDORS.yaml | grep ha_exception; grep -n 'replicaCount' charts/sonarqube/values.yaml; helm lint charts/sonarqube/ charts/reportportal/; helm template charts/sonarqube/ | grep PodDisruptionBudget; helm template charts/reportportal/ | grep PodDisruptionBudget.",
       "dependencies": [],
