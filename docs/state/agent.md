@@ -101,6 +101,17 @@ wrapper-level `templates/poddisruptionbudget.yaml` and disable the subchart PDB 
 causes review failure. Validate YAML with `yq e '.'` (not `kubectl apply --dry-run` — ArgoCD CRDs
 are not installed locally).
 
+**kubectl dry-run does not work for CRD-backed resources**: `kubectl apply --dry-run=client`
+silently fails with "no matches for kind X" for any custom resource (ArgoCD Application,
+Crossplane XR/XRC, etc.) unless the operator CRDs are pre-installed in the target cluster.
+kind-sovereign-test is a bare cluster — it has no operator CRDs. For CRD-backed manifests,
+use YAML-only validation:
+```bash
+python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"
+```
+This is the correct gate for any `.yaml` file that is not a core K8s resource. Core resources
+(Deployment, Service, Ingress, PDB, ConfigMap) can still use `kubectl apply --dry-run=client`.
+
 **shellcheck**: all `.sh` files must pass `shellcheck -S error` (matches CI's shellcheck 0.10.0).
 Common fixes:
 
@@ -172,7 +183,8 @@ unambiguous. Pointing to an external file requires navigation and reduces the SM
    - `helm template charts/<name>/ | python3 scripts/check-limits.py` if you touched a chart
    - `helm template charts/<name>/ | grep -i datasource` if you added an observability chart
    - `shellcheck -S error <file>.sh` if you touched a shell script
-   - `yq e '.' <file>.yaml` if you touched ArgoCD manifests
+   - `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"` for ArgoCD Application manifests (CRDs not in kind — use YAML-only validation)
+   - `yq e '.' <file>.yaml` on all YAML files touched
    - `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
 6. Set `passes: true` in the sprint file
 7. Push the branch, open a PR, wait for CI to pass, merge to main
@@ -199,16 +211,17 @@ Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hard
 2i (integration), 3 (gitops-engine), 4 (autarky), 5 (security), 6 (observability), 7 (devex),
 8 (testing-and-ha), 9 (sovereign-pm — documentation layer: quickstart, architecture, provider guides,
 README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Dockerfile, Helm chart),
-11 (remediation — restored GGE G5: planning pipeline guard for pending increment)
-
-Increment pending (next): 12 (developer-portal — Backstage service catalog + code-server Helm chart)
+11 (remediation — restored GGE G5: planning pipeline guard for pending increment),
+12 (developer-portal — Backstage plugin config, SonarQube + ReportPortal Helm charts; story 027a
+returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in kind)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics backlog: E11 (developer portal — Backstage + code-server), E12 (code quality — SonarQube +
-ReportPortal), E13 (testing infrastructure + HA validation), E15 (HA integration testing)
+Epics backlog: E11 (developer portal — Backstage scaffold/ArgoCD app still in backlog as story 027a),
+E12 (code quality — SonarQube + ReportPortal Helm charts exist; GitLab CI integration story 052 pending),
+E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
 ---
 
@@ -231,3 +244,6 @@ ReportPortal), E13 (testing infrastructure + HA validation), E15 (HA integration
 - `attempts` field is initialized to 1 after first implementation, so `attempts == 0` in advance.py
   always reports 0% first-pass rate. Story 053 will fix: initialize to 0, increment only on review
   re-open, update formula to use `len(reviewNotes) == 0`.
+- 4 backlog stories (049, 050, 051, 052) still carry a `phase` field alongside `epicId`. These are
+  redundant — `epicId → targetIncrement` is authoritative. Story to clean up: add to backlog as
+  housekeeping under E1 when a remediation sprint is next.
