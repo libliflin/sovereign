@@ -55,7 +55,7 @@
         "helm lint charts/backstage/ exits 0 after plugin config additions",
         "helm template charts/backstage/ | grep -q 'catalog'"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "grep -A5 'catalog:' charts/backstage/values.yaml; grep -A5 'kubernetes:' charts/backstage/values.yaml; grep -A5 'argocd:' charts/backstage/values.yaml; grep -A5 'techdocs:' charts/backstage/values.yaml; helm lint charts/backstage/; helm template charts/backstage/ | grep catalog",
       "dependencies": [

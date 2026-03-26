@@ -55,3 +55,46 @@ resources:
   limits:
     cpu: "1000m"
     memory: "1Gi"
+
+backstage:
+  appConfig:
+    catalog:
+      providers:
+        gitlab:
+          host: "gitlab.sovereign-autarky.dev"
+          apiBaseUrl: "https://gitlab.sovereign-autarky.dev/api/v4"
+          branch: "main"
+          fallbackBranch: "master"
+          skipForkedRepos: false
+          entityFilename: "catalog-info.yaml"
+          projectPattern: '[\s\S]*'
+    kubernetes:
+      serviceLocatorMethod:
+        type: "multiTenant"
+      clusterLocatorMethods:
+        - type: "config"
+          clusters:
+            - url: "https://kubernetes.default.svc"
+              name: "sovereign"
+              authProvider: "serviceAccount"
+              skipTLSVerify: false
+              skipMetricsLookup: false
+    argocd:
+      username: "admin"
+      password: ""
+      appLocatorMethods:
+        - type: "config"
+          instances:
+            - name: "sovereign"
+              url: "https://argocd.sovereign-autarky.dev"
+    techdocs:
+      builder: "external"
+      generator:
+        runIn: "docker"
+      publisher:
+        type: "awsS3"
+        awsS3:
+          bucketName: "techdocs"
+          region: "us-east-1"
+          endpoint: "https://s3.sovereign-autarky.dev"
+          s3ForcePathStyle: true
