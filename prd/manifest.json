@@ -175,45 +175,5 @@
       "storiesIncomplete": 1,
       "reviewPassRate": 33.3
     }
-  ],
-  "activeSprint": "prd/increment-12-developer-portal.json",
-  "currentIncrement": 12,
-  "sprintHistory": [
-    {
-      "increment": 11,
-      "name": "remediation",
-      "endDate": "2026-03-25T00:00:00+00:00",
-      "pointsCompleted": 2,
-      "storiesTotal": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    },
-    {
-      "increment": 12,
-      "name": "developer-portal",
-      "endDate": "2026-03-26T00:00:00+00:00",
-      "pointsCompleted": 5,
-      "storiesTotal": 3,
-      "storiesAccepted": 2,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 33.3
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 11,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-25T00:00:00+00:00"
-    },
-    {
-      "increment": 12,
-      "pointsCompleted": 5,
-      "storiesAccepted": 2,
-      "reviewPassRate": 33.3,
-      "date": "2026-03-26T00:00:00+00:00"
-    }
   ]
 }
