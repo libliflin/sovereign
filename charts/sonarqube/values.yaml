@@ -6,6 +6,9 @@ global:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
 
+# ha_exception: see vendor/VENDORS.yaml — SonarQube CE is architecturally single-instance
+replicaCount: 1
+
 # ---------------------------------------------------------------------------
 # Custom ingress (upstream ingress disabled — we manage it here)
 # ---------------------------------------------------------------------------

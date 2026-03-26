@@ -109,6 +109,25 @@ jobs:
             echo "No values.yaml — skipping replicaCount check"
             exit 0
           fi
+          # Check for ha_exception in vendor/VENDORS.yaml for this chart
+          HA_EXCEPTION=$(python3 -c "
+          import yaml, sys
+          chart = '${{ matrix.chart }}'
+          try:
+              with open('vendor/VENDORS.yaml') as f:
+                  data = yaml.safe_load(f)
+              for v in data.get('vendors', []):
+                  if v.get('name') == chart and v.get('ha_exception') is True:
+                      print('true')
+                      sys.exit(0)
+          except Exception:
+              pass
+          print('false')
+          " 2>/dev/null || echo "false")
+          if [ "$HA_EXCEPTION" = "true" ]; then
+            echo "INFO: ha_exception=true for ${{ matrix.chart }} in vendor/VENDORS.yaml — replicaCount check skipped"
+            exit 0
+          fi
           REPLICA=$(python3 -c "
           import yaml, sys
           with open('$VALUES') as f:
