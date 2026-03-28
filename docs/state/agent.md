@@ -136,10 +136,6 @@ A story whose theme contradicts the increment's purpose creates SMART scoring no
 drift. If the sprint goal diverges from the increment `themeGoal`, flag it before accepting
 stories — do not implement work that contradicts the increment's stated purpose.
 
-**Single-story sprints are a planning smell**: if capacity ≥ 3 and only one story fills the
-sprint, pull from adjacent increments or the backlog. Two to three stories per sprint is preferred
-even when one is a stretch goal.
-
 **Sprint planning must fill >= 75% capacity**: a sprint with fewer stories than its capacity
 allows is a planning failure. If the current increment's backlog is exhausted, pull the
 highest-priority stories from adjacent increments or the general backlog.
@@ -164,10 +160,17 @@ option B", the implementer must pick one before writing code. Leaving it open cr
 ambiguity and rework risk. Future grooming should resolve all OR-choices before pulling a
 story into a sprint.
 
-**ANDON stories must inline the verification command**: ANDON remediation stories that reference
-`prd/gge.json` for the failure condition should inline the exact verification command in `acceptanceCriteria`.
-A self-contained AC ("run `python3 scripts/ralph/ceremonies.py orient` and confirm G5 passes") is
-unambiguous. Pointing to an external file requires navigation and reduces the SMART "specific" score.
+**ANDON stories must inline the verification command, and it must be a runnable one-liner**:
+ANDON remediation stories must include the exact verification command in `acceptanceCriteria` —
+a self-contained Python or bash one-liner that proves the gate passes without navigating to an
+external file. This pattern consistently produces single-iteration completion with no review
+failures. Stories that reference external files for their verification conditions require
+navigation and reduce the SMART "specific" score.
+
+**Remediation sprints work best as single tightly-scoped stories**: remediation sprints with
+one story (≤ 2 pts) consistently achieve 100% first-review acceptance. When opening a
+remediation sprint, prefer one clearly-scoped story over bundling multiple fixes. If multiple
+blockers exist, order them by severity and sprint them sequentially.
 
 ---
 
@@ -199,7 +202,9 @@ Do not mark `passes: true` if any gate fails. Do not self-certify — gates will
 - **Proof of work**: checks your branch is pushed and PR is merged to main
 - **Review**: adversarially checks your acceptance criteria
 - **Retro**: closes the sprint, returns incomplete work to backlog with 5 Whys
+- **Sync**: rewrites `docs/state/architecture.md` and `docs/state/agent.md`
 - **Advance**: moves the increment pointer in manifest.json
+- **Plan**: populates the next sprint file with stories from the backlog
 
 You implement. Ceremonies verify. Don't conflate the two.
 
@@ -213,13 +218,18 @@ Increments complete: 0 (ceremonies), 1 (bootstrap), 2 (foundations), 2h (ci-hard
 README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Dockerfile, Helm chart),
 11 (remediation — restored GGE G5: planning pipeline guard for pending increment),
 12 (developer-portal — Backstage plugin config, SonarQube + ReportPortal Helm charts; story 027a
-returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in kind)
+returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in kind),
+13 (remediation — GGE G5 restored: increment 14 added to manifest.json as pending so planning
+pipeline guard passes)
+
+Increment active: 14 (developer-portal-argocd — targeting T3 Developer Autonomy: E11 Backstage
+ArgoCD Application, E12 code quality stories)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics backlog: E11 (developer portal — Backstage scaffold/ArgoCD app still in backlog as story 027a),
+Epics active/backlog: E11 (developer portal — Backstage ArgoCD app story 027a pending),
 E12 (code quality — SonarQube + ReportPortal Helm charts exist; GitLab CI integration story 052 pending),
 E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
@@ -236,6 +246,7 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 - HA gate fails (PDB, podAntiAffinity, or replicaCount < 2 without a VENDORS.yaml ha_exception) → fix before marking passes: true
 - `check-limits.py` reports any container or initContainer missing `resources.requests` or `resources.limits` → fix before marking passes: true
 - The word "phase" appears in new Python or JSON you are writing → use "increment" instead
+- `prd/manifest.json` has no increment with `status: "pending"` AND `activeSprint` is unset → the planning ceremony will stall silently; add a pending increment before advancing
 
 ---
 
@@ -244,6 +255,3 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 - `attempts` field is initialized to 1 after first implementation, so `attempts == 0` in advance.py
   always reports 0% first-pass rate. Story 053 will fix: initialize to 0, increment only on review
   re-open, update formula to use `len(reviewNotes) == 0`.
-- 4 backlog stories (049, 050, 051, 052) still carry a `phase` field alongside `epicId`. These are
-  redundant — `epicId → targetIncrement` is authoritative. Story to clean up: add to backlog as
-  housekeeping under E1 when a remediation sprint is next.
