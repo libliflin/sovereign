@@ -197,11 +197,34 @@
       "name": "developer-portal-argocd",
       "description": "Deliver story 027a (ArgoCD Application for Backstage developer portal) and remaining E11/E12 backlog items. Continues the developer portal increment interrupted by increment 12.",
       "file": "prd/increment-14-developer-portal-argocd.json",
-      "status": "complete",
+      "status": "active",
       "dependsOn": [
         13
       ],
       "themeGoal": "T3 Developer Autonomy \u2014 complete E11 (Backstage ArgoCD app) and E12 code quality stories"
+    }
+  ],
+  "activeSprint": "prd/increment-14-developer-portal-argocd.json",
+  "currentIncrement": 14,
+  "sprintHistory": [
+    {
+      "increment": 13,
+      "name": "remediation",
+      "endDate": "2026-03-28T00:00:00+00:00",
+      "pointsCompleted": 2,
+      "storiesTotal": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 13,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-28T00:00:00+00:00"
     }
   ]
 }
