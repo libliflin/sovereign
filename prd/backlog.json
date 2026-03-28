@@ -26,7 +26,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "Ejected from sprint by SMART gate (post-split still failing). Low dimensions: measurable. Achievable < 3 usually means the story is too large \u2014 split further."
+      "readinessNote": "Priority-0 ANDON \u2014 included in increment-13-remediation despite SMART gate ejection. Gaps noted: missing testPlan (added at planning), branchName uses fix/ prefix. Included because priority-0 stories override readiness gates per ceremony rules."
     },
     {
       "id": "GGE-G4-andon",

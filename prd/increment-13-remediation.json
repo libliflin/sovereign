@@ -25,12 +25,12 @@
       "dependencies": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 3,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 3: the story does not name which file to modify or what exact change to make. The test plan implies adding an increment with status=pending to prd/manifest.json, but this must be inferred \u2014 no file path, field name, or example diff is provided."
       },
       "readinessNote": "Priority-0 ANDON \u2014 included in sprint despite SMART gate ejection. Readiness gaps: missing testPlan (added at planning), branchName uses fix/ prefix instead of feature/. Fix: orient ceremony must show GGE G5 = PASS after this story is accepted."
     }
