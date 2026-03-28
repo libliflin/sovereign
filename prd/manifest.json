@@ -180,25 +180,51 @@
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
       "file": "prd/increment-13-remediation.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": [],
       "startDate": "2026-03-28T22:04:11.867723+00:00",
       "pointsTotal": 2,
-      "storiesTotal": 1
+      "storiesTotal": 1,
+      "endDate": "2026-03-28T00:00:00+00:00",
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 14,
       "name": "developer-portal-argocd",
       "description": "Deliver story 027a (ArgoCD Application for Backstage developer portal) and remaining E11/E12 backlog items. Continues the developer portal increment interrupted by increment 12.",
       "file": "prd/increment-14-developer-portal-argocd.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [
         13
       ],
       "themeGoal": "T3 Developer Autonomy \u2014 complete E11 (Backstage ArgoCD app) and E12 code quality stories"
     }
   ],
-  "activeSprint": "prd/increment-13-remediation.json",
-  "currentIncrement": 13
+  "activeSprint": "prd/increment-14-developer-portal-argocd.json",
+  "currentIncrement": 14,
+  "sprintHistory": [
+    {
+      "increment": 13,
+      "name": "remediation",
+      "endDate": "2026-03-28T00:00:00+00:00",
+      "pointsCompleted": 2,
+      "storiesTotal": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 13,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-28T00:00:00+00:00"
+    }
+  ]
 }
