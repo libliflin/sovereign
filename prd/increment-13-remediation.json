@@ -16,7 +16,7 @@
       "priority": 0,
       "phase": 13,
       "points": 2,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "epicId": "E1",
