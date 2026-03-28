@@ -1,0 +1,38 @@
+{
+  "increment": 13,
+  "name": "remediation",
+  "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
+  "sprintGoal": "GGE G5 passes in orient: the planning pipeline always has a pending increment to execute.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "GGE-G5-andon",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment to execute",
+      "description": "Golden Goose Egg G5 indicator is failing. Indicator type: gate_passing. Restore it immediately. Rationale: The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently \u2014 no error, no alert, just nothing to plan. This egg catches that stall state immediately. First triggered when increment 9 completed with no successor increment defined.",
+      "acceptanceCriteria": [
+        "GGE G5 indicator passes in orient"
+      ],
+      "testPlan": "Run the orient ceremony: bash scripts/ralph/ceremonies/orient.sh. Confirm GGE G5 shows PASS (no FAIL line for G5). Alternatively: python3 -c \"import json; m=json.load(open('prd/manifest.json')); incs=m.get('increments',[]); pending=[i for i in incs if i.get('status')=='pending']; print('PASS' if pending or m.get('activeSprint') else 'FAIL')\"",
+      "priority": 0,
+      "phase": 13,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/gge-g5-andon",
+      "dependencies": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      },
+      "readinessNote": "Priority-0 ANDON \u2014 included in sprint despite SMART gate ejection. Readiness gaps: missing testPlan (added at planning), branchName uses fix/ prefix instead of feature/. Fix: orient ceremony must show GGE G5 = PASS after this story is accepted."
+    }
+  ]
+}
