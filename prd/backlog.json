@@ -26,7 +26,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "Ejected from sprint by SMART gate (post-split still failing). Low dimensions: measurable. Achievable < 3 usually means the story is too large \u2014 split further."
+      "readinessNote": "Priority-0 ANDON \u2014 included in increment-13-remediation despite SMART gate ejection. Gaps noted: missing testPlan (added at planning), branchName uses fix/ prefix. Included because priority-0 stories override readiness gates per ceremony rules."
     },
     {
       "id": "GGE-G4-andon",
@@ -2165,6 +2165,36 @@
         "notes": "Well-bounded fix: one field initialization, one formula change, and a dry-run verification."
       },
       "readinessNote": ""
+    },
+    {
+      "id": "054r-kind-argocd-crds",
+      "title": "Install ArgoCD CRDs into kind-sovereign-test so Application manifests can be validated with kubectl dry-run",
+      "description": "kind/setup.sh provisions a bare cluster with no operator CRDs. Every story that creates an ArgoCD Application manifest and tests it with kubectl apply --dry-run=client fails because the Application CRD is not registered. Fix: add a step to kind/setup.sh that installs the ArgoCD CRDs (application-crd.yaml, appproject-crd.yaml, applicationset-crd.yaml) from the pinned argocd release. Update CLAUDE.md quality gate wording to distinguish CRD-backed manifests from core K8s resources.",
+      "acceptanceCriteria": [
+        "kind/setup.sh installs ArgoCD CRDs (application, appproject, applicationset) into kind-sovereign-test",
+        "kubectl --context kind-sovereign-test apply --dry-run=client -f argocd-apps/devex/backstage-app.yaml exits 0 after setup",
+        "kind/setup.sh --status verifies CRDs are registered",
+        "shellcheck kind/setup.sh exits 0"
+      ],
+      "priority": 1,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "fix/kind-argocd-crds",
+      "dependencies": [],
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-12-developer-portal.json",
+      "returnedReason": "kind-sovereign-test does not install ArgoCD CRDs, so kubectl dry-run validation of ArgoCD Application manifests always fails in CI and kind-based tests",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Precise fix: add CRD installation to kind/setup.sh. Fully verifiable with the AC commands. 2 points."
+      }
     }
   ]
 }

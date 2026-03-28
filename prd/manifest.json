@@ -159,7 +159,7 @@
       "name": "developer-portal",
       "description": "Backstage developer portal and code-server (VS Code in browser). Provides service catalog, developer self-service, and the primary interface for Claude Code agents.",
       "file": "prd/increment-12-developer-portal.json",
-      "status": "active",
+      "status": "complete",
       "startDate": "2026-03-26",
       "pointsTotal": 8,
       "storiesTotal": 3,
@@ -168,30 +168,37 @@
         6,
         7
       ],
-      "themeGoal": "T3 Developer Autonomy \u2014 Backstage (E11) and code-server: service catalog, developer portal, browser-based IDE"
-    }
-  ],
-  "activeSprint": "prd/increment-12-developer-portal.json",
-  "currentIncrement": 12,
-  "sprintHistory": [
+      "themeGoal": "T3 Developer Autonomy \u2014 Backstage (E11) and code-server: service catalog, developer portal, browser-based IDE",
+      "endDate": "2026-03-26T00:00:00+00:00",
+      "pointsCompleted": 5,
+      "storiesAccepted": 2,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 33.3
+    },
     {
-      "increment": 11,
+      "id": 13,
       "name": "remediation",
-      "endDate": "2026-03-25T00:00:00+00:00",
-      "pointsCompleted": 2,
-      "storiesTotal": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
+      "file": "prd/increment-13-remediation.json",
+      "status": "active",
+      "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
+      "dependsOn": [],
+      "startDate": "2026-03-28T22:04:11.867723+00:00",
+      "pointsTotal": 2,
+      "storiesTotal": 1
+    },
+    {
+      "id": 14,
+      "name": "developer-portal-argocd",
+      "description": "Deliver story 027a (ArgoCD Application for Backstage developer portal) and remaining E11/E12 backlog items. Continues the developer portal increment interrupted by increment 12.",
+      "file": "prd/increment-14-developer-portal-argocd.json",
+      "status": "pending",
+      "dependsOn": [
+        13
+      ],
+      "themeGoal": "T3 Developer Autonomy \u2014 complete E11 (Backstage ArgoCD app) and E12 code quality stories"
     }
   ],
-  "velocity": [
-    {
-      "increment": 11,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-25T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-13-remediation.json",
+  "currentIncrement": 13
 }

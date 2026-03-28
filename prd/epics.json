@@ -115,7 +115,8 @@
       "targetIncrement": 7,
       "status": "backlog",
       "storyIds": [
-        "027",
+        "027a",
+        "027b",
         "028",
         "049"
       ]
