@@ -17,7 +17,7 @@
       "phase": 13,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "epicId": "E1",
       "themeId": "T3",
@@ -34,5 +34,7 @@
       },
       "readinessNote": "Priority-0 ANDON \u2014 included in sprint despite SMART gate ejection. Readiness gaps: missing testPlan (added at planning), branchName uses fix/ prefix instead of feature/. Fix: orient ceremony must show GGE G5 = PASS after this story is accepted."
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
