@@ -1,18 +1,18 @@
 {
   "increment": 18,
   "name": "remediation",
-  "description": "Remediation sprint — restores broken GGEs and resolves priority-0 blockers.",
+  "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
   "sprintGoal": "GGE G5 passes: manifest.json contains at least one pending increment, unblocking the planning pipeline.",
   "capacity": 12,
   "stories": [
     {
       "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE — Planning pipeline always has a pending increment",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
       "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
       "acceptanceCriteria": [
         "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
       ],
-      "testPlan": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" — must exit 0 and print OK. Show output verbatim.",
+      "testPlan": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
       "phase": 18,
       "priority": 0,
       "points": 1,
