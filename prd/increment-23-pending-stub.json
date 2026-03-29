@@ -22,7 +22,7 @@
       "priority": 1,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -53,7 +53,7 @@
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 1,
@@ -83,10 +83,12 @@
         "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart"
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 1,
+      "reviewNotes": [
+        "[Review 2] AC failed: 'For a chart that has replicaCount: 1 in values.yaml, scripts/ha-gate.sh outputs FAIL:<chart>:replicaCount < 2 and exits non-zero' and 'For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart'. Detail: The script uses set -euo pipefail. When processing platform/charts/_globals/values.yaml (which has no top-level replicaCount: field), the grep pipeline 'grep -E '^replicaCount:' ... | awk ... | tr ...' exits with code 1 (no match). With bash 3.2 (macOS default) and set -euo pipefail, a failed pipeline inside a command substitution triggers errexit and kills the script before any output is produced. Commands run: 'bash scripts/ha-gate.sh > /tmp/ha-out.txt 2>&1; echo exit:$?' => exit: 1, stdout empty. 'bash -x scripts/ha-gate.sh 2>/tmp/ha-trace.txt' trace ends at '+ replica_count=' with no subsequent output. Fix: add '|| true' to the grep pipeline: grep -E '^replicaCount:' ... || true | awk ... (or restructure to avoid pipefail killing on grep miss)."
+      ],
+      "attempts": 2,
       "dependencies": [],
       "smart": {
         "specific": 4,
@@ -111,7 +113,7 @@
       "priority": 2,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -135,7 +137,7 @@
       "priority": 3,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -165,7 +167,7 @@
       "priority": 4,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -201,7 +203,7 @@
       "testPlan": "shellcheck -S error scripts/gates/cost-gate.sh && echo 'shellcheck OK'; bash scripts/gates/cost-gate.sh; show full output verbatim including final PASS/FAIL line.",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -229,7 +231,7 @@
       "points": 1,
       "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 4,
@@ -262,7 +264,7 @@
       "dependencies": [
         "DEVEX-007a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 5,
@@ -276,5 +278,7 @@
       }
     }
   ],
-  "storiesTotal": 9
+  "storiesTotal": 9,
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
