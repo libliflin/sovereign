@@ -21,11 +21,15 @@ push branches, open PRs. Ceremonies verify your work. You do not run ceremonies.
 | Current sprint | `prd/manifest.json` → `activeSprint` field |
 | All stories | `prd/backlog.json` |
 | Strategic direction | `prd/themes.json`, `prd/epics.json` |
-| Helm charts | `charts/<service>/` |
+| Platform service charts | `platform/charts/<service>/` |
+| Kind bootstrap charts | `cluster/kind/charts/<service>/` |
 | ArgoCD apps | `argocd-apps/<tier>/<service>-app.yaml` |
-| Bootstrap scripts | `bootstrap/` |
+| Contract schema | `contract/v1/` — validated by `contract/validate.py` |
+| Bootstrap scripts | `bootstrap/` (VPS) and `cluster/kind/bootstrap.sh` (kind) |
 | Governance rules | `docs/governance/` |
 | Architecture decisions | `docs/state/architecture.md` (this directory) |
+
+The root `charts/` directory is empty and retired. Do not create charts there.
 
 ---
 
@@ -44,13 +48,17 @@ domain in `templates/`.
 **Helm chart structure**: every chart needs `Chart.yaml`, `values.yaml`, `templates/`. Run
 `helm dependency update` before `helm lint` when `Chart.yaml` has dependencies.
 
+**Chart location**: platform service charts go in `platform/charts/<service>/`. Kind bootstrap
+charts (cert-manager, cilium, sealed-secrets) go in `cluster/kind/charts/<service>/`.
+Never create charts in the root `charts/` directory.
+
 **HA gate — run before every `git push` on a chart story:**
 
 ```bash
-helm template charts/<name>/ | grep -c PodDisruptionBudget   # must be >= 1 (>= 1 per component for distributed-mode charts)
-helm template charts/<name>/ | grep -c podAntiAffinity        # must be >= 1
-grep replicaCount charts/<name>/values.yaml                   # must be >= 2
-helm template charts/<name>/ | python3 scripts/check-limits.py  # every container must have requests AND limits
+helm template platform/charts/<name>/ | grep -c PodDisruptionBudget   # must be >= 1 (>= 1 per component for distributed-mode charts)
+helm template platform/charts/<name>/ | grep -c podAntiAffinity        # must be >= 1
+grep replicaCount platform/charts/<name>/values.yaml                   # must be >= 2
+helm template platform/charts/<name>/ | python3 scripts/check-limits.py  # every container must have requests AND limits
 ```
 
 This applies to upstream wrapper charts too. Setting `affinity` in `values.yaml` is not
@@ -64,8 +72,8 @@ is reasonable for the chart's component topology.
 
 **Resource limits — use check-limits.py, not grep**: `grep -A5 resources:` is insufficient for
 verifying resource limits on every container. It passes even when one initContainer is missing
-limits. Always use `helm template charts/<name>/ | python3 scripts/check-limits.py` which
-exhaustively enumerates every container and initContainer spec. This is quality gate #6.
+limits. Always use `helm template platform/charts/<name>/ | python3 scripts/check-limits.py`
+which exhaustively enumerates every container and initContainer spec. This is quality gate #6.
 
 **Upstream wrapper charts need values-schema research before implementation**: when an HA story
 covers a chart that wraps an upstream Helm chart (cilium, cert-manager, crossplane, etc.), identify
@@ -124,8 +132,8 @@ Common fixes:
 flags. CI checks for both with grep. Missing either causes CI failure.
 
 **Observability charts with Grafana integration**: include a Grafana datasource ConfigMap in
-`charts/<name>/templates/`. This is required for the chart to auto-register in Grafana.
-Gate: `helm template charts/<name>/ | grep -i datasource` must exit 0.
+`platform/charts/<name>/templates/`. This is required for the chart to auto-register in Grafana.
+Gate: `helm template platform/charts/<name>/ | grep -i datasource` must exit 0.
 
 **Documentation stories**: use `markdownlint` for lint validation and `grep -i 'cost'` to
 confirm cost estimates are present in provider docs. This is a reusable testPlan pattern.
@@ -139,6 +147,11 @@ stories — do not implement work that contradicts the increment's stated purpos
 **Sprint planning must fill >= 75% capacity**: a sprint with fewer stories than its capacity
 allows is a planning failure. If the current increment's backlog is exhausted, pull the
 highest-priority stories from adjacent increments or the general backlog.
+
+**Kaizen stories in feature sprints must have priority ≤ 5**: a kaizen story with priority > 5
+in a feature sprint will always land last in the priority queue. Last means it may miss the
+review window at sprint boundary and end up in `passes: true, reviewed: false` purgatory.
+If a kaizen fix matters enough to be in the sprint, give it priority ≤ 5.
 
 **Multi-stage Dockerfile for Node.js + React**: build the React frontend with `vite build`,
 build the Express/Node backend with `tsc`, combine both artifacts in a single distroless-style
@@ -184,17 +197,18 @@ blockers exist, order them by severity and sprint them sequentially.
    Only begin implementation after the contract is written. Run every test. Show the output.
 
 6. Run quality gates before marking `passes: true`:
-   - `helm lint charts/<name>/` if you touched a chart
+   - `helm lint platform/charts/<name>/` if you touched a platform chart
+   - `helm lint cluster/kind/charts/<name>/` if you touched a kind chart
    - HA gate (PDB, podAntiAffinity, replicaCount) if you touched a chart
-   - `helm template charts/<name>/ | python3 scripts/check-limits.py` if you touched a chart
-   - `helm template charts/<name>/ | grep -i datasource` if you added an observability chart
+   - `helm template platform/charts/<name>/ | python3 scripts/check-limits.py` if you touched a chart
+   - `helm template platform/charts/<name>/ | grep -i datasource` if you added an observability chart
    - `shellcheck -S error <file>.sh` if you touched a shell script
    - `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"` for ArgoCD Application manifests (CRDs not in kind — use YAML-only validation)
    - `yq e '.' <file>.yaml` on all YAML files touched
    - `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
    - **Autarky gate** (every chart or vendor story — show output verbatim):
      ```bash
-     grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" charts/*/templates/ 2>/dev/null \
+     grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/ cluster/kind/charts/*/templates/ 2>/dev/null \
        && echo "FAIL" && exit 1 || echo "PASS: no external registries in templates"
      ```
 6. Set `passes: true` in the sprint file
@@ -230,10 +244,15 @@ returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in
 13 (remediation — GGE G5 restored: increment 14 added to manifest.json as pending so planning
 pipeline guard passes),
 14 (developer-portal-argocd — delivered backstage-app.yaml ArgoCD Application manifest),
-15 (remediation — GGE G5 restored: increment 16 added to manifest.json as pending)
+15 (remediation — GGE G5 restored: increment 16 added to manifest.json as pending),
+16 (code-quality — SonarQube + ReportPortal GitLab CI integration),
+17 (restructure — contract/v1/ schema, cluster/kind/bootstrap.sh, platform/deploy.sh,
+charts migrated to platform/charts/ and cluster/kind/charts/)
 
-Increment active: 16 (code-quality — targeting T3 Developer Autonomy: E12 SonarQube and
-ReportPortal GitLab CI integration)
+Increment active: 17 complete, awaiting advance ceremony to activate next increment.
+
+KAIZEN-003 (fix attempts field initialization) is implemented (`passes: true`) and returned to
+backlog pending review ceremony in the next sprint. It does not need re-implementation.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -262,11 +281,10 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 - You are about to write `|| true`, `2>/dev/null`, or `--dry-run` as the only test → these are workarounds, diagnose and fix the root cause
 - You are about to commit code containing `# TODO`, `# FIXME`, or `# HACK` → deferred work is incomplete work; use the blocker protocol instead
 - A story implementation touches files outside the stated story scope (more than ~3 charts for a 1-service story, new dependencies not in VENDORS.yaml, etc.) → stop and split before implementing
+- A chart is created in the root `charts/` directory → wrong location; use `platform/charts/` or `cluster/kind/charts/` depending on purpose
 
 ---
 
 ## Known model inconsistencies
 
-- `attempts` field is initialized to 1 after first implementation, so `attempts == 0` in advance.py
-  always reports 0% first-pass rate. Story 053 will fix: initialize to 0, increment only on review
-  re-open, update formula to use `len(reviewNotes) == 0`.
+- KAIZEN-004r (pre-retro guard): ceremonies.sh does not automatically drain `passes: true, reviewed: false` stories before firing retro. Stories at the sprint boundary can end up accepted-but-unreviewed. Story KAIZEN-004r will add the guard.

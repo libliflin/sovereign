@@ -39,7 +39,9 @@ The word "phase" is retired from code and data. If you see it in Python or JSON,
 | GitOps engine | ArgoCD App-of-Apps. Root app watches `argocd-apps/`. All services are ArgoCD Applications. |
 | Infrastructure composition | Crossplane with Helm + Kubernetes providers. Cloud resources are XRDs, not scripts. |
 | Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
-| Bootstrapping | `bootstrap.sh` is the only manual step. It installs increment 1 foundations; ArgoCD takes over. |
+| Bootstrapping | `cluster/kind/bootstrap.sh` (kind) and `bootstrap/bootstrap.sh` (VPS) are the only manual steps. Everything after is ArgoCD. |
+| Helm charts | Platform-level service charts in `platform/charts/<service>/`. Kind cluster bootstrap charts in `cluster/kind/charts/<service>/`. The root `charts/` directory is empty and retired. |
+| Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` runs pre-deployment validation against this schema. |
 | Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
 | ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. Validate with `yq e '.'` — not `kubectl apply --dry-run` (CRDs not installed locally). |
 
@@ -96,9 +98,9 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 |---|---|
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
 | code-server | Browser-based VS Code IDE for agents and developers. Helm chart and ArgoCD Application deployed. |
-| Backstage | Service catalog — `charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. Full Keycloak OIDC integration and plugin config (GitLab catalog, Kubernetes, ArgoCD, TechDocs) are pending (story 027a). |
-| SonarQube | Static analysis history — `charts/sonarqube/` deployed, wraps sonarqube/sonarqube. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
-| ReportPortal | Test result history — `charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
+| Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. Full Keycloak OIDC integration and plugin config (GitLab catalog, Kubernetes, ArgoCD, TechDocs) are pending (story 027a). |
+| SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed, wraps sonarqube/sonarqube. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
+| ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 
 Sovereign PM uses a multi-stage Dockerfile: Vite builds the React frontend, tsc builds the
 Express backend, combined in a single production image. Database: bitnami/postgresql subchart
@@ -125,17 +127,17 @@ All observability charts register their data sources in Grafana via a ConfigMap 
 
 Every story must pass before `reviewed: true`:
 
-1. `helm lint charts/<name>/` — zero errors
+1. `helm lint platform/charts/<name>/` — zero errors
 2. `helm template | kubectl apply --dry-run=client` — zero errors (core K8s resources only)
 3. `helm template | grep PodDisruptionBudget` — must match ≥ 1 (≥ 1 per component for distributed-mode charts)
 4. `helm template | grep podAntiAffinity` — must match ≥ 1
-5. `grep replicaCount charts/<name>/values.yaml` — must be ≥ 2. **Exception**: if `vendor/VENDORS.yaml` has `ha_exception: true` for this service with a documented `ha_exception_reason`, then `replicaCount: 1` is acceptable — but only if the chart has a top-level `replicaCount: 1` with a comment referencing the VENDORS.yaml exception entry. Undocumented `replicaCount: 1` always fails.
-6. `helm template charts/<name>/ | python3 scripts/check-limits.py` — every container and initContainer must have `resources.requests` AND `resources.limits`. Use `check-limits.py`, not `grep -A5 resources:` — grep misses individual containers that lack limits even when others have them.
+5. `grep replicaCount platform/charts/<name>/values.yaml` — must be ≥ 2. **Exception**: if `vendor/VENDORS.yaml` has `ha_exception: true` for this service with a documented `ha_exception_reason`, then `replicaCount: 1` is acceptable — but only if the chart has a top-level `replicaCount: 1` with a comment referencing the VENDORS.yaml exception entry. Undocumented `replicaCount: 1` always fails.
+6. `helm template platform/charts/<name>/ | python3 scripts/check-limits.py` — every container and initContainer must have `resources.requests` AND `resources.limits`. Use `check-limits.py`, not `grep -A5 resources:` — grep misses individual containers that lack limits even when others have them.
 7. `shellcheck` on all `.sh` files — zero errors
 8. **ArgoCD Application and CRD-backed manifests**: `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"` — not `kubectl apply --dry-run=client` (CRDs not installed in kind-sovereign-test). Core K8s resources (Deployment, Service, Ingress, PDB) still use `kubectl apply --dry-run=client`.
 9. `yq e '.'` on all YAML files touched — valid YAML
 10. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
-11. `helm template charts/<name>/ | grep -i datasource` — required for all observability charts
+11. `helm template platform/charts/<name>/ | grep -i datasource` — required for all observability charts
 12. Branch pushed to remote + PR merged to main — proof of work
 
 ---
