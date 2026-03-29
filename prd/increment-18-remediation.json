@@ -23,7 +23,15 @@
       "themeId": "T3",
       "branchName": "fix/gge-g5-andon",
       "dependencies": [],
-      "attempts": 0
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     }
   ]
 }
