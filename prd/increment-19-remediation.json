@@ -15,7 +15,7 @@
       "priority": 0,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "fix/gge-g5-andon",
@@ -32,5 +32,7 @@
       "returnedToBacklog": true,
       "returnedReason": "Sprint closed with 0 implementation attempts \u2014 retrospective ran before execute ceremony could run; story returns to backlog for the next sprint."
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
