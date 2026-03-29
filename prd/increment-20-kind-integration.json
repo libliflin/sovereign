@@ -1,0 +1,147 @@
+{
+  "increment": 20,
+  "name": "kind-integration",
+  "description": "Kind cluster integration: kind bootstrap script delivers a running sovereign-test cluster with Cilium CNI, cert-manager, sealed-secrets, and autarky egress policy verified.",
+  "sprintGoal": "kind bootstrap (cluster/kind/bootstrap.sh) runs end-to-end, produces a valid cluster-values.yaml, and the kind cluster passes all autarky invariants.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "GGE-G5-andon",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
+      "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
+      "acceptanceCriteria": [
+        "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
+      ],
+      "priority": 0,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/gge-g5-andon",
+      "dependencies": [],
+      "attempts": 0,
+      "reviewNotes": [],
+      "testPlan": "Run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+    },
+    {
+      "id": "KAIZEN-007r",
+      "title": "Plan ceremony: always queue a pending increment stub when creating an active sprint",
+      "description": "GGE G5 fires every sprint because the plan ceremony creates an active increment but never queues a follow-on pending increment. The fix: at the end of the plan ceremony, if no increment has status='pending' in manifest.json, automatically append a minimal pending increment stub (id, name, description, status='pending', dependsOn current). This ensures GGE G5 never fires again and the planning pipeline is always primed.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/plan.md (or the plan ceremony runner) contains logic to append a pending increment stub if none exists",
+        "After running plan ceremony on a fresh sprint, python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" exits 0",
+        "shellcheck -S error scripts/ralph/ceremonies/*.sh exits 0 (if any .sh files are modified)"
+      ],
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/plan-ceremony-pending-increment",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "points": 2,
+      "priority": 1,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-19-remediation.json",
+      "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
+      "reviewNotes": [],
+      "testPlan": "After implementing the plan ceremony change: run the plan ceremony on a fresh sprint context, then verify: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies/*.sh must exit 0."
+    },
+    {
+      "id": "KAIZEN-004r",
+      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/pre-retro-review-guard",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "ceremonies.sh (or the retro ceremony wrapper) checks for passes:true reviewed:false stories before running retro",
+        "If such stories exist, review ceremony is invoked first: python3 -c \"import json; s=json.load(open('prd/increment-17-restructure.json')); pending=[x for x in s['stories'] if x.get('passes') and not x.get('reviewed')]; print(len(pending))\" returns 0 after the guard runs",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after the change",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 (if Python-based)"
+      ],
+      "testPlan": "Manually set a story to passes:true reviewed:false in a test sprint file. Run ceremonies.sh --start-at retro. Verify review ceremony runs first, then retro. Show output verbatim.",
+      "returnedFromSprint": null,
+      "returnedReason": null
+    },
+    {
+      "id": "KIND-001",
+      "title": "kind cluster bootstrap produces a valid cluster-values.yaml",
+      "description": "cluster/kind/bootstrap.sh runs end-to-end on a developer machine. Produces cluster-values.yaml that passes contract validation. Kind cluster has 3 nodes, Cilium CNI (kindnet disabled), cert-manager, sealed-secrets, local-path-provisioner, MinIO.",
+      "acceptanceCriteria": [
+        "./cluster/kind/bootstrap.sh --dry-run exits 0",
+        "./cluster/kind/bootstrap.sh runs without error on a clean machine",
+        "kind get clusters shows sovereign-test",
+        "kubectl get nodes shows 3 nodes all Ready",
+        "python3 contract/validate.py cluster-values.yaml exits 0",
+        "kubectl get pods -n cert-manager shows all Running",
+        "kubectl get pods -n sealed-secrets shows all Running",
+        "kubectl get pods -n minio shows all Running",
+        "kubectl get storageclass shows local-path as default"
+      ],
+      "priority": 2,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "epicId": "E2",
+      "themeId": "T3",
+      "branchName": "feature/kind-bootstrap",
+      "dependencies": [
+        "RESTRUCTURE-001c"
+      ],
+      "attempts": 0,
+      "reviewNotes": [],
+      "testPlan": "1. ./cluster/kind/bootstrap.sh --dry-run: must exit 0. Show output. 2. ./cluster/kind/bootstrap.sh: runs without error. 3. kind get clusters: shows sovereign-test. 4. kubectl get nodes: shows 3 nodes all Ready. 5. python3 contract/validate.py cluster-values.yaml: exits 0. 6. kubectl get pods -n cert-manager: all Running. 7. kubectl get pods -n sealed-secrets: all Running. 8. kubectl get pods -n minio: all Running. 9. kubectl get storageclass: shows local-path as default. Show all output verbatim."
+    },
+    {
+      "id": "KAIZEN-005",
+      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-patch-naming",
+      "priority": 3,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
+        "scripts/ralph/ceremonies/sync.md no longer contains the string 'retro-patch-phase'",
+        "grep -r 'retro-patch-phase' scripts/ returns no matches",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
+      ],
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+    },
+    {
+      "id": "KAIZEN-006",
+      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/remove-phase-field",
+      "priority": 4,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
+        "grep -n '\"phase\"' prd/backlog.json returns no matches",
+        "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+    }
+  ]
+}
