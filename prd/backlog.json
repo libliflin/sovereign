@@ -4,6 +4,26 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
+      "id": "KAIZEN-009",
+      "title": "Kaizen: ArgoCD Application manifests must inject global.domain parameter",
+      "description": "16 ArgoCD Application manifests reference their chart's values.yaml but do not inject global.domain as a Helm parameter. At deploy time, charts will use their values.yaml default (sovereign-autarky.dev) regardless of the cluster's actual domain. Fix: add a helm.parameters entry for global.domain sourced from a cluster-level ApplicationSet parameter or a top-level values file, OR add a valueFiles reference to a cluster-specific values override. Affects: cert-manager, crossplane, gitlab, harbor, keycloak, sealed-secrets, vault, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator, argocd-image-updater.",
+      "acceptanceCriteria": [
+        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches \u2014 every app either injects global.domain or is documented as domain-agnostic",
+        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 \u2014 all YAML is valid after edits"
+      ],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-injection",
+      "priority": 12,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml \u2014 must return no output. Show verbatim."
+    },
+    {
       "id": "KAIZEN-008",
       "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
       "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
@@ -872,6 +892,195 @@
         "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
       },
       "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+    },
+    {
+      "id": "TEST-004",
+      "epicId": "E13",
+      "themeId": "T5",
+      "phase": 8,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/chaos-mesh-chart",
+      "title": "Chaos Mesh deploys and runs a pod failure experiment in kind",
+      "description": "Create charts/chaos-mesh/ Helm chart wrapping the upstream chaos-mesh Helm chart. Install into kind-sovereign-test in namespace chaos-testing. Apply a PodChaos experiment that kills a test pod. Verify the experiment completes (phase=Finished) and the pod recovers. The chart must include replicaCount>=2 for chaos-controller-manager, PDB with minAvailable=1, and podAntiAffinity. All containers must have readinessProbe, livenessProbe, resources.requests, and resources.limits.",
+      "acceptanceCriteria": [
+        "helm lint charts/chaos-mesh/ exits 0 with '0 chart(s) failed'",
+        "helm install chaos-mesh charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m exits 0 and kubectl get pods -n chaos-testing --context kind-sovereign-test shows all pods Running",
+        "kubectl apply a PodChaos experiment YAML against kind-sovereign-test exits 0 and kubectl get podchaos -n chaos-testing --context kind-sovereign-test shows phase=Finished within 120 seconds",
+        "helm template charts/chaos-mesh/ | grep -c PodDisruptionBudget returns at least 1",
+        "helm template charts/chaos-mesh/ | grep -c podAntiAffinity returns at least 1"
+      ],
+      "testPlan": "helm lint charts/chaos-mesh/ && helm install chaos-mesh charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m && kubectl get pods -n chaos-testing --context kind-sovereign-test && kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test && sleep 30 && kubectl get podchaos -n chaos-testing --context kind-sovereign-test; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KIND-001a",
+        "KIND-001b"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "TEST-005",
+      "epicId": "E13",
+      "themeId": "T5",
+      "phase": 8,
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/wiremock-chart",
+      "title": "Wiremock deploys and accepts API stub mappings via its admin REST API",
+      "description": "Create charts/wiremock/ Helm chart. Install into kind-sovereign-test in namespace wiremock-test. Verify the Wiremock admin API responds and accepts a stub mapping POST to /__admin/mappings. The stub mapping must be retrievable and matching GET requests must return the configured response body. Chart must meet HA standards: replicaCount>=2, PDB with minAvailable=1, podAntiAffinity, readinessProbe, livenessProbe, resource requests and limits.",
+      "acceptanceCriteria": [
+        "helm lint charts/wiremock/ exits 0 with '0 chart(s) failed'",
+        "helm install wiremock charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m exits 0 and kubectl get pods -n wiremock-test --context kind-sovereign-test shows all pods Running",
+        "kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 --context kind-sovereign-test & sleep 2 && curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/__admin/mappings -H 'Content-Type: application/json' -d '{\"request\":{\"method\":\"GET\",\"url\":\"/api/test\"},\"response\":{\"status\":200,\"body\":\"ok\"}}' returns 201",
+        "helm template charts/wiremock/ | grep -c PodDisruptionBudget returns at least 1",
+        "helm template charts/wiremock/ | grep -c podAntiAffinity returns at least 1"
+      ],
+      "testPlan": "helm lint charts/wiremock/ && helm install wiremock charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m && kubectl get pods -n wiremock-test --context kind-sovereign-test && kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 & sleep 2 && curl -X POST http://localhost:8080/__admin/mappings ... && curl http://localhost:8080/api/test; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KIND-001a",
+        "KIND-001b"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "HA-001",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/ha-gate-script",
+      "title": "HA gate script validates all platform charts have replicaCount>=2, PDB, and podAntiAffinity",
+      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm.",
+      "acceptanceCriteria": [
+        "scripts/ha-gate.sh exists and passes shellcheck -S error: shellcheck -S error scripts/ha-gate.sh exits 0",
+        "bash -n scripts/ha-gate.sh exits 0 (syntax check)",
+        "scripts/ha-gate.sh --dry-run prints the list of charts it will check with output containing each chart directory name, then exits 0",
+        "For a chart that has replicaCount: 1 in values.yaml, scripts/ha-gate.sh outputs FAIL:<chart>:replicaCount < 2 and exits non-zero",
+        "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart"
+      ],
+      "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "HA-002",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 2,
+      "points": 3,
+      "branchName": "feature/pdb-drain-validation",
+      "title": "PDB drain validation: kubectl drain blocks eviction of last pod when minAvailable=1",
+      "description": "Create kind/fixtures/pdb-test.yaml defining: a Namespace (pdb-test), a Deployment with replicaCount=2, podAntiAffinity (requiredDuringScheduling across nodes), and a PodDisruptionBudget with minAvailable=1. In kind-sovereign-test, apply the fixture, drain a worker node, and verify: (a) kubectl drain exits non-zero or produces 'Cannot evict pod as it would violate the pod disruption budget' output when trying to evict the last pod, and (b) at least 1 pdb-test pod remains Running during the drain. After uncordon, verify both pods return to Running.",
+      "acceptanceCriteria": [
+        "kind/fixtures/pdb-test.yaml exists and contains Namespace, Deployment (replicaCount=2), and PodDisruptionBudget (minAvailable=1) resources: python3 -c \"import yaml; docs=list(yaml.safe_load_all(open('kind/fixtures/pdb-test.yaml'))); kinds={d['kind'] for d in docs if d}; assert 'Deployment' in kinds and 'PodDisruptionBudget' in kinds and 'Namespace' in kinds; print('OK')\" exits 0",
+        "kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test exits 0 and kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test shows 2/2 Running within 60 seconds",
+        "kubectl drain <worker-node> --delete-emptydir-data --ignore-daemonsets --context kind-sovereign-test produces output containing 'Cannot evict pod as it would violate the pod disruption budget' OR exits non-zero",
+        "kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test immediately after drain attempt shows at least 1 pod Running",
+        "kubectl uncordon <worker-node> --context kind-sovereign-test followed by kubectl wait --for=condition=Ready pod -l app=pdb-test -n pdb-test --timeout=60s --context kind-sovereign-test exits 0"
+      ],
+      "testPlan": "kind get clusters (verify kind-sovereign-test) && kubectl get nodes --context kind-sovereign-test && kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && WORKER=$(kubectl get nodes --context kind-sovereign-test --no-headers | grep -v control-plane | head -1 | awk '{print $1}') && kubectl drain $WORKER --delete-emptydir-data --ignore-daemonsets --context kind-sovereign-test 2>&1 | tee /tmp/drain.out && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && kubectl uncordon $WORKER --context kind-sovereign-test; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "HA-003",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/rolling-update-smoke-test",
+      "title": "Rolling update smoke test verifies zero pod unavailability during Helm chart upgrade in kind",
+      "description": "Create kind/smoke-test/rolling-update.sh that: (1) installs a test Helm chart into kind-sovereign-test with replicaCount=2 and maxUnavailable=0 maxSurge=1, (2) upgrades the chart (e.g. bumps an annotation) triggering a rolling update, (3) polls kubectl get pods every 2 seconds during the rollout, (4) verifies at no point were fewer than 1 pod Running, (5) exits 0 with 'PASS: zero unavailability during rollout' if the invariant held throughout. Script must pass shellcheck -S error and support --dry-run.",
+      "acceptanceCriteria": [
+        "kind/smoke-test/rolling-update.sh exists and passes shellcheck -S error: shellcheck -S error kind/smoke-test/rolling-update.sh exits 0",
+        "bash -n kind/smoke-test/rolling-update.sh exits 0",
+        "kind/smoke-test/rolling-update.sh --dry-run prints the test steps and the chart it will use, then exits 0 without executing helm install",
+        "kind/smoke-test/rolling-update.sh runs against kind-sovereign-test and exits 0 with output containing 'PASS: zero unavailability during rollout'",
+        "helm template of the test chart used confirms strategy.rollingUpdate.maxUnavailable is 0: helm template <test-chart> | grep -A5 'rollingUpdate' shows 'maxUnavailable: 0'"
+      ],
+      "testPlan": "shellcheck -S error kind/smoke-test/rolling-update.sh && bash -n kind/smoke-test/rolling-update.sh && kind/smoke-test/rolling-update.sh --dry-run && kind/smoke-test/rolling-update.sh; show all output verbatim including the per-poll pod counts",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
     }
   ]
 }
