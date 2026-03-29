@@ -155,10 +155,10 @@
         "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
       ],
       "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "smart": {
         "specific": 5,
