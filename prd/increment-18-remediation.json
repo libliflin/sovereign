@@ -33,5 +33,7 @@
         "notes": "All SMART dimensions green."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
