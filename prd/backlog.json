@@ -697,6 +697,49 @@
         "timebound": 0,
         "notes": "Not yet SMART-scored."
       }
+    },
+    {
+      "id": "KAIZEN-005",
+      "title": "Kaizen: Rename retro-patch-phase*.md → retro-patch-increment*.md",
+      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model — all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-patch-naming",
+      "priority": 3,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
+        "scripts/ralph/ceremonies/sync.md no longer contains the string 'retro-patch-phase'",
+        "grep -r 'retro-patch-phase' scripts/ returns no matches",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
+      ],
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ — must return no matches. Show output verbatim."
+    },
+    {
+      "id": "KAIZEN-006",
+      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId → targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/remove-phase-field",
+      "priority": 4,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
+        "grep -n '\"phase\"' prd/backlog.json returns no matches",
+        "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" — must exit 0 and print OK. Show output verbatim."
     }
   ]
 }

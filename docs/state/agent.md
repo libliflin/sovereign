@@ -185,6 +185,13 @@ one story (≤ 2 pts) consistently achieve 100% first-review acceptance. When op
 remediation sprint, prefer one clearly-scoped story over bundling multiple fixes. If multiple
 blockers exist, order them by severity and sprint them sequentially.
 
+**Remediation sprints require at least one execute cycle before retro is eligible**: a
+remediation sprint with zero execute cycles (all stories at `attempts: 0`, no stories accepted)
+must not fire retro. If you find yourself in this state, the story was likely never attempted
+and remains unimplemented. Check `backlog.json` — the story will have been returned there.
+The planning ceremony that follows will typically resolve the root condition (e.g., adding a
+pending increment resolves GGE-G5). If not, the backlog story covers the fallback.
+
 ---
 
 ## How to implement a story
@@ -241,15 +248,18 @@ README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Do
 11 (remediation — restored GGE G5: planning pipeline guard for pending increment),
 12 (developer-portal — Backstage plugin config, SonarQube + ReportPortal Helm charts; story 027a
 returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in kind),
-13 (remediation — GGE G5 restored: increment 14 added to manifest.json as pending so planning
-pipeline guard passes),
+13 (remediation — GGE G5 restored: increment 14 added to manifest.json as pending),
 14 (developer-portal-argocd — delivered backstage-app.yaml ArgoCD Application manifest),
 15 (remediation — GGE G5 restored: increment 16 added to manifest.json as pending),
 16 (code-quality — SonarQube + ReportPortal GitLab CI integration),
 17 (restructure — contract/v1/ schema, cluster/kind/bootstrap.sh, platform/deploy.sh,
-charts migrated to platform/charts/ and cluster/kind/charts/)
+charts migrated to platform/charts/ and cluster/kind/charts/),
+18 (remediation — zero stories accepted; GGE-G5-andon returned to backlog; retro fired before
+any execute cycle ran)
 
-Increment active: 17 complete, awaiting advance ceremony to activate next increment.
+Increment active: 18 complete, awaiting advance ceremony to activate next increment.
+No pending increments exist in manifest.json — GGE G5 is failing. The planning ceremony must
+add a new pending increment before advance can proceed.
 
 KAIZEN-003 (fix attempts field initialization) is implemented (`passes: true`) and returned to
 backlog pending review ceremony in the next sprint. It does not need re-implementation.
@@ -287,4 +297,6 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
 ## Known model inconsistencies
 
-- KAIZEN-004r (pre-retro guard): ceremonies.sh does not automatically drain `passes: true, reviewed: false` stories before firing retro. Stories at the sprint boundary can end up accepted-but-unreviewed. Story KAIZEN-004r will add the guard.
+- `phase` field on backlog stories is redundant with `epicId` (8 stories affected) → KAIZEN-006 will remove it
+- `retro-patch-phase*.md` filenames use "phase" instead of "increment" — vocabulary inconsistency in ceremonies generation code → KAIZEN-005 will rename the pattern to `retro-patch-increment*.md`
+- KAIZEN-004r (pre-retro guard): ceremonies.sh does not check for minimum execute cycles before firing retro. A sprint with zero attempts and zero accepted stories can reach retro without any work happening. KAIZEN-004r will add the guard.

@@ -98,8 +98,8 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 |---|---|
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
 | code-server | Browser-based VS Code IDE for agents and developers. Helm chart and ArgoCD Application deployed. |
-| Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. Full Keycloak OIDC integration and plugin config (GitLab catalog, Kubernetes, ArgoCD, TechDocs) are pending (story 027a). |
-| SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed, wraps sonarqube/sonarqube. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
+| Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. |
+| SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 | ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 
 Sovereign PM uses a multi-stage Dockerfile: Vite builds the React frontend, tsc builds the
