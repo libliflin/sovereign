@@ -65,28 +65,6 @@ else
 fi
 
 echo "PRD file: $PRD_FILE"
-ARCHIVE_DIR="$SCRIPT_DIR/archive"
-LAST_BRANCH_FILE="$SCRIPT_DIR/.last-branch"
-
-# ── Archive previous run if branch changed ────────────────────────────────────
-if [[ -f "$PRD_FILE" && -f "$LAST_BRANCH_FILE" ]]; then
-  CURRENT_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
-  LAST_BRANCH=$(cat "$LAST_BRANCH_FILE" 2>/dev/null || echo "")
-  if [[ -n "$CURRENT_BRANCH" && -n "$LAST_BRANCH" && "$CURRENT_BRANCH" != "$LAST_BRANCH" ]]; then
-    DATE=$(date +%Y-%m-%d)
-    FOLDER_NAME="${LAST_BRANCH#ralph/}"
-    ARCHIVE_FOLDER="$ARCHIVE_DIR/$DATE-$FOLDER_NAME"
-    echo "Archiving previous run: $LAST_BRANCH"
-    mkdir -p "$ARCHIVE_FOLDER"
-    [[ -f "$PRD_FILE" ]]      && cp "$PRD_FILE"      "$ARCHIVE_FOLDER/"
-    echo "   Archived to: $ARCHIVE_FOLDER"
-  fi
-fi
-
-if [[ -f "$PRD_FILE" ]]; then
-  CURRENT_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
-  [[ -n "$CURRENT_BRANCH" ]] && echo "$CURRENT_BRANCH" > "$LAST_BRANCH_FILE"
-fi
 
 # ── Layer 2: Build failure context from sprint file ───────────────────────────
 # Reads _lastSmokeTestFailures, _lastProofOfWorkFailures, and story reviewNotes
@@ -302,24 +280,9 @@ print(t.strftime('%I:%M %p %Z  (%a %b %-d)'))
 
 echo "Starting Ralph — tool: $TOOL — max iterations: $MAX_ITERATIONS"
 
-# Pre-flight: check if there is actually anything to implement.
-# If all stories already have passes:true, there is no work for the agent.
-# Signal COMPLETE immediately so ceremonies.sh can move to smoke test.
-if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
-  STORIES_NEEDING_WORK=$(jq '[.stories[] | select(.passes == false)] | length' \
-    "$PRD_FILE" 2>/dev/null || echo "1")
-  if [[ "$STORIES_NEEDING_WORK" -eq 0 ]]; then
-    echo ""
-    echo "All stories already passing — no implementation work needed."
-    echo "<promise>COMPLETE</promise>"
-    exit 0
-  fi
-  echo "  Stories needing work: $STORIES_NEEDING_WORK"
-fi
-
 # ── Git hygiene before handing off to Ralph ───────────────────────────────────
 # If ceremonies left uncommitted changes, commit them so Ralph starts clean.
-# Ralph handles branch checkout/creation itself — see CLAUDE.md step 4-5.
+# Ralph handles everything else (branch checkout, story selection, etc.).
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo "  WARNING: uncommitted changes left by ceremony — auto-committing:"
   git diff --name-only 2>&1 | sed 's/^/    /'
