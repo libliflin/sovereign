@@ -385,7 +385,7 @@
       "branchName": "kaizen/attempts-field-fix",
       "priority": 14,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "attempts": 0,
       "dependencies": [],
@@ -395,7 +395,33 @@
         "python3 -c \"import json; s=json.load(open('prd/schema/story.schema.json')); assert s['properties']['attempts']['default'] == 0\" exits 0",
         "shellcheck or python3 -m py_compile scripts/ralph/lib/advance.py exits 0"
       ],
-      "testPlan": "Show schema default and advance.py formula change. Run py_compile. Show output verbatim."
+      "testPlan": "Show schema default and advance.py formula change. Run py_compile. Show output verbatim.",
+      "returnedFromSprint": "prd/increment-17-restructure.json",
+      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Review ceremony in next sprint can accept it immediately."
+    },
+    {
+      "id": "KAIZEN-004r",
+      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/pre-retro-review-guard",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "ceremonies.sh (or the retro ceremony wrapper) checks for passes:true reviewed:false stories before running retro",
+        "If such stories exist, review ceremony is invoked first: python3 -c \"import json; s=json.load(open('prd/increment-17-restructure.json')); pending=[x for x in s['stories'] if x.get('passes') and not x.get('reviewed')]; print(len(pending))\" returns 0 after the guard runs",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after the change",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 (if Python-based)"
+      ],
+      "testPlan": "Manually set a story to passes:true reviewed:false in a test sprint file. Run ceremonies.sh --start-at retro. Verify review ceremony runs first, then retro. Show output verbatim.",
+      "returnedFromSprint": null,
+      "returnedReason": null
     },
     {
       "id": "DEVEX-001",

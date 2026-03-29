@@ -125,7 +125,9 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "Relevant score 4: this is a process kaizen (attempts-field accuracy), not directly required by the restructure sprint goal (contract/v1/ + cluster/kind/ + platform/ skeleton). Could be deferred to a dedicated kaizen increment without blocking the restructure work."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Return to backlog with passes: true preserved — review ceremony in next sprint can accept it immediately."
     }
   ]
 }
