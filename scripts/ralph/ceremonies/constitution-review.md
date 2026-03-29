@@ -176,47 +176,22 @@ print("All indicators valid.")
 
 ---
 
-## PART 2 — Strategic Theme Health (Shi 勢)
+## PART 2 — Theme Health
 
-Shi is not velocity. Shi is reading the terrain — where is the natural advantage,
-where should we position to get the most leverage from the least effort.
+### Step 2.1 — Assess each theme
 
-### Step 2.1 — Read the field
+Using the velocity data from Step 1.1, check:
+1. **Is any theme stuck?** Multiple sprints with 0% flow = structural problem, not capacity.
+2. **Are success criteria still valid?** Given what was actually built.
+3. **Any themes with no active epics?**
 
-Using the velocity data from Step 1.1:
-
-For each theme, answer:
-1. **Where is the energy?** Which themes have momentum? Where does work flow naturally?
-2. **Where is the friction?** Not "what failed" but "what keeps failing and why?" A theme
-   with 0% flow after multiple attempts has a structural problem, not a capacity problem.
-3. **Where is the leverage?** Which single piece of work, if done, would unblock the most
-   other work across themes?
-4. **What's the natural next move?** Given what's done and what's pending, where does the
-   situation want to go? Don't fight the terrain.
-
-Output per theme:
-```
-## T<N>: <Name> — [HEALTH: flowing | friction | blocked]
-
-Energy:   <where work flows naturally in this theme>
-Friction: <what keeps not working, and the structural reason>
-Leverage: <what one thing would change the dynamic>
-Position: <what we should do about this theme right now>
-```
-
-### Step 2.2 — Strategic recommendation
-
-Based on the shi reading, answer: **What should the next increment focus on?**
-
-Not "what has the lowest flow rate" — that's a metric. Ask:
-- Where is the highest leverage?
-- What enables the most downstream work?
-- What is the natural next step given what's already built?
-
-### Step 2.3 — Theme updates (if any)
+### Step 2.2 — Theme updates (if any)
 
 If a theme's success criteria need updating, output the proposed change.
 Propose theme changes for human review — update CLAUDE.md's Themes section if approved.
+
+Note: Strategic positioning (shi) — where to focus for maximum leverage — is handled
+by the plan ceremony. Constitution review focuses on whether values are still right.
 
 ---
 

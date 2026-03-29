@@ -83,7 +83,7 @@
         "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart"
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [
         "[Review 2] AC failed: 'For a chart that has replicaCount: 1 in values.yaml, scripts/ha-gate.sh outputs FAIL:<chart>:replicaCount < 2 and exits non-zero' and 'For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart'. Detail: The script uses set -euo pipefail. When processing platform/charts/_globals/values.yaml (which has no top-level replicaCount: field), the grep pipeline 'grep -E '^replicaCount:' ... | awk ... | tr ...' exits with code 1 (no match). With bash 3.2 (macOS default) and set -euo pipefail, a failed pipeline inside a command substitution triggers errexit and kills the script before any output is produced. Commands run: 'bash scripts/ha-gate.sh > /tmp/ha-out.txt 2>&1; echo exit:$?' => exit: 1, stdout empty. 'bash -x scripts/ha-gate.sh 2>/tmp/ha-trace.txt' trace ends at '+ replica_count=' with no subsequent output. Fix: add '|| true' to the grep pipeline: grep -E '^replicaCount:' ... || true | awk ... (or restructure to avoid pipefail killing on grep miss)."

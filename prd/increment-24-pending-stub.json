@@ -23,10 +23,10 @@
         "scripts/ha-gate.sh runs against all existing platform/charts/ without crashing on charts that lack a top-level replicaCount field (e.g. _globals): bash scripts/ha-gate.sh --dry-run 2>&1 | grep -v 'replicaCount' exits 0 for every chart listed"
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output. ALSO run scripts/ha-gate.sh against all existing platform/charts/ to confirm no crash on charts missing replicaCount.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "smart": {
         "specific": 5,

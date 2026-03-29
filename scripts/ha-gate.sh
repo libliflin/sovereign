@@ -56,7 +56,7 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         continue
     fi
 
-    replica_count="$(grep -E '^replicaCount:' "${values_file}" | awk '{print $2}' | tr -d '[:space:]')"
+    replica_count="$(grep -E '^replicaCount:' "${values_file}" | awk '{print $2}' | tr -d '[:space:]' || true)"
     if [[ -z "${replica_count}" ]]; then
         echo "FAIL:${chart_name}:replicaCount missing from values.yaml"
         chart_fail=true
