@@ -42,7 +42,8 @@
       "themeId": "T1",
       "branchName": "restructure/monorepo",
       "dependencies": [],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with exact runnable commands (e.g., shellcheck cluster/kind/bootstrap.sh; python3 contract/validate.py contract/v1/tests/valid.yaml; git log --oneline bootstrap/providers/) and expected outputs."
     },
     {
       "id": "KIND-001",
@@ -69,7 +70,8 @@
       "dependencies": [
         "RESTRUCTURE-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with exact commands (e.g., ./cluster/kind/bootstrap.sh --dry-run; kind get clusters; kubectl get nodes; python3 contract/validate.py cluster-values.yaml) and expected outputs. Unresolved dependency: RESTRUCTURE-001 must pass first."
     },
     {
       "id": "KIND-002",
@@ -91,7 +93,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed. Vague ACs: 'A CiliumClusterwideNetworkPolicy...is applied' and 'Internal pod-to-pod communication still works' have no runnable verification commands \u2014 replace with kubectl get ciliumclusterwidenetworkpolicy and explicit curl/wget probe commands. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-001",
@@ -113,7 +116,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --cluster-values cluster-values.yaml --only cert-manager; kubectl get pods -n cert-manager; kubectl get certificate -n cert-manager-test; show output verbatim. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-002",
@@ -135,7 +139,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only sealed-secrets; kubectl get pods -n sealed-secrets; kubeseal < test-secret.yaml > sealed.yaml; kubectl apply -f sealed.yaml; kubectl get secret test-secret -o jsonpath='{.data.value}' | base64 -d; show output verbatim. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-003",
@@ -159,7 +164,8 @@
         "KIND-001",
         "PLATFORM-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only harbor; kubectl get pods -n harbor; curl https://harbor.sovereign.local/api/v2.0/ping (via port-forward); docker push test; show output verbatim. Unresolved dependencies: KIND-001 and PLATFORM-001 must pass first."
     },
     {
       "id": "PLATFORM-004",
@@ -182,7 +188,8 @@
         "PLATFORM-001",
         "PLATFORM-002"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. AC 'curl the token endpoint returns a valid JWT' is vague \u2014 specify the exact curl command and the JWT field to assert on (e.g., .access_token). Add a testPlan with exact commands. Unresolved dependencies: PLATFORM-001 and PLATFORM-002 must pass first."
     },
     {
       "id": "PLATFORM-005",
@@ -205,7 +212,8 @@
         "PLATFORM-003",
         "PLATFORM-004"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. AC 'The commit appears in the GitLab UI (verified via API)' needs the exact API call specified (e.g., curl http://gitlab.sovereign.local/api/v4/projects/1/repository/commits). Add a testPlan with exact commands. Unresolved dependencies: PLATFORM-003 and PLATFORM-004 must pass first."
     },
     {
       "id": "PLATFORM-006",
@@ -228,7 +236,8 @@
       "dependencies": [
         "PLATFORM-005"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only argocd; kubectl get pods -n argocd; argocd app create test-app ...; git push test manifest; argocd app wait test-app --sync; kubectl get configmap -n argocd-test; show output verbatim. Unresolved dependency: PLATFORM-005 must pass first."
     },
     {
       "id": "PLATFORM-007",
@@ -250,7 +259,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only prometheus-stack; kubectl get pods -n monitoring; kubectl port-forward svc/prometheus-operated 9090:9090 -n monitoring & curl 'http://localhost:9090/api/v1/query?query=up'; show output verbatim. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "KAIZEN-001",
@@ -273,7 +283,8 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
+      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (contract/validate.py does not exist until RESTRUCTURE-001 completes)."
     },
     {
       "id": "KAIZEN-002",
@@ -296,7 +307,8 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim."
+      "testPlan": "Run grep checks above. Show output verbatim.",
+      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (the new monorepo paths being documented do not exist until RESTRUCTURE-001 completes)."
     },
     {
       "id": "KAIZEN-003",
