@@ -160,20 +160,12 @@
       "description": "Backstage developer portal and code-server (VS Code in browser). Provides service catalog, developer self-service, and the primary interface for Claude Code agents.",
       "file": "prd/increment-12-developer-portal.json",
       "status": "complete",
-      "startDate": "2026-03-26",
-      "pointsTotal": 8,
-      "storiesTotal": 3,
       "dependsOn": [
         3,
         6,
         7
       ],
-      "themeGoal": "T3 Developer Autonomy \u2014 Backstage (E11) and code-server: service catalog, developer portal, browser-based IDE",
-      "endDate": "2026-03-26T00:00:00+00:00",
-      "pointsCompleted": 5,
-      "storiesAccepted": 2,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 33.3
+      "themeGoal": "T3 Developer Autonomy \u2014 Backstage (E11) and code-server: service catalog, developer portal, browser-based IDE"
     },
     {
       "id": 13,
@@ -182,15 +174,7 @@
       "file": "prd/increment-13-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": [],
-      "startDate": "2026-03-28T22:04:11.867723+00:00",
-      "pointsTotal": 2,
-      "storiesTotal": 1,
-      "endDate": "2026-03-28T00:00:00+00:00",
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "dependsOn": []
     },
     {
       "id": 14,
@@ -210,15 +194,7 @@
       "file": "prd/increment-15-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": [],
-      "startDate": "2026-03-29T03:07:54.605974+00:00",
-      "endDate": "2026-03-28T00:00:00+00:00",
-      "pointsTotal": 2,
-      "storiesTotal": 1,
-      "pointsCompleted": 2,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "dependsOn": []
     },
     {
       "id": 16,
@@ -238,15 +214,7 @@
       "file": "prd/increment-17-restructure.json",
       "status": "complete",
       "dependsOn": [],
-      "themeGoal": "T1 Sovereignty \u2014 establish contract-driven architecture: cluster/kind/, platform/, contract/v1/",
-      "startDate": "2026-03-29T17:02:56.608369+00:00",
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsTotal": 6,
-      "storiesTotal": 4,
-      "pointsCompleted": 5,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 75.0
+      "themeGoal": "T1 Sovereignty \u2014 establish contract-driven architecture: cluster/kind/, platform/, contract/v1/"
     },
     {
       "id": 18,
@@ -255,15 +223,7 @@
       "file": "prd/increment-18-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": [],
-      "startDate": "2026-03-29T17:59:47.978979+00:00",
-      "endDate": "2026-03-29T18:00:00.000000+00:00",
-      "pointsTotal": 1,
-      "storiesTotal": 1,
-      "pointsCompleted": 0,
-      "storiesAccepted": 0,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      "dependsOn": []
     },
     {
       "id": 19,
@@ -272,47 +232,20 @@
       "file": "prd/increment-19-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-      "dependsOn": [],
-      "startDate": "2026-03-29T18:11:10.855110+00:00",
-      "pointsTotal": 1,
-      "storiesTotal": 1,
-      "endDate": "2026-03-29T18:30:00+00:00",
-      "pointsCompleted": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      "dependsOn": []
     },
     {
       "id": 20,
       "name": "kind-integration",
       "description": "Kind cluster integration: kind bootstrap script delivers a running sovereign-test cluster with Cilium CNI, cert-manager, sealed-secrets, and autarky egress policy verified.",
       "file": "prd/increment-20-kind-integration.json",
-      "status": "pending",
-      "dependsOn": [17],
+      "status": "active",
+      "dependsOn": [
+        17
+      ],
       "themeGoal": "T1 Sovereignty \u2014 kind cluster bootstrap (KIND-001): running cluster with autarky invariants verified end-to-end"
     }
   ],
-  "activeSprint": "prd/increment-19-remediation.json",
-  "currentIncrement": 19,
-  "sprintHistory": [
-    {
-      "increment": 19,
-      "name": "remediation",
-      "endDate": "2026-03-29T18:30:00+00:00",
-      "pointsCompleted": 1,
-      "storiesTotal": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 19,
-      "pointsCompleted": 1,
-      "storiesAccepted": 1,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-29T18:30:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-20-kind-integration.json",
+  "currentIncrement": 20
 }
