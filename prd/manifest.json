@@ -236,9 +236,14 @@
       "name": "restructure",
       "description": "Monorepo restructure: contract/, cluster/kind/, platform/. Establishes clean separation between cluster provider and platform. Archives all non-kind providers. First increment of the new architecture.",
       "file": "prd/increment-17-restructure.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [],
-      "themeGoal": "T1 Sovereignty — establish contract-driven architecture: cluster/kind/, platform/, contract/v1/"
+      "themeGoal": "T1 Sovereignty \u2014 establish contract-driven architecture: cluster/kind/, platform/, contract/v1/",
+      "startDate": "2026-03-29T17:02:56.608369+00:00",
+      "pointsTotal": 4,
+      "storiesTotal": 2
     }
-  ]
+  ],
+  "activeSprint": "prd/increment-17-restructure.json",
+  "currentIncrement": 17
 }

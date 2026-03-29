@@ -1,0 +1,60 @@
+{
+  "increment": 17,
+  "name": "restructure",
+  "description": "Monorepo restructure: contract/, cluster/kind/, platform/. Establishes clean separation between cluster provider and platform. Archives all non-kind providers. First increment of the new architecture.",
+  "sprintGoal": "contract/v1/ is validated, cluster/kind/bootstrap.sh and platform/deploy.sh exist and pass shellcheck — the three-layer architecture skeleton is in place and lint-clean.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "RESTRUCTURE-001",
+      "title": "Monorepo restructure: contract/, cluster/kind/, platform/",
+      "description": "Establish the clean separation between cluster provider and platform. Create contract/v1/cluster.schema.yaml, cluster/kind/ skeleton, platform/ with deploy.sh. Archive all non-kind providers. This story is the rough shape — subsequent stories make each layer operational.",
+      "acceptanceCriteria": [
+        "contract/v1/cluster.schema.yaml exists and is valid YAML",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
+        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with AUTARKY VIOLATION message",
+        "cluster/kind/bootstrap.sh exists and passes shellcheck -S error",
+        "platform/deploy.sh exists and passes shellcheck -S error",
+        "bootstrap/providers/ is removed from working tree (archived in git history)",
+        "All platform charts are under platform/charts/",
+        "All cluster charts are under cluster/kind/charts/"
+      ],
+      "testPlan": "Test 1: Validate contract schema YAML — python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" exits 0. Test 2: Validator accepts valid fixture — python3 contract/validate.py contract/v1/tests/valid.yaml exits 0. Test 3: Validator rejects missing-egress fixture — python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with 'AUTARKY VIOLATION' in output. Test 4: Kind bootstrap shellcheck — shellcheck -S error cluster/kind/bootstrap.sh exits 0. Test 5: Platform deploy shellcheck — shellcheck -S error platform/deploy.sh exits 0. Show all output verbatim.",
+      "phase": 17,
+      "priority": 1,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "dependencies": [],
+      "attempts": 0,
+      "readinessNote": "testPlan added by planning ceremony. Ready for sprint."
+    },
+    {
+      "id": "KAIZEN-003",
+      "title": "Kaizen: Fix attempts field — initialize to 0, increment only on review re-open",
+      "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
+      "acceptanceCriteria": [
+        "prd/schema/story.schema.json has attempts with default 0",
+        "scripts/ralph/lib/advance.py uses len(story.get('reviewNotes', [])) == 0 for first-pass rate calculation",
+        "python3 -c \"import json; s=json.load(open('prd/schema/story.schema.json')); assert s['properties']['attempts']['default'] == 0\" exits 0",
+        "shellcheck or python3 -m py_compile scripts/ralph/lib/advance.py exits 0"
+      ],
+      "testPlan": "Show schema default and advance.py formula change. Run py_compile. Show output verbatim.",
+      "phase": 17,
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/attempts-field-fix",
+      "priority": 14,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": []
+    }
+  ]
+}
