@@ -118,7 +118,7 @@
         "bash platform/deploy.sh --help 2>&1 | grep -q 'chart-dir' exits 0",
         "grep -q 'helm upgrade --install' platform/deploy.sh exits 0 (script contains the helm invocation)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "ls platform/deploy.sh && shellcheck -S error platform/deploy.sh && bash -n platform/deploy.sh && bash platform/deploy.sh --help 2>&1 | grep 'chart-dir' && grep 'helm upgrade --install' platform/deploy.sh && echo 'all checks passed'; show all output verbatim",
       "dependencies": [
@@ -126,7 +126,7 @@
       ],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 3,
       "smart": {
         "specific": 4,
