@@ -19,16 +19,17 @@ DRY_RUN=false
 CLUSTER_NAME="sovereign-test"
 
 usage() {
-  echo "Usage: $0 [--domain DOMAIN] [--output PATH] [--dry-run]"
+  echo "Usage: $0 [--cluster-name NAME (default: sovereign-test)] [--domain DOMAIN] [--output PATH] [--dry-run]"
   exit 1
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --domain)   DOMAIN="$2";  shift 2 ;;
-    --output)   OUTPUT="$2";  shift 2 ;;
-    --dry-run)  DRY_RUN=true; shift   ;;
-    --help)     usage ;;
+    --cluster-name) CLUSTER_NAME="$2"; shift 2 ;;
+    --domain)       DOMAIN="$2";       shift 2 ;;
+    --output)       OUTPUT="$2";       shift 2 ;;
+    --dry-run)      DRY_RUN=true;      shift   ;;
+    --help)         usage ;;
     *) echo "Unknown flag: $1"; usage ;;
   esac
 done
@@ -42,6 +43,8 @@ if [[ "$DRY_RUN" == "true" ]]; then
   log "Would write: ${OUTPUT}"
   exit 0
 fi
+
+log "Bootstrapping kind cluster: ${CLUSTER_NAME}"
 
 # ── 1. Create kind cluster ────────────────────────────────────────────────
 log "Creating kind cluster '${CLUSTER_NAME}'..."
