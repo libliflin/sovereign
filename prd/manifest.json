@@ -268,12 +268,26 @@
     {
       "id": 23,
       "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 22 completes.",
+      "description": "Ceremony tooling kaizen, HA gate infrastructure, and contract-layer foundation. Advances delivery machinery health and begins kind-cluster HA validation groundwork.",
       "file": "prd/increment-23-pending-stub.json",
       "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 22 advances.",
+      "themeGoal": "T3/T5 \u2014 strengthen ceremony tooling (kaizen), HA gate script, contract-layer primitives, code-server toolchain autarky.",
       "dependsOn": [
         22
+      ],
+      "startDate": "2026-03-29T22:23:03.497071+00:00",
+      "pointsTotal": 12,
+      "storiesTotal": 8
+    },
+    {
+      "id": 24,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 23 completes.",
+      "file": "prd/increment-24-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 23 advances.",
+      "dependsOn": [
+        23
       ]
     }
   ],
