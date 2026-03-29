@@ -1024,7 +1024,7 @@
       "points": 2,
       "branchName": "feature/ha-gate-script",
       "title": "HA gate script validates all platform charts have replicaCount>=2, PDB, and podAntiAffinity",
-      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm.",
+      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm. IMPORTANT FIX (from sprint-23 review): The grep pipeline for extracting replicaCount must use '|| true' to prevent set -euo pipefail from killing the script when processing charts that have no top-level replicaCount field (e.g. platform/charts/_globals/). Pattern: replica_count=$(grep -E '^replicaCount:' \"$chart/values.yaml\" || true | awk ...)",
       "acceptanceCriteria": [
         "scripts/ha-gate.sh exists and passes shellcheck -S error: shellcheck -S error scripts/ha-gate.sh exits 0",
         "bash -n scripts/ha-gate.sh exits 0 (syntax check)",
@@ -1045,7 +1045,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
     },
     {
       "id": "HA-002",
@@ -1643,6 +1645,29 @@
         "notes": "Not yet SMART-scored."
       },
       "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "KAIZEN-012",
+      "title": "Kaizen: Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart \u2014 it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",
+        "The requirement text includes an explicit note about bash set -euo pipefail with grep pipelines: use '|| true' when grep results may be empty",
+        "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md (or equivalent) returns at least one match confirming the guidance is present"
+      ],
+      "testPlan": "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md and grep -n 'pipefail\\||| true' scripts/ralph/ceremonies/smart.md \u2014 show output verbatim. Both must return matches.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/chart-iteration-script-gate",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
     }
   ]
 }

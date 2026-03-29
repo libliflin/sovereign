@@ -97,7 +97,9 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Specific score 4: description says 'iterates every chart in charts/' but project uses platform/charts/ \u2014 directory path is ambiguous. Measurable score 4: ACs 4-5 require creating a test fixture chart but do not specify where to place it or how to clean it up. Achievable score 4: near the top of the point budget given per-chart helm template calls plus test fixture creation. Time-bound score 4: 'create a minimal test chart' in the test plan adds undefined setup scope."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field (e.g. _globals); fix requires || true guard on grep pipeline \u2014 documented in reviewNotes"
     },
     {
       "id": "KAIZEN-008",
