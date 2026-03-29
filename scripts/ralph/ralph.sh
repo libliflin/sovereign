@@ -304,7 +304,7 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
   echo "  Stories needing work: $STORIES_NEEDING_WORK"
 fi
 
-PROMPT_TMP=$(mktemp /tmp/ralph-prompt-XXXXXX.md)
+PROMPT_TMP=$(mktemp /tmp/ralph-prompt-XXXXXX)
 trap 'rm -f "$PROMPT_TMP"' EXIT
 
 for i in $(seq 1 "$MAX_ITERATIONS"); do
