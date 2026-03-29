@@ -2,7 +2,7 @@
   "increment": 17,
   "name": "restructure",
   "description": "Monorepo restructure: contract/, cluster/kind/, platform/. Establishes clean separation between cluster provider and platform. Archives all non-kind providers. First increment of the new architecture.",
-  "sprintGoal": "contract/v1/ is validated, cluster/kind/bootstrap.sh and platform/deploy.sh exist and pass shellcheck — the three-layer architecture skeleton is in place and lint-clean.",
+  "sprintGoal": "contract/v1/ is validated, cluster/kind/bootstrap.sh and platform/deploy.sh exist and pass shellcheck \u2014 the three-layer architecture skeleton is in place and lint-clean.",
   "capacity": 12,
   "stories": [
     {
@@ -21,7 +21,7 @@
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 1,
@@ -31,7 +31,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 3: the description says 'defining the sovereign cluster contract invariants' but does not enumerate which invariants must be present in cluster.schema.yaml. The invalid fixture is named 'invalid-egress-not-blocked.yaml' implying an egress-blocking rule, but no authoritative list of required constraints is given — Ralph must infer them. Add a bullet list of required schema properties (e.g. egressBlocked: true, imageRegistryPolicy, etc.) to remove ambiguity."
+        "notes": "Specific score 3: the description says 'defining the sovereign cluster contract invariants' but does not enumerate which invariants must be present in cluster.schema.yaml. The invalid fixture is named 'invalid-egress-not-blocked.yaml' implying an egress-blocking rule, but no authoritative list of required constraints is given \u2014 Ralph must infer them. Add a bullet list of required schema properties (e.g. egressBlocked: true, imageRegistryPolicy, etc.) to remove ambiguity."
       }
     },
     {
@@ -40,7 +40,7 @@
       "themeId": "T1",
       "branchName": "restructure/monorepo",
       "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
-      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history — [ ! -d bootstrap/providers ] passes).",
+      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
       "acceptanceCriteria": [
         "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
         "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
@@ -52,7 +52,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 2,
@@ -83,7 +83,7 @@
       "dependencies": [
         "RESTRUCTURE-001b"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 3,
@@ -93,12 +93,12 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 4,
-        "notes": "Specific score 3 (downgraded from 4): the 25+3 chart lists are explicit, but the story omits a critical cross-cutting requirement: ArgoCD app manifests in argocd-apps/ currently reference 'path: charts/<name>' (old root path) and must be updated to 'path: platform/charts/<name>' or 'path: cluster/kind/charts/<name>' — without this, ArgoCD breaks after the migration. This is a missing required task, not a minor gap. Time-bound score 4: the unmentioned ArgoCD manifest updates (20+ files) represent unstated scope. Achievable score 4: moving 28 chart directories is mechanical but high in file-operation volume; the hidden ArgoCD reference updates add more work than the 2-point budget suggests."
+        "notes": "Specific score 3 (downgraded from 4): the 25+3 chart lists are explicit, but the story omits a critical cross-cutting requirement: ArgoCD app manifests in argocd-apps/ currently reference 'path: charts/<name>' (old root path) and must be updated to 'path: platform/charts/<name>' or 'path: cluster/kind/charts/<name>' \u2014 without this, ArgoCD breaks after the migration. This is a missing required task, not a minor gap. Time-bound score 4: the unmentioned ArgoCD manifest updates (20+ files) represent unstated scope. Achievable score 4: moving 28 chart directories is mechanical but high in file-operation volume; the hidden ArgoCD reference updates add more work than the 2-point budget suggests."
       }
     },
     {
       "id": "KAIZEN-003",
-      "title": "Kaizen: Fix attempts field — initialize to 0, increment only on review re-open",
+      "title": "Kaizen: Fix attempts field \u2014 initialize to 0, increment only on review re-open",
       "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
       "acceptanceCriteria": [
         "prd/schema/story.schema.json has attempts with default 0",
@@ -113,7 +113,7 @@
       "branchName": "kaizen/attempts-field-fix",
       "priority": 14,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
