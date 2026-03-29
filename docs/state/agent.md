@@ -192,6 +192,11 @@ and remains unimplemented. Check `backlog.json` — the story will have been ret
 The planning ceremony that follows will typically resolve the root condition (e.g., adding a
 pending increment resolves GGE-G5). If not, the backlog story covers the fallback.
 
+**Plan ceremony must always leave a pending increment queued**: before the advance ceremony
+runs, `manifest.json` must contain at least one increment with `status: "pending"`. If the
+backlog is drained and no pending increment exists, GGE G5 will fail and the pipeline stalls.
+When planning a new sprint, verify the pending increment exists before closing the plan ceremony.
+
 ---
 
 ## How to implement a story
@@ -254,15 +259,12 @@ returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in
 16 (code-quality — SonarQube + ReportPortal GitLab CI integration),
 17 (restructure — contract/v1/ schema, cluster/kind/bootstrap.sh, platform/deploy.sh,
 charts migrated to platform/charts/ and cluster/kind/charts/),
-18 (remediation — zero stories accepted; GGE-G5-andon returned to backlog; retro fired before
-any execute cycle ran)
+18 (remediation — zero stories accepted; GGE-G5-andon returned to backlog before execute ran),
+19 (remediation — GGE G5 restored: increment 20 kind-integration added as pending; 1/1 accepted)
 
-Increment active: 18 complete, awaiting advance ceremony to activate next increment.
-No pending increments exist in manifest.json — GGE G5 is failing. The planning ceremony must
-add a new pending increment before advance can proceed.
-
-KAIZEN-003 (fix attempts field initialization) is implemented (`passes: true`) and returned to
-backlog pending review ceremony in the next sprint. It does not need re-implementation.
+Increment pending: 20 (kind-integration) — kind cluster bootstrap delivering a running
+`sovereign-test` cluster with Cilium CNI, cert-manager, sealed-secrets, and autarky egress
+policy verified end-to-end. Activated by the advance ceremony that follows this sync.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
