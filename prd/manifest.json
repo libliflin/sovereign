@@ -274,49 +274,20 @@
       "themeGoal": "T3/T5 \u2014 strengthen ceremony tooling (kaizen), HA gate script, contract-layer primitives, code-server toolchain autarky.",
       "dependsOn": [
         22
-      ],
-      "startDate": "2026-03-29T22:23:03.497071+00:00",
-      "pointsTotal": 12,
-      "storiesTotal": 8,
-      "endDate": "2026-03-29T23:02:47.461864+00:00",
-      "pointsCompleted": 11,
-      "storiesAccepted": 8,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      ]
     },
     {
       "id": 24,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 23 completes.",
       "file": "prd/increment-24-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 23 advances.",
       "dependsOn": [
         23
       ]
     }
   ],
-  "activeSprint": "prd/increment-23-pending-stub.json",
-  "currentIncrement": 23,
-  "sprintHistory": [
-    {
-      "increment": 23,
-      "name": "pending-stub",
-      "endDate": "2026-03-29T23:02:47.461864+00:00",
-      "pointsCompleted": 11,
-      "storiesTotal": 9,
-      "storiesAccepted": 8,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 23,
-      "pointsCompleted": 11,
-      "storiesAccepted": 8,
-      "reviewPassRate": 0.0,
-      "date": "2026-03-29T23:02:47.461864+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-24-pending-stub.json",
+  "currentIncrement": 24
 }
