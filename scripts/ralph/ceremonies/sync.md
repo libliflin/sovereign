@@ -24,8 +24,9 @@ sprint_file = manifest['activeSprint']
 with open(sprint_file) as f:
     sprint = json.load(f)
 
-with open('prd/themes.json') as f:
-    themes = json.load(f)
+with open('prd/constitution.json') as f:
+    constitution = json.load(f)
+themes = constitution.get('themes', [])
 
 with open('prd/epics.json') as f:
     epics = json.load(f)
@@ -184,7 +185,7 @@ backlog story (if it requires migration). Do not leave findings undocumented.
 
 **Hierarchy alignment**
 - Does every story have an `epicId` that maps to a real epic in epics.json?
-- Does every epic have a `themeId` that maps to a real theme in themes.json?
+- Does every epic have a `themeId` that maps to a real theme in constitution.json?
 - Does the `phase` field on stories agree with the epic's target increment?
   If a story says `phase: 7` but its epic targets increment 5, that's drift.
 
@@ -192,10 +193,10 @@ backlog story (if it requires migration). Do not leave findings undocumented.
 import json
 backlog = json.load(open('prd/backlog.json'))
 epics   = json.load(open('prd/epics.json'))
-themes  = json.load(open('prd/themes.json'))
+constitution = json.load(open('prd/constitution.json'))
 
 epic_ids  = {e['id'] for e in epics.get('epics', [])}
-theme_ids = {t['id'] for t in themes.get('themes', [])}
+theme_ids = {t['id'] for t in constitution.get('themes', [])}
 
 orphaned_epic  = [s for s in backlog['stories'] if s.get('epicId') and s['epicId'] not in epic_ids]
 orphaned_theme = [s for s in backlog['stories'] if s.get('themeId') and s['themeId'] not in theme_ids]

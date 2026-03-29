@@ -8,7 +8,7 @@ epics that are in backlog or active status but have few or no stories.
 Read these files:
 
 1. `prd/epics.json` — find epics with status "backlog" or "active" that have 0 or few storyIds
-2. `prd/themes.json` — understand the strategic intent behind each epic's theme
+2. `prd/constitution.json` — themes and strategic intent
 3. `prd/schema/story.schema.json` — the required story format (follow it exactly)
 4. `prd/backlog.json` — read existing stories to find the current max story id and avoid collisions
 

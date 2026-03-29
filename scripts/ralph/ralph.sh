@@ -299,14 +299,16 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo "  Ralph Iteration $i of $MAX_ITERATIONS ($TOOL)"
   echo "================================================================"
 
-  # Build prompt = CLAUDE.md + failure context (if any)
-  cat "$SCRIPT_DIR/CLAUDE.md" > "$PROMPT_TMP"
+  # Build prompt = ralph-prompt.md + failure context (if any)
+  # Note: Claude Code auto-loads root CLAUDE.md from the working directory,
+  # so we only pipe the agent-specific prompt, not the full constitution.
+  cat "$SCRIPT_DIR/ralph-prompt.md" > "$PROMPT_TMP"
   build_failure_context "$PRD_FILE" /tmp/ralph-failure-context-$$.md
   cat /tmp/ralph-failure-context-$$.md >> "$PROMPT_TMP"
   rm -f /tmp/ralph-failure-context-$$.md
 
   FAILURE_LINES=$(wc -l < "$PROMPT_TMP")
-  CLAUDE_LINES=$(wc -l < "$SCRIPT_DIR/CLAUDE.md")
+  CLAUDE_LINES=$(wc -l < "$SCRIPT_DIR/ralph-prompt.md")
   CONTEXT_LINES=$(( FAILURE_LINES - CLAUDE_LINES ))
   if [[ $CONTEXT_LINES -gt 2 ]]; then
     echo "  ⚠ Failure context injected: ${CONTEXT_LINES} lines of gate failure details"

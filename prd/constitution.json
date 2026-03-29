@@ -1,10 +1,12 @@
 {
-  "_comment": "Golden Goose Eggs — the 3-5 outcomes that matter most right now. Defined and redefined by theme-review. Orient checks these first. A failing GGE triggers an immediate priority-0 backlog story.",
-  "limit": {
-    "min": 3,
-    "max": 5
-  },
-  "eggs": [
+  "themes": [
+    {"id": "T1", "name": "Sovereignty"},
+    {"id": "T2", "name": "Zero Trust"},
+    {"id": "T3", "name": "Developer Autonomy"},
+    {"id": "T4", "name": "Observability"},
+    {"id": "T5", "name": "Resilience"}
+  ],
+  "gates": [
     {
       "id": "G1",
       "title": "Delivery machine is self-orienting and self-healing",
@@ -68,5 +70,9 @@
       "retiredReason": "Graduated to table stakes. Vocabulary migration (increments/phases) completed many sprints ago. The gate_passing check always passes and has never triggered a remediation sprint. The word 'phases' does not appear in new code and the hard-stop rule in agent.md enforces this at the implementation level. Retiring frees a slot for fragility that is real and current.",
       "retiredAt": "increment-17-restructure"
     }
-  ]
+  ],
+  "limit": {
+    "min": 3,
+    "max": 5
+  }
 }

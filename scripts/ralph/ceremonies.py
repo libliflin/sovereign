@@ -10,7 +10,7 @@ the correct next step automatically. Every step is reachable via
 
 Full step sequence:
   orient        — read KPIs, decide next step (no AI, no mutations)
-  theme-review  — AI: validate / update strategic themes
+  constitution-review — AI: validate constitution, gates, and strategic themes
   epic-breakdown— AI: decompose epics into sprint-sized stories
   backlog-groom — AI: score and refine story readiness
   plan          — AI: pull sprint-ready stories into sprint file
@@ -50,7 +50,7 @@ from lib import advance as advance_lib, orient as orient_lib
 # ---------------------------------------------------------------------------
 STEPS = [
     "orient",
-    "theme-review",
+    "constitution-review",
     "epic-breakdown",
     "backlog-groom",
     "plan",
@@ -274,14 +274,14 @@ def main() -> int:
                 print(f"\n  WARNING: sprint file has unexpected uncommitted changes (not gate noise).")
                 print(f"  Inspect with: git diff HEAD -- {active_sprint}")
 
-    # -- STEP 1: THEME-REVIEW --------------------------------------------------
-    log_step("theme-review")
-    if not should_run("theme-review"):
+    # -- STEP 1: CONSTITUTION-REVIEW ---------------------------------------------
+    log_step("constitution-review")
+    if not should_run("constitution-review"):
         print("  skipped")
     else:
-        sep("AI CEREMONY: Theme Review")
-        _ai(args.tool, "theme-review.md", log_file)
-        _git_commit("theme-review", ["prd/gge.json", "prd/themes.json", "prd/epics.json"])
+        sep("AI CEREMONY: Constitution Review")
+        _ai(args.tool, "constitution-review.md", log_file)
+        _git_commit("constitution-review", ["prd/constitution.json", "prd/epics.json", "CLAUDE.md"])
 
     # -- STEP 2: EPIC-BREAKDOWN ------------------------------------------------
     log_step("epic-breakdown")
@@ -322,10 +322,10 @@ def main() -> int:
             if not sprint_file or not sprint_file.exists():
                 # Plan found no pending increment to populate.
                 # Theme-review owns new increment definition — run it now then re-plan.
-                print(f"\n  Plan: no pending increments — kaizen cycle: running theme-review → epic-breakdown → backlog-groom → plan.")
-                sep("AI CEREMONY: Theme Review (kaizen)")
-                _ai(args.tool, "theme-review.md", log_file)
-                _git_commit("theme-review", ["prd/gge.json", "prd/themes.json", "prd/epics.json"])
+                print(f"\n  Plan: no pending increments — kaizen cycle: running constitution-review → epic-breakdown → backlog-groom → plan.")
+                sep("AI CEREMONY: Constitution Review (kaizen)")
+                _ai(args.tool, "constitution-review.md", log_file)
+                _git_commit("constitution-review", ["prd/constitution.json", "prd/epics.json", "CLAUDE.md"])
                 sep("AI CEREMONY: Epic Breakdown (kaizen)")
                 _ai(args.tool, "epic-breakdown.md", log_file)
                 _git_commit("epic-breakdown", ["prd/backlog.json", "prd/epics.json"])

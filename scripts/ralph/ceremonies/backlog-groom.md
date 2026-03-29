@@ -9,7 +9,7 @@ Read these files:
 
 1. `prd/backlog.json` — the full backlog
 2. `prd/epics.json` — epic context for understanding story intent
-3. `prd/themes.json` — strategic direction for each theme
+3. `prd/constitution.json` — themes and constitutional gates
 4. `prd/manifest.json` — to know which phases have sprint files already (completed/active phases)
 
 ## What to check

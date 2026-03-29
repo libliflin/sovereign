@@ -1,865 +1,160 @@
-# Sovereign Platform — Claude Code Agent Instructions
+# Sovereign Platform Constitution
 
-You are an autonomous coding agent building the **Sovereign Platform**: a fully self-hosted,
-zero-trust Kubernetes infrastructure stack that any developer can clone, configure with their
-domain and VPS credentials, and run to get a complete production-grade development platform.
+A fully self-hosted, zero-trust Kubernetes infrastructure stack. Clone it, fill in a
+config file, and get a complete production-grade platform. No cloud vendor lock-in.
 
-The repo is: https://github.com/libliflin/sovereign
-The dogfood domain is: sovereign-autarky.dev
-Architecture: ArgoCD App-of-Apps pattern, Helm charts, Crossplane for infrastructure composition.
+Repo: https://github.com/libliflin/sovereign
+Dogfood domain: sovereign-autarky.dev
+Architecture: ArgoCD App-of-Apps, Helm charts, Crossplane compositions.
 
 ---
 
-## BEFORE EVERY ITERATION
+## Themes — Why This Project Exists
 
-1. Read `prd/manifest.json` → find `activeSprint` field → read that file (e.g. `prd/phase-7-devex.json`)
-   - The active sprint file contains only the stories for the current phase (~8 stories max)
-2. Find the highest-priority story where `"passes": false` AND `"reviewed": false`
-   - **If ALL stories have `passes: true`**: your work is done. Output exactly `<promise>COMPLETE</promise>` and stop. Do NOT ask what to do next. Do NOT run ceremonies. Do NOT commit or push anything. The ceremonies.sh orchestrator handles the next step.
-   - `passes: true` but `reviewed: false` means Ralph marked it done but the review ceremony has not run yet — do NOT re-implement it, leave it for the review ceremony
-3. Read `docs/state/agent.md` — current platform patterns, hard stops, and state
-4. Check which git branch the current story requires (`branchName` in the sprint file)
-5. Check out that branch (or create from main if it doesn't exist)
-6. Read any `CLAUDE.md` files in subdirectories relevant to your story
+**T1 Sovereignty.** Zero dependency on any cloud provider, proprietary service, or
+single-vendor project that could change terms or revoke access. All components use
+permissive-licensed (Apache 2.0/MIT/BSD), foundation-governed software. The platform
+runs on any bare-metal or VPS without a cloud account. No data leaves the cluster
+without explicit operator configuration. The Vault-to-OpenBao migration is the
+reference precedent.
 
-## THE SPRINT CYCLE (how phases work)
+**T2 Zero Trust.** No implicit trust anywhere. Every connection is authenticated,
+encrypted, and authorized by policy. mTLS everywhere (Istio STRICT), deny-all
+NetworkPolicy with explicit allows, OPA/Gatekeeper enforcement, Falco runtime
+detection, Trivy vulnerability scanning before admission.
 
-The project is split into phases. Each phase is a sprint with ~8 stories and ~15 story points.
-Phases are managed by the ceremony system in `scripts/ralph/ceremonies/`.
+**T3 Developer Autonomy.** A developer clones this repo, fills in a config file, and
+has a production-grade platform in under 30 minutes — with no cloud account required
+for local development. kind-based local cluster, Backstage service catalog, browser-based
+IDE (code-server), complete GitOps workflow via GitLab + ArgoCD.
 
-```
-prd/manifest.json          ← source of truth: which phase is active
-prd/phase-N-<name>.json    ← active sprint: only stories for this phase
-prd/backlog.json           ← full backlog: all future stories
-scripts/ralph/ceremonies.sh ← THE entry point — runs the full delivery machine
-```
+**T4 Observability.** Every signal from every component is captured, correlated, and
+queryable — metrics, logs, traces, security events — with no data leaving the cluster.
+Prometheus, Loki, Tempo, Thanos for long-term retention, Falco events in Grafana.
+
+**T5 Resilience.** The platform survives node failures, upgrades, and deliberate chaos
+without data loss or unplanned downtime. PodDisruptionBudgets, podAntiAffinity, daily
+backups with tested restore, zero-downtime rolling updates, Chaos Mesh scenarios.
+
+---
+
+## Constitutional Gates
+
+Machine-checkable invariants that protect core values. If a gate fails, the ceremony
+loop stops until it's fixed. Gates are defined in `prd/constitution.json` and evaluated
+by orient.py at the start of every cycle. The constitution-review ceremony evaluates
+whether each gate still serves the project.
+
+Current gates:
+- **G1** — Ceremony scripts compile without errors (T3: delivery machine health)
+- **G2** — Living state docs exist and are current (T3: orientation without archaeology)
+- **G6** — Zero external registry references in chart templates (T1: sovereignty)
+- **G7** — Contract validator test suite passes (T1: sovereignty enforcement)
+
+---
+
+## Team Norms
+
+**Stop the line.** When any gate fails, all new work stops. Fix the specific failure,
+show the passing output, then continue. No deferrals, no "known issues."
+
+**Proof of work.** Every completed story must: push to remote, create a PR, wait for
+CI to pass, squash merge to main. Show actual command output — don't assert results.
+
+**Never self-certify.** If you didn't run the command and see the output, you can't
+mark it verified. "It should work" is not proof.
+
+**Test contract first.** Before writing code, write the exact commands you'll run and
+what output proves the story done. Run them after implementation. Show the output.
+
+**Blocker protocol.** When you can't complete a story due to a missing prerequisite
+(credentials, running cluster, external service), implement what you can, add a `blocker`
+field to the story, set `passes: false`, and push what you have.
 
 **Story lifecycle:**
 ```
-passes: false, reviewed: false  → needs implementation (Ralph's job)
-passes: true,  reviewed: false  → implemented, awaiting review ceremony
-passes: true,  reviewed: true   → accepted (done)
-passes: false, reviewed: false, attempts > 0  → re-opened by review ceremony with reviewNotes
+passes: false, reviewed: false  -> needs implementation
+passes: true,  reviewed: false  -> implemented, awaiting review ceremony
+passes: true,  reviewed: true   -> accepted (done)
 ```
 
-When re-opened, read `reviewNotes[]` carefully — they contain the exact failure from the review
-ceremony. Fix only what the reviewNotes describe. Do not re-implement the whole story.
-
-**Story points:**
-1 = trivial (config file, small script change)
-2 = standard (single Helm chart, medium script)
-3 = complex (multi-file feature, chart with dependencies)
-5 = must split before implementing
-
-When you complete a story, mark `passes: true`. Do NOT mark `reviewed: true` — that is set
-by the review ceremony only.
+Mark `passes: true` when done. Never mark `reviewed: true` — that's the review ceremony's job.
 
 ---
 
-## THE STACK YOU ARE BUILDING
+## Architecture Decisions
 
-### Architecture Philosophy
-- **ArgoCD App-of-Apps** is the GitOps engine. Everything after bootstrap is an ArgoCD Application.
-- **Crossplane** manages infrastructure compositions (cloud resources, namespaces, RBAC)
-- **Domain is a variable** — never hardcode a domain. Always use `{{ .Values.global.domain }}` in Helm
-- **Bootstrapping** is the only manual step. After that, GitOps manages everything.
-- **Namespaces are sovereign** — each service lives in its own namespace with network policies
+- **ArgoCD App-of-Apps** — everything after bootstrap is an ArgoCD Application
+- **Domain is a variable** — `{{ .Values.global.domain }}` everywhere, never hardcoded
+- **Autarky** — after bootstrap, the cluster never pulls from external registries
+- **HA mandatory** — 3+ nodes (odd), replicaCount >= 2, PDB, podAntiAffinity on every chart
+- **Distroless mandatory** — all images use distroless bases, exceptions require VENDORS.yaml deprecation entry
+- **License policy** — Apache 2.0/MIT/BSD approved, BSL blocked (OpenBao not Vault), AGPL needs review
+- **Zero-downtime rollout** — staging first, smoke test, promote, auto-rollback on failure
+- **Crossplane** for infrastructure compositions (namespaces, RBAC, cloud resources)
+- **kind-first testing** — static analysis always, kind integration when possible, cloud never in CI
 
-### High Availability — MANDATORY at every layer
-**bootstrap.sh MUST refuse to proceed with fewer than 3 nodes or an even node count.**
-HA is not optional and is not a "phase 2" concern. It is baked in from the first commit.
-
-```
-Node layer:      3+ nodes (odd). etcd quorum + Ceph quorum both require this.
-API server:      kube-vip floating VIP across all control plane nodes.
-CNI:             Cilium DaemonSet — inherently HA.
-Front door:      cloudflared DaemonSet on ALL nodes, not a single systemd unit.
-Storage:         Rook/Ceph replication factor 3.
-Applications:    replicaCount >= 2 on every Helm chart (3 for critical services).
-Rollout:         maxUnavailable: 0, maxSurge: 1. Never take a service to zero replicas.
-```
-
-**Every Helm chart MUST include:**
-- `replicaCount: 2` minimum (configurable, but default must be >= 2)
-- `podDisruptionBudget: { minAvailable: 1 }` — prevents both replicas going down during drain
-- `podAntiAffinity` — replicas must land on different nodes (preferredDuringScheduling minimum,
-  requiredDuring for critical services like etcd, ArgoCD, Keycloak)
-- `readinessProbe` and `livenessProbe` on every container
-- `resources.requests` and `resources.limits` on every container
-
-**Every bootstrap provider script MUST:**
-- Accept `nodes.count` from config.yaml (validate: odd number, >= 3, abort otherwise)
-- Provision all N nodes before proceeding
-- Install kube-vip on control plane nodes for API server VIP
-- Install K3s with `--cluster-init` on node 1, `--server https://<VIP>:6443` on nodes 2+
-- Verify ALL nodes are Ready before returning kubeconfig
-
-### Backup Strategy — MANDATORY
-The git repo is the nuclear recovery path. Everything else makes recovery fast, not possible.
-
-**Recovery path (worst case — all servers lost):**
-1. Clone sovereign repo (backed up to at least one secondary remote)
-2. `vendor/fetch.sh --all` — recreates all GitLab mirrors from upstream at pinned SHAs
-3. `vendor/build.sh --all` — rebuilds all images from patched source
-4. Bootstrap a new cluster from scratch
-5. ArgoCD restores all services from git state
-
-**Operational backup (day-to-day):**
-- `vendor/backup.sh` runs as a Kubernetes CronJob (daily, HA by default)
-- Mirrors all `gitlab.<domain>/vendor/*` repos to a secondary remote (S3 bare repo or secondary git)
-- `crane copy` all `harbor.<domain>/sovereign/*` images to a backup registry
-- Writes `backup-manifest.json` with {name, source_sha, image_digest, timestamp} for every artifact
-- Exits non-zero on any failure so alerting triggers
-
-**Every vendor script MUST support:**
-- `--dry-run` — print actions without executing
-- `--backup` — push to secondary remote/registry after primary operation
-- Tagging current state before overwriting: `git tag sovereign/pre-update-<timestamp>`
-
-### Zero Downtime Rollout — MANDATORY
-No image is ever pushed directly to production. Every change goes through staging first.
-
-```
-build.sh  →  harbor.../sovereign-staging/<name>:<tag>
-                ↓
-deploy.sh →  apply to staging namespace
-                ↓  (kubectl rollout status --timeout=5m)
-             smoke-test.sh (vendor/recipes/<name>/smoke-test.sh)
-                ↓  (must exit 0)
-             record last-known-good SHA in ConfigMap sovereign-vendor/lkg-<name>
-                ↓
-             promote to production ArgoCD Application
-                ↓  (kubectl rollout status --timeout=10m)
-             if production rollout fails → auto-rollback via rollback.sh
-```
-
-**Image tag format:** `<upstream-version>-<source-sha>-p<patch-count>` e.g. `v1.16.0-a3f8c2d-p3`
-Never `:latest`. Never just `:<version>`. The patch count makes vendor divergence visible.
-
-**Every recipe.yaml MUST declare:**
-```yaml
-rollout:
-  strategy: rolling        # rolling | node_by_node (CNI only) | skip (bootstrap tools)
-  max_unavailable: 0
-  max_surge: 1
-  staging_timeout: 5m
-  production_timeout: 10m
-backup:
-  priority: critical       # critical | standard | derived (can be rebuilt, skip backup)
-```
-
-**rollback.sh** reads `sovereign-vendor/lkg-<name>` ConfigMap and repins that image digest.
-Always know the last-known-good. Rollback must complete in under 2 minutes.
-
-### Autarky Build Philosophy (CRITICAL)
-The platform must be **genuinely self-sufficient at runtime**. After bootstrap completes, the cluster
-must never pull images from external registries (docker.io, quay.io, ghcr.io, gcr.io, etc.).
-
-**Vendor everything. Build everything. Own everything.**
-
-#### The Vendor System (Gentoo-inspired)
-- Every upstream dependency has a **recipe** in `vendor/recipes/<name>/recipe.yaml`
-- Recipes declare: upstream URL, pinned version, SPDX license, fetch method, distroless base, build tool
-- `vendor/fetch.sh` mirrors upstream source into the internal GitLab at `gitlab.<domain>/vendor/<name>`
-- `vendor/build.sh` builds OCI images via Bazel and pushes to `harbor.<domain>/sovereign/<name>:<version>`
-- `vendor/update-check.sh` checks for upstream releases and opens GitLab issues
-- **No git submodules.** No external dependencies at runtime. The internal GitLab is the source of truth.
-
-#### Distroless Standard (MANDATORY)
-- **All container images MUST use distroless base images.** No exceptions without an approved deprecation.
-- Go binaries → `gcr.io/distroless/static` (fetched during bootstrap, cached in Harbor after)
-- JVM services → `gcr.io/distroless/java21`
-- Node.js services → `gcr.io/distroless/nodejs`
-- Any service that cannot run distroless MUST have a `deprecated: true` entry in `vendor/VENDORS.yaml`
-  with a `deprecated_reason` and an `alternative` pointing to a distroless-compatible replacement.
-- When writing new code (Sovereign PM, custom operators, etc.) — **use Rust or Go**, build distroless.
-- **PRs adding a non-distroless image are rejected** unless `vendor/VENDORS.yaml` has a `deprecated: true`
-  entry for that service with `deprecated_reason` and `alternative` (migration plan). No exceptions.
-- See `vendor/DISTROLESS.md` for the full compatibility matrix and per-service migration roadmap.
-- `vendor/audit.sh` enforces this automatically — it must exit 0 before any vendor story can pass.
-
-#### License Policy
-- Apache 2.0, MIT, BSD, LGPL → approved for vendoring
-- **BSL (HashiCorp products) → BLOCKED.** Use OpenBao instead of Vault.
-- AGPL → review required before adding
-- SSPL → blocked
-- Run `vendor/audit.sh` before marking any vendor story as passing. It must exit 0.
-
-#### Image Registry Policy
-- All Helm charts MUST use `{{ .Values.global.imageRegistry }}/` as the image repository prefix
-- `global.imageRegistry` defaults to `harbor.<domain>/sovereign` (set in `charts/_globals/values.yaml`)
-- During bootstrap (before Harbor is up), set `global.imageRegistry: ""` to use upstream registries temporarily
-- ArgoCD Image Updater watches Harbor and auto-syncs when new images are pushed
-
-### Bootstrap Sequence (strict ordering — dependencies must come first)
-```
-PHASE 0 — Cluster Provisioning (scripts, not Helm)
-  └─ Hetzner Cloud API scripts (primary)
-  └─ Generic VPS scripts (Vultr, DigitalOcean, Linode)
-  └─ AWS EC2 scripts (free tier compatible)
-  └─ Bare metal / existing cluster onboarding
-
-PHASE 1 — Cluster Foundations (bootstrap script installs these directly)
-  └─ Cilium (CNI + network policies)
-  └─ Crossplane core + Helm provider + Kubernetes provider
-  └─ cert-manager (self-signed initially)
-  └─ Sealed Secrets controller (for GitOps-safe secret storage)
-
-PHASE 2 — Identity & Secrets (Crossplane deploys these)
-  └─ Vault (dev mode → production HA after Ceph is ready)
-  └─ Keycloak (embedded DB → PostgreSQL after DB operator ready)
-
-PHASE 3 — Storage (enables everything stateful)
-  └─ Rook/Ceph operator
-  └─ CephCluster (encrypted, distributed)
-  └─ StorageClasses (block, filesystem, object)
-
-PHASE 4 — GitOps Engine (becomes self-managing from here)
-  └─ GitLab (self-hosted, migrates to Ceph storage)
-  └─ Harbor (artifact registry, uses Ceph object storage)
-  └─ ArgoCD (App-of-Apps, takes over managing all above)
-  └─ GitLab CI Runners
-
-PHASE 5 — Service Mesh & Security
-  └─ Istio (mTLS everywhere)
-  └─ OPA/Gatekeeper (policy enforcement)
-  └─ Trivy Operator (vulnerability scanning)
-  └─ OWASP ZAP (web security scanning)
-  └─ Falco (runtime security)
-
-PHASE 6 — Observability
-  └─ Prometheus + Alertmanager
-  └─ Grafana + dashboards
-  └─ Loki (log aggregation)
-  └─ Thanos (long-term Prometheus storage)
-  └─ Tempo (distributed tracing)
-
-PHASE 7 — Developer Experience
-  └─ Backstage (developer portal + service catalog)
-  └─ code-server (VS Code in browser — primary interface for Claude Code agents)
-  └─ SonarQube (code quality history)
-  └─ ReportPortal (test result history)
-
-PHASE 8 — Testing Infrastructure
-  └─ Selenium Grid (persistent browser testing)
-  └─ k6 Operator (load testing)
-  └─ Wiremock (API mocking)
-  └─ MailHog (email testing)
-  └─ Chaos Mesh (resilience testing)
-
-PHASE 9 — AI-Native Project Management
-  └─ Sovereign PM (custom lightweight web app)
-      - Create epics and user stories through a web UI
-      - Generates prd.json compatible with Ralph
-      - Tracks agent run history and pass/fail per story
-      - Keycloak SSO integration
-      - Deployed as a Kubernetes service in `sovereign-pm` namespace
-```
+See subdirectory CLAUDE.md files for implementation details:
+- `platform/charts/CLAUDE.md` — Helm chart standards, HA gates, values conventions
+- `cluster/CLAUDE.md` — Bootstrap requirements, provider scripts
+- `platform/vendor/CLAUDE.md` — Vendor recipes, distroless, license details
 
 ---
 
-## REPO STRUCTURE YOU ARE BUILDING
+## Quality Gates
 
-```
-sovereign/
-├── CLAUDE.md                    ← this file
-├── README.md                    ← human-readable setup guide
-├── prd.json                     ← Ralph task queue
-├── progress.txt                 ← Ralph learnings log
-│
-├── bootstrap/                   ← Phase 0-1: manual/scripted setup
-│   ├── providers/
-│   │   ├── hetzner.sh           ← Hetzner Cloud provisioning
-│   │   ├── generic-vps.sh       ← Generic VPS (Ubuntu 22.04+)
-│   │   ├── aws-ec2.sh           ← AWS free tier compatible
-│   │   └── existing-cluster.sh ← Onboard existing K8s cluster
-│   ├── frontdoor/               ← Pluggable security front door (tunnel/firewall)
-│   │   ├── interface.sh         ← 5-hook contract all providers must implement
-│   │   ├── cloudflare.sh        ← Cloudflare Tunnel + Zero Trust (default)
-│   │   ├── none.sh              ← Baseline (prompt for caller IP, UFW only)
-│   │   └── custom.sh.example   ← Template for custom implementations
-│   ├── hardening/               ← Always-on VPS hardening (runs before front door)
-│   │   ├── base.sh              ← unattended-upgrades, fail2ban, auditd
-│   │   ├── ssh.sh               ← pubkey-only, no root password login
-│   │   ├── kernel.sh            ← CIS benchmark sysctl settings
-│   │   └── firewall.sh          ← UFW default-deny + front door CIDRs
-│   ├── bootstrap.sh             ← Main entry point
-│   ├── config.yaml.example      ← User fills this in (domain, provider, creds)
-│   └── verify.sh                ← Post-bootstrap health check
-│
-├── vendor/                      ← Autarky build system (Gentoo-inspired)
-│   ├── VENDORS.yaml             ← Manifest: every upstream with license + distroless status
-│   ├── DISTROLESS.md            ← Compatibility matrix: which services use which base
-│   ├── audit.sh                 ← License + distroless audit (must exit 0 before passing)
-│   ├── fetch.sh                 ← Mirror upstream repos into internal GitLab
-│   ├── build.sh                 ← Bazel build all recipes → push to Harbor
-│   ├── update-check.sh          ← Check for new upstream releases
-│   ├── pin.sh                   ← Pin a service to a specific version
-│   ├── verify-distroless.sh     ← Confirm built images have no shell
-│   ├── gitlab-ci-template.yml   ← CI template included by all mirrored repos
-│   └── recipes/                 ← One recipe per vendored service
-│       ├── cilium/
-│       │   ├── recipe.yaml      ← upstream, version, license, fetch_method, distroless_base
-│       │   └── BUILD.bazel      ← Bazel build + distroless OCI image target
-│       ├── cert-manager/
-│       ├── crossplane/
-│       ├── argocd/
-│       └── ...                  ← One per service in VENDORS.yaml
-│
-├── platform/                    ← Crossplane XRDs and Compositions
-│   ├── xrds/
-│   └── compositions/
-│
-├── charts/                      ← Helm charts (one per service)
-│   ├── _globals/                ← Shared values and helpers
-│   ├── cilium/
-│   ├── crossplane/
-│   ├── cert-manager/
-│   ├── sealed-secrets/
-│   ├── openbao/                 ← OpenBao (Apache 2.0 fork of Vault — BSL blocked)
-│   ├── keycloak/
-│   ├── rook-ceph/
-│   ├── gitlab/
-│   ├── harbor/
-│   ├── argocd/
-│   ├── istio/
-│   ├── opa-gatekeeper/
-│   ├── prometheus-stack/
-│   ├── loki/
-│   ├── thanos/
-│   ├── tempo/
-│   ├── backstage/
-│   ├── code-server/
-│   ├── sonarqube/
-│   ├── reportportal/
-│   ├── selenium-grid/
-│   ├── k6-operator/
-│   ├── wiremock/
-│   ├── mailhog/
-│   ├── chaos-mesh/
-│   ├── trivy-operator/
-│   ├── falco/
-│   └── sovereign-pm/            ← Custom AI-native PM tool
-│
-├── argocd-apps/                 ← ArgoCD Application manifests (App-of-Apps)
-│   ├── root-app.yaml            ← The root ArgoCD app that manages all others
-│   ├── platform/
-│   ├── security/
-│   ├── observability/
-│   ├── devex/
-│   └── testing/
-│
-├── docs/                        ← Setup documentation
-│   ├── quickstart.md
-│   ├── providers/
-│   │   ├── hetzner.md
-│   │   ├── aws-ec2-free-tier.md
-│   │   ├── digitalocean.md
-│   │   ├── vultr.md
-│   │   └── bare-metal.md
-│   ├── architecture.md
-│   └── day-2-operations.md
-│
-└── sovereign-pm/                ← Source code for the AI-native PM web app
-    ├── src/
-    ├── Dockerfile
-    └── helm/                    ← Also mirrored in charts/sovereign-pm/
-```
-
----
-
-## HELM CHART STANDARDS
-
-Every chart MUST follow these conventions:
-
-```yaml
-# charts/<name>/values.yaml — always include:
-global:
-  domain: "sovereign-autarky.dev"   # overridden by parent values
-  storageClass: "ceph-block"
-  keycloak:
-    url: "https://auth.{{ .Values.global.domain }}"
-    realm: "sovereign"
-
-# All ingress hostnames must be:
-#   <service>.{{ .Values.global.domain }}
-# Examples:
-#   gitlab.sovereign-autarky.dev
-#   argocd.sovereign-autarky.dev
-#   grafana.sovereign-autarky.dev
-```
-
-**Never hardcode:**
-- Domain names
-- IP addresses
-- Passwords or secrets (use Vault references or Sealed Secrets)
-- Storage class names (use `{{ .Values.global.storageClass }}`)
-
----
-
-## ARGOCD APP-OF-APPS PATTERN
-
-The root ArgoCD application (`argocd-apps/root-app.yaml`) watches the `argocd-apps/` directory.
-Each subdirectory contains Application manifests for a tier of the stack.
-ArgoCD auto-syncs all of them.
-
-When you add a new service:
-1. Create `charts/<service>/` with Chart.yaml, values.yaml, templates/
-2. Create `argocd-apps/<tier>/<service>-app.yaml`
-3. ArgoCD picks it up automatically
-
----
-
-## SOVEREIGN PM — AI-NATIVE PROJECT MANAGEMENT
-
-This is a custom web application (Node.js + React, simple and deployable) that:
-- Provides a web UI for creating Epics and User Stories
-- Each story has: title, description, acceptance criteria, priority, phase
-- Has a "Generate PRD" button that outputs a valid `prd.json` for Ralph consumption
-- Tracks agent run history (which Ralph iteration ran which story, pass/fail, logs)
-- Has a "Run Ralph" button that triggers the ralph.sh loop via a Kubernetes Job
-- Secured by Keycloak SSO (OIDC)
-- Stores data in PostgreSQL (managed by Crossplane)
-
-The `prd.json` schema it generates:
-```json
-{
-  "branchName": "feature/story-slug",
-  "stories": [
-    {
-      "id": "story-001",
-      "title": "Human readable title",
-      "description": "What to build",
-      "acceptanceCriteria": ["criterion 1", "criterion 2"],
-      "phase": 1,
-      "priority": 1,
-      "passes": false
-    }
-  ]
-}
-```
-
----
-
-## VPS PROVIDER DOCUMENTATION REQUIREMENTS
-
-Every provider script (`bootstrap/providers/*.sh`) must:
-1. Accept `config.yaml` as input (domain, SSH key, `nodes.count`, `nodes.serverType`)
-2. **Validate `nodes.count` is odd and >= 3 — abort with clear error if not**
-3. Provision all N nodes (loop, not single-server)
-4. Install kube-vip on control plane nodes for a floating API server VIP
-5. Install K3s with `--cluster-init` + embedded etcd on node 1; join nodes 2+ via the VIP
-6. Verify ALL nodes are `Ready` before outputting kubeconfig
-7. Output a valid `kubeconfig` pointing at the kube-vip VIP (not a single node IP)
-8. Print estimated **3-node monthly cost** (single-node cost is not shown — it is not supported)
-9. Print Cloudflare wildcard DNS setup instructions (`*.domain.com → kube-vip VIP`)
-
-Provider docs (`docs/providers/*.md`) must include:
-- Estimated cost for **3-node HA cluster** (minimum) and **recommended spec**
-- Note if the provider's free tier is viable (most aren't — be honest)
-- Prerequisites (CLI tools, accounts needed)
-- Step-by-step with copy-pasteable commands
-- How to add nodes later (scale out)
-- How to replace a failed node without downtime
-
----
-
-## STOP THE LINE — THE ONLY RULE THAT MATTERS
-
-In Toyota manufacturing, any worker can pull the **andon cord** to halt the assembly
-line the moment they spot a defect. No new parts get bolted onto broken ones. The line
-restarts only after the root cause is fixed and verified at the source.
-
-**This repository works the same way.**
-
-When any gate fails — smoke test, proof-of-work, CI, review — **all new work stops**.
-You fix the specific failure. You run the same gate again and show its output. Then you
-continue. There are no deferrals, no "I'll fix it in the next story", no "it's a known issue."
-
-**Three corollaries:**
-
-1. **Never build on red.** A failing `helm lint` is not a note for later. Fix it now, in
-   this iteration, before writing anything else.
-
-2. **The gate output is ground truth.** `shellcheck` says line 47 fails. Your belief that
-   it should work is irrelevant. Fix line 47. Show the passing output.
-
-3. **One defect per stop.** The gate tells you exactly what broke. Fix that thing only.
-   Do not refactor unrelated code in the same pass — that introduces new failures.
-
-4. **Workarounds are defects.** The following patterns mean a gate is failing but hidden.
-   If you find yourself writing any of these, stop and diagnose the root cause:
-
-   | Pattern | Why it's a workaround |
-   |---|---|
-   | `\|\| true` after a gate command | Silences failure — the gate must pass, not be bypassed |
-   | `2>/dev/null` on a quality gate | If it errors, you need to know |
-   | `--dry-run` as the ONLY test for a Helm chart | Dry-run ≠ deployment — use kind install |
-   | `# TODO`, `# FIXME`, `# HACK` in committed code | Deferred work is not complete work |
-   | "I'll fix this in the next story" | There is no next story. Fix it now or add a blocker. |
-   | `skipVerify: true`, `insecureSkipTLSVerify: true` | Security regressions are not fixes |
-
-**The mechanical implementation:**
-`ceremonies.sh` runs the gates as bash commands (not prose, not self-reporting) and writes
-every failure as structured JSON into the sprint file: the exact error output, the exact
-file, the exact gate that caught it. `ralph.sh` reads those failures and injects them into
-your prompt at the start of every iteration. You will see exactly what broke. Act on it.
-
-All the rules that follow — Proof of Work, Blocker Protocol, Never Self-Certify, Quality
-Gates — are just specific applications of this one principle.
-
----
-
-## PROOF OF WORK — MANDATORY BEFORE passes:true
-
-**Every completed story MUST do all of the following before setting `passes: true`.**
-There are no exceptions. "It should work" is not proof. Showing output is proof.
-
-### 1. Commit and push to remote
-```bash
-git add <specific files>          # never git add -A blindly
-git commit -m "story-NNN: <description>"
-git push origin <branchName>      # NON-NEGOTIABLE — if push fails, fix it
-```
-
-If `git push` fails for any reason, DO NOT mark the story done. Fix the push problem.
-
-### 2. Create a PR, wait for CI, then MERGE it
-
-**A story is not done until the code lands on main.** An open PR is work in progress, not complete.
+Run before marking any story `passes: true`:
 
 ```bash
-# Create the PR
-PR_URL=$(gh pr create --title "story-NNN: <title>" --base main --head <branchName> \
-  --body "Closes story-NNN. See PROOF OF WORK below.")
-echo "PR: $PR_URL"
-
-# Extract PR number
-PR_NUM=$(echo "$PR_URL" | grep -o '[0-9]*$')
-
-# Wait for all CI checks to complete (polls every 10s, exits when done)
-gh pr checks "$PR_NUM" --watch --interval 10
-# If CI fails: fix the issue on the branch, push again, re-run checks
-
-# Merge only after CI passes
-gh pr merge "$PR_NUM" --squash --delete-branch
-# --squash: clean linear history on main
-# --delete-branch: removes the feature branch after merge
-
-# Verify it landed on main
-git checkout main && git pull origin main
-git log --oneline -3  # your story commit should be at the top
-```
-
-**If CI fails:** do NOT merge. Read the failure output, fix the issue on the branch, push again,
-and wait for CI to pass. DO NOT mark `passes: true` while CI is red.
-
-**If `gh` is not authenticated:** note it as a blocker. Push the branch but leave a note:
-`"blocker: gh not authenticated — PR must be merged manually before story can be accepted."`
-
-### 3. Show actual command output
-Every quality gate run MUST be shown verbatim in your response:
-```
-$ helm lint charts/cert-manager/
-==> Linting charts/cert-manager/
-[INFO] Chart.yaml: icon is recommended
-1 chart(s) linted, 0 chart(s) failed
-exit code: 0
-```
-
-Do NOT write "helm lint passes ✓" without showing the actual output.
-Do NOT write "I ran shellcheck and it passed" — show the command and output.
-
-### 4. The response must contain a Proof of Work block
-End every story completion response with:
-```
-## Proof of Work — story-NNN
-
-theme:          [T1/T2/T3/T4/T5] — one sentence why this story serves the mission
-scope:          only touched files within stated story scope ✓
-test contract:  written before implementation (tests listed above) ✓
-autarky gate:   PASS — no external registries in templates (output above) ✓
-git push:       pushed to origin/<branchName> ✓
-CI:             all checks passed ✓  (gh pr checks output above)
-PR merged:      https://github.com/libliflin/sovereign/pull/<N> → squash merged to main ✓
-helm lint:      exit 0 (output above)
-shellcheck:     exit 0 (output above)
-HA gate:        PDB ✓ | anti-affinity ✓ | replicaCount=2 ✓
-workarounds:    none introduced ✓
-```
-
-Any field marked ✓ must have its verifying command output shown above it in the response.
-A ✓ without output is self-certification and will be rejected by the review ceremony.
-
----
-
-## BLOCKER PROTOCOL
-
-When you cannot complete or test a story due to a missing prerequisite, **do not fake it**.
-
-Missing prerequisites include:
-- Cloud provider API tokens (HETZNER_TOKEN, CLOUDFLARE_API_TOKEN, DO_TOKEN, AWS keys)
-- A running Kubernetes cluster
-- An external service that must be live
-- A tool that is not installed
-
-**What to do instead:**
-1. Implement the code as completely as possible — write everything that can be written
-2. Add a `blocker` field to the story in the sprint JSON:
-```json
-"blocker": {
-  "type": "missing_credential",
-  "name": "HETZNER_TOKEN",
-  "description": "Cannot live-test node provisioning without a Hetzner Cloud account. Code is complete and dry-tested. Set HETZNER_TOKEN and re-run the smoke-test ceremony to verify."
-}
-```
-3. Set `passes: false` — a story with an honest blocker is NOT a failure, it is parked
-4. Push what you have anyway (`git push` is still required — partial work on remote beats nothing)
-5. In your response, clearly state: `BLOCKER: <specific thing missing>`
-
-**A story with a clear blocker and pushed code is better than a story marked passes:true
-that was never actually tested.** The next engineer (or the next sprint after credentials
-are obtained) can pick it up immediately.
-
-### Things that are NOT valid blockers
-- "I can't run kubectl because there's no cluster" → `kubectl apply --dry-run=client -f -`
-  works without a cluster for manifest validation. Use it.
-- "I can't test helm install" → `helm template` + `helm lint` works without a cluster. Use it.
-- "shellcheck isn't installed" → `brew install shellcheck`. It takes 10 seconds.
-
----
-
-## NEVER SELF-CERTIFY
-
-You are not allowed to mark a criterion verified if you did not actually run a command that
-proves it. The following are **prohibited**:
-
-❌ "The helm chart should pass lint" → must run `helm lint` and show output
-❌ "This follows the HA pattern" → must run `helm template | grep PodDisruptionBudget`
-❌ "The script will work correctly" → must run with `--dry-run` and show output
-❌ "I verified all acceptance criteria" → must show each one with actual command + output
-❌ "The PR/CI will confirm this" → CI is not a substitute for running checks locally first
-
-If you cannot verify a criterion because a tool is unavailable:
-- State it explicitly: `UNVERIFIABLE: helm not installed`
-- Add it to `reviewNotes` in the sprint file
-- Do NOT write ✓ next to it
-- Do NOT mark the story `passes: true` if critical criteria are unverifiable
-
-The review ceremony will catch self-certification. Stories re-opened by review with
-`reviewNotes` about unverified criteria count as wasted iterations against the sprint budget.
-
----
-
-## TESTING STRATEGY — kind-first, cloud-never-in-CI
-
-### The testing pyramid
-
-```
-Layer 3 — Live cloud (Hetzner/DO/AWS)   MANUAL ONLY, never in CI
-  ./bootstrap/bootstrap.sh --confirm-charges
-  Requires cloud credentials. Costs real money. Run deliberately.
-
-Layer 2 — kind integration tests        kind-first, runs in CI
-  ./kind/setup.sh                        Free, local, reproducible.
-  helm install → kubectl wait → pod Running
-  Proves charts actually deploy, not just lint.
-
-Layer 1 — Static analysis               Always runs in CI
-  helm lint, shellcheck, kubectl dry-run
-  Fast, no cluster needed.
-```
-
-### Rules Ralph MUST follow
-
-1. **Never call cloud APIs in CI or during story implementation.**
-   Do not execute `hcloud`, `doctl`, `aws`, or `cloudflare` commands unless the story
-   explicitly requires live provisioning AND the user has confirmed it.
-
-2. **kind is available for integration tests.** The cluster may already be running.
-   Check with `kind get clusters` before creating one. Use context `kind-sovereign-test`.
-   ```bash
-   kind get clusters                          # check if sovereign-test exists
-   ./kind/setup.sh                            # create it if not
-   ./kind/setup.sh --status                   # check health
-   ```
-
-3. **For Helm chart stories, do a real install into kind** if the chart doesn't require
-   Ceph (rook-ceph, gitlab, harbor need Ceph — use `helm install --dry-run` for those).
-   ```bash
-   helm install test-release charts/<name>/ \
-     --kube-context kind-sovereign-test \
-     --namespace <expected-ns> --create-namespace \
-     --wait --timeout 2m
-   kubectl --context kind-sovereign-test get pods -n <expected-ns>
-   # Must show Running before marking passes:true
-   helm uninstall test-release --kube-context kind-sovereign-test -n <expected-ns>
-   ```
-
-4. **Known chart namespaces** (upstream charts hardcode these — use them exactly):
-   | Chart | Namespace |
-   |-------|-----------|
-   | sealed-secrets | `sealed-secrets` |
-   | cert-manager | `cert-manager` |
-   | crossplane | `crossplane-system` |
-   | argocd | `argocd` |
-   | vault | `vault` |
-   | keycloak | `keycloak` |
-
-5. **Credentials needed for daily work:** only `GITHUB_TOKEN` (for `gh pr create`).
-   Cloud credentials (HETZNER_TOKEN, CLOUDFLARE_API_TOKEN, etc.) are NOT needed
-   for any story until phase-2i story 2I-003 (cost gate) or live provisioning.
-   Do not ask for or block on cloud credentials. Use kind instead.
-
-6. **Bootstrap scripts are tested statically only** (shellcheck + bash -n + --dry-run).
-   Never run `bootstrap.sh` or any provider script in full execution mode during
-   a story. Those are manual steps the human runs when ready to provision real infra.
-
----
-
-## GOVERNANCE CHECKPOINTS — CONSULT BEFORE THESE DECISIONS
-
-These are hard gates, identical in weight to quality gates. Governance failures are BLOCKERS.
-Do not skip them. Do not self-certify. Read the referenced document and apply the rule.
-
-### 1. Before adding any new chart, tool, library, or upstream dependency
-
-Read **`docs/governance/license-policy.md`**:
-- Is the license on the Permitted list (Apache 2.0, MIT, BSD, MPL 2.0, ISC)?
-- If not → **BLOCKER**. Find a foundation-governed alternative. Do not proceed.
-
-Read **`docs/governance/sovereignty.md`** → "Evaluating a New Dependency":
-- What tier is this? Platform infrastructure or application layer?
-- Tier 1 (CNI, storage, PKI, secret management, GitOps, mesh, policy, observability): must be in CNCF/ASF/LF. No exceptions.
-- Tier 2 (GitLab, Keycloak, Harbor, etc.): must be Apache 2.0/MIT/BSD. Foundation preferred.
-- Is there a CNCF project that does the same thing? Use that instead.
-- If a vendor controls the roadmap and could change the license → flag it in VENDORS.yaml with a note.
-
-### 2. Before making any cluster-level architectural decision
-(CNI, StorageClass, PKI, bootstrap scripts, network policy, secret management)
-
-Read **`docs/governance/cluster-contract.md`**:
-- Does your change assume a specific cloud provider primitive? (ALB, Cloud SQL, S3) → **BLOCKER**. Self-hosted only.
-- Does your change require a specific OS or kernel version? → document it in the cluster contract.
-- Will your change work on a cluster you didn't provision (bring-your-own-cluster)? → it must.
-- Are you replacing a CNI other than Cilium? → Cilium is the reference CNI. Document why.
-
-### 3. Before implementing anything that seems outside the platform's mission
-
-Read **`docs/governance/scope.md`** → "The 'Should We Add X?' Decision Tree":
-- If out of scope → add `"scopeNote": "out of scope — reason"` to the story's reviewNotes and raise a BLOCKER.
-- Do not implement out-of-scope work even if the story explicitly asks for it. Escalate.
-
-### 4. If you notice an upstream dependency has changed its license
-
-This is a Vault-precedent situation. Read **`docs/governance/sovereignty.md`** → "The Vault Precedent":
-- Check if a foundation fork exists immediately.
-- Flag the dependency in VENDORS.yaml with `"license_change_detected": true` and the date.
-- Create a story in the backlog to replace it.
-- Do NOT upgrade past the last permissively-licensed release.
-- This is a P0 blocker — higher priority than any feature work.
-
----
-
-## TEST CONTRACT — WRITE BEFORE IMPLEMENTATION
-
-Before writing a single file for any story, write a **test contract** in your response.
-The test contract states exactly what commands you will run and what output proves the story done.
-
-```
-## Test Contract — story-NNN
-
-Test 1: [what it verifies]
-  Command: [exact runnable command]
-  Expected: [exact expected output or exit code]
-
-Test 2: ...
-```
-
-**Only begin implementation after the test contract is written.**
-Run every listed test after implementation. Show the output. An unrun test is not a test.
-
-**What counts as a test:**
-- `helm install --wait` into kind → `kubectl get pods` showing Running
-- `shellcheck -S error` → exit 0 shown
-- `bash -n && shellcheck && ./script.sh --dry-run` → output shown
-- Autarky gate commands → `PASS` shown
-
-**What does NOT count:**
-- "This should pass helm lint" — assertion without output
-- "I verified the logic" — self-certification
-- `helm template | grep X` as the only gate — structure ≠ behavior
-- Skipping kind install because "it requires Ceph" without proving it does
-
----
-
-## QUALITY GATES
-
-Before marking any story `passes: true`, you MUST:
-1. `helm lint charts/<name>/` — no errors
-2. `helm template charts/<name>/ | kubectl apply --dry-run=client -f -` — no errors
-3. For bootstrap scripts: `shellcheck bootstrap/**/*.sh` — no errors
-4. For vendor scripts: `shellcheck vendor/*.sh` — no errors
-5. For any JS/TS code: `npm run typecheck && npm run lint` — clean
-6. For ArgoCD apps: validate YAML with `kubectl apply --dry-run=client`
-
-**kind integration gate — for Helm chart stories where chart does NOT require Ceph:**
-7. `helm install` into kind-sovereign-test succeeds (exit 0)
-8. `kubectl get pods -n <ns>` shows all pods Running within 2 minutes
-9. `helm uninstall` cleanly removes the release
-
-**HA gate — every Helm chart story MUST also verify:**
-10. `helm template` output contains a `PodDisruptionBudget` resource
-11. `helm template` output contains `podAntiAffinity` in the Deployment/StatefulSet
-12. Default `replicaCount` in values.yaml is >= 2
-13. Every container spec has `readinessProbe`, `livenessProbe`, `resources.requests`, `resources.limits`
-
-**Vendor/build gate — every vendor story MUST also verify:**
-14. `vendor/audit.sh` exits 0 (no license violations, no missing alternatives)
-15. All new recipe.yaml files have `rollout` and `backup` sections
-16. All new vendor/*.sh scripts support `--dry-run` flag
-
-**Autarky gate — every chart or vendor story MUST also verify (show output verbatim):**
-```bash
-# No hard-coded external registry in chart templates
+# Helm charts
+helm lint platform/charts/<name>/
+helm template platform/charts/<name>/ | grep PodDisruptionBudget
+helm template platform/charts/<name>/ | grep podAntiAffinity
+
+# Scripts
+shellcheck -S error <script>
+
+# Autarky
 grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  charts/*/templates/ 2>/dev/null \
-  && echo "FAIL: external registry found — fix before passes:true" && exit 1 \
-  || echo "PASS: no external registries in templates"
+  platform/charts/*/templates/ && echo "FAIL" || echo "PASS"
 
-# Every image: reference uses global.imageRegistry
-grep -rn "^\s*image:" charts/*/templates/ \
-  | grep -v "\.Values\.global\.imageRegistry\|{{" \
-  && echo "FAIL: bare image reference not using .Values.global.imageRegistry" && exit 1 \
-  || echo "PASS: all image references use global.imageRegistry"
+# Contract
+python3 contract/validate.py contract/v1/tests/valid.yaml
+python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml  # must fail
 ```
-If either check fails: stop. Fix the reference. Re-run. Do NOT mark `passes: true`.
 
 ---
 
-## RATE LIMIT / TOKEN AWARENESS
+## Governance
 
-This project uses Ralph on a Claude Pro subscription. The loop will pause when daily token
-limits are hit and resume the next day. Design each story to be completable in ~2000 tokens
-of output. If a task is getting complex, split it into sub-stories before starting.
-
-The loop command to run this project:
-```bash
-./scripts/ralph/ralph.sh --tool claude 10
-```
-
-To resume after a token limit pause, just re-run the same command. Ralph reads `prd.json`
-and continues from the first story where `passes: false`.
+Before adding any new dependency, read `docs/governance/license-policy.md` and
+`docs/governance/sovereignty.md`. Before cluster-level architectural decisions,
+read `docs/governance/cluster-contract.md`. Before anything outside the platform's
+mission, read `docs/governance/scope.md`.
 
 ---
 
-## CURRENT STATE
+## Live State
 
-Read `docs/state/agent.md` before implementing anything.
+Read `docs/state/agent.md` before implementing anything — it's the live briefing,
+rewritten each sprint by the sync ceremony. Current patterns, current gotchas,
+current platform state.
 
-That file is the live briefing — rewritten each sprint by the sync ceremony to reflect
-current reality. It contains current patterns, current gotchas, current platform state,
-and hard stops. It is the chart. This file (CLAUDE.md) is the constitution.
+Read `docs/state/architecture.md` for architecture decisions currently in force.
 
-`docs/state/architecture.md` contains decisions currently in force — what the system
-is and how it works, without history or aspiration.
+Read subdirectory CLAUDE.md files when working in those directories.
+
+---
+
+## Sprint Mechanics
+
+```
+prd/manifest.json           <- source of truth: active sprint, increments
+prd/increment-N-<name>.json <- sprint file: stories for this increment
+prd/backlog.json            <- all future stories
+prd/constitution.json       <- themes + constitutional gates
+```
+
+The ceremony system (`scripts/ralph/ceremonies.py`) runs the full delivery cycle:
+orient -> constitution-review -> epic-breakdown -> backlog-groom -> plan -> preflight ->
+smart -> execute -> smoke -> proof -> review -> retro -> sync -> advance.

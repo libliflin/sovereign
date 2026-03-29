@@ -1,12 +1,12 @@
-# Theme Review Ceremony
+# Constitution Review Ceremony
 
-You are the Sovereign Platform strategic reviewer. This ceremony grounds every
+You are the Sovereign Platform constitutional reviewer. This ceremony grounds every
 cycle in values before action. It runs before planning, before execution, before
 any firefighting. Its purpose is to ensure we are doing the right work — not just
 doing work right.
 
 Two jobs, in order:
-1. **Golden Goose Eggs** — the 3-5 outcomes we protect. Evaluate with evidence.
+1. **Constitutional gates** — the 3-5 machine-checkable invariants we protect. Evaluate with evidence.
 2. **Strategic theme health** — are we positioned where the leverage is?
 
 ---
@@ -20,11 +20,11 @@ import json
 from pathlib import Path
 from collections import Counter
 
-with open('prd/gge.json') as f:
-    gge = json.load(f)
+with open('prd/constitution.json') as f:
+    constitution = json.load(f)
 
-with open('prd/themes.json') as f:
-    themes = json.load(f)
+gates = constitution.get('gates', [])
+themes_list = constitution.get('themes', [])
 
 with open('prd/epics.json') as f:
     epics = json.load(f)
@@ -35,11 +35,10 @@ with open('prd/manifest.json') as f:
 with open('prd/backlog.json') as f:
     backlog = json.load(f)
 
-eggs = gge.get('eggs', [])
 increments = manifest.get('increments', [])
 
-print("=== Current GGEs ===")
-for e in eggs:
+print("=== Current Constitutional Gates ===")
+for e in gates:
     print(f"  {e['id']}: {e['title']}")
 
 print(f"\n=== Platform state ===")
@@ -74,7 +73,8 @@ if not andon_counts:
 # === Velocity by theme ===
 print(f"\n=== Theme velocity (accepted vs returned points) ===")
 epic_theme = {e['id']: e.get('themeId', '') for e in epics.get('epics', [])}
-theme_names = {t['id']: t.get('title', t.get('name', t['id'])) for t in themes.get('themes', [])}
+retired = constitution.get('_retired', [])
+theme_names = {t['id']: t.get('name', t['id']) for t in themes_list}
 from collections import defaultdict
 accepted = defaultdict(int)
 returned = defaultdict(int)
@@ -137,7 +137,7 @@ Think about:
 Do NOT just create eggs for things that are easy to measure. Create eggs for things
 that are genuinely important to protect, even if the indicator is harder to write.
 
-### Step 1.4 — Rewrite prd/gge.json
+### Step 1.4 — Update gates in prd/constitution.json
 
 Rules:
 - **Retire eggs that create churn** — if an egg triggered 3+ andons with the same
@@ -162,14 +162,15 @@ Validate:
 ```python
 import json
 
-with open('prd/gge.json') as f:
-    gge = json.load(f)
+with open('prd/constitution.json') as f:
+    c = json.load(f)
 
-assert 3 <= len(gge['eggs']) <= 5, f"GGE count {len(gge['eggs'])} — must be 3-5"
-print(f"GGE count: {len(gge['eggs'])} — OK")
-for e in gge['eggs']:
-    assert e.get('indicator', {}).get('type') in ('file_exists', 'files_exist', 'story_complete', 'gate_passing'), \
-        f"Unknown indicator type on {e['id']}"
+gates = c.get('gates', [])
+assert 3 <= len(gates) <= 5, f"Gate count {len(gates)} — must be 3-5"
+print(f"Gate count: {len(gates)} — OK")
+for g in gates:
+    assert g.get('indicator', {}).get('type') in ('file_exists', 'files_exist', 'story_complete', 'gate_passing'), \
+        f"Unknown indicator type on {g['id']}"
 print("All indicators valid.")
 ```
 
@@ -215,7 +216,7 @@ Not "what has the lowest flow rate" — that's a metric. Ask:
 ### Step 2.3 — Theme updates (if any)
 
 If a theme's success criteria need updating, output the proposed change.
-Do NOT write directly to themes.json — propose for human review.
+Propose theme changes for human review — update CLAUDE.md's Themes section if approved.
 
 ---
 
@@ -252,9 +253,9 @@ For findings that warrant action, add stories to `prd/backlog.json`:
 
 ## Constraints
 
-- GGE count at ceremony end: **3-5. Enforced. Ceremony fails otherwise.**
-- GGEs must be machine-checkable (no subjective indicators)
-- Theme review is read-only for themes.json — propose changes, do not write
+- Gate count at ceremony end: **3-5. Enforced. Ceremony fails otherwise.**
+- Gates must be machine-checkable (no subjective indicators)
+- Theme changes: propose updates to CLAUDE.md's Themes section
 - Kaizen stories ARE written directly to backlog.json
 - **Do NOT create pending increments.** That is the plan ceremony's job. If no pending
   increment exists, that is a signal for plan to handle, not theme-review.

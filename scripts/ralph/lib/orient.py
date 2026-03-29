@@ -14,7 +14,7 @@ OODA loop: Observe (read sprint files, GGEs, agent state) →
 
 Check order (first failing KPI wins):
   1. GGEs (golden goose eggs) — unhealthy egg → Andon priority-0 story
-  2. GGE count (3-5 required) → theme-review if out of range
+  2. GGE count (3-5 required) → constitution-review if out of range
   3. Priority-0 stories → plan immediately
   4. Retro debt → BLOCKED
   5. Sprint active → resume
@@ -66,14 +66,14 @@ class PlatformState(Enum):
 
 
 class NextAction(Enum):
-    THEME_REVIEW    = "theme-review"
+    THEME_REVIEW    = "constitution-review"
     EPIC_BREAKDOWN  = "epic-breakdown"
     BACKLOG_GROOM   = "backlog-groom"
     PLAN            = "plan"
     RESUME_SPRINT   = "execute"      # maps to --start-at execute
     BLOCKED         = "blocked"
     # NOTE: DONE is intentionally absent. The machine never stops improving.
-    # When all planned work is delivered, it returns to theme-review to ask:
+    # When all planned work is delivered, it returns to constitution-review to ask:
     # what drifted? what deprecated? what hardened? what refined?
 
 
@@ -470,11 +470,11 @@ def _read_agent_state(repo_root: Path) -> str:
 def assess(repo_root: Path) -> Assessment:
     prd = repo_root / "prd"
     manifest = _load_json(prd / "manifest.json") or {}
-    themes_data = _load_json(prd / "themes.json") or {}
+    constitution = _load_json(prd / "constitution.json") or {}
     epics_data = _load_json(prd / "epics.json") or {}
     backlog_data = _load_json(prd / "backlog.json") or {}
 
-    themes = themes_data.get("themes", [])
+    themes = constitution.get("themes", [])
     epics = epics_data.get("epics", [])
     all_stories = backlog_data.get("stories", [])
     active_sprint_file = manifest.get("activeSprint")
@@ -490,8 +490,7 @@ def assess(repo_root: Path) -> Assessment:
     agent_context = _read_agent_state(repo_root)
 
     kpis: list[KPI] = []
-    gge_data = _load_json(prd / "gge.json") or {}
-    eggs = gge_data.get("eggs", [])
+    eggs = constitution.get("gates", [])
 
     # ── KPI 1: EMPTY check ──────────────────────────────────────────────────
     if not themes and not epics and not all_stories:
@@ -499,7 +498,7 @@ def assess(repo_root: Path) -> Assessment:
         return Assessment(
             state=PlatformState.EMPTY,
             action=NextAction.THEME_REVIEW,
-            reason="Platform has no themes yet. Run theme-review to establish strategic direction.",
+            reason="Platform has no themes yet. Run constitution-review to establish strategic direction.",
             kpis=kpis,
             shi=shi,
             niti=niti,
@@ -507,21 +506,21 @@ def assess(repo_root: Path) -> Assessment:
         )
 
     # ── KPI 2: Golden Goose Eggs ────────────────────────────────────────────
-    # GGE count gate: must have 3-5 eggs or theme-review is required
+    # GGE count gate: must have 3-5 eggs or constitution-review is required
     egg_count = len(eggs)
     if egg_count < GGE_MIN or egg_count > GGE_MAX:
         kpis.append(KPI(
             "GGE count",
             f"{egg_count} eggs",
             "FAIL",
-            f"must have {GGE_MIN}–{GGE_MAX} eggs (prd/gge.json)"
+            f"must have {GGE_MIN}–{GGE_MAX} gates (prd/constitution.json)"
         ))
         return Assessment(
             state=PlatformState.EMPTY,
             action=NextAction.THEME_REVIEW,
             reason=(
-                f"Golden Goose Eggs count is {egg_count}, must be {GGE_MIN}–{GGE_MAX}. "
-                "Run theme-review to define or trim the eggs."
+                f"Constitutional gates count is {egg_count}, must be {GGE_MIN}–{GGE_MAX}. "
+                "Run constitution-review to define or trim the gates."
             ),
             kpis=kpis,
             shi=shi,
@@ -601,8 +600,8 @@ def assess(repo_root: Path) -> Assessment:
             reason=(
                 f"GGE {first_broken['id']} is broken — Andon cord pulled. "
                 f"Indicator: {first_broken.get('indicator', {}).get('type')}. "
-                "Priority-0 story created. Starting at theme-review so the "
-                "team can evaluate whether this GGE still reflects core values "
+                "Priority-0 story created. Starting at constitution-review so the "
+                "team can evaluate whether this gate still reflects core values "
                 "before planning a fix."
             ),
             kpis=kpis,
@@ -639,7 +638,7 @@ def assess(repo_root: Path) -> Assessment:
             reason=(
                 f"{len(urgent)} priority-0 story/stories need attention: "
                 f"{', '.join(s['id'] + ' (' + s['title'] + ')' for s in urgent)}. "
-                "Starting at theme-review to align on values before planning."
+                "Starting at constitution-review to align on values before planning."
             ),
             kpis=kpis,
             shi=shi,
@@ -842,7 +841,7 @@ def assess(repo_root: Path) -> Assessment:
     if depth < BACKLOG_DEPTH_MIN:
         # PI Planning trigger: when all planned increments are delivered and the
         # backlog is thin, grooming alone won't help — we need to rethink what
-        # we're building next. Escalate to theme-review (top of the funnel).
+        # we're building next. Escalate to constitution-review (top of the funnel).
         if all_increments_done:
             return Assessment(
                 state=PlatformState.THIN_BACKLOG,
@@ -850,7 +849,7 @@ def assess(repo_root: Path) -> Assessment:
                 reason=(
                     f"All planned increments delivered and backlog depth is {depth:.1f} "
                     f"({len(ready_stories)} ready stories). "
-                    "PI planning needed — run theme-review → epic-breakdown → groom "
+                    "PI planning needed — run constitution-review → epic-breakdown → groom "
                     "to define the next wave of work before planning."
                 ),
                 kpis=kpis,
@@ -888,7 +887,7 @@ def assess(repo_root: Path) -> Assessment:
                 reason=(
                     f"All planned increments delivered but backlog depth is {depth:.1f} "
                     f"({len(ready_stories)} ready stories). "
-                    "PI planning needed: run theme-review → epic-breakdown → groom "
+                    "PI planning needed: run constitution-review → epic-breakdown → groom "
                     "to define the next wave of work."
                 ),
                 kpis=kpis,
