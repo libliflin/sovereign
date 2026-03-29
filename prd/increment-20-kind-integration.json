@@ -51,7 +51,7 @@
       "priority": 1,
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
-      "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
+      "returnedReason": "Sprint closed (manual retro) before Ralph iterated this story; well-specified and ready for next sprint",
       "reviewNotes": [],
       "testPlan": "After implementing the plan ceremony change: run the plan ceremony on a fresh sprint context, then verify: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies/*.sh must exit 0.",
       "smart": {
@@ -61,7 +61,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: AC targets 'plan.md (or the plan ceremony runner)' \u2014 both candidate files should be named explicitly so Ralph knows exactly which file to edit. Measurable score 4: AC1 ('contains logic to append a pending increment stub') is a prose assertion, not a runnable command; replace with a grep for the specific function or code pattern added."
-      }
+      },
+      "returnedToBacklog": true
     },
     {
       "id": "KAIZEN-004r",
@@ -85,7 +86,7 @@
       ],
       "testPlan": "Manually set a story to passes:true reviewed:false in a test sprint file. Run ceremonies.sh --start-at retro. Verify review ceremony runs first, then retro. Show output verbatim.",
       "returnedFromSprint": null,
-      "returnedReason": null,
+      "returnedReason": "Sprint closed before iteration; AC2 references wrong sprint file (increment-17) \u2014 fix before next sprint",
       "smart": {
         "specific": 4,
         "measurable": 4,
@@ -93,7 +94,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: AC2 hard-codes 'increment-17-restructure.json' as the test target \u2014 a completed sprint. The guard must work for the active sprint file; AC should use a temporary fixture file, not a named completed increment. Measurable score 4: AC1 ('checks for passes:true reviewed:false stories') is prose; should be grep/python command that verifies the guard code exists in ceremonies.sh."
-      }
+      },
+      "returnedToBacklog": true
     },
     {
       "id": "KIND-001",
@@ -130,7 +132,9 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Achievable score 3: 3-point story requires authoring cluster/kind/bootstrap.sh from scratch PLUS installing Cilium (with kindnet disabled), cert-manager, sealed-secrets, MinIO, local-path-provisioner, and a contract validator \u2014 eight integration points that together exceed a single Ralph iteration budget. Recommend splitting: KIND-001a (bootstrap.sh + 3-node cluster + contract/validate.py) and KIND-001b (Cilium + cert-manager + sealed-secrets + MinIO). Time-bound score 4: MinIO and local-path-provisioner appear in ACs but not in the sprint goal or story description \u2014 minor scope creep risk that could expand during implementation."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint closed before iteration; story superseded by KIND-001a + KIND-001b split (SMART achievable=3, 8 integration points)"
     },
     {
       "id": "KAIZEN-005",
@@ -160,7 +164,9 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "Relevant score 4: naming consistency kaizen is valuable but not on the critical path to the sprint goal (kind cluster bootstrap). Can be deferred without blocking KIND-001."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint closed before reaching priority-3 story; valid and ready"
     },
     {
       "id": "KAIZEN-006",
@@ -189,7 +195,9 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "Relevant score 4: data model cleanup is useful but not blocking the sprint goal. Can be deferred without impact to KIND-001."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint closed before reaching priority-4 story; valid and ready"
     }
   ],
   "_lastSmokeTestFailures": [],

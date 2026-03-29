@@ -136,7 +136,14 @@
       "dependencies": [
         "RESTRUCTURE-001c"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "status": "superseded",
+      "supersededBy": [
+        "KIND-001a",
+        "KIND-001b"
+      ],
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Split into KIND-001a and KIND-001b (SMART achievable=3, 8 integration points)"
     },
     {
       "id": "KIND-002",
@@ -414,13 +421,13 @@
       "dependencies": [],
       "acceptanceCriteria": [
         "ceremonies.sh (or the retro ceremony wrapper) checks for passes:true reviewed:false stories before running retro",
-        "If such stories exist, review ceremony is invoked first: python3 -c \"import json; s=json.load(open('prd/increment-17-restructure.json')); pending=[x for x in s['stories'] if x.get('passes') and not x.get('reviewed')]; print(len(pending))\" returns 0 after the guard runs",
+        "If such stories exist, review ceremony is invoked first: create a temp fixture sprint file with one passes:true reviewed:false story, run ceremonies.sh --start-at retro pointing at that fixture, and verify review ceremony runs first and the story is marked reviewed:true afterward",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after the change",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 (if Python-based)"
       ],
-      "testPlan": "Manually set a story to passes:true reviewed:false in a test sprint file. Run ceremonies.sh --start-at retro. Verify review ceremony runs first, then retro. Show output verbatim.",
-      "returnedFromSprint": null,
-      "returnedReason": null
+      "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Sprint closed before iteration; AC2 fixed \u2014 no longer references increment-17"
     },
     {
       "id": "DEVEX-001",
@@ -760,6 +767,76 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
       "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle."
+    },
+    {
+      "id": "KIND-001a",
+      "title": "kind bootstrap: cluster/kind/bootstrap.sh + 3-node cluster + contract/validate.py",
+      "description": "Split of KIND-001 (achievable=3). Deliver only the cluster scaffolding half: write cluster/kind/bootstrap.sh that creates a 3-node kind cluster named sovereign-test and emits cluster-values.yaml; write contract/validate.py that validates cluster-values.yaml against contract/v1/cluster.schema.yaml. No platform components (Cilium, cert-manager, etc.) \u2014 those are KIND-001b.",
+      "acceptanceCriteria": [
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "./cluster/kind/bootstrap.sh --dry-run exits 0 and prints intended actions",
+        "./cluster/kind/bootstrap.sh runs without error: kind get clusters shows sovereign-test",
+        "kubectl get nodes --context kind-sovereign-test shows 3 nodes all Ready",
+        "cluster-values.yaml is emitted and python3 contract/validate.py cluster-values.yaml exits 0 with output containing 'CONTRACT VALID'"
+      ],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "feature/kind-bootstrap",
+      "dependencies": [
+        "RESTRUCTURE-001c"
+      ],
+      "priority": 2,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Split from KIND-001 (achievable=3 \u2014 too many integration points for one story)",
+      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; ./cluster/kind/bootstrap.sh --dry-run; ./cluster/kind/bootstrap.sh; kind get clusters; kubectl get nodes --context kind-sovereign-test; python3 contract/validate.py cluster-values.yaml \u2014 show all output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Focused split: cluster scaffolding only. No platform components in scope."
+      }
+    },
+    {
+      "id": "KIND-001b",
+      "title": "kind bootstrap: install Cilium, cert-manager, sealed-secrets, MinIO into kind cluster",
+      "description": "Split of KIND-001 (achievable=3). Platform component install half: after KIND-001a produces a running 3-node kind cluster, install Cilium CNI (kindnet disabled), cert-manager, sealed-secrets, local-path-provisioner (default StorageClass), and MinIO into that cluster. Depends on KIND-001a.",
+      "acceptanceCriteria": [
+        "kubectl get pods -n kube-system shows cilium pods Running (kindnet pods absent)",
+        "kubectl get pods -n cert-manager shows all Running",
+        "kubectl get pods -n sealed-secrets shows all Running",
+        "kubectl get pods -n minio shows all Running",
+        "kubectl get storageclass shows local-path as default (annotated storageclass.kubernetes.io/is-default-class: 'true')"
+      ],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "feature/kind-bootstrap",
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "priority": 3,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Split from KIND-001 (achievable=3 \u2014 too many integration points for one story)",
+      "testPlan": "kubectl get pods -n kube-system | grep cilium; kubectl get pods -n cert-manager; kubectl get pods -n sealed-secrets; kubectl get pods -n minio; kubectl get storageclass \u2014 show all output verbatim. All pods must show Running/Completed. local-path must be default.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
+      }
     }
   ]
 }

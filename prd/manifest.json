@@ -239,14 +239,19 @@
       "name": "kind-integration",
       "description": "Kind cluster integration: kind bootstrap script delivers a running sovereign-test cluster with Cilium CNI, cert-manager, sealed-secrets, and autarky egress policy verified.",
       "file": "prd/increment-20-kind-integration.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         17
       ],
       "themeGoal": "T1 Sovereignty \u2014 kind cluster bootstrap (KIND-001): running cluster with autarky invariants verified end-to-end",
       "startDate": "2026-03-29T19:10:10.357209+00:00",
       "pointsTotal": 9,
-      "storiesTotal": 6
+      "storiesTotal": 6,
+      "endDate": "2026-03-29T19:27:41.771149+00:00",
+      "pointsCompleted": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 5,
+      "reviewPassRate": 16.7
     },
     {
       "id": 21,
@@ -261,5 +266,26 @@
     }
   ],
   "activeSprint": "prd/increment-20-kind-integration.json",
-  "currentIncrement": 20
+  "currentIncrement": 20,
+  "sprintHistory": [
+    {
+      "increment": 20,
+      "name": "kind-integration",
+      "endDate": "2026-03-29T19:27:41.771149+00:00",
+      "pointsCompleted": 1,
+      "storiesTotal": 6,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 5,
+      "reviewPassRate": 16.7
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 20,
+      "pointsCompleted": 1,
+      "storiesAccepted": 1,
+      "reviewPassRate": 16.7,
+      "date": "2026-03-29T19:27:41.771149+00:00"
+    }
+  ]
 }
