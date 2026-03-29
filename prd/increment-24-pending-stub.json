@@ -244,13 +244,13 @@
         "grep -q 'global.domain' platform/argocd-apps/observability/thanos-app.yaml exits 0",
         "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" exits 0 (all YAML valid)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "for f in platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 14,
       "smart": {
         "specific": 4,
