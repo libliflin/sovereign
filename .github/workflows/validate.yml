@@ -23,10 +23,11 @@ jobs:
       - name: List charts with Chart.yaml
         id: list
         run: |
-          CHARTS=$(ls charts/*/Chart.yaml 2>/dev/null \
-            | sed 's|charts/||;s|/Chart.yaml||' \
-            | sort \
-            | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().split()))")
+          CHARTS=$(
+            { ls platform/charts/*/Chart.yaml 2>/dev/null; ls cluster/kind/charts/*/Chart.yaml 2>/dev/null; } \
+              | sed 's|/Chart.yaml||' \
+              | sort \
+              | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().split()))")
           echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
           echo "Discovered charts: $CHARTS"
 
@@ -56,33 +57,36 @@ jobs:
       - name: Cache Helm deps
         uses: actions/cache@v4
         with:
-          path: charts/${{ matrix.chart }}/charts
-          key: helm-${{ matrix.chart }}-${{ hashFiles(format('charts/{0}/Chart.lock', matrix.chart)) }}
+          path: ${{ matrix.chart }}/charts
+          key: helm-${{ matrix.chart }}-${{ hashFiles(format('{0}/Chart.lock', matrix.chart)) }}
           restore-keys: helm-${{ matrix.chart }}-
 
       - name: Helm dependency update
         run: |
-          if [ -f "charts/${{ matrix.chart }}/Chart.yaml" ]; then
-            helm dependency update "charts/${{ matrix.chart }}/" 2>/dev/null || true
+          if [ -f "${{ matrix.chart }}/Chart.yaml" ]; then
+            helm dependency update "${{ matrix.chart }}/" 2>/dev/null || true
           fi
 
       - name: Helm lint
         run: |
-          helm lint "charts/${{ matrix.chart }}/"
+          helm lint "${{ matrix.chart }}/"
+
+      - name: Set safe chart name for filenames
+        run: echo "CHART_SAFE=$(echo '${{ matrix.chart }}' | tr '/' '_')" >> "$GITHUB_ENV"
 
       - name: Helm template (render)
         id: template
         run: |
-          helm template sovereign "charts/${{ matrix.chart }}/" \
+          helm template sovereign "${{ matrix.chart }}/" \
             --set global.domain=sovereign-autarky.dev \
-            > /tmp/rendered-${{ matrix.chart }}.yaml
-          echo "Rendered $(wc -l < /tmp/rendered-${{ matrix.chart }}.yaml) lines"
+            > "/tmp/rendered-${CHART_SAFE}.yaml"
+          echo "Rendered $(wc -l < "/tmp/rendered-${CHART_SAFE}.yaml") lines"
 
       - name: Assert PodDisruptionBudget present
         run: |
-          if grep -q "kind: Deployment\|kind: StatefulSet" /tmp/rendered-${{ matrix.chart }}.yaml; then
-            if ! grep -q "kind: PodDisruptionBudget" /tmp/rendered-${{ matrix.chart }}.yaml; then
-              echo "ERROR: chart/${{ matrix.chart }} has a Deployment/StatefulSet but no PodDisruptionBudget"
+          if grep -q "kind: Deployment\|kind: StatefulSet" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+            if ! grep -q "kind: PodDisruptionBudget" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+              echo "ERROR: ${{ matrix.chart }} has a Deployment/StatefulSet but no PodDisruptionBudget"
               exit 1
             fi
             echo "✓ PodDisruptionBudget found"
@@ -92,9 +96,9 @@ jobs:
 
       - name: Assert podAntiAffinity present
         run: |
-          if grep -q "kind: Deployment\|kind: StatefulSet" /tmp/rendered-${{ matrix.chart }}.yaml; then
-            if ! grep -q "podAntiAffinity" /tmp/rendered-${{ matrix.chart }}.yaml; then
-              echo "ERROR: chart/${{ matrix.chart }} has a Deployment/StatefulSet but no podAntiAffinity"
+          if grep -q "kind: Deployment\|kind: StatefulSet" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+            if ! grep -q "podAntiAffinity" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+              echo "ERROR: ${{ matrix.chart }} has a Deployment/StatefulSet but no podAntiAffinity"
               exit 1
             fi
             echo "✓ podAntiAffinity found"
@@ -104,17 +108,17 @@ jobs:
 
       - name: Assert replicaCount >= 2 in values.yaml
         run: |
-          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          VALUES="${{ matrix.chart }}/values.yaml"
           if [ ! -f "$VALUES" ]; then
             echo "No values.yaml — skipping replicaCount check"
             exit 0
           fi
-          # Check for ha_exception in vendor/VENDORS.yaml for this chart
+          # Check for ha_exception in platform/vendor/VENDORS.yaml for this chart
           HA_EXCEPTION=$(python3 -c "
-          import yaml, sys
-          chart = '${{ matrix.chart }}'
+          import yaml, sys, os
+          chart = os.path.basename('${{ matrix.chart }}')
           try:
-              with open('vendor/VENDORS.yaml') as f:
+              with open('platform/vendor/VENDORS.yaml') as f:
                   data = yaml.safe_load(f)
               for v in data.get('vendors', []):
                   if v.get('name') == chart and v.get('ha_exception') is True:
@@ -125,7 +129,7 @@ jobs:
           print('false')
           " 2>/dev/null || echo "false")
           if [ "$HA_EXCEPTION" = "true" ]; then
-            echo "INFO: ha_exception=true for ${{ matrix.chart }} in vendor/VENDORS.yaml — replicaCount check skipped"
+            echo "INFO: ha_exception=true for ${{ matrix.chart }} in platform/vendor/VENDORS.yaml — replicaCount check skipped"
             exit 0
           fi
           REPLICA=$(python3 -c "
@@ -142,7 +146,7 @@ jobs:
           if [ "$REPLICA" = "NONE" ]; then
             echo "INFO: replicaCount not set in values.yaml (may be inherited from subchart)"
           elif [ "$REPLICA" -lt 2 ] 2>/dev/null; then
-            echo "ERROR: charts/${{ matrix.chart }}/values.yaml has replicaCount=$REPLICA (must be >= 2)"
+            echo "ERROR: ${{ matrix.chart }}/values.yaml has replicaCount=$REPLICA (must be >= 2)"
             exit 1
           else
             echo "✓ replicaCount=$REPLICA"
@@ -150,10 +154,10 @@ jobs:
 
       - name: "Assert no :latest image tags in values.yaml"
         run: |
-          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          VALUES="${{ matrix.chart }}/values.yaml"
           if [ ! -f "$VALUES" ]; then exit 0; fi
           if grep -qE ":\s*latest\b|tag:\s*latest\b" "$VALUES"; then
-            echo "ERROR: charts/${{ matrix.chart }}/values.yaml contains :latest image tag"
+            echo "ERROR: ${{ matrix.chart }}/values.yaml contains :latest image tag"
             grep -nE ":\s*latest\b|tag:\s*latest\b" "$VALUES"
             exit 1
           fi
@@ -161,7 +165,7 @@ jobs:
 
       - name: Assert image.repository uses global.imageRegistry
         run: |
-          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          VALUES="${{ matrix.chart }}/values.yaml"
           if [ ! -f "$VALUES" ]; then exit 0; fi
           # Only check if image.repository is explicitly set (not via subchart)
           if python3 -c "
@@ -207,8 +211,8 @@ jobs:
 
       - name: Shellcheck vendor scripts (if any)
         run: |
-          if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
-            find vendor -name "*.sh" -print0 | xargs -0 shellcheck -S error
+          if ls platform/vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
+            find platform/vendor -name "*.sh" -print0 | xargs -0 shellcheck -S error
           else
             echo "No vendor scripts yet — skipping"
           fi
@@ -216,8 +220,8 @@ jobs:
       - name: Assert vendor scripts handle --dry-run and --backup
         run: |
           FAIL=0
-          if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
-            for script in vendor/*.sh; do
+          if ls platform/vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
+            for script in platform/vendor/*.sh; do
               if ! grep -qE "dry.run|DRY_RUN" "$script"; then
                 echo "ERROR: $script missing --dry-run handling"
                 FAIL=1
@@ -237,27 +241,27 @@ jobs:
     name: Vendor Audit
     runs-on: ubuntu-latest
     if: >
-      contains(github.event.head_commit.modified, 'vendor/') ||
-      contains(toJson(github.event.pull_request.changed_files), 'vendor/')
+      contains(github.event.head_commit.modified, 'platform/vendor/') ||
+      contains(toJson(github.event.pull_request.changed_files), 'platform/vendor/')
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Run vendor/audit.sh
         run: |
-          if [ -f vendor/audit.sh ]; then
-            bash vendor/audit.sh
+          if [ -f platform/vendor/audit.sh ]; then
+            bash platform/vendor/audit.sh
           else
-            echo "vendor/audit.sh not yet created — skipping"
+            echo "platform/vendor/audit.sh not yet created — skipping"
           fi
 
       - name: Validate VENDORS.yaml schema
         run: |
-          if [ -f vendor/VENDORS.yaml ]; then
+          if [ -f platform/vendor/VENDORS.yaml ]; then
             python3 - <<'PYEOF'
           import yaml, sys
 
-          with open('vendor/VENDORS.yaml') as f:
+          with open('platform/vendor/VENDORS.yaml') as f:
               vendors = yaml.safe_load(f)
 
           required = ['name', 'upstream', 'version', 'license', 'distroless']
@@ -282,7 +286,7 @@ jobs:
           print(f"✓ VENDORS.yaml: {len(vendors.get('vendors', []))} entries validated")
           PYEOF
           else
-            echo "vendor/VENDORS.yaml not yet created — skipping"
+            echo "platform/vendor/VENDORS.yaml not yet created — skipping"
           fi
 
       - name: Validate recipe.yaml rollout and backup sections
@@ -293,7 +297,7 @@ jobs:
           errors = []
           checked = 0
 
-          for root, dirs, files in os.walk('vendor/recipes'):
+          for root, dirs, files in os.walk('platform/vendor/recipes'):
               for fname in files:
                   if fname == 'recipe.yaml':
                       path = os.path.join(root, fname)
