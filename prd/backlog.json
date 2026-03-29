@@ -28,24 +28,161 @@
       "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
     },
     {
-      "id": "KAIZEN-009",
-      "title": "Kaizen: ArgoCD Application manifests must inject global.domain parameter",
-      "description": "16 ArgoCD Application manifests reference their chart's values.yaml but do not inject global.domain as a Helm parameter. At deploy time, charts will use their values.yaml default (sovereign-autarky.dev) regardless of the cluster's actual domain. Fix: add a helm.parameters entry for global.domain sourced from a cluster-level ApplicationSet parameter or a top-level values file, OR add a valueFiles reference to a cluster-specific values override. Affects: cert-manager, crossplane, gitlab, harbor, keycloak, sealed-secrets, vault, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator, argocd-image-updater.",
-      "acceptanceCriteria": [
-        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches \u2014 every app either injects global.domain or is documented as domain-agnostic",
-        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 \u2014 all YAML is valid after edits"
-      ],
+      "id": "KAIZEN-009a",
       "epicId": "E2",
       "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-injection",
-      "priority": 12,
-      "points": 2,
+      "branchName": "kaizen/argocd-global-domain-platform-tier-1",
+      "title": "ArgoCD global.domain injection: cert-manager, crossplane, sealed-secrets, vault, keycloak",
+      "description": "Add helm.parameters entry for global.domain to 5 ArgoCD Application manifests: platform/argocd-apps/platform/cert-manager-app.yaml, crossplane-app.yaml, sealed-secrets-app.yaml, vault-app.yaml, keycloak-app.yaml. For each file, add the following block under spec.source.helm (alongside the existing valueFiles entry):\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev\nThis ensures all 5 charts receive the cluster domain at sync time regardless of their values.yaml default.",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/platform/cert-manager-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/crossplane-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/sealed-secrets-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/vault-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/keycloak-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
       "passes": false,
+      "points": 2,
+      "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
+      "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "priority": 12,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified, fix approach is helm.parameters (not valueFiles). Achievable score 4: 5 files x ~4 lines each, near top of budget but within one iteration."
+      }
+    },
+    {
+      "id": "KAIZEN-009b",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-platform-tier-2",
+      "title": "ArgoCD global.domain injection: gitlab, harbor, argocd-image-updater",
+      "description": "Add helm.parameters entry for global.domain to 3 ArgoCD Application manifests: platform/argocd-apps/platform/gitlab-app.yaml, harbor-app.yaml, argocd-image-updater-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/platform/gitlab-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/harbor-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/argocd-image-updater-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "for f in platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
-      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml \u2014 must return no output. Show verbatim."
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 13,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified."
+      }
+    },
+    {
+      "id": "KAIZEN-009c",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-observability",
+      "title": "ArgoCD global.domain injection: loki, tempo, thanos",
+      "description": "Add helm.parameters entry for global.domain to 3 ArgoCD Application manifests: platform/argocd-apps/observability/loki-app.yaml, tempo-app.yaml, thanos-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/observability/loki-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/observability/tempo-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/observability/thanos-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "for f in platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 14,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified."
+      }
+    },
+    {
+      "id": "KAIZEN-009d",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-security-tier",
+      "title": "ArgoCD global.domain injection: falco, istio, kiali, opa-gatekeeper, trivy-operator",
+      "description": "Add helm.parameters entry for global.domain to 5 ArgoCD Application manifests: platform/argocd-apps/security/falco-app.yaml, istio-app.yaml, kiali-app.yaml, opa-gatekeeper-app.yaml, trivy-operator-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/security/falco-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/istio-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/kiali-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/opa-gatekeeper-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/trivy-operator-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "for f in platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 15,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified. Achievable score 4: 5 files x ~4 lines, near top of budget but within one iteration."
+      }
+    },
+    {
+      "id": "KAIZEN-009e",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-verify-corpus",
+      "title": "Verify: all 16 targeted ArgoCD app manifests have global.domain injection",
+      "description": "Verify that all 16 targeted ArgoCD Application manifests contain global.domain after KAIZEN-009a through KAIZEN-009d complete. The 16 targeted files are: cert-manager, crossplane, sealed-secrets, vault, keycloak, gitlab, harbor, argocd-image-updater, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator. Files explicitly exempt (domain-agnostic or non-helm): cilium-app.yaml, rook-ceph-app.yaml, prometheus-stack-app.yaml, code-server-app.yaml, sonarqube-app.yaml, reportportal-app.yaml, sovereign-pm-app.yaml, backstage-app.yaml.",
+      "acceptanceCriteria": [
+        "Run the corpus check command: 'for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS' \u2014 must print ALL_16_PASS",
+        "python3 -c \"import yaml; files=['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml','platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml','platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml','platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']; [yaml.safe_load(open(f)) for f in files]; print('ALL_YAML_VALID')\" exits 0 and prints ALL_YAML_VALID"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS; show all output verbatim.",
+      "dependencies": [
+        "KAIZEN-009a",
+        "KAIZEN-009b",
+        "KAIZEN-009c",
+        "KAIZEN-009d"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 16,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Pure verification story: enumerates all 16 targeted files explicitly, lists all 8 exempt files with reason. No escape hatches."
+      }
     },
     {
       "id": "KAIZEN-008",
@@ -97,20 +234,23 @@
       }
     },
     {
-      "id": "RESTRUCTURE-001b",
+      "id": "RESTRUCTURE-001b-1",
       "epicId": "E2",
       "themeId": "T1",
-      "branchName": "restructure/monorepo",
-      "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
-      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
+      "branchName": "restructure/kind-bootstrap-script",
+      "title": "cluster/kind/bootstrap.sh: kind cluster provisioner with --help, --cluster-name, and kind create cluster invocation",
+      "description": "Create cluster/kind/bootstrap.sh. The script must: (1) support --help flag that prints usage including '--cluster-name NAME (default: sovereign-test)'; (2) accept --cluster-name NAME option defaulting to 'sovereign-test'; (3) print 'Bootstrapping kind cluster: $cluster_name' before running; (4) invoke 'kind create cluster --name \"$cluster_name\"'. Script must pass shellcheck -S error with set -euo pipefail at the top. Also verify that bootstrap/providers/ is not present in the working tree (it should have been removed in RESTRUCTURE-001a).",
       "acceptanceCriteria": [
-        "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
-        "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
-        "bootstrap/providers/ does not exist in working tree: [ ! -d bootstrap/providers ] exits 0"
+        "cluster/kind/bootstrap.sh exists: ls cluster/kind/bootstrap.sh exits 0",
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "bash -n cluster/kind/bootstrap.sh exits 0",
+        "bash cluster/kind/bootstrap.sh --help 2>&1 | grep -q 'cluster-name' exits 0",
+        "grep -q 'kind create cluster' cluster/kind/bootstrap.sh exits 0 (script contains the kind invocation)",
+        "[ ! -d bootstrap/providers ] exits 0 (bootstrap/providers/ not in working tree)"
       ],
       "passes": false,
       "points": 1,
-      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; shellcheck -S error platform/deploy.sh; [ ! -d bootstrap/providers ] && echo 'providers archived OK'; show all output verbatim.",
+      "testPlan": "ls cluster/kind/bootstrap.sh && shellcheck -S error cluster/kind/bootstrap.sh && bash -n cluster/kind/bootstrap.sh && bash cluster/kind/bootstrap.sh --help 2>&1 | grep 'cluster-name' && grep 'kind create cluster' cluster/kind/bootstrap.sh && [ ! -d bootstrap/providers ] && echo 'all checks passed'; show all output verbatim",
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
@@ -119,14 +259,46 @@
       "attempts": 0,
       "priority": 2,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b-2",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/platform-deploy-script",
+      "title": "platform/deploy.sh: Helm deployment orchestrator with --help, --chart-dir, --namespace, and helm upgrade --install invocation",
+      "description": "Create platform/deploy.sh. The script must: (1) support --help flag that prints usage including '--chart-dir DIR' and '--namespace NS'; (2) accept --chart-dir DIR and --namespace NS required options; (3) print 'Deploying chart: $chart_dir to namespace: $namespace' before running; (4) invoke 'helm upgrade --install' for the given chart and namespace. Script must pass shellcheck -S error with set -euo pipefail at the top.",
+      "acceptanceCriteria": [
+        "platform/deploy.sh exists: ls platform/deploy.sh exits 0",
+        "shellcheck -S error platform/deploy.sh exits 0",
+        "bash -n platform/deploy.sh exits 0",
+        "bash platform/deploy.sh --help 2>&1 | grep -q 'chart-dir' exits 0",
+        "grep -q 'helm upgrade --install' platform/deploy.sh exits 0 (script contains the helm invocation)"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "ls platform/deploy.sh && shellcheck -S error platform/deploy.sh && bash -n platform/deploy.sh && bash platform/deploy.sh --help 2>&1 | grep 'chart-dir' && grep 'helm upgrade --install' platform/deploy.sh && echo 'all checks passed'; show all output verbatim",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 3,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
     },
     {
       "id": "RESTRUCTURE-001c",
