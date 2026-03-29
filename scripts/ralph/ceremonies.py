@@ -537,6 +537,7 @@ def main() -> int:
         _git_commit("sync", [
             "docs/state/",
             "prd/backlog.json", "prd/epics.json", "prd/manifest.json", "prd/",
+            "scripts/",  # sync coherence audit may fix vocabulary in code files
         ])
 
     # -- STEP 13: ADVANCE ------------------------------------------------------

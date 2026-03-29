@@ -597,11 +597,13 @@ def assess(repo_root: Path) -> Assessment:
 
         return Assessment(
             state=PlatformState.SPRINT_READY,
-            action=NextAction.PLAN,
+            action=NextAction.THEME_REVIEW,
             reason=(
                 f"GGE {first_broken['id']} is broken — Andon cord pulled. "
                 f"Indicator: {first_broken.get('indicator', {}).get('type')}. "
-                "Priority-0 story created. Plan immediately to restore it."
+                "Priority-0 story created. Starting at theme-review so the "
+                "team can evaluate whether this GGE still reflects core values "
+                "before planning a fix."
             ),
             kpis=kpis,
             shi=shi,
@@ -633,11 +635,11 @@ def assess(repo_root: Path) -> Assessment:
         ))
         return Assessment(
             state=PlatformState.SPRINT_READY,
-            action=NextAction.PLAN,
+            action=NextAction.THEME_REVIEW,
             reason=(
-                f"{len(urgent)} priority-0 story/stories must be pulled into the next sprint immediately: "
+                f"{len(urgent)} priority-0 story/stories need attention: "
                 f"{', '.join(s['id'] + ' (' + s['title'] + ')' for s in urgent)}. "
-                "These unblock the delivery system itself."
+                "Starting at theme-review to align on values before planning."
             ),
             kpis=kpis,
             shi=shi,
