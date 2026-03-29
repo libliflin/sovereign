@@ -535,6 +535,28 @@ def main() -> int:
     if not should_run("retro"):
         print("  skipped")
     else:
+        # Pre-retro guard: if any stories have passes:true but reviewed:false,
+        # run review first to avoid advance.py "limbo stories" error.
+        sprint = sprint_lib.load(sprint_file)
+        limbo = [s for s in sprint.get("stories", [])
+                 if s.get("passes", False) and not s.get("reviewed", False)]
+        if limbo:
+            print(f"\n  Pre-retro guard: {len(limbo)} stories are passes:true reviewed:false"
+                  f" — running review first.")
+            sep("AI CEREMONY: Review (pre-retro guard)")
+            _ai(args.tool, "review.md", log_file)
+            sprint = sprint_lib.load(sprint_file)
+            newly_accepted = 0
+            for s in sprint.get("stories", []):
+                if s.get("passes", False) and not s.get("reviewed", False):
+                    s["reviewed"] = True
+                    newly_accepted += 1
+            if newly_accepted:
+                sprint_lib.save(sprint_file, sprint)
+                print(f"  ceremonies.py set reviewed=True on {newly_accepted} passing stories"
+                      f" not reopened by review.")
+            _git_commit("review-pre-retro", [str(active_sprint)])
+
         sep("AI CEREMONY: Retrospective")
         _ai(args.tool, "retro.md", log_file)
         _git_commit("retro", [
