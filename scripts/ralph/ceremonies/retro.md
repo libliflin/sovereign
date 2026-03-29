@@ -149,7 +149,7 @@ so they can be repulled in a future sprint once the system fixes are in place.
 
 ## Step 4 — Write retro patch
 
-Write `prd/retro-patch-phase<N>.md`:
+Write `prd/retro-patch-increment<N>.md`:
 
 ```markdown
 # Retro Patch: Phase <N> — <sprint name>
@@ -276,7 +276,7 @@ with open(sprint_file, 'w') as f:
   ─────────────────────────────
   <list prior phases and points>
 
-  Retro patch → prd/retro-patch-phase<N>.md
+  Retro patch → prd/retro-patch-increment<N>.md
 ════════════════════════════════════════════════════════════════════
 ```
 

@@ -127,15 +127,17 @@ HEADER
   fi
 
   if [[ $exec_count -gt 0 ]]; then
-    echo "### Execute Failure (ralph.sh crashed on previous attempt)" >> "$out_file"
-    echo "" >> "$out_file"
-    jq -r '._lastExecuteFailure[] |
-      "- **\(.step)**: \(.message) (exit code \(.exitCode))"' "$sprint_file" 2>/dev/null >> "$out_file" || true
-    echo "" >> "$out_file"
-    echo "ralph.sh failed before any stories were implemented. This is usually" >> "$out_file"
-    echo "a git or infrastructure problem, not a story problem. Check the error" >> "$out_file"
-    echo "above and fix the root cause before attempting stories." >> "$out_file"
-    echo "" >> "$out_file"
+    {
+      echo "### Execute Failure (ralph.sh crashed on previous attempt)"
+      echo ""
+      jq -r '._lastExecuteFailure[] |
+        "- **\(.step)**: \(.message) (exit code \(.exitCode))"' "$sprint_file" 2>/dev/null || true
+      echo ""
+      echo "ralph.sh failed before any stories were implemented. This is usually"
+      echo "a git or infrastructure problem, not a story problem. Check the error"
+      echo "above and fix the root cause before attempting stories."
+      echo ""
+    } >> "$out_file"
   fi
 
   if [[ $proof_count -gt 0 ]]; then

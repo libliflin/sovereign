@@ -89,6 +89,12 @@ def log_step(name: str) -> None:
     print(f"\nSTEP {n}/{TOTAL} — {label}")
 
 
+def find_limbo_stories(sprint: dict) -> list[dict]:
+    """Return stories that are passes:true but reviewed:false (pre-retro guard)."""
+    return [s for s in sprint.get("stories", [])
+            if s.get("passes", False) and not s.get("reviewed", False)]
+
+
 def _find_not_smart(sprint: dict) -> list[dict]:
     result = []
     for s in sprint.get("stories", []):
@@ -538,8 +544,7 @@ def main() -> int:
         # Pre-retro guard: if any stories have passes:true but reviewed:false,
         # run review first to avoid advance.py "limbo stories" error.
         sprint = sprint_lib.load(sprint_file)
-        limbo = [s for s in sprint.get("stories", [])
-                 if s.get("passes", False) and not s.get("reviewed", False)]
+        limbo = find_limbo_stories(sprint)
         if limbo:
             print(f"\n  Pre-retro guard: {len(limbo)} stories are passes:true reviewed:false"
                   f" — running review first.")
