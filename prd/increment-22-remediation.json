@@ -164,10 +164,10 @@
       "branchName": "kaizen/retro-patch-naming",
       "priority": 3,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
