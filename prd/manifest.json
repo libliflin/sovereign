@@ -208,12 +208,17 @@
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
       "file": "prd/increment-15-remediation.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": [],
       "startDate": "2026-03-29T03:07:54.605974+00:00",
+      "endDate": "2026-03-28T00:00:00+00:00",
       "pointsTotal": 2,
-      "storiesTotal": 1
+      "storiesTotal": 1,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 16,
@@ -225,6 +230,27 @@
       "themeGoal": "T3 Developer Autonomy \u2014 E12 code quality: GitLab CI integration for SonarQube and ReportPortal"
     }
   ],
-  "activeSprint": "prd/increment-15-remediation.json",
-  "currentIncrement": 15
+  "activeSprint": "prd/increment-16-code-quality.json",
+  "currentIncrement": 16,
+  "sprintHistory": [
+    {
+      "increment": 15,
+      "name": "remediation",
+      "endDate": "2026-03-28T00:00:00+00:00",
+      "pointsCompleted": 2,
+      "storiesTotal": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 15,
+      "pointsCompleted": 2,
+      "storiesAccepted": 1,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-28T00:00:00+00:00"
+    }
+  ]
 }
