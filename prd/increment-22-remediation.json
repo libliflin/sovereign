@@ -14,7 +14,7 @@
       ],
       "priority": 0,
       "points": 1,
-      "passes": true,
+      "passes": false,
       "reviewed": false,
       "epicId": "E1",
       "themeId": "T3",
@@ -31,7 +31,10 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green."
-      }
+      },
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ]
     },
     {
       "id": "KAIZEN-004r",
@@ -42,9 +45,11 @@
       "branchName": "kaizen/pre-retro-review-guard",
       "priority": 1,
       "points": 1,
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ],
       "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
@@ -79,7 +84,7 @@
       "themeId": "T3",
       "branchName": "fix/plan-ceremony-pending-increment",
       "dependencies": [],
-      "passes": true,
+      "passes": false,
       "reviewed": false,
       "points": 2,
       "priority": 1,
@@ -94,7 +99,10 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Specific score 4: 'plan.md or the plan ceremony runner' is ambiguous \u2014 should name exactly one file to modify. Measurable score 4: AC1 ('contains logic') is not a binary shell command; should be a grep or python test. Time-bound score 4: AC3 conditional 'if any .sh files are modified' leaves ambiguity about scope of shellcheck gate."
-      }
+      },
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ]
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -108,12 +116,14 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
         "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
       ],
-      "passes": true,
+      "passes": false,
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
       "reviewed": false,
-      "reviewNotes": [],
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ],
       "attempts": 1,
       "priority": 1,
       "smart": {
@@ -139,9 +149,11 @@
       "branchName": "kaizen/e15-target-increment",
       "priority": 2,
       "points": 1,
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ],
       "attempts": 1,
       "dependencies": [],
       "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
@@ -164,9 +176,11 @@
       "branchName": "kaizen/retro-patch-naming",
       "priority": 3,
       "points": 1,
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ],
       "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
@@ -195,9 +209,11 @@
       "branchName": "kaizen/remove-phase-field",
       "priority": 4,
       "points": 1,
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
+      "reviewNotes": [
+        "[SMOKE-FAIL] see _lastSmokeTestFailures"
+      ],
       "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
