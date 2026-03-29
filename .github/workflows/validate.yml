@@ -109,12 +109,12 @@ jobs:
             echo "No values.yaml — skipping replicaCount check"
             exit 0
           fi
-          # Check for ha_exception in vendor/VENDORS.yaml for this chart
+          # Check for ha_exception in platform/vendor/VENDORS.yaml for this chart
           HA_EXCEPTION=$(python3 -c "
           import yaml, sys
           chart = '${{ matrix.chart }}'
           try:
-              with open('vendor/VENDORS.yaml') as f:
+              with open('platform/vendor/VENDORS.yaml') as f:
                   data = yaml.safe_load(f)
               for v in data.get('vendors', []):
                   if v.get('name') == chart and v.get('ha_exception') is True:
@@ -125,7 +125,7 @@ jobs:
           print('false')
           " 2>/dev/null || echo "false")
           if [ "$HA_EXCEPTION" = "true" ]; then
-            echo "INFO: ha_exception=true for ${{ matrix.chart }} in vendor/VENDORS.yaml — replicaCount check skipped"
+            echo "INFO: ha_exception=true for ${{ matrix.chart }} in platform/vendor/VENDORS.yaml — replicaCount check skipped"
             exit 0
           fi
           REPLICA=$(python3 -c "
@@ -207,8 +207,8 @@ jobs:
 
       - name: Shellcheck vendor scripts (if any)
         run: |
-          if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
-            find vendor -name "*.sh" -print0 | xargs -0 shellcheck -S error
+          if ls platform/vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
+            find platform/vendor -name "*.sh" -print0 | xargs -0 shellcheck -S error
           else
             echo "No vendor scripts yet — skipping"
           fi
@@ -216,8 +216,8 @@ jobs:
       - name: Assert vendor scripts handle --dry-run and --backup
         run: |
           FAIL=0
-          if ls vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
-            for script in vendor/*.sh; do
+          if ls platform/vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
+            for script in platform/vendor/*.sh; do
               if ! grep -qE "dry.run|DRY_RUN" "$script"; then
                 echo "ERROR: $script missing --dry-run handling"
                 FAIL=1
@@ -237,27 +237,27 @@ jobs:
     name: Vendor Audit
     runs-on: ubuntu-latest
     if: >
-      contains(github.event.head_commit.modified, 'vendor/') ||
-      contains(toJson(github.event.pull_request.changed_files), 'vendor/')
+      contains(github.event.head_commit.modified, 'platform/vendor/') ||
+      contains(toJson(github.event.pull_request.changed_files), 'platform/vendor/')
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run vendor/audit.sh
+      - name: Run platform/vendor/audit.sh
         run: |
-          if [ -f vendor/audit.sh ]; then
-            bash vendor/audit.sh
+          if [ -f platform/vendor/audit.sh ]; then
+            bash platform/vendor/audit.sh
           else
-            echo "vendor/audit.sh not yet created — skipping"
+            echo "platform/vendor/audit.sh not yet created — skipping"
           fi
 
       - name: Validate VENDORS.yaml schema
         run: |
-          if [ -f vendor/VENDORS.yaml ]; then
+          if [ -f platform/vendor/VENDORS.yaml ]; then
             python3 - <<'PYEOF'
           import yaml, sys
 
-          with open('vendor/VENDORS.yaml') as f:
+          with open('platform/vendor/VENDORS.yaml') as f:
               vendors = yaml.safe_load(f)
 
           required = ['name', 'upstream', 'version', 'license', 'distroless']
@@ -282,7 +282,7 @@ jobs:
           print(f"✓ VENDORS.yaml: {len(vendors.get('vendors', []))} entries validated")
           PYEOF
           else
-            echo "vendor/VENDORS.yaml not yet created — skipping"
+            echo "platform/vendor/VENDORS.yaml not yet created — skipping"
           fi
 
       - name: Validate recipe.yaml rollout and backup sections
@@ -293,7 +293,7 @@ jobs:
           errors = []
           checked = 0
 
-          for root, dirs, files in os.walk('vendor/recipes'):
+          for root, dirs, files in os.walk('platform/vendor/recipes'):
               for fname in files:
                   if fname == 'recipe.yaml':
                       path = os.path.join(root, fname)
