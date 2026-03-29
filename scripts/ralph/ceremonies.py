@@ -444,13 +444,20 @@ def main() -> int:
                     ralph_exit = ai_lib.run_ralph(SCRIPT_DIR / "ralph.sh", sprint_file, args.tool, 10, log_file)
                     _git_commit("execute", [str(active_sprint)])
                     if ralph_exit != 0:
-                        # Andon cord: stop the line, don't run meaningless
-                        # downstream steps on zero work. Exit 0 so the
-                        # while-loop retries the full cycle — orient will
-                        # re-assess and ceremonies will re-run from the top.
+                        # Andon: stop, record the failure, retry. Same pattern
+                        # as smoke/proof — the failure gets written to the sprint
+                        # file and injected into Ralph's prompt on the next attempt.
+                        sprint_lib.write_failures(sprint_file, "_lastExecuteFailure", [{
+                            "step": "execute",
+                            "exitCode": ralph_exit,
+                            "message": f"ralph.sh exited {ralph_exit}",
+                        }])
                         print(f"\n  EXECUTE FAILED (ralph.sh exited {ralph_exit}).")
-                        print(f"  Andon: stopping this cycle. Will retry from orient.")
-                        return 0
+                        if retry < args.max_retries:
+                            print(f"  Retrying from execute ({retry + 1}/{args.max_retries})...")
+                            continue
+                        print("\nFATAL: Execute failed after max retries.")
+                        return 1
                     sprint = sprint_lib.load(sprint_file)
                     passing = sprint_lib.stories_passing(sprint)
                     print(f"\n  Passing: {len(passing)}/{len(sprint.get('stories', []))}")

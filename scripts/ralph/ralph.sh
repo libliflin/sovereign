@@ -101,9 +101,10 @@ build_failure_context() {
   [[ ! -f "$sprint_file" ]] && return 0
   ! command -v jq &>/dev/null && return 0
 
-  local smoke_count proof_count review_count
+  local smoke_count proof_count review_count exec_count
   smoke_count=$(jq '._lastSmokeTestFailures // [] | length' "$sprint_file" 2>/dev/null || echo 0)
   proof_count=$(jq '._lastProofOfWorkFailures // [] | length' "$sprint_file" 2>/dev/null || echo 0)
+  exec_count=$(jq '._lastExecuteFailure // [] | length' "$sprint_file" 2>/dev/null || echo 0)
 
   # Stories re-opened by review: passes:false AND have a gate-stamped reviewNote
   review_count=$(jq '[
@@ -119,7 +120,7 @@ build_failure_context() {
     )
   ] | length' "$sprint_file" 2>/dev/null || echo 0)
 
-  local total=$(( smoke_count + proof_count + review_count ))
+  local total=$(( smoke_count + proof_count + review_count + exec_count ))
   if [[ $total -eq 0 ]]; then return 0; fi
 
   cat >> "$out_file" <<'HEADER'
@@ -145,6 +146,18 @@ HEADER
       (.output // "(no output captured)"),
       "```",
       ""' "$sprint_file" 2>/dev/null >> "$out_file" || true
+  fi
+
+  if [[ $exec_count -gt 0 ]]; then
+    echo "### Execute Failure (ralph.sh crashed on previous attempt)" >> "$out_file"
+    echo "" >> "$out_file"
+    jq -r '._lastExecuteFailure[] |
+      "- **\(.step)**: \(.message) (exit code \(.exitCode))"' "$sprint_file" 2>/dev/null >> "$out_file" || true
+    echo "" >> "$out_file"
+    echo "ralph.sh failed before any stories were implemented. This is usually" >> "$out_file"
+    echo "a git or infrastructure problem, not a story problem. Check the error" >> "$out_file"
+    echo "above and fix the root cause before attempting stories." >> "$out_file"
+    echo "" >> "$out_file"
   fi
 
   if [[ $proof_count -gt 0 ]]; then

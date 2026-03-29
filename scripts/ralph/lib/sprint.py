@@ -51,6 +51,7 @@ def clear_failures(path: Path) -> None:
     sprint = load(path)
     sprint.pop("_lastSmokeTestFailures", None)
     sprint.pop("_lastProofOfWorkFailures", None)
+    sprint.pop("_lastExecuteFailure", None)
     save(path, sprint)
 
 
