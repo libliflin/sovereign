@@ -15,7 +15,7 @@
       "priority": 0,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "fix/gge-g5-andon",
@@ -191,5 +191,7 @@
         "notes": "Relevant score 4: data model cleanup is useful but not blocking the sprint goal. Can be deferred without impact to KIND-001."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
