@@ -197,6 +197,28 @@ runs, `manifest.json` must contain at least one increment with `status: "pending
 backlog is drained and no pending increment exists, GGE G5 will fail and the pipeline stalls.
 When planning a new sprint, verify the pending increment exists before closing the plan ceremony.
 
+**Plan ceremony must mark pulled stories as active in backlog**: when the plan ceremony pulls a
+story into a sprint file, it must set `status: "active"` on that story in `backlog.json` (or
+remove it). Leaving stories as open in both the sprint file and the backlog creates duplicates
+that confuse planning and inflate backlog size. If you see the same story ID in both places,
+the sprint copy is authoritative — update the backlog entry to `status: "active"`.
+
+**SMART achievable < 4 is a hard split gate, not an advisory**: a story with `smart.achievable < 4`
+must be split before it can enter a sprint. Grooming may not pull it as-is, even if it fits
+within sprint capacity in points. The achievable score captures bundled scope that will exceed
+a single Ralph iteration budget. If achievable=3 reached the sprint, the story will almost
+certainly be returned to backlog incomplete. Split first.
+
+**Acceptance criteria must not reference specific completed sprint files by name**: an AC like
+"run against `prd/increment-17-restructure.json`" creates a dependency on a file whose content
+may change or whose path may be retired. Use a temp fixture file instead:
+```bash
+echo '{"increments": [...]}' > /tmp/test-manifest.json
+python3 script.py /tmp/test-manifest.json
+```
+Stories with ACs that reference named completed sprint files have measurability score ≤ 4
+and will be flagged by SMART review. Fix at grooming.
+
 **Kind cluster bootstrap is not yet end-to-end**: `cluster/kind/bootstrap.sh` exists as the
 declared entry point but the full kind cluster bootstrap (KIND-001a, KIND-001b) has not been
 implemented. Stories that depend on a running kind cluster (`kind get clusters` showing
@@ -267,13 +289,15 @@ returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in
 charts migrated to platform/charts/ and cluster/kind/charts/),
 18 (remediation — zero stories accepted; GGE-G5-andon returned to backlog before execute ran),
 19 (remediation — GGE G5 restored: increment 20 kind-integration added as pending; 1/1 accepted),
-20 (kind-integration — 1/6 stories accepted: GGE-G5-andon only. Kind cluster bootstrap was NOT
-delivered: KIND-001 was split into KIND-001a + KIND-001b and returned to backlog. Increment 21
-now has pending status in manifest.json.)
+20 (kind-integration — 1/6 stories accepted: GGE-G5-andon only. KIND-001 split into KIND-001a +
+KIND-001b and returned to backlog. Increment 21 added as pending.),
+21 (platform-foundations — 0/1 stories accepted: GGE-G5-andon returned to backlog before Ralph
+ran any implementation cycles. Sprint closed without execution. No pending increment queued —
+pipeline stalled pending plan ceremony.)
 
-Increment active/pending: 21 (platform-foundations) — deploy core sovereign Helm charts into
-kind cluster. Depends on KIND-001a and KIND-001b which are in the backlog. The plan ceremony
-must pull KIND-001a/KIND-001b before or alongside platform-foundations stories.
+Increment active: 21 is `currentIncrement` and `activeSprint` in manifest.json but was closed
+by retro with 0 accepted stories. The advance ceremony will move the pointer. No pending increment
+exists in manifest.json — the plan ceremony must add one before GGE G5 passes.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -304,13 +328,14 @@ see Known model inconsistencies)
 - You are about to commit code containing `# TODO`, `# FIXME`, or `# HACK` → deferred work is incomplete work; use the blocker protocol instead
 - A story implementation touches files outside the stated story scope (more than ~3 charts for a 1-service story, new dependencies not in VENDORS.yaml, etc.) → stop and split before implementing
 - A chart is created in the root `charts/` directory → wrong location; use `platform/charts/` or `cluster/kind/charts/` depending on purpose
+- A story has `smart.achievable < 4` and has not been split → split first, do not implement
 
 ---
 
 ## Known model inconsistencies
 
 - `phase` field on 8 backlog stories is redundant with `epicId` (DEVEX-001/002/003, QUALITY-001/002, TEST-001/002/003) → KAIZEN-006 will remove it
-- `retro-patch-phase*.md` filenames use "phase" instead of "increment" — vocabulary inconsistency in ceremonies generation code → KAIZEN-005 will rename the pattern to `retro-patch-increment*.md`
+- Retro patch filename inconsistency: `retro-patch-increment20.md` vs `retro-patch-increment-21.md` (missing hyphen before number in increment 20) → KAIZEN-005 covers vocabulary normalization; filename pattern is a side effect
 - KAIZEN-004r (pre-retro guard): ceremonies.sh does not check for minimum execute cycles before firing retro. A sprint with zero attempts and zero accepted stories can reach retro without any work happening. KAIZEN-004r will add the guard.
 - E15 `targetIncrement` is stale ("2i" — already complete). E15 stories (KIND integration testing, HA validation) target current kind-cluster work. → KAIZEN-008 will update E15 targetIncrement to align with active increment.
 - 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001 superseded, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). The `themeId` field on a story may be intentional cross-theme attribution or drift — no migration story yet. Flag if causing planning confusion.
