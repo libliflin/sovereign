@@ -580,7 +580,7 @@ def assess(repo_root: Path) -> Assessment:
                     "reviewed": False,
                     "epicId": "E1",
                     "themeId": first_broken.get("themeId", "T3"),
-                    "branchName": f"fix/gge-{first_broken['id'].lower()}-andon",
+                    "branchName": f"fix/gge-{first_broken['id'].lower()}-andon-inc{current_phase}",
                     "dependencies": [],
                     "attempts": 0,
                     "smart": {"specific": 0, "measurable": 0, "achievable": 0,
