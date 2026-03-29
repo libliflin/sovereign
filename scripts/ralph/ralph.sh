@@ -317,53 +317,14 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
   echo "  Stories needing work: $STORIES_NEEDING_WORK"
 fi
 
-# ── Ensure story branch exists and is up-to-date with main ────────────────────
-# Stories specify a branchName. If that branch already exists (from a previous
-# sprint), it may be stale. Always merge latest main into it so the agent
-# never works on an outdated codebase.
-if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
-  # Use the first non-passing story's branch, or fall back to sprint-level branchName
-  STORY_BRANCH=$(jq -r '
-    (.stories[] | select(.passes == false) | .branchName // empty) // .branchName // empty
-  ' "$PRD_FILE" 2>/dev/null | head -1)
-
-  if [[ -n "$STORY_BRANCH" ]]; then
-    echo "  Branch: $STORY_BRANCH"
-    git fetch origin main 2>/dev/null || true
-
-    # If the working tree is dirty, commit the leftovers. Ceremonies should
-    # commit after each step, but if one forgets, warn and fix it rather
-    # than stopping the entire pipeline over uncommitted ceremony output.
-    if ! git diff --quiet || ! git diff --cached --quiet; then
-      echo "  WARNING: uncommitted changes left by ceremony — auto-committing:"
-      git diff --name-only 2>&1 | sed 's/^/    /'
-      git add -A
-      git commit -m "ceremonies: auto-commit uncommitted ceremony output" 2>/dev/null || true
-    fi
-
-    if git rev-parse --verify "origin/$STORY_BRANCH" &>/dev/null; then
-      # Branch exists remotely — check it out and merge main
-      git checkout "$STORY_BRANCH" 2>/dev/null || git checkout -b "$STORY_BRANCH" "origin/$STORY_BRANCH"
-      git merge origin/main --no-edit -m "sync: merge main into $STORY_BRANCH" || {
-        echo "  ERROR: merge conflict syncing main into $STORY_BRANCH — needs manual resolution" >&2
-        exit 1
-      }
-      echo "  ✓ Merged latest main into $STORY_BRANCH"
-    elif git rev-parse --verify "$STORY_BRANCH" &>/dev/null; then
-      # Branch exists locally only — check it out and merge main
-      git checkout "$STORY_BRANCH"
-      git merge origin/main --no-edit -m "sync: merge main into $STORY_BRANCH" || {
-        echo "  ERROR: merge conflict syncing main into $STORY_BRANCH — needs manual resolution" >&2
-        exit 1
-      }
-      echo "  ✓ Merged latest main into $STORY_BRANCH (local)"
-    else
-      # Branch doesn't exist — create from main
-      git checkout -b "$STORY_BRANCH" origin/main
-      echo "  ✓ Created $STORY_BRANCH from main"
-    fi
-
-  fi
+# ── Git hygiene before handing off to Ralph ───────────────────────────────────
+# If ceremonies left uncommitted changes, commit them so Ralph starts clean.
+# Ralph handles branch checkout/creation itself — see CLAUDE.md step 4-5.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "  WARNING: uncommitted changes left by ceremony — auto-committing:"
+  git diff --name-only 2>&1 | sed 's/^/    /'
+  git add -A
+  git commit -m "ceremonies: auto-commit dirty tree instead of hard-stopping" 2>/dev/null || true
 fi
 
 PROMPT_TMP=$(mktemp /tmp/ralph-prompt-XXXXXX)
@@ -406,13 +367,6 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     echo "Ralph completed all tasks!"
     echo "Completed at iteration $i of $MAX_ITERATIONS"
 
-    # Clean up: return to main and delete the story branch locally
-    if [[ -n "${STORY_BRANCH:-}" ]]; then
-      git checkout main 2>/dev/null || true
-      git pull origin main 2>/dev/null || true
-      git branch -d "$STORY_BRANCH" 2>/dev/null && echo "  ✓ Deleted local branch $STORY_BRANCH" || true
-      git remote prune origin 2>/dev/null || true
-    fi
     exit 0
   fi
 
@@ -422,6 +376,4 @@ done
 
 echo ""
 echo "Ralph reached max iterations ($MAX_ITERATIONS) without completing all tasks."
-# Return to main even on max-iterations — don't leave on a stale branch
-git checkout main 2>/dev/null || true
 exit 1
