@@ -22,7 +22,7 @@ Full step sequence:
   review        — AI: adversarial AC verification
   retro         — AI: 5 Whys, backlog remediation, honest close
   sync          — AI: rewrite docs/state/architecture.md + agent.md (chart, not log)
-  advance       — Python: close sprint, activate next phase
+  advance       — Python: close sprint, activate next increment
 
 Usage:
   ./ceremonies.sh                          # orient decides everything
