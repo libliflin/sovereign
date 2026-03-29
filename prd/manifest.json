@@ -202,6 +202,29 @@
         13
       ],
       "themeGoal": "T3 Developer Autonomy \u2014 complete E11 (Backstage ArgoCD app) and E12 code quality stories"
+    },
+    {
+      "id": 15,
+      "name": "remediation",
+      "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
+      "file": "prd/increment-15-remediation.json",
+      "status": "active",
+      "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
+      "dependsOn": [],
+      "startDate": "2026-03-29T03:07:54.605974+00:00",
+      "pointsTotal": 2,
+      "storiesTotal": 1
+    },
+    {
+      "id": 16,
+      "name": "code-quality",
+      "description": "Code quality integration: GitLab CI pipeline wiring for SonarQube and ReportPortal. Completes E12 epic.",
+      "file": "prd/increment-16-code-quality.json",
+      "status": "pending",
+      "dependsOn": [14],
+      "themeGoal": "T3 Developer Autonomy \u2014 E12 code quality: GitLab CI integration for SonarQube and ReportPortal"
     }
-  ]
+  ],
+  "activeSprint": "prd/increment-15-remediation.json",
+  "currentIncrement": 15
 }

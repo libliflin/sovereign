@@ -1,0 +1,38 @@
+{
+  "increment": 15,
+  "name": "remediation",
+  "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
+  "sprintGoal": "GGE G5 passes in orient: manifest always has at least one pending increment so the plan ceremony never stalls.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "GGE-G5-andon",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment to execute",
+      "description": "Golden Goose Egg G5 indicator is failing. Indicator type: gate_passing. Restore it immediately. Rationale: The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently \u2014 no error, no alert, just nothing to plan. This egg catches that stall state immediately. First triggered when increment 9 completed with no successor increment defined.\n\nFix: Add at least one entry to prd/manifest.json increments[] with status==\"pending\". These should be meaningful future increments (e.g. the next theme or kaizen sprint), not placeholder entries. Use the theme-review ceremony output or backlog priorities to determine appropriate future increment names.",
+      "acceptanceCriteria": [
+        "GGE G5 indicator passes in orient"
+      ],
+      "testPlan": "Run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1, f'No pending increments \u2014 GGE G5 still failing'; print(f'{len(pending)} pending increment(s) \u2014 GGE G5 OK')\"\nExpected output: '1 pending increment(s) \u2014 GGE G5 OK' (or more).",
+      "priority": 0,
+      "phase": 15,
+      "points": 2,
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "feature/gge-g5-andon",
+      "dependencies": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: the story names prd/manifest.json and the status='pending' field, but does not specify the exact structure or content of the increment entry to add (required fields, example values). The description defers content decisions to 'theme-review ceremony output or backlog priorities'."
+      },
+      "readinessNote": "Priority-0 ANDON \u2014 included despite SMART gap. Fix: add pending increments to prd/manifest.json. branchName updated to feature/ prefix to satisfy schema. testPlan added at planning."
+    }
+  ]
+}
