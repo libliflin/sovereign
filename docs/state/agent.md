@@ -192,10 +192,10 @@ and remains unimplemented. Check `backlog.json` — the story will have been ret
 The planning ceremony that follows will typically resolve the root condition (e.g., adding a
 pending increment resolves GGE-G5). If not, the backlog story covers the fallback.
 
-**Plan ceremony must always leave a pending increment queued**: before the advance ceremony
-runs, `manifest.json` must contain at least one increment with `status: "pending"`. If the
-backlog is drained and no pending increment exists, GGE G5 will fail and the pipeline stalls.
-When planning a new sprint, verify the pending increment exists before closing the plan ceremony.
+**Plan ceremony must always leave a pending increment queued**: the plan ceremony automatically
+appends a pending increment stub after creating an active sprint (KAIZEN-007r). Before the advance
+ceremony runs, verify `manifest.json` contains at least one increment with `status: "pending"`.
+If the pending stub is missing, the next GGE G5 check will fail and the pipeline stalls.
 
 **Plan ceremony must mark pulled stories as active in backlog**: when the plan ceremony pulls a
 story into a sprint file, it must set `status: "active"` on that story in `backlog.json` (or
@@ -208,6 +208,19 @@ must be split before it can enter a sprint. Grooming may not pull it as-is, even
 within sprint capacity in points. The achievable score captures bundled scope that will exceed
 a single Ralph iteration budget. If achievable=3 reached the sprint, the story will almost
 certainly be returned to backlog incomplete. Split first.
+
+**SMART achievable must validate test command flags**: before accepting a story, verify that every
+shell command in `testPlan` and `acceptanceCriteria` uses only flags and invocation paths that
+actually exist in the codebase. A command referencing a flag like `--sprint` must be rejected if
+that flag is not implemented. Run `<cmd> --help` or grep the source for the flag. A story whose
+testPlan references an unimplemented flag has `smart.achievable ≤ 3` and must be fixed at
+grooming — it will fail review.
+
+**Integration test ACs must be self-contained**: if an AC requires temporarily mutating a system
+file (e.g. manifest.json) or invoking a live AI ceremony to verify, it is not verifiable in a
+CI-safe way. Rewrite such ACs as unit tests that import and call the logic directly with mock
+data. An AC that cannot be run without side-effecting the live manifest is an unverifiable AC —
+the review ceremony will correctly refuse to accept it.
 
 **Acceptance criteria must not reference specific completed sprint files by name**: an AC like
 "run against `prd/increment-17-restructure.json`" creates a dependency on a file whose content
@@ -266,7 +279,7 @@ Do not mark `passes: true` if any gate fails. Do not self-certify — gates will
 - **Retro**: closes the sprint, returns incomplete work to backlog with 5 Whys
 - **Sync**: rewrites `docs/state/architecture.md` and `docs/state/agent.md`
 - **Advance**: moves the increment pointer in manifest.json
-- **Plan**: populates the next sprint file with stories from the backlog
+- **Plan**: populates the next sprint file with stories from the backlog; auto-queues a pending increment stub
 
 You implement. Ceremonies verify. Don't conflate the two.
 
@@ -292,12 +305,14 @@ charts migrated to platform/charts/ and cluster/kind/charts/),
 20 (kind-integration — 1/6 stories accepted: GGE-G5-andon only. KIND-001 split into KIND-001a +
 KIND-001b and returned to backlog. Increment 21 added as pending.),
 21 (platform-foundations — 0/1 stories accepted: GGE-G5-andon returned to backlog before Ralph
-ran any implementation cycles. Sprint closed without execution. No pending increment queued —
-pipeline stalled pending plan ceremony.)
+ran any implementation cycles. Sprint closed without execution.),
+22 (remediation — 6/7 accepted: GGE-G5-andon, KAIZEN-007r plan ceremony pending-stub auto-prime,
+RESTRUCTURE-001a contract layer validator + test fixtures, KAIZEN-008 E15 targetIncrement updated,
+KAIZEN-005 retro-patch naming normalized, KAIZEN-006 phase field removed from backlog stories;
+KAIZEN-004r pre-retro guard returned to backlog as KAIZEN-010r — unit test AC needed)
 
-Increment active: 21 is `currentIncrement` and `activeSprint` in manifest.json but was closed
-by retro with 0 accepted stories. The advance ceremony will move the pointer. No pending increment
-exists in manifest.json — the plan ceremony must add one before GGE G5 passes.
+Increment active: 22 is complete; advance ceremony will move pointer to increment 23 (pending stub).
+Increment 23 is a placeholder — plan ceremony will populate it with stories from the backlog.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -306,8 +321,7 @@ E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and
 Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; stories 027a
 full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube +
 ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration story 052 pending),
-E13 (testing infrastructure + HA validation), E15 (HA integration testing — targetIncrement stale,
-see Known model inconsistencies)
+E13 (testing infrastructure + HA validation), E15 (HA integration testing — targetIncrement: 22)
 
 ---
 
@@ -334,8 +348,5 @@ see Known model inconsistencies)
 
 ## Known model inconsistencies
 
-- `phase` field on 8 backlog stories is redundant with `epicId` (DEVEX-001/002/003, QUALITY-001/002, TEST-001/002/003) → KAIZEN-006 will remove it
-- Retro patch filename inconsistency: `retro-patch-increment20.md` vs `retro-patch-increment-21.md` (missing hyphen before number in increment 20) → KAIZEN-005 covers vocabulary normalization; filename pattern is a side effect
-- KAIZEN-004r (pre-retro guard): ceremonies.sh does not check for minimum execute cycles before firing retro. A sprint with zero attempts and zero accepted stories can reach retro without any work happening. KAIZEN-004r will add the guard.
-- E15 `targetIncrement` is stale ("2i" — already complete). E15 stories (KIND integration testing, HA validation) target current kind-cluster work. → KAIZEN-008 will update E15 targetIncrement to align with active increment.
-- 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001 superseded, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). The `themeId` field on a story may be intentional cross-theme attribution or drift — no migration story yet. Flag if causing planning confusion.
+- KAIZEN-004r (pre-retro guard): guard code implemented at ceremonies.py:538-558 but AC2 (fixture-based test) is unverifiable as written; KAIZEN-010r will add a unit test of the guard logic — then KAIZEN-004r can be re-verified with the updated AC
+- 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.

@@ -41,7 +41,7 @@ The word "phase" is retired from code and data. If you see it in Python or JSON,
 | Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
 | Bootstrapping | `cluster/kind/bootstrap.sh` (kind) and `bootstrap/bootstrap.sh` (VPS) are the only manual steps. Everything after is ArgoCD. |
 | Helm charts | Platform-level service charts in `platform/charts/<service>/`. Kind cluster bootstrap charts in `cluster/kind/charts/<service>/`. The root `charts/` directory is empty and retired. |
-| Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` runs pre-deployment validation against this schema. |
+| Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces autarky invariants (externalEgressBlocked=true) before any cluster is provisioned. |
 | Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
 | ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. Validate with `yq e '.'` — not `kubectl apply --dry-run` (CRDs not installed locally). |
 
