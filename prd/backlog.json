@@ -241,28 +241,5 @@
       "attempts": 0
     },
 
-    {
-      "id": "CLUSTER-HETZNER-001",
-      "title": "cluster/hetzner/bootstrap.sh produces a valid cluster-values.yaml",
-      "description": "First non-kind cluster provider. Same contract, different implementation: real Hetzner VPS nodes, K3s + kube-vip, Rook/Ceph for storage, real Cilium. Outputs cluster-values.yaml that passes contract validation. NOT in CI — manual execution with real credentials.",
-      "acceptanceCriteria": [
-        "./cluster/hetzner/bootstrap.sh --dry-run exits 0",
-        "shellcheck -S error cluster/hetzner/bootstrap.sh exits 0",
-        "With real HETZNER_TOKEN: cluster provisions 3 nodes, all Ready",
-        "python3 contract/validate.py cluster-values.yaml exits 0",
-        "platform/deploy.sh runs successfully against the Hetzner cluster"
-      ],
-      "priority": 20,
-      "points": 5,
-      "passes": false,
-      "reviewed": false,
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "feature/cluster-hetzner",
-      "dependencies": ["PLATFORM-006"],
-      "attempts": 0,
-      "blockerNote": "Requires HETZNER_TOKEN. Manual execution only. Do not implement until PLATFORM-006 is passing."
-    }
-
   ]
 }
