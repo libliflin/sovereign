@@ -100,7 +100,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
     },
     {
       "id": "RESTRUCTURE-001c",
@@ -131,7 +132,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001b has passes=false. Resolve that story first."
     },
     {
       "id": "KIND-001",
@@ -165,7 +167,8 @@
         "KIND-001b"
       ],
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
-      "returnedReason": "Split into KIND-001a and KIND-001b (SMART achievable=3, 8 integration points)"
+      "returnedReason": "Split into KIND-001a and KIND-001b (SMART achievable=3, 8 integration points)",
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
     },
     {
       "id": "KIND-002",
@@ -188,7 +191,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Dependency KIND-001 must pass before this story can be started. KIND-001 is in increment-20 sprint. Re-plan after KIND-001 is accepted."
+      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-001",
@@ -211,7 +214,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan. Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-002",
@@ -234,7 +237,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan. Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-003",
@@ -259,7 +262,7 @@
         "PLATFORM-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan. Unresolved dependencies: KIND-001 and PLATFORM-001 must pass first."
+      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-004",
@@ -283,7 +286,7 @@
         "PLATFORM-002"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. AC 'curl the token endpoint returns a valid JWT' is vague \u2014 specify the exact curl command and the JWT field to assert on (e.g., .access_token). Add a testPlan with exact commands. Unresolved dependencies: PLATFORM-001 and PLATFORM-002 must pass first."
+      "readinessNote": "BLOCKED: dependency PLATFORM-001 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-005",
@@ -307,7 +310,7 @@
         "PLATFORM-004"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. AC 'The commit appears in the GitLab UI (verified via API)' needs the exact API call specified (e.g., curl http://gitlab.sovereign.local/api/v4/projects/1/repository/commits). Add a testPlan with exact commands. Unresolved dependencies: PLATFORM-003 and PLATFORM-004 must pass first."
+      "readinessNote": "BLOCKED: dependency PLATFORM-003 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-006",
@@ -331,7 +334,7 @@
         "PLATFORM-005"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only argocd; kubectl get pods -n argocd; argocd app create test-app ...; git push test manifest; argocd app wait test-app --sync; kubectl get configmap -n argocd-test; show output verbatim. Unresolved dependency: PLATFORM-005 must pass first."
+      "readinessNote": "BLOCKED: dependency PLATFORM-005 has passes=false. Resolve that story first."
     },
     {
       "id": "PLATFORM-007",
@@ -354,7 +357,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only prometheus-stack; kubectl get pods -n monitoring; kubectl port-forward svc/prometheus-operated 9090:9090 -n monitoring & curl 'http://localhost:9090/api/v1/query?query=up'; show output verbatim. Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
       "id": "KAIZEN-001",
@@ -378,7 +381,7 @@
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
       "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
-      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (contract/validate.py does not exist until RESTRUCTURE-001 completes)."
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
     },
     {
       "id": "KAIZEN-002",
@@ -402,7 +405,7 @@
         "markdownlint docs/quickstart.md exits 0"
       ],
       "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (new monorepo paths being documented do not exist until RESTRUCTURE-001 completes)."
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
     },
     {
       "id": "KAIZEN-003",
@@ -483,7 +486,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-004 has passes=false. Resolve that story first."
     },
     {
       "id": "DEVEX-002",
@@ -518,7 +522,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-004 has passes=false. Resolve that story first."
     },
     {
       "id": "DEVEX-003",
@@ -551,7 +556,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-001",
@@ -586,7 +592,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-004 has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-002",
@@ -621,7 +628,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-001 has passes=false. Resolve that story first."
     },
     {
       "id": "TEST-001",
@@ -655,7 +663,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-006 has passes=false. Resolve that story first."
     },
     {
       "id": "TEST-002",
@@ -690,7 +699,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-006 has passes=false. Resolve that story first."
     },
     {
       "id": "TEST-003",
@@ -724,7 +734,8 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
       "id": "KAIZEN-005",
@@ -823,7 +834,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
     },
     {
       "id": "KIND-001b",
@@ -858,7 +870,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
     }
   ]
 }

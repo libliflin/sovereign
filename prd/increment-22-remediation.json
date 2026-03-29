@@ -23,7 +23,15 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-21-platform-foundations.json",
       "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle.",
-      "phase": 22
+      "phase": 22,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     },
     {
       "id": "KAIZEN-004r",
@@ -48,7 +56,15 @@
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
       "returnedReason": "Sprint closed before iteration; AC2 fixed \u2014 no longer references increment-17",
-      "phase": 22
+      "phase": 22,
+      "smart": {
+        "specific": 3,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 3: implementation approach not specified (bash guard vs Python call vs new ceremony step). Measurable score 4: AC2 assumes ceremonies.sh supports --start-at flag; if absent, test plan is blocked. Achievable score 4: fixture creation adds scope beyond the guard logic. Time-bound score 4: AC2 fixture creation is implicit extra work not called out in points estimate."
+      }
     },
     {
       "id": "KAIZEN-007r",
@@ -70,7 +86,15 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
       "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
-      "phase": 22
+      "phase": 22,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'plan.md or the plan ceremony runner' is ambiguous \u2014 should name exactly one file to modify. Measurable score 4: AC1 ('contains logic') is not a binary shell command; should be a grep or python test. Time-bound score 4: AC3 conditional 'if any .sh files are modified' leaves ambiguity about scope of shellcheck gate."
+      }
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -93,12 +117,12 @@
       "attempts": 0,
       "priority": 1,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: creates 4 files (schema, validator, valid fixture, invalid fixture) \u2014 near top of 2-point budget but doable."
       },
       "phase": 22
     },
@@ -121,7 +145,15 @@
       "attempts": 0,
       "dependencies": [],
       "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
-      "phase": 22
+      "phase": 22,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Specific score 4: target value is given as 'increment 20 or 21' \u2014 should specify the exact value (22, the active sprint). Measurable score 4: AC1 asserts the value is NOT in a list of stale IDs but does not assert it IS a specific valid value. Relevant score 4: useful for planning accuracy but does not block current sprint execution."
+      }
     },
     {
       "id": "KAIZEN-005",
@@ -144,7 +176,15 @@
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
       "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
-      "phase": 22
+      "phase": 22,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: naming cleanup improves consistency but does not block the sprint goal (GGE-G5 fix, plan ceremony self-prime)."
+      }
     },
     {
       "id": "KAIZEN-006",
@@ -166,7 +206,15 @@
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
       "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
-      "phase": 22
+      "phase": 22,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'update the story schema to mark it as deprecated' does not name the schema file. Time-bound score 4: the schema update sub-task is open-ended without a named file. Relevant score 4: data model hygiene, useful but does not block the sprint goal."
+      }
     }
   ]
 }
