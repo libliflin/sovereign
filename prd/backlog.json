@@ -1536,7 +1536,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-007a has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-006",
@@ -1659,7 +1660,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-004 has passes=false. Resolve that story first."
     },
     {
       "id": "DEVEX-009",
@@ -1725,7 +1727,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
     },
     {
       "id": "HA-007",
@@ -1760,7 +1763,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency HA-001 has passes=false. Resolve that story first."
     },
     {
       "id": "HA-008",
