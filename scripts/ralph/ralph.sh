@@ -318,10 +318,14 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
     echo "  Branch: $STORY_BRANCH"
     git fetch origin main 2>/dev/null || true
 
-    # Stash any uncommitted changes so checkout doesn't fail
-    STASHED=false
+    # Refuse to proceed if the working tree is dirty — ceremonies should
+    # have committed everything. A dirty tree means a bug upstream.
     if ! git diff --quiet || ! git diff --cached --quiet; then
-      git stash push -m "ralph: auto-stash before branch sync" 2>/dev/null && STASHED=true
+      echo "  ERROR: uncommitted changes detected before branch checkout:" >&2
+      git diff --name-only 2>&1 | sed 's/^/    /' >&2
+      git diff --cached --name-only 2>&1 | sed 's/^/    (staged) /' >&2
+      echo "  This is a bug — the ceremony that modified these files should have committed them." >&2
+      exit 1
     fi
 
     if git rev-parse --verify "origin/$STORY_BRANCH" &>/dev/null; then
@@ -346,10 +350,6 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
       echo "  ✓ Created $STORY_BRANCH from main"
     fi
 
-    # Restore stashed changes (sprint file updates from ceremonies)
-    if [[ "$STASHED" == "true" ]]; then
-      git stash pop 2>/dev/null || echo "  WARNING: stash pop failed — may need manual resolution"
-    fi
   fi
 fi
 
