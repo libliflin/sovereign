@@ -21,28 +21,95 @@
       "attempts": 0
     },
     {
-      "id": "RESTRUCTURE-001",
-      "title": "Monorepo restructure: contract/, cluster/kind/, platform/",
-      "description": "Establish the clean separation between cluster provider and platform. Create contract/v1/cluster.schema.yaml, cluster/kind/ skeleton, platform/ with deploy.sh. Archive all non-kind providers. This story is the rough shape \u2014 subsequent stories make each layer operational.",
-      "acceptanceCriteria": [
-        "contract/v1/cluster.schema.yaml exists and is valid YAML",
-        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
-        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with AUTARKY VIOLATION message",
-        "cluster/kind/bootstrap.sh exists and passes shellcheck -S error",
-        "platform/deploy.sh exists and passes shellcheck -S error",
-        "bootstrap/providers/ is removed from working tree (archived in git history)",
-        "All platform charts are under platform/charts/",
-        "All cluster charts are under cluster/kind/charts/"
-      ],
-      "priority": 1,
-      "points": 3,
-      "passes": false,
-      "reviewed": false,
+      "id": "RESTRUCTURE-001a",
       "epicId": "E2",
       "themeId": "T1",
       "branchName": "restructure/monorepo",
+      "title": "Contract layer: cluster.schema.yaml, validate.py, test fixtures",
+      "description": "Create contract/v1/cluster.schema.yaml defining the sovereign cluster contract invariants. Create contract/validate.py that validates a cluster config YAML against the schema and exits 1 with an 'AUTARKY VIOLATION' message on constraint failures. Create test fixtures: contract/v1/tests/valid.yaml (passes validation) and contract/v1/tests/invalid-egress-not-blocked.yaml (fails with AUTARKY VIOLATION).",
+      "acceptanceCriteria": [
+        "contract/v1/cluster.schema.yaml exists and is valid YAML: python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" exits 0",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
+        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
-      "attempts": 0
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 1,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
+      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
+      "acceptanceCriteria": [
+        "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
+        "bootstrap/providers/ does not exist in working tree: [ ! -d bootstrap/providers ] exits 0"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; shellcheck -S error platform/deploy.sh; [ ! -d bootstrap/providers ] && echo 'providers archived OK'; show all output verbatim.",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 2,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001c",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Chart migration: platform/charts/ and cluster/kind/charts/ explicit placement",
+      "description": "Migrate (and verify) all chart directories to the correct tier. Platform-layer charts (_globals, argocd, backstage, chaos-mesh, code-server, crossplane, falco, gitlab, harbor, istio, k6-operator, keycloak, kiali, loki, mailhog, opa-gatekeeper, prometheus-stack, reportportal, selenium-grid, sonarqube, sovereign-pm, tempo, thanos, trivy-operator, wiremock) must be under platform/charts/. Cluster-layer charts (cert-manager, cilium, sealed-secrets) must be under cluster/kind/charts/. The root charts/ directory must be empty to confirm no charts remain in the old location.",
+      "acceptanceCriteria": [
+        "ls platform/charts/ contains all 25 platform charts: _globals argocd backstage chaos-mesh code-server crossplane falco gitlab harbor istio k6-operator keycloak kiali loki mailhog opa-gatekeeper prometheus-stack reportportal selenium-grid sonarqube sovereign-pm tempo thanos trivy-operator wiremock",
+        "ls cluster/kind/charts/ contains all 3 cluster charts: cert-manager cilium sealed-secrets",
+        "root charts/ is empty: [ -z \"$(ls charts/ 2>/dev/null)\" ] exits 0"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "ls platform/charts/; ls cluster/kind/charts/; [ -z \"$(ls charts/ 2>/dev/null)\" ] && echo 'root charts/ empty'; show all output verbatim.",
+      "dependencies": [
+        "RESTRUCTURE-001b"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 3,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
     },
     {
       "id": "KIND-001",
@@ -67,9 +134,10 @@
       "themeId": "T3",
       "branchName": "feature/kind-bootstrap",
       "dependencies": [
-        "RESTRUCTURE-001"
+        "RESTRUCTURE-001c"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan. Unresolved dependency: RESTRUCTURE-001 must pass first."
     },
     {
       "id": "KIND-002",
@@ -91,7 +159,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan. Vague ACs (no runnable verification commands for egress probe and internal comms). Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-001",
@@ -113,7 +182,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-002",
@@ -135,7 +205,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-003",
@@ -159,7 +230,8 @@
         "KIND-001",
         "PLATFORM-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan. Unresolved dependencies: KIND-001 and PLATFORM-001 must pass first."
     },
     {
       "id": "PLATFORM-004",
@@ -182,7 +254,8 @@
         "PLATFORM-001",
         "PLATFORM-002"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. AC 'curl the token endpoint returns a valid JWT' is vague \u2014 specify the exact curl command and the JWT field to assert on (e.g., .access_token). Add a testPlan with exact commands. Unresolved dependencies: PLATFORM-001 and PLATFORM-002 must pass first."
     },
     {
       "id": "PLATFORM-005",
@@ -205,7 +278,8 @@
         "PLATFORM-003",
         "PLATFORM-004"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. AC 'The commit appears in the GitLab UI (verified via API)' needs the exact API call specified (e.g., curl http://gitlab.sovereign.local/api/v4/projects/1/repository/commits). Add a testPlan with exact commands. Unresolved dependencies: PLATFORM-003 and PLATFORM-004 must pass first."
     },
     {
       "id": "PLATFORM-006",
@@ -228,7 +302,8 @@
       "dependencies": [
         "PLATFORM-005"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only argocd; kubectl get pods -n argocd; argocd app create test-app ...; git push test manifest; argocd app wait test-app --sync; kubectl get configmap -n argocd-test; show output verbatim. Unresolved dependency: PLATFORM-005 must pass first."
     },
     {
       "id": "PLATFORM-007",
@@ -250,7 +325,8 @@
       "dependencies": [
         "KIND-001"
       ],
-      "attempts": 0
+      "attempts": 0,
+      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only prometheus-stack; kubectl get pods -n monitoring; kubectl port-forward svc/prometheus-operated 9090:9090 -n monitoring & curl 'http://localhost:9090/api/v1/query?query=up'; show output verbatim. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "KAIZEN-001",
@@ -265,7 +341,7 @@
       "reviewed": false,
       "attempts": 0,
       "dependencies": [
-        "RESTRUCTURE-001"
+        "RESTRUCTURE-001c"
       ],
       "acceptanceCriteria": [
         "contract/v1/tests/invalid-no-imageregistry.yaml exists and fails validate.py with a message referencing imageRegistry",
@@ -273,7 +349,8 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
+      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (contract/validate.py does not exist until RESTRUCTURE-001 completes)."
     },
     {
       "id": "KAIZEN-002",
@@ -288,7 +365,7 @@
       "reviewed": false,
       "attempts": 0,
       "dependencies": [
-        "RESTRUCTURE-001"
+        "RESTRUCTURE-001c"
       ],
       "acceptanceCriteria": [
         "grep -r 'kind/setup.sh' docs/ README.md returns no matches",
@@ -296,7 +373,8 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim."
+      "testPlan": "Run grep checks above. Show output verbatim.",
+      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (new monorepo paths being documented do not exist until RESTRUCTURE-001 completes)."
     },
     {
       "id": "KAIZEN-003",

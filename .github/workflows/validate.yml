@@ -193,9 +193,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y shellcheck
 
-      - name: Shellcheck bootstrap scripts
+      - name: Shellcheck cluster and platform scripts
         run: |
-          find bootstrap -name "*.sh" -print0 | xargs -0 shellcheck -S error
+          find cluster platform -name "*.sh" -not -path "*/node_modules/*" -print0 | xargs -0 shellcheck -S error
 
       - name: Shellcheck prd scripts
         run: |
@@ -376,40 +376,30 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y shellcheck
 
-      - name: Shellcheck provider scripts
+      - name: Shellcheck cluster/kind/bootstrap.sh
         run: |
-          find bootstrap/providers -name "*.sh" -print0 | xargs -0 shellcheck -S error
+          shellcheck -S error cluster/kind/bootstrap.sh
 
-      - name: Assert node count guard in bootstrap.sh
+      - name: Assert --dry-run flag in cluster/kind/bootstrap.sh
         run: |
-          if ! grep -qE "nodes.*count.*[<].*3|count.*<.*3|NODE_COUNT" bootstrap/bootstrap.sh; then
-            echo "ERROR: bootstrap/bootstrap.sh is missing a node count guard (nodes.count < 3 check)"
-            echo "All provider scripts must reject node counts < 3 or even."
+          if ! grep -qE "dry.run|DRY_RUN" cluster/kind/bootstrap.sh; then
+            echo "ERROR: cluster/kind/bootstrap.sh is missing --dry-run flag support"
             exit 1
           fi
-          echo "✓ Node count guard found in bootstrap.sh"
+          echo "✓ --dry-run flag found in cluster/kind/bootstrap.sh"
 
-      - name: Assert provider scripts loop over node count
+      - name: Shellcheck platform/deploy.sh
+        run: |
+          shellcheck -S error platform/deploy.sh
+
+      - name: Assert no hardcoded IP addresses in cluster scripts
         run: |
           FAIL=0
-          for script in bootstrap/providers/*.sh; do
-            if ! grep -qE "for .* in|while .* NODE|NODE_COUNT|NODES" "$script"; then
-              echo "ERROR: $script does not appear to loop over multiple nodes"
-              FAIL=1
-            fi
-          done
-          [ $FAIL -eq 0 ] && echo "✓ All provider scripts contain node loop logic"
-          exit $FAIL
-
-      - name: Assert no single hardcoded server IP in provider scripts
-        run: |
-          FAIL=0
-          for script in bootstrap/providers/*.sh; do
-            # Reject patterns like IP="1.2.3.4" or SERVER_IP="..." with a real IP literal
+          for script in cluster/kind/bootstrap.sh platform/deploy.sh; do
             if grep -qE 'IP="[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}"' "$script"; then
               echo "ERROR: $script contains a hardcoded IP address"
               FAIL=1
             fi
           done
-          [ $FAIL -eq 0 ] && echo "✓ No hardcoded IP addresses in provider scripts"
+          [ $FAIL -eq 0 ] && echo "✓ No hardcoded IP addresses in cluster scripts"
           exit $FAIL
