@@ -220,17 +220,20 @@ README), 10 (sovereign-pm-webapp — Node.js/Express backend, React frontend, Do
 12 (developer-portal — Backstage plugin config, SonarQube + ReportPortal Helm charts; story 027a
 returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in kind),
 13 (remediation — GGE G5 restored: increment 14 added to manifest.json as pending so planning
-pipeline guard passes)
+pipeline guard passes),
+14 (developer-portal-argocd — delivered backstage-app.yaml ArgoCD Application manifest),
+15 (remediation — GGE G5 restored: increment 16 added to manifest.json as pending)
 
-Increment active: 14 (developer-portal-argocd — targeting T3 Developer Autonomy: E11 Backstage
-ArgoCD Application, E12 code quality stories)
+Increment active: 16 (code-quality — targeting T3 Developer Autonomy: E12 SonarQube and
+ReportPortal GitLab CI integration)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics active/backlog: E11 (developer portal — Backstage ArgoCD app story 027a pending),
-E12 (code quality — SonarQube + ReportPortal Helm charts exist; GitLab CI integration story 052 pending),
+Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; stories 027a
+full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube +
+ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration story 052 pending),
 E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
 ---
