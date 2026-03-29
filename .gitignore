@@ -38,3 +38,6 @@ prd/logs/
 scripts/ralph/progress.txt
 scripts/ralph/.last-branch
 scripts/ralph/archive/
+
+# supervisord runtime files (logs, socket, PID)
+logs/
