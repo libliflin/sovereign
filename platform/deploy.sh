@@ -17,6 +17,8 @@
 set -euo pipefail
 
 CLUSTER_VALUES=""
+CHART_DIR=""
+NAMESPACE=""
 DRY_RUN=false
 ONLY=""
 PLATFORM_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -24,18 +26,35 @@ CONTRACT_VALIDATE="$(cd "${PLATFORM_DIR}/.." && pwd)/contract/validate.py"
 
 usage() {
   echo "Usage: $0 --cluster-values <path> [--dry-run] [--only <chart>]"
+  echo "       $0 --chart-dir DIR --namespace NS [--dry-run]"
   exit 1
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cluster-values) CLUSTER_VALUES="$2"; shift 2 ;;
+    --chart-dir)      CHART_DIR="$2";      shift 2 ;;
+    --namespace)      NAMESPACE="$2";      shift 2 ;;
     --dry-run)        DRY_RUN=true;        shift   ;;
     --only)           ONLY="$2";           shift 2 ;;
     --help)           usage ;;
     *) echo "Unknown flag: $1"; usage ;;
   esac
 done
+
+# Single-chart deployment mode: --chart-dir DIR --namespace NS
+if [[ -n "$CHART_DIR" || -n "$NAMESPACE" ]]; then
+  [[ -z "$CHART_DIR" || -z "$NAMESPACE" ]] && { echo "ERROR: --chart-dir and --namespace are both required"; usage; }
+  log "Deploying chart: ${CHART_DIR} to namespace: ${NAMESPACE}"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "[dry-run] helm upgrade --install $(basename "${CHART_DIR}") ${CHART_DIR} --namespace ${NAMESPACE} --create-namespace"
+  else
+    helm upgrade --install "$(basename "${CHART_DIR}")" "${CHART_DIR}" \
+      --namespace "${NAMESPACE}" --create-namespace \
+      --wait --timeout 5m
+  fi
+  exit 0
+fi
 
 [[ -z "$CLUSTER_VALUES" ]] && usage
 [[ ! -f "$CLUSTER_VALUES" ]] && { echo "ERROR: $CLUSTER_VALUES not found"; exit 1; }
@@ -97,9 +116,7 @@ install_chart() {
 # Rule: each chart must be smoke-tested before the next is installed.
 # The autarky bootstrap window closes after Harbor is running (step 4).
 # After that, all images come from Harbor only.
-#
-# TODO: each install_chart call will gain a smoke-test assertion in a
-# subsequent story. For now the gate is: pods Running.
+# Gate: pods Running. Smoke-test assertions are a future story (E2 backlog).
 
 # Step 1: cert-manager (PKI — everything else needs TLS)
 install_chart cert-manager cert-manager
