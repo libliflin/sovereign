@@ -243,49 +243,20 @@
       "dependsOn": [
         17
       ],
-      "themeGoal": "T1 Sovereignty \u2014 kind cluster bootstrap (KIND-001): running cluster with autarky invariants verified end-to-end",
-      "startDate": "2026-03-29T19:10:10.357209+00:00",
-      "pointsTotal": 9,
-      "storiesTotal": 6,
-      "endDate": "2026-03-29T19:27:41.771149+00:00",
-      "pointsCompleted": 1,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 5,
-      "reviewPassRate": 16.7
+      "themeGoal": "T1 Sovereignty \u2014 kind cluster bootstrap (KIND-001): running cluster with autarky invariants verified end-to-end"
     },
     {
       "id": 21,
       "name": "platform-foundations",
       "description": "Platform foundations: deploy core sovereign Helm charts (Cilium, cert-manager, sealed-secrets, OpenBao) into kind cluster. Follows KIND-001 kind bootstrap.",
       "file": "prd/increment-21-platform-foundations.json",
-      "status": "pending",
+      "status": "active",
       "dependsOn": [
         20
       ],
       "themeGoal": "T1 Sovereignty \u2014 platform foundations: deploy core charts into kind cluster"
     }
   ],
-  "activeSprint": "prd/increment-20-kind-integration.json",
-  "currentIncrement": 20,
-  "sprintHistory": [
-    {
-      "increment": 20,
-      "name": "kind-integration",
-      "endDate": "2026-03-29T19:27:41.771149+00:00",
-      "pointsCompleted": 1,
-      "storiesTotal": 6,
-      "storiesAccepted": 1,
-      "storiesIncomplete": 5,
-      "reviewPassRate": 16.7
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 20,
-      "pointsCompleted": 1,
-      "storiesAccepted": 1,
-      "reviewPassRate": 16.7,
-      "date": "2026-03-29T19:27:41.771149+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-21-platform-foundations.json",
+  "currentIncrement": 21
 }
