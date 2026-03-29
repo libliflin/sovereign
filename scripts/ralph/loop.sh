@@ -52,9 +52,12 @@ cmd_start() {
     mkdir -p "$LOG_DIR"
 
     # The loop: run ceremonies, sleep briefly on success, stop on any fatal.
+    # sleep is backgrounded + waited so SIGTERM actually interrupts the pause.
     (
+        trap 'exit 0' SIGTERM
         while "$SCRIPT_DIR/ceremonies.sh" --tool "$tool"; do
-            sleep 5
+            sleep 5 &
+            wait $! || exit 0
         done
         echo "[loop.sh] ceremonies.sh exited non-zero — machine stopped for human review." \
             >> "$(latest_log || echo /dev/stderr)"
@@ -71,13 +74,30 @@ cmd_start() {
 cmd_stop() {
     if ! is_running; then
         echo "Not running."
-        [[ -f "$PID_FILE" ]] && rm "$PID_FILE"
+        [[ -f "$PID_FILE" ]] && rm -f "$PID_FILE"
         exit 0
     fi
     local pid
     pid=$(cat "$PID_FILE")
-    kill "$pid"
-    rm "$PID_FILE"
+
+    # Kill children first (sleep, ceremonies.sh), then the subshell itself.
+    pkill -TERM -P "$pid" 2>/dev/null
+    kill -TERM "$pid" 2>/dev/null
+
+    # Wait up to 5s for graceful shutdown.
+    local _
+    for _ in 1 2 3 4 5; do
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 1
+    done
+
+    # Force-kill stragglers.
+    if kill -0 "$pid" 2>/dev/null; then
+        pkill -9 -P "$pid" 2>/dev/null
+        kill -9 "$pid" 2>/dev/null
+    fi
+
+    rm -f "$PID_FILE"
     echo "Stopped (PID $pid)."
 }
 

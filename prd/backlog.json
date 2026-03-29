@@ -3,12 +3,13 @@
   "schema": "prd/schema/story.schema.json",
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
-
     {
       "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE — Planning pipeline always has a pending increment",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
       "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
-      "acceptanceCriteria": ["GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""],
+      "acceptanceCriteria": [
+        "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
+      ],
       "priority": 0,
       "points": 1,
       "passes": true,
@@ -19,11 +20,10 @@
       "dependencies": [],
       "attempts": 0
     },
-
     {
       "id": "RESTRUCTURE-001",
       "title": "Monorepo restructure: contract/, cluster/kind/, platform/",
-      "description": "Establish the clean separation between cluster provider and platform. Create contract/v1/cluster.schema.yaml, cluster/kind/ skeleton, platform/ with deploy.sh. Archive all non-kind providers. This story is the rough shape — subsequent stories make each layer operational.",
+      "description": "Establish the clean separation between cluster provider and platform. Create contract/v1/cluster.schema.yaml, cluster/kind/ skeleton, platform/ with deploy.sh. Archive all non-kind providers. This story is the rough shape \u2014 subsequent stories make each layer operational.",
       "acceptanceCriteria": [
         "contract/v1/cluster.schema.yaml exists and is valid YAML",
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
@@ -44,7 +44,6 @@
       "dependencies": [],
       "attempts": 0
     },
-
     {
       "id": "KIND-001",
       "title": "kind cluster bootstrap produces a valid cluster-values.yaml",
@@ -67,13 +66,14 @@
       "epicId": "E2",
       "themeId": "T3",
       "branchName": "feature/kind-bootstrap",
-      "dependencies": ["RESTRUCTURE-001"],
+      "dependencies": [
+        "RESTRUCTURE-001"
+      ],
       "attempts": 0
     },
-
     {
       "id": "KIND-002",
-      "title": "Egress is blocked in kind cluster — autarky invariant verified",
+      "title": "Egress is blocked in kind cluster \u2014 autarky invariant verified",
       "description": "After KIND-001, verify that the autarky.externalEgressBlocked invariant actually holds. Apply a Cilium egress deny policy and confirm test pods cannot reach the internet.",
       "acceptanceCriteria": [
         "A CiliumClusterwideNetworkPolicy denying external egress is applied",
@@ -88,14 +88,15 @@
       "epicId": "E2",
       "themeId": "T2",
       "branchName": "feature/kind-egress-policy",
-      "dependencies": ["KIND-001"],
+      "dependencies": [
+        "KIND-001"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-001",
       "title": "platform/deploy.sh installs cert-manager and verifies it issues a certificate",
-      "description": "First working step of deploy.sh. Reads cluster-values.yaml, validates contract, installs cert-manager into the kind cluster, and verifies it can actually issue a certificate. This is the first behavioral test — not just 'pods running' but 'it does its job'.",
+      "description": "First working step of deploy.sh. Reads cluster-values.yaml, validates contract, installs cert-manager into the kind cluster, and verifies it can actually issue a certificate. This is the first behavioral test \u2014 not just 'pods running' but 'it does its job'.",
       "acceptanceCriteria": [
         "./platform/deploy.sh --cluster-values cluster-values.yaml --only cert-manager exits 0",
         "kubectl get pods -n cert-manager shows all Running",
@@ -109,10 +110,11 @@
       "epicId": "E3",
       "themeId": "T3",
       "branchName": "feature/platform-cert-manager",
-      "dependencies": ["KIND-001"],
+      "dependencies": [
+        "KIND-001"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-002",
       "title": "platform/deploy.sh installs sealed-secrets and verifies seal/unseal works",
@@ -130,10 +132,11 @@
       "epicId": "E3",
       "themeId": "T1",
       "branchName": "feature/platform-sealed-secrets",
-      "dependencies": ["KIND-001"],
+      "dependencies": [
+        "KIND-001"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-003",
       "title": "Harbor deploys and images can be pushed to it",
@@ -152,10 +155,12 @@
       "epicId": "E5",
       "themeId": "T1",
       "branchName": "feature/platform-harbor",
-      "dependencies": ["KIND-001", "PLATFORM-001"],
+      "dependencies": [
+        "KIND-001",
+        "PLATFORM-001"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-004",
       "title": "Keycloak deploys and issues an OIDC token",
@@ -173,10 +178,12 @@
       "epicId": "E4",
       "themeId": "T2",
       "branchName": "feature/platform-keycloak",
-      "dependencies": ["PLATFORM-001", "PLATFORM-002"],
+      "dependencies": [
+        "PLATFORM-001",
+        "PLATFORM-002"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-005",
       "title": "GitLab deploys and accepts a git push",
@@ -194,14 +201,16 @@
       "epicId": "E5",
       "themeId": "T3",
       "branchName": "feature/platform-gitlab",
-      "dependencies": ["PLATFORM-003", "PLATFORM-004"],
+      "dependencies": [
+        "PLATFORM-003",
+        "PLATFORM-004"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-006",
       "title": "ArgoCD deploys and syncs a manifest from GitLab",
-      "description": "deploy.sh installs ArgoCD. Behavioral test: create an ArgoCD Application pointing at a GitLab repo, push a manifest, verify ArgoCD syncs it to the cluster. This is the GitOps handoff — after this story, ArgoCD manages all subsequent platform upgrades.",
+      "description": "deploy.sh installs ArgoCD. Behavioral test: create an ArgoCD Application pointing at a GitLab repo, push a manifest, verify ArgoCD syncs it to the cluster. This is the GitOps handoff \u2014 after this story, ArgoCD manages all subsequent platform upgrades.",
       "acceptanceCriteria": [
         "./platform/deploy.sh --cluster-values cluster-values.yaml --only argocd exits 0",
         "kubectl get pods -n argocd shows all Running",
@@ -216,10 +225,11 @@
       "epicId": "E5",
       "themeId": "T3",
       "branchName": "feature/platform-argocd",
-      "dependencies": ["PLATFORM-005"],
+      "dependencies": [
+        "PLATFORM-005"
+      ],
       "attempts": 0
     },
-
     {
       "id": "PLATFORM-007",
       "title": "Observability stack deploys and scrapes a metric",
@@ -237,9 +247,352 @@
       "epicId": "E9",
       "themeId": "T4",
       "branchName": "feature/platform-prometheus",
-      "dependencies": ["KIND-001"],
+      "dependencies": [
+        "KIND-001"
+      ],
       "attempts": 0
+    },
+    {
+      "id": "KAIZEN-001",
+      "title": "Kaizen: Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
+      "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants \u2014 there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/contract-test-corpus",
+      "priority": 12,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [
+        "RESTRUCTURE-001"
+      ],
+      "acceptanceCriteria": [
+        "contract/v1/tests/invalid-no-imageregistry.yaml exists and fails validate.py with a message referencing imageRegistry",
+        "contract/v1/tests/invalid-no-storageclass.yaml exists and fails validate.py with a message referencing storageClass",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
+        "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
+      ],
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
+    },
+    {
+      "id": "KAIZEN-002",
+      "title": "Kaizen: Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
+      "description": "The monorepo restructure (increment 17) moved kind setup from kind/setup.sh to cluster/kind/bootstrap.sh and charts from charts/ to platform/charts/. Any documentation referencing old paths gives developers incorrect instructions. Scan docs/ and README.md for stale references and update them.",
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "kaizen/docs-path-update",
+      "priority": 13,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [
+        "RESTRUCTURE-001"
+      ],
+      "acceptanceCriteria": [
+        "grep -r 'kind/setup.sh' docs/ README.md returns no matches",
+        "grep -r 'bootstrap/providers' docs/ README.md returns no matches",
+        "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
+        "markdownlint docs/quickstart.md exits 0"
+      ],
+      "testPlan": "Run grep checks above. Show output verbatim."
+    },
+    {
+      "id": "KAIZEN-003",
+      "title": "Kaizen: Fix attempts field \u2014 initialize to 0, increment only on review re-open",
+      "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/attempts-field-fix",
+      "priority": 14,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "prd/schema/story.schema.json has attempts with default 0",
+        "scripts/ralph/lib/advance.py uses len(story.get('reviewNotes', [])) == 0 for first-pass rate calculation",
+        "python3 -c \"import json; s=json.load(open('prd/schema/story.schema.json')); assert s['properties']['attempts']['default'] == 0\" exits 0",
+        "shellcheck or python3 -m py_compile scripts/ralph/lib/advance.py exits 0"
+      ],
+      "testPlan": "Show schema default and advance.py formula change. Run py_compile. Show output verbatim."
+    },
+    {
+      "id": "DEVEX-001",
+      "epicId": "E11",
+      "themeId": "T3",
+      "title": "code-server deploys and serves VS Code in browser with Keycloak SSO",
+      "description": "platform/deploy.sh installs code-server into the kind cluster. Behavioral test: code-server responds with HTTP 200 on the /healthz endpoint. Keycloak OAuth2 proxy protects the route \u2014 unauthenticated requests redirect to Keycloak. This is the primary browser IDE for agents and developers.",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only code-server exits 0",
+        "kubectl get pods -n code-server shows all Running within 2 minutes",
+        "kubectl port-forward svc/code-server 8080:8080 -n code-server; curl -s http://localhost:8080/healthz returns 200",
+        "platform/charts/code-server/templates/ passes autarky gate: grep -r 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/code-server/templates/ returns no matches",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm install code-server platform/charts/code-server/ --kube-context kind-sovereign-test --namespace code-server --create-namespace --wait --timeout 2m; kubectl get pods -n code-server; kubectl port-forward svc/code-server 8080:8080 -n code-server & sleep 3; curl -v http://localhost:8080/healthz; show output verbatim",
+      "phase": 7,
+      "priority": 15,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/devex-code-server",
+      "dependencies": [
+        "PLATFORM-004"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-002",
+      "epicId": "E11",
+      "themeId": "T3",
+      "title": "Backstage deploys and auto-discovers platform services from kubernetes",
+      "description": "platform/deploy.sh installs Backstage. The Kubernetes plugin auto-discovers services by scanning the kind cluster. Behavioral test: Backstage catalog API returns at least the platform components (argocd, harbor, keycloak, gitlab) as catalog entities. Backstage is secured by Keycloak OIDC.",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only backstage exits 0",
+        "kubectl get pods -n backstage shows all Running within 3 minutes",
+        "kubectl port-forward svc/backstage 7007:7007 -n backstage; curl -s http://localhost:7007/api/catalog/entities returns JSON array with at least 1 entry",
+        "platform/charts/backstage/values.yaml has app-config.yaml embedded with kubernetes plugin enabled",
+        "helm lint platform/charts/backstage/ exits 0"
+      ],
+      "testPlan": "helm install backstage platform/charts/backstage/ --kube-context kind-sovereign-test --namespace backstage --create-namespace --wait --timeout 3m; kubectl get pods -n backstage; kubectl port-forward svc/backstage 7007:7007 -n backstage & sleep 5; curl -s http://localhost:7007/api/catalog/entities | python3 -m json.tool; show output verbatim",
+      "phase": 7,
+      "priority": 16,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/devex-backstage",
+      "dependencies": [
+        "PLATFORM-004",
+        "PLATFORM-006"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-003",
+      "epicId": "E11",
+      "themeId": "T3",
+      "title": "Backstage TechDocs renders sovereign platform documentation from GitLab",
+      "description": "Backstage TechDocs plugin is configured to build and serve documentation from the sovereign GitLab repo. A catalog-info.yaml and mkdocs.yml exist in the sovereign repo. Behavioral test: navigating to /docs in Backstage returns rendered HTML from the sovereign docs.",
+      "acceptanceCriteria": [
+        "catalog-info.yaml exists at repo root with annotations.backstage.io/techdocs-ref pointing to the docs/ directory",
+        "mkdocs.yml exists at repo root with at least docs/quickstart.md in the nav",
+        "kubectl port-forward svc/backstage 7007:7007 -n backstage; curl -s http://localhost:7007/api/techdocs/static/docs/default/component/sovereign/ returns 200",
+        "helm lint platform/charts/backstage/ exits 0 after techdocs config added to app-config.yaml"
+      ],
+      "testPlan": "Add catalog-info.yaml and mkdocs.yml to repo. Restart Backstage. curl techdocs API. Show output verbatim.",
+      "phase": 7,
+      "priority": 17,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/devex-techdocs",
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "QUALITY-001",
+      "epicId": "E12",
+      "themeId": "T3",
+      "title": "SonarQube deploys and accepts a project analysis",
+      "description": "platform/deploy.sh installs SonarQube Community Edition. Behavioral test: sonar-scanner submits an analysis of the sovereign repo's shell scripts, and a project appears in SonarQube's API with at least one metric. SonarQube is secured by Keycloak OIDC.",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only sonarqube exits 0",
+        "kubectl get pods -n sonarqube shows all Running within 3 minutes",
+        "kubectl port-forward svc/sonarqube 9000:9000 -n sonarqube; curl -s http://localhost:9000/api/system/health returns {\"health\":\"GREEN\"}",
+        "sonar-scanner -Dsonar.projectKey=sovereign -Dsonar.sources=. exits 0 after running against the repo",
+        "curl http://localhost:9000/api/measures/component?component=sovereign&metricKeys=ncloc returns JSON with measures array",
+        "helm lint platform/charts/sonarqube/ exits 0"
+      ],
+      "testPlan": "helm install sonarqube platform/charts/sonarqube/ --kube-context kind-sovereign-test --namespace sonarqube --create-namespace --wait --timeout 3m; kubectl get pods -n sonarqube; kubectl port-forward svc/sonarqube 9000:9000 -n sonarqube & sleep 5; curl -s http://localhost:9000/api/system/health; show output verbatim",
+      "phase": 7,
+      "priority": 18,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/quality-sonarqube",
+      "dependencies": [
+        "PLATFORM-004"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "QUALITY-002",
+      "epicId": "E12",
+      "themeId": "T3",
+      "title": "ReportPortal deploys and accepts a JUnit test report via API",
+      "description": "platform/deploy.sh installs ReportPortal. Behavioral test: POST a JUnit XML test report to the ReportPortal API, verify the launch appears with a passing test result. ReportPortal stores results in PostgreSQL (provided by the chart's bundled postgres).",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only reportportal exits 0",
+        "kubectl get pods -n reportportal shows all Running within 5 minutes",
+        "kubectl port-forward svc/reportportal-index 8080:8080 -n reportportal; curl -s http://localhost:8080/ui/ returns HTTP 200",
+        "POST to /api/v1/default_personal/launch with a test JUnit XML returns HTTP 201",
+        "GET /api/v1/default_personal/launch returns the created launch in the response",
+        "helm lint platform/charts/reportportal/ exits 0"
+      ],
+      "testPlan": "helm install reportportal platform/charts/reportportal/ --kube-context kind-sovereign-test --namespace reportportal --create-namespace --wait --timeout 5m; kubectl get pods -n reportportal; port-forward and POST test XML; show output verbatim",
+      "phase": 7,
+      "priority": 19,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/quality-reportportal",
+      "dependencies": [
+        "PLATFORM-001"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "TEST-001",
+      "epicId": "E13",
+      "themeId": "T5",
+      "title": "Selenium Grid deploys and executes a browser test via RemoteWebDriver",
+      "description": "platform/deploy.sh installs Selenium Grid (hub + Chrome node). Behavioral test: a Python Selenium script connects to the grid via RemoteWebDriver, navigates to example.com, and asserts the page title. Grid uses Keycloak for UI access.",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only selenium-grid exits 0",
+        "kubectl get pods -n selenium shows hub and at least 1 chrome node Running",
+        "kubectl port-forward svc/selenium-hub 4444:4444 -n selenium; curl -s http://localhost:4444/status returns {\"ready\":true,...}",
+        "python3 -c \"from selenium import webdriver; from selenium.webdriver.common.desired_capabilities import DesiredCapabilities; driver=webdriver.Remote('http://localhost:4444/wd/hub',DesiredCapabilities.CHROME); driver.get('http://example.com'); assert 'Example' in driver.title; driver.quit(); print('PASS')\" exits 0",
+        "helm lint platform/charts/selenium-grid/ exits 0"
+      ],
+      "testPlan": "helm install selenium-grid platform/charts/selenium-grid/ --kube-context kind-sovereign-test --namespace selenium --create-namespace --wait --timeout 2m; kubectl get pods -n selenium; port-forward 4444; run selenium test; show output verbatim",
+      "phase": 8,
+      "priority": 20,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/test-selenium-grid",
+      "dependencies": [
+        "PLATFORM-006"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "TEST-002",
+      "epicId": "E13",
+      "themeId": "T5",
+      "title": "k6 Operator deploys and runs a TestRun to completion",
+      "description": "platform/deploy.sh installs the k6 Operator. Behavioral test: create a TestRun CR with a simple k6 script (10 VUs for 10s hitting example.com), verify the Kubernetes Job runs to completion and the TestRun enters Finished state with no errors.",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only k6-operator exits 0",
+        "kubectl get pods -n k6-operator shows operator Running",
+        "kubectl apply -f cluster/kind/tests/k6-smoke-testrun.yaml --context kind-sovereign-test exits 0",
+        "kubectl wait --for=condition=complete --timeout=60s job -l k6_cr=k6-smoke -n default exits 0",
+        "kubectl get testrun k6-smoke -n default shows status.stage=Finished",
+        "helm lint platform/charts/k6-operator/ exits 0"
+      ],
+      "testPlan": "helm install k6-operator platform/charts/k6-operator/ --kube-context kind-sovereign-test --namespace k6-operator --create-namespace --wait --timeout 2m; apply smoke TestRun CR; kubectl wait for job completion; show output verbatim",
+      "phase": 8,
+      "priority": 21,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/test-k6-operator",
+      "dependencies": [
+        "PLATFORM-006"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "TEST-003",
+      "epicId": "E13",
+      "themeId": "T5",
+      "title": "MailHog deploys and captures SMTP email sent by platform services",
+      "description": "platform/deploy.sh installs MailHog as the platform email sink. Behavioral test: send an email via SMTP to MailHog and verify it appears in the MailHog API. All platform services (Keycloak, GitLab, ArgoCD) are configured to use MailHog SMTP in kind.",
+      "acceptanceCriteria": [
+        "./platform/deploy.sh --cluster-values cluster-values.yaml --only mailhog exits 0",
+        "kubectl get pods -n mailhog shows all Running",
+        "kubectl port-forward svc/mailhog 1025:1025 8025:8025 -n mailhog; python3 -c \"import smtplib; s=smtplib.SMTP('localhost',1025); s.sendmail('test@sovereign.local','test@sovereign.local','Subject: test\\n\\nbody'); s.quit()\" exits 0",
+        "curl -s http://localhost:8025/api/v2/messages returns JSON with total >= 1 after sending",
+        "helm lint platform/charts/mailhog/ exits 0"
+      ],
+      "testPlan": "helm install mailhog platform/charts/mailhog/ --kube-context kind-sovereign-test --namespace mailhog --create-namespace --wait --timeout 2m; kubectl get pods -n mailhog; port-forward 1025 and 8025; send SMTP email; curl messages API; show output verbatim",
+      "phase": 8,
+      "priority": 22,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "branchName": "feature/test-mailhog",
+      "dependencies": [
+        "KIND-001"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timebound": 0,
+        "notes": "Not yet SMART-scored."
+      }
     }
-
   ]
 }
