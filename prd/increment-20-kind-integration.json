@@ -22,7 +22,15 @@
       "dependencies": [],
       "attempts": 0,
       "reviewNotes": [],
-      "testPlan": "Run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "Run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     },
     {
       "id": "KAIZEN-007r",
@@ -45,7 +53,15 @@
       "returnedFromSprint": "prd/increment-19-remediation.json",
       "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
       "reviewNotes": [],
-      "testPlan": "After implementing the plan ceremony change: run the plan ceremony on a fresh sprint context, then verify: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies/*.sh must exit 0."
+      "testPlan": "After implementing the plan ceremony change: run the plan ceremony on a fresh sprint context, then verify: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies/*.sh must exit 0.",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: implementation target is 'plan.md (or the plan ceremony runner)' \u2014 both files should be named explicitly. Measurable score 4: AC1 ('contains logic to append...') is structural assertion, not a runnable command; should be a grep for the specific function name or added code block."
+      }
     },
     {
       "id": "KAIZEN-004r",
@@ -69,7 +85,15 @@
       ],
       "testPlan": "Manually set a story to passes:true reviewed:false in a test sprint file. Run ceremonies.sh --start-at retro. Verify review ceremony runs first, then retro. Show output verbatim.",
       "returnedFromSprint": null,
-      "returnedReason": null
+      "returnedReason": null,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: AC references increment-17-restructure.json in the verification command, but the guard should work for the *active* sprint file \u2014 test plan should use a generic fixture, not a named completed sprint. Measurable score 4: AC1 ('checks for passes:true reviewed:false stories') is prose; should be a grep for the guard code."
+      }
     },
     {
       "id": "KIND-001",
@@ -98,7 +122,15 @@
       ],
       "attempts": 0,
       "reviewNotes": [],
-      "testPlan": "1. ./cluster/kind/bootstrap.sh --dry-run: must exit 0. Show output. 2. ./cluster/kind/bootstrap.sh: runs without error. 3. kind get clusters: shows sovereign-test. 4. kubectl get nodes: shows 3 nodes all Ready. 5. python3 contract/validate.py cluster-values.yaml: exits 0. 6. kubectl get pods -n cert-manager: all Running. 7. kubectl get pods -n sealed-secrets: all Running. 8. kubectl get pods -n minio: all Running. 9. kubectl get storageclass: shows local-path as default. Show all output verbatim."
+      "testPlan": "1. ./cluster/kind/bootstrap.sh --dry-run: must exit 0. Show output. 2. ./cluster/kind/bootstrap.sh: runs without error. 3. kind get clusters: shows sovereign-test. 4. kubectl get nodes: shows 3 nodes all Ready. 5. python3 contract/validate.py cluster-values.yaml: exits 0. 6. kubectl get pods -n cert-manager: all Running. 7. kubectl get pods -n sealed-secrets: all Running. 8. kubectl get pods -n minio: all Running. 9. kubectl get storageclass: shows local-path as default. Show all output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Achievable score 3: 3-point story requires writing cluster/kind/bootstrap.sh from scratch plus installing Cilium (kindnet disabled), cert-manager, sealed-secrets, MinIO, local-path-provisioner, and a contract validator \u2014 eight moving parts that together likely exceed a single 2000-token Ralph iteration. Consider splitting into KIND-001a (bootstrap.sh + 3-node cluster + contract validator) and KIND-001b (Cilium + cert-manager + sealed-secrets + MinIO). Time-bound score 4: MinIO and local-path-provisioner are not mentioned in the sprint goal or description but appear in the ACs \u2014 minor scope creep risk."
+      }
     },
     {
       "id": "KAIZEN-005",
@@ -120,7 +152,15 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: naming consistency kaizen is useful but not blocking the sprint goal (kind cluster bootstrap). Could be deferred without impact to KIND-001."
+      }
     },
     {
       "id": "KAIZEN-006",
@@ -141,7 +181,15 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: data model cleanup is valuable but not on the critical path to the sprint goal. Could be deferred without blocking kind cluster work."
+      }
     }
   ]
 }

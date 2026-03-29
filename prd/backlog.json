@@ -136,8 +136,7 @@
       "dependencies": [
         "RESTRUCTURE-001c"
       ],
-      "attempts": 0,
-      "readinessNote": "Missing testPlan. Unresolved dependency: RESTRUCTURE-001 must pass first."
+      "attempts": 0
     },
     {
       "id": "KIND-002",
@@ -160,7 +159,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan. Vague ACs (no runnable verification commands for egress probe and internal comms). Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "Dependency KIND-001 must pass before this story can be started. KIND-001 is in increment-20 sprint. Re-plan after KIND-001 is accepted."
     },
     {
       "id": "PLATFORM-001",
