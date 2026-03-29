@@ -1,7 +1,7 @@
 {
   "increment": 15,
   "name": "remediation",
-  "description": "Remediation sprint — restores broken GGEs and resolves priority-0 blockers.",
+  "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
   "sprintGoal": "GGE G5 passes in orient: manifest always has at least one pending increment so the plan ceremony never stalls.",
   "capacity": 12,
   "stories": [
@@ -12,7 +12,7 @@
       "acceptanceCriteria": [
         "GGE G5 indicator passes in orient"
       ],
-      "testPlan": "Run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1, f'No pending increments — GGE G5 still failing'; print(f'{len(pending)} pending increment(s) — GGE G5 OK')\"\nExpected output: '1 pending increment(s) — GGE G5 OK' (or more).",
+      "testPlan": "Run: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1, f'No pending increments \u2014 GGE G5 still failing'; print(f'{len(pending)} pending increment(s) \u2014 GGE G5 OK')\"\nExpected output: '1 pending increment(s) \u2014 GGE G5 OK' (or more).",
       "priority": 0,
       "phase": 15,
       "points": 2,
@@ -25,12 +25,12 @@
       "dependencies": [],
       "attempts": 0,
       "smart": {
-        "specific": 3,
+        "specific": 4,
         "measurable": 5,
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 3: the story does not name which file to modify or what exact change to make. The test plan implies adding an increment with status=pending to prd/manifest.json, but this must be inferred \u2014 no file path, field name, or example diff is provided."
+        "notes": "Specific score 4: the story names prd/manifest.json and the status='pending' field, but does not specify the exact structure or content of the increment entry to add (required fields, example values). The description defers content decisions to 'theme-review ceremony output or backlog priorities'."
       },
       "readinessNote": "Priority-0 ANDON \u2014 included despite SMART gap. Fix: add pending increments to prd/manifest.json. branchName updated to feature/ prefix to satisfy schema. testPlan added at planning."
     }
