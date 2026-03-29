@@ -438,6 +438,9 @@ def main() -> int:
                 else:
                     print(f"  {len(needing)}/{len(sprint.get('stories', []))} stories need work.")
                     sprint_lib.clear_failures(sprint_file)
+                    # clear_failures modifies the sprint file — commit so ralph
+                    # doesn't see a dirty tree when it tries to checkout
+                    _git_commit("clear-failures", [str(active_sprint)])
                     ralph_exit = ai_lib.run_ralph(SCRIPT_DIR / "ralph.sh", sprint_file, args.tool, 10, log_file)
                     if ralph_exit != 0:
                         print(f"  WARNING: ralph.sh exited {ralph_exit}")
