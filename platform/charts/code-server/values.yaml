@@ -88,6 +88,13 @@ toolchainInit:
   image: sovereign/toolchain:latest
   # Destination path in the shared emptyDir volume where binaries are copied
   workspaceBinPath: /home/coder/workspace/bin
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
 
 podDisruptionBudget:
   minAvailable: 1
