@@ -444,9 +444,13 @@ def main() -> int:
                     ralph_exit = ai_lib.run_ralph(SCRIPT_DIR / "ralph.sh", sprint_file, args.tool, 10, log_file)
                     _git_commit("execute", [str(active_sprint)])
                     if ralph_exit != 0:
+                        # Andon cord: stop the line, don't run meaningless
+                        # downstream steps on zero work. Exit 0 so the
+                        # while-loop retries the full cycle — orient will
+                        # re-assess and ceremonies will re-run from the top.
                         print(f"\n  EXECUTE FAILED (ralph.sh exited {ralph_exit}).")
-                        print(f"  Andon cord pulled — stopping the line. Fix the failure before re-running.")
-                        return 1
+                        print(f"  Andon: stopping this cycle. Will retry from orient.")
+                        return 0
                     sprint = sprint_lib.load(sprint_file)
                     passing = sprint_lib.stories_passing(sprint)
                     print(f"\n  Passing: {len(passing)}/{len(sprint.get('stories', []))}")
