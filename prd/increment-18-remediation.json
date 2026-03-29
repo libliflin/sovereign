@@ -24,6 +24,8 @@
       "branchName": "fix/gge-g5-andon",
       "dependencies": [],
       "attempts": 0,
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint closed with 0 execute cycles — retro fired before Ralph could implement the trivial 1-point fix.",
       "smart": {
         "specific": 5,
         "measurable": 5,
