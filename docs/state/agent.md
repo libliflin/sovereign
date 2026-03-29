@@ -180,7 +180,10 @@ blockers exist, order them by severity and sprint them sequentially.
 2. Check out the branch named in `branchName` (create from `main` if it doesn't exist)
 3. If `attempts > 0`: read `reviewNotes[0]`, summarize the specific change required, implement only that
 4. Implement the acceptance criteria — nothing more, nothing less
-5. Run quality gates before marking `passes: true`:
+5. Write the **test contract** before touching any file — list each test command and expected output.
+   Only begin implementation after the contract is written. Run every test. Show the output.
+
+6. Run quality gates before marking `passes: true`:
    - `helm lint charts/<name>/` if you touched a chart
    - HA gate (PDB, podAntiAffinity, replicaCount) if you touched a chart
    - `helm template charts/<name>/ | python3 scripts/check-limits.py` if you touched a chart
@@ -189,6 +192,11 @@ blockers exist, order them by severity and sprint them sequentially.
    - `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"` for ArgoCD Application manifests (CRDs not in kind — use YAML-only validation)
    - `yq e '.' <file>.yaml` on all YAML files touched
    - `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
+   - **Autarky gate** (every chart or vendor story — show output verbatim):
+     ```bash
+     grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" charts/*/templates/ 2>/dev/null \
+       && echo "FAIL" && exit 1 || echo "PASS: no external registries in templates"
+     ```
 6. Set `passes: true` in the sprint file
 7. Push the branch, open a PR, wait for CI to pass, merge to main
 
@@ -250,6 +258,10 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 - `check-limits.py` reports any container or initContainer missing `resources.requests` or `resources.limits` → fix before marking passes: true
 - The word "phase" appears in new Python or JSON you are writing → use "increment" instead
 - `prd/manifest.json` has no increment with `status: "pending"` AND `activeSprint` is unset → the planning ceremony will stall silently; add a pending increment before advancing
+- A chart template contains a hard-coded external registry (docker.io, quay.io, ghcr.io, gcr.io, registry.k8s.io) → autarky violation, fix before marking passes: true
+- You are about to write `|| true`, `2>/dev/null`, or `--dry-run` as the only test → these are workarounds, diagnose and fix the root cause
+- You are about to commit code containing `# TODO`, `# FIXME`, or `# HACK` → deferred work is incomplete work; use the blocker protocol instead
+- A story implementation touches files outside the stated story scope (more than ~3 charts for a 1-service story, new dependencies not in VENDORS.yaml, etc.) → stop and split before implementing
 
 ---
 

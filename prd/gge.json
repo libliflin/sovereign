@@ -2,7 +2,7 @@
   "_comment": "Golden Goose Eggs — the 3-5 outcomes that matter most right now. Defined and redefined by theme-review. Orient checks these first. A failing GGE triggers an immediate priority-0 backlog story.",
   "limit": {
     "min": 3,
-    "max": 5
+    "max": 6
   },
   "eggs": [
     {
@@ -60,6 +60,16 @@
       "indicator": {
         "type": "gate_passing",
         "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1, f'No pending increments — plan ceremony will stall. Run theme-review to create one.'; print(f'{len(pending)} pending increment(s) — OK')\""
+      }
+    },
+    {
+      "id": "G6",
+      "title": "Zero external registry references in Helm chart templates",
+      "themeId": "T1",
+      "rationale": "Sovereignty requires that no chart template ever hard-codes an external registry (docker.io, quay.io, ghcr.io, gcr.io, registry.k8s.io). Every image reference must use {{ .Values.global.imageRegistry }}. A single hard-coded reference breaks autarky silently — the cluster works during bootstrap but pulls from external registries in production. This egg catches that class of defect continuously.",
+      "indicator": {
+        "type": "gate_passing",
+        "command": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" charts/*/templates/ 2>/dev/null); [ -z \"$result\" ] && echo \"G6 PASS: no external registries in templates\" || (echo \"G6 FAIL:\" && echo \"$result\" && exit 1)'"
       }
     }
   ]

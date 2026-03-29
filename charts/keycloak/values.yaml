@@ -24,6 +24,10 @@ ingress:
 # ---------------------------------------------------------------------------
 realmInit:
   enabled: true
+  image:
+    registry: "quay.io"          # upstream registry — used only when global.imageRegistry is empty
+    repository: "keycloak/keycloak"
+    tag: "23.0.7"
   # Admin credentials to bootstrap Keycloak
   adminUser: admin
   # Admin password source — from Sealed Secret (see templates/admin-secret.yaml)

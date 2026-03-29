@@ -487,6 +487,18 @@ continue. There are no deferrals, no "I'll fix it in the next story", no "it's a
 3. **One defect per stop.** The gate tells you exactly what broke. Fix that thing only.
    Do not refactor unrelated code in the same pass — that introduces new failures.
 
+4. **Workarounds are defects.** The following patterns mean a gate is failing but hidden.
+   If you find yourself writing any of these, stop and diagnose the root cause:
+
+   | Pattern | Why it's a workaround |
+   |---|---|
+   | `\|\| true` after a gate command | Silences failure — the gate must pass, not be bypassed |
+   | `2>/dev/null` on a quality gate | If it errors, you need to know |
+   | `--dry-run` as the ONLY test for a Helm chart | Dry-run ≠ deployment — use kind install |
+   | `# TODO`, `# FIXME`, `# HACK` in committed code | Deferred work is not complete work |
+   | "I'll fix this in the next story" | There is no next story. Fix it now or add a blocker. |
+   | `skipVerify: true`, `insecureSkipTLSVerify: true` | Security regressions are not fixes |
+
 **The mechanical implementation:**
 `ceremonies.sh` runs the gates as bash commands (not prose, not self-reporting) and writes
 every failure as structured JSON into the sprint file: the exact error output, the exact
@@ -563,13 +575,21 @@ End every story completion response with:
 ```
 ## Proof of Work — story-NNN
 
-git push:   pushed to origin/<branchName> ✓
-CI:         all checks passed ✓  (gh pr checks output above)
-PR merged:  https://github.com/libliflin/sovereign/pull/<N> → squash merged to main ✓
-helm lint:  exit 0 (output above)
-shellcheck: exit 0 (output above)
-HA gate:    PDB ✓ | anti-affinity ✓ | replicaCount=2 ✓
+theme:          [T1/T2/T3/T4/T5] — one sentence why this story serves the mission
+scope:          only touched files within stated story scope ✓
+test contract:  written before implementation (tests listed above) ✓
+autarky gate:   PASS — no external registries in templates (output above) ✓
+git push:       pushed to origin/<branchName> ✓
+CI:             all checks passed ✓  (gh pr checks output above)
+PR merged:      https://github.com/libliflin/sovereign/pull/<N> → squash merged to main ✓
+helm lint:      exit 0 (output above)
+shellcheck:     exit 0 (output above)
+HA gate:        PDB ✓ | anti-affinity ✓ | replicaCount=2 ✓
+workarounds:    none introduced ✓
 ```
+
+Any field marked ✓ must have its verifying command output shown above it in the response.
+A ✓ without output is self-certification and will be rejected by the review ceremony.
 
 ---
 
@@ -741,6 +761,38 @@ This is a Vault-precedent situation. Read **`docs/governance/sovereignty.md`** �
 
 ---
 
+## TEST CONTRACT — WRITE BEFORE IMPLEMENTATION
+
+Before writing a single file for any story, write a **test contract** in your response.
+The test contract states exactly what commands you will run and what output proves the story done.
+
+```
+## Test Contract — story-NNN
+
+Test 1: [what it verifies]
+  Command: [exact runnable command]
+  Expected: [exact expected output or exit code]
+
+Test 2: ...
+```
+
+**Only begin implementation after the test contract is written.**
+Run every listed test after implementation. Show the output. An unrun test is not a test.
+
+**What counts as a test:**
+- `helm install --wait` into kind → `kubectl get pods` showing Running
+- `shellcheck -S error` → exit 0 shown
+- `bash -n && shellcheck && ./script.sh --dry-run` → output shown
+- Autarky gate commands → `PASS` shown
+
+**What does NOT count:**
+- "This should pass helm lint" — assertion without output
+- "I verified the logic" — self-certification
+- `helm template | grep X` as the only gate — structure ≠ behavior
+- Skipping kind install because "it requires Ceph" without proving it does
+
+---
+
 ## QUALITY GATES
 
 Before marking any story `passes: true`, you MUST:
@@ -766,6 +818,22 @@ Before marking any story `passes: true`, you MUST:
 14. `vendor/audit.sh` exits 0 (no license violations, no missing alternatives)
 15. All new recipe.yaml files have `rollout` and `backup` sections
 16. All new vendor/*.sh scripts support `--dry-run` flag
+
+**Autarky gate — every chart or vendor story MUST also verify (show output verbatim):**
+```bash
+# No hard-coded external registry in chart templates
+grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
+  charts/*/templates/ 2>/dev/null \
+  && echo "FAIL: external registry found — fix before passes:true" && exit 1 \
+  || echo "PASS: no external registries in templates"
+
+# Every image: reference uses global.imageRegistry
+grep -rn "^\s*image:" charts/*/templates/ \
+  | grep -v "\.Values\.global\.imageRegistry\|{{" \
+  && echo "FAIL: bare image reference not using .Values.global.imageRegistry" && exit 1 \
+  || echo "PASS: all image references use global.imageRegistry"
+```
+If either check fails: stop. Fix the reference. Re-run. Do NOT mark `passes: true`.
 
 ---
 

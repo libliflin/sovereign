@@ -230,6 +230,17 @@
         14
       ],
       "themeGoal": "T3 Developer Autonomy \u2014 E12 code quality: GitLab CI integration for SonarQube and ReportPortal"
+    },
+    {
+      "id": 17,
+      "name": "platform-hardening",
+      "description": "Next sprint — to be planned by the plan ceremony. Candidate work: GitHub CI comprehensive gate, OpenBao chart, bootstrap HA multi-node, Cloudflare front door.",
+      "file": "prd/increment-17-platform-hardening.json",
+      "status": "pending",
+      "dependsOn": [
+        16
+      ],
+      "themeGoal": "T1 Sovereignty + T5 Resilience \u2014 CI hardening, OpenBao chart, bootstrap HA, front door"
     }
   ]
 }
