@@ -263,6 +263,31 @@
       "storiesAccepted": 0,
       "storiesIncomplete": 1,
       "reviewPassRate": 0.0
+    },
+    {
+      "id": 22,
+      "name": "remediation",
+      "description": "Remediation sprint \u2014 restores broken GGE-G5 and resolves priority-0 blockers.",
+      "file": "prd/increment-22-remediation.json",
+      "status": "active",
+      "themeGoal": "Restore platform health: GGE-G5 green, plan ceremony self-primes, contract layer foundation.",
+      "dependsOn": [],
+      "startDate": "2026-03-29T19:51:20.913233+00:00",
+      "pointsTotal": 9,
+      "storiesTotal": 7
+    },
+    {
+      "id": 23,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 22 completes.",
+      "file": "prd/increment-23-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 22 advances.",
+      "dependsOn": [
+        22
+      ]
     }
-  ]
+  ],
+  "activeSprint": "prd/increment-22-remediation.json",
+  "currentIncrement": 22
 }

@@ -1,0 +1,172 @@
+{
+  "increment": 22,
+  "name": "remediation",
+  "description": "Remediation sprint \u2014 restores broken GGE-G5 (planning pipeline must always have a pending increment), fixes plan ceremony to self-prime, and completes contract layer foundation.",
+  "sprintGoal": "GGE-G5 indicator green, plan ceremony self-primes pending increments, and contract layer foundation committed.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "GGE-G5-andon",
+      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
+      "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
+      "acceptanceCriteria": [
+        "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
+      ],
+      "priority": 0,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/gge-g5-andon",
+      "dependencies": [],
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-21-platform-foundations.json",
+      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle.",
+      "phase": 22
+    },
+    {
+      "id": "KAIZEN-004r",
+      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/pre-retro-review-guard",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "ceremonies.sh (or the retro ceremony wrapper) checks for passes:true reviewed:false stories before running retro",
+        "If such stories exist, review ceremony is invoked first: create a temp fixture sprint file with one passes:true reviewed:false story, run ceremonies.sh --start-at retro pointing at that fixture, and verify review ceremony runs first and the story is marked reviewed:true afterward",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after the change",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 (if Python-based)"
+      ],
+      "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Sprint closed before iteration; AC2 fixed \u2014 no longer references increment-17",
+      "phase": 22
+    },
+    {
+      "id": "KAIZEN-007r",
+      "title": "Plan ceremony: always queue a pending increment stub when creating an active sprint",
+      "description": "GGE G5 fires every sprint because the plan ceremony creates an active increment but never queues a follow-on pending increment. The fix: at the end of the plan ceremony, if no increment has status='pending' in manifest.json, automatically append a minimal pending increment stub (id, name, description, status='pending', dependsOn current). This ensures GGE G5 never fires again and the planning pipeline is always primed.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/plan.md (or the plan ceremony runner) contains logic to append a pending increment stub if none exists",
+        "After running plan ceremony on a fresh sprint, python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" exits 0",
+        "shellcheck -S error scripts/ralph/ceremonies/*.sh exits 0 (if any .sh files are modified)"
+      ],
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/plan-ceremony-pending-increment",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "points": 2,
+      "priority": 1,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-19-remediation.json",
+      "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
+      "phase": 22
+    },
+    {
+      "id": "RESTRUCTURE-001a",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Contract layer: cluster.schema.yaml, validate.py, test fixtures",
+      "description": "Create contract/v1/cluster.schema.yaml defining the sovereign cluster contract invariants. Create contract/validate.py that validates a cluster config YAML against the schema and exits 1 with an 'AUTARKY VIOLATION' message on constraint failures. Create test fixtures: contract/v1/tests/valid.yaml (passes validation) and contract/v1/tests/invalid-egress-not-blocked.yaml (fails with AUTARKY VIOLATION).",
+      "acceptanceCriteria": [
+        "contract/v1/cluster.schema.yaml exists and is valid YAML: python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" exits 0",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
+        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 1,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      },
+      "phase": 22
+    },
+    {
+      "id": "KAIZEN-008",
+      "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
+      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
+        "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
+      ],
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/e15-target-increment",
+      "priority": 2,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
+      "phase": 22
+    },
+    {
+      "id": "KAIZEN-005",
+      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-patch-naming",
+      "priority": 3,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
+        "scripts/ralph/ceremonies/sync.md no longer contains the string 'retro-patch-phase'",
+        "grep -r 'retro-patch-phase' scripts/ returns no matches",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
+      ],
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "phase": 22
+    },
+    {
+      "id": "KAIZEN-006",
+      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/remove-phase-field",
+      "priority": 4,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
+        "grep -n '\"phase\"' prd/backlog.json returns no matches",
+        "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "phase": 22
+    }
+  ]
+}
