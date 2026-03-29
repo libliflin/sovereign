@@ -318,6 +318,12 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
     echo "  Branch: $STORY_BRANCH"
     git fetch origin main 2>/dev/null || true
 
+    # Stash any uncommitted changes so checkout doesn't fail
+    STASHED=false
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+      git stash push -m "ralph: auto-stash before branch sync" 2>/dev/null && STASHED=true
+    fi
+
     if git rev-parse --verify "origin/$STORY_BRANCH" &>/dev/null; then
       # Branch exists remotely — check it out and merge main
       git checkout "$STORY_BRANCH" 2>/dev/null || git checkout -b "$STORY_BRANCH" "origin/$STORY_BRANCH"
@@ -338,6 +344,11 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
       # Branch doesn't exist — create from main
       git checkout -b "$STORY_BRANCH" origin/main
       echo "  ✓ Created $STORY_BRANCH from main"
+    fi
+
+    # Restore stashed changes (sprint file updates from ceremonies)
+    if [[ "$STASHED" == "true" ]]; then
+      git stash pop 2>/dev/null || echo "  WARNING: stash pop failed — may need manual resolution"
     fi
   fi
 fi
