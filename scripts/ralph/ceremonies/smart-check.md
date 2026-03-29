@@ -118,6 +118,41 @@ Not-ready   : 1/4 stories (P0-004)
 Action needed: Refine P0-004 before sprint execution. See smart.notes for details.
 ```
 
+## Shell script quality gates (apply when scoring Achievable/Measurable)
+
+### Chart-iterating scripts must be tested against the real corpus
+
+Any shell script story whose description mentions iterating `platform/charts/` **must include**
+"run against all existing charts in `platform/charts/`" as an explicit acceptance criterion —
+not just a synthetic fixture chart. Mark `achievable ≤ 3` if this criterion is missing.
+
+The real chart corpus contains edge cases that synthetic fixtures will not expose:
+- Charts with no top-level `replicaCount` field (e.g. `platform/charts/_globals/`)
+- Underscore-prefixed directories that are not deployable services
+
+If an AC only covers a freshly-created test chart, the script has not been validated against
+the actual platform and will likely fail review.
+
+### `set -euo pipefail` + grep on optional YAML fields is a hard failure mode
+
+When a shell script uses `set -euo pipefail` and runs `grep` for an optional YAML field
+(e.g. `replicaCount`), the grep will exit 1 when the field is absent. With `pipefail`, this
+kills the script silently — no error message, no FAIL output, just a non-zero exit.
+
+**Required fix**: always use `|| true` on grep pipelines where the field may be absent:
+
+```bash
+# BAD — script dies silently on charts without replicaCount
+replica_count="$(grep -E '^replicaCount:' "$values" | awk '{print $2}')"
+
+# GOOD — script continues; empty result handled by subsequent -z check
+replica_count="$(grep -E '^replicaCount:' "$values" | awk '{print $2}' || true)"
+```
+
+Mark `achievable ≤ 3` for any story whose shell script iterates `platform/charts/` and whose
+test plan does not include running against the full chart corpus. The real corpus will expose
+this bug; a synthetic fixture will not.
+
 ## Important constraints
 
 - Write SMART scores directly into the active sprint file. This is the only file you modify.
