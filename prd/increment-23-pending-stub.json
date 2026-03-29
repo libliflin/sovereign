@@ -27,7 +27,15 @@
       "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-22-remediation.json",
-      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
+      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -50,12 +58,12 @@
       "attempts": 0,
       "priority": 1,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -81,12 +89,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: description says 'iterates every chart in charts/' but project uses platform/charts/ \u2014 directory path is ambiguous. Measurable score 4: ACs 4-5 require creating a test fixture chart but do not specify where to place it or how to clean it up. Achievable score 4: near the top of the point budget given per-chart helm template calls plus test fixture creation. Time-bound score 4: 'create a minimal test chart' in the test plan adds undefined setup scope."
       }
     },
     {
@@ -107,7 +115,15 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: updating E15.targetIncrement is planning-accuracy maintenance and does not directly advance the sprint goal of ceremony tooling reliability, HA gate, or contract-layer primitives."
+      }
     },
     {
       "id": "KAIZEN-005",
@@ -129,7 +145,15 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'rename any existing retro-patch-phase*.md files' does not specify how many exist or their locations. Time-bound score 4: file rename scope is open-ended without a known count of affected files. Relevant score 4: terminology hygiene is useful but not directly required by the sprint goal."
+      }
     },
     {
       "id": "KAIZEN-006",
@@ -150,7 +174,15 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: removing the legacy 'phase' field is data model housekeeping not directly required by the sprint goal of ceremony tooling reliability, HA gate, or contract-layer primitives."
+      }
     },
     {
       "id": "HA-006",
@@ -173,45 +205,76 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 3,
+        "measurable": 4,
+        "achievable": 3,
+        "relevant": 4,
+        "timeBound": 3,
+        "notes": "Specific score 3: extraction of resources.requests.{cpu,memory} from heterogeneous values.yaml structures is unspecified; how 'configurable' budget is exposed (env var, flag, or config file) is not defined. Achievable score 3: parsing YAML resource values in bash across varied chart structures is non-trivial and prone to expansion. Time-bound score 3: open-ended YAML parsing approach plus undefined configurable-budget interface adds unconstrained implementation scope."
       }
     },
     {
-      "id": "DEVEX-007",
-      "title": "code-server init container pre-installs sovereign toolchain (kubectl, helm, k9s) into workspace volume",
-      "description": "Add an init container to the code-server Deployment that copies kubectl, helm, and k9s binaries into /home/coder/workspace/bin before the main container starts. This ensures every browser-based session has the sovereign toolchain available without network access during the session (autarky). Binaries must be sourced from the platform Harbor registry via {{ .Values.global.imageRegistry }} \u2014 no external registry references. The init container must use a distroless-compatible base image.",
+      "id": "DEVEX-007a",
       "epicId": "E11",
       "themeId": "T3",
-      "phase": 7,
+      "branchName": "feature/code-server-toolchain-values",
+      "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
+      "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
+      "acceptanceCriteria": [
+        "grep 'toolchainInit' platform/charts/code-server/values.yaml returns a match",
+        "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
       "priority": 4,
-      "points": 2,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: establishes the values interface for DEVEX-007b but does not deliver user-visible functionality on its own; the sprint goal references 'code-server toolchain autarky' which this story only partially advances as a prerequisite."
+      }
+    },
+    {
+      "id": "DEVEX-007b",
+      "epicId": "E11",
+      "themeId": "T3",
       "branchName": "feature/code-server-toolchain-init",
+      "title": "code-server chart: add initContainer to Deployment template copying toolchain binaries (kubectl, helm, k9s)",
+      "description": "Add an initContainers section to platform/charts/code-server/templates/deployment.yaml. The init container image must be constructed in the template source as '{{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}'. The init container copies kubectl, helm, and k9s binaries into /home/coder/workspace/bin via a shared emptyDir volume. No external registry literals may appear in templates \u2014 all image refs must use global.imageRegistry. Depends on DEVEX-007a for the values interface.",
       "acceptanceCriteria": [
         "helm template platform/charts/code-server/ | grep -A5 'initContainers' returns at least one init container spec",
-        "helm template platform/charts/code-server/ | grep '.Values.global.imageRegistry' returns at least one match within the init container image reference",
+        "grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml returns at least one match confirming the init container image is sourced from the platform registry (source file grep, not rendered output)",
         "helm template platform/charts/code-server/ | grep -E 'kubectl|helm|k9s' returns matches showing toolchain binary installation",
         "helm lint platform/charts/code-server/ exits 0",
         "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches \u2014 G6 passes"
       ],
-      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers \u2014 show verbatim output confirming init container mounts toolchain binaries from Harbor.",
       "passes": false,
+      "points": 2,
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers; grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml; grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ \u2014 show all output verbatim.",
+      "dependencies": [
+        "DEVEX-007a"
+      ],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
-      "dependencies": [],
+      "priority": 5,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: adding initContainers with emptyDir volumeMount and binary copy commands for three tools (kubectl, helm, k9s) is near the top of the point budget for a 2-point story."
       }
     }
-  ]
+  ],
+  "storiesTotal": 9
 }
