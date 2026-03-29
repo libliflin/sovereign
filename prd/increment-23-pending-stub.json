@@ -22,7 +22,7 @@
       "priority": 1,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -53,7 +53,7 @@
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 1,
@@ -85,8 +85,10 @@
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
       "passes": true,
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 1,
+      "reviewNotes": [
+        "[Review 2] AC failed: 'For a chart that has replicaCount: 1 in values.yaml, scripts/ha-gate.sh outputs FAIL:<chart>:replicaCount < 2 and exits non-zero' and 'For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart'. Detail: The script uses set -euo pipefail. When processing platform/charts/_globals/values.yaml (which has no top-level replicaCount: field), the grep pipeline 'grep -E '^replicaCount:' ... | awk ... | tr ...' exits with code 1 (no match). With bash 3.2 (macOS default) and set -euo pipefail, a failed pipeline inside a command substitution triggers errexit and kills the script before any output is produced. Commands run: 'bash scripts/ha-gate.sh > /tmp/ha-out.txt 2>&1; echo exit:$?' => exit: 1, stdout empty. 'bash -x scripts/ha-gate.sh 2>/tmp/ha-trace.txt' trace ends at '+ replica_count=' with no subsequent output. Fix: add '|| true' to the grep pipeline: grep -E '^replicaCount:' ... || true | awk ... (or restructure to avoid pipefail killing on grep miss)."
+      ],
+      "attempts": 2,
       "dependencies": [],
       "smart": {
         "specific": 4,
@@ -95,7 +97,9 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Specific score 4: description says 'iterates every chart in charts/' but project uses platform/charts/ \u2014 directory path is ambiguous. Measurable score 4: ACs 4-5 require creating a test fixture chart but do not specify where to place it or how to clean it up. Achievable score 4: near the top of the point budget given per-chart helm template calls plus test fixture creation. Time-bound score 4: 'create a minimal test chart' in the test plan adds undefined setup scope."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field (e.g. _globals); fix requires || true guard on grep pipeline \u2014 documented in reviewNotes"
     },
     {
       "id": "KAIZEN-008",
@@ -110,10 +114,10 @@
       "branchName": "kaizen/e15-target-increment",
       "priority": 2,
       "points": 1,
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
       "smart": {
@@ -134,10 +138,10 @@
       "branchName": "kaizen/retro-patch-naming",
       "priority": 3,
       "points": 1,
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
@@ -164,10 +168,10 @@
       "branchName": "kaizen/remove-phase-field",
       "priority": 4,
       "points": 1,
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
         "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
@@ -200,10 +204,10 @@
       ],
       "testPlan": "shellcheck -S error scripts/gates/cost-gate.sh && echo 'shellcheck OK'; bash scripts/gates/cost-gate.sh; show full output verbatim including final PASS/FAIL line.",
       "dependencies": [],
-      "passes": false,
-      "reviewed": false,
+      "passes": true,
+      "reviewed": true,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 3,
         "measurable": 4,
@@ -225,13 +229,13 @@
         "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
         "helm lint platform/charts/code-server/ exits 0"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 4,
       "smart": {
         "specific": 5,
@@ -256,15 +260,15 @@
         "helm lint platform/charts/code-server/ exits 0",
         "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches \u2014 G6 passes"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers; grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml; grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ \u2014 show all output verbatim.",
       "dependencies": [
         "DEVEX-007a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 5,
       "smart": {
         "specific": 5,
@@ -276,5 +280,7 @@
       }
     }
   ],
-  "storiesTotal": 9
+  "storiesTotal": 9,
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

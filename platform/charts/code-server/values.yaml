@@ -82,6 +82,20 @@ serviceAccount:
   # Bind to cluster-admin so agents can run kubectl across all namespaces
   clusterAdmin: true
 
+toolchainInit:
+  # Init container image name (without registry prefix).
+  # Combined at template render time as {{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}
+  image: sovereign/toolchain:1.0.0
+  # Destination path in the shared emptyDir volume where binaries are copied
+  workspaceBinPath: /home/coder/workspace/bin
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
 podDisruptionBudget:
   minAvailable: 1
 

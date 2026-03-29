@@ -4,28 +4,6 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
-      "id": "KAIZEN-011",
-      "title": "Kaizen: Strengthen G1 indicator to catch broken imports, not just syntax errors",
-      "description": "The G1 gate runs python3 -m py_compile on ceremonies.py, orient.py, and gates.py. This catches syntax errors but not broken imports \u2014 a missing dependency or bad import statement causes a ModuleNotFoundError at runtime, not at compile time. The loop would stall on the first ceremony invocation with no actionable error in the gate output. Fix: augment G1's indicator command to also run 'python3 -c \"import scripts.ralph.lib.orient; import scripts.ralph.lib.gates\"' (or equivalent import smoke test) so broken imports surface as a gate failure before the loop attempts to run.",
-      "acceptanceCriteria": [
-        "G1 indicator command in prd/constitution.json is updated to include an import smoke test (e.g. python3 -c 'import importlib.util; ...' or PYTHONPATH=. python3 -c 'from scripts.ralph.lib import orient, gates') in addition to py_compile",
-        "bash -c '<updated G1 command>' exits 0 with 'G1 PASS' on the current codebase",
-        "If a deliberate broken import is introduced (e.g. 'import nonexistent_module' added to orient.py), the updated G1 command exits nonzero \u2014 then revert the deliberate break",
-        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 after any modifications to constitution.json"
-      ],
-      "testPlan": "Run the updated G1 indicator command directly and show output. Then introduce a broken import, confirm G1 fails, revert, confirm G1 passes again.",
-      "epicId": "E1",
-      "themeId": "T3",
-      "branchName": "kaizen/g1-import-smoke-test",
-      "priority": 10,
-      "points": 1,
-      "passes": false,
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "dependencies": []
-    },
-    {
       "id": "KAIZEN-010r",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
@@ -50,24 +28,161 @@
       "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
     },
     {
-      "id": "KAIZEN-009",
-      "title": "Kaizen: ArgoCD Application manifests must inject global.domain parameter",
-      "description": "16 ArgoCD Application manifests reference their chart's values.yaml but do not inject global.domain as a Helm parameter. At deploy time, charts will use their values.yaml default (sovereign-autarky.dev) regardless of the cluster's actual domain. Fix: add a helm.parameters entry for global.domain sourced from a cluster-level ApplicationSet parameter or a top-level values file, OR add a valueFiles reference to a cluster-specific values override. Affects: cert-manager, crossplane, gitlab, harbor, keycloak, sealed-secrets, vault, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator, argocd-image-updater.",
-      "acceptanceCriteria": [
-        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches \u2014 every app either injects global.domain or is documented as domain-agnostic",
-        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 \u2014 all YAML is valid after edits"
-      ],
+      "id": "KAIZEN-009a",
       "epicId": "E2",
       "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-injection",
-      "priority": 12,
-      "points": 2,
+      "branchName": "kaizen/argocd-global-domain-platform-tier-1",
+      "title": "ArgoCD global.domain injection: cert-manager, crossplane, sealed-secrets, vault, keycloak",
+      "description": "Add helm.parameters entry for global.domain to 5 ArgoCD Application manifests: platform/argocd-apps/platform/cert-manager-app.yaml, crossplane-app.yaml, sealed-secrets-app.yaml, vault-app.yaml, keycloak-app.yaml. For each file, add the following block under spec.source.helm (alongside the existing valueFiles entry):\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev\nThis ensures all 5 charts receive the cluster domain at sync time regardless of their values.yaml default.",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/platform/cert-manager-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/crossplane-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/sealed-secrets-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/vault-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/keycloak-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
       "passes": false,
+      "points": 2,
+      "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
+      "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "priority": 12,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified, fix approach is helm.parameters (not valueFiles). Achievable score 4: 5 files x ~4 lines each, near top of budget but within one iteration."
+      }
+    },
+    {
+      "id": "KAIZEN-009b",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-platform-tier-2",
+      "title": "ArgoCD global.domain injection: gitlab, harbor, argocd-image-updater",
+      "description": "Add helm.parameters entry for global.domain to 3 ArgoCD Application manifests: platform/argocd-apps/platform/gitlab-app.yaml, harbor-app.yaml, argocd-image-updater-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/platform/gitlab-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/harbor-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/platform/argocd-image-updater-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "for f in platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
-      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml \u2014 must return no output. Show verbatim."
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 13,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified."
+      }
+    },
+    {
+      "id": "KAIZEN-009c",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-observability",
+      "title": "ArgoCD global.domain injection: loki, tempo, thanos",
+      "description": "Add helm.parameters entry for global.domain to 3 ArgoCD Application manifests: platform/argocd-apps/observability/loki-app.yaml, tempo-app.yaml, thanos-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/observability/loki-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/observability/tempo-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/observability/thanos-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "for f in platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 14,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified."
+      }
+    },
+    {
+      "id": "KAIZEN-009d",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-security-tier",
+      "title": "ArgoCD global.domain injection: falco, istio, kiali, opa-gatekeeper, trivy-operator",
+      "description": "Add helm.parameters entry for global.domain to 5 ArgoCD Application manifests: platform/argocd-apps/security/falco-app.yaml, istio-app.yaml, kiali-app.yaml, opa-gatekeeper-app.yaml, trivy-operator-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
+      "acceptanceCriteria": [
+        "grep -q 'global.domain' platform/argocd-apps/security/falco-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/istio-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/kiali-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/opa-gatekeeper-app.yaml exits 0",
+        "grep -q 'global.domain' platform/argocd-apps/security/trivy-operator-app.yaml exits 0",
+        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" exits 0 (all YAML valid)"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "for f in platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 15,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact files named, exact YAML snippet specified. Achievable score 4: 5 files x ~4 lines, near top of budget but within one iteration."
+      }
+    },
+    {
+      "id": "KAIZEN-009e",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-verify-corpus",
+      "title": "Verify: all 16 targeted ArgoCD app manifests have global.domain injection",
+      "description": "Verify that all 16 targeted ArgoCD Application manifests contain global.domain after KAIZEN-009a through KAIZEN-009d complete. The 16 targeted files are: cert-manager, crossplane, sealed-secrets, vault, keycloak, gitlab, harbor, argocd-image-updater, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator. Files explicitly exempt (domain-agnostic or non-helm): cilium-app.yaml, rook-ceph-app.yaml, prometheus-stack-app.yaml, code-server-app.yaml, sonarqube-app.yaml, reportportal-app.yaml, sovereign-pm-app.yaml, backstage-app.yaml.",
+      "acceptanceCriteria": [
+        "Run the corpus check command: 'for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS' \u2014 must print ALL_16_PASS",
+        "python3 -c \"import yaml; files=['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml','platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml','platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml','platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']; [yaml.safe_load(open(f)) for f in files]; print('ALL_YAML_VALID')\" exits 0 and prints ALL_YAML_VALID"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS; show all output verbatim.",
+      "dependencies": [
+        "KAIZEN-009a",
+        "KAIZEN-009b",
+        "KAIZEN-009c",
+        "KAIZEN-009d"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 16,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Pure verification story: enumerates all 16 targeted files explicitly, lists all 8 exempt files with reason. No escape hatches."
+      }
     },
     {
       "id": "KAIZEN-008",
@@ -88,26 +203,6 @@
       "attempts": 0,
       "dependencies": [],
       "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
-    },
-    {
-      "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
-      "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
-      "acceptanceCriteria": [
-        "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
-      ],
-      "priority": 0,
-      "points": 1,
-      "passes": false,
-      "reviewed": false,
-      "epicId": "E1",
-      "themeId": "T3",
-      "branchName": "fix/gge-g5-andon",
-      "dependencies": [],
-      "attempts": 0,
-      "returnedFromSprint": "prd/increment-21-platform-foundations.json",
-      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle.",
-      "readinessNote": "NOT READY: missing testPlan \u2014 add concrete commands and expected outputs before pulling into a sprint."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -139,20 +234,23 @@
       }
     },
     {
-      "id": "RESTRUCTURE-001b",
+      "id": "RESTRUCTURE-001b-1",
       "epicId": "E2",
       "themeId": "T1",
-      "branchName": "restructure/monorepo",
-      "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
-      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
+      "branchName": "restructure/kind-bootstrap-script",
+      "title": "cluster/kind/bootstrap.sh: kind cluster provisioner with --help, --cluster-name, and kind create cluster invocation",
+      "description": "Create cluster/kind/bootstrap.sh. The script must: (1) support --help flag that prints usage including '--cluster-name NAME (default: sovereign-test)'; (2) accept --cluster-name NAME option defaulting to 'sovereign-test'; (3) print 'Bootstrapping kind cluster: $cluster_name' before running; (4) invoke 'kind create cluster --name \"$cluster_name\"'. Script must pass shellcheck -S error with set -euo pipefail at the top. Also verify that bootstrap/providers/ is not present in the working tree (it should have been removed in RESTRUCTURE-001a).",
       "acceptanceCriteria": [
-        "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
-        "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
-        "bootstrap/providers/ does not exist in working tree: [ ! -d bootstrap/providers ] exits 0"
+        "cluster/kind/bootstrap.sh exists: ls cluster/kind/bootstrap.sh exits 0",
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "bash -n cluster/kind/bootstrap.sh exits 0",
+        "bash cluster/kind/bootstrap.sh --help 2>&1 | grep -q 'cluster-name' exits 0",
+        "grep -q 'kind create cluster' cluster/kind/bootstrap.sh exits 0 (script contains the kind invocation)",
+        "[ ! -d bootstrap/providers ] exits 0 (bootstrap/providers/ not in working tree)"
       ],
       "passes": false,
       "points": 1,
-      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; shellcheck -S error platform/deploy.sh; [ ! -d bootstrap/providers ] && echo 'providers archived OK'; show all output verbatim.",
+      "testPlan": "ls cluster/kind/bootstrap.sh && shellcheck -S error cluster/kind/bootstrap.sh && bash -n cluster/kind/bootstrap.sh && bash cluster/kind/bootstrap.sh --help 2>&1 | grep 'cluster-name' && grep 'kind create cluster' cluster/kind/bootstrap.sh && [ ! -d bootstrap/providers ] && echo 'all checks passed'; show all output verbatim",
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
@@ -161,14 +259,46 @@
       "attempts": 0,
       "priority": 2,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b-2",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/platform-deploy-script",
+      "title": "platform/deploy.sh: Helm deployment orchestrator with --help, --chart-dir, --namespace, and helm upgrade --install invocation",
+      "description": "Create platform/deploy.sh. The script must: (1) support --help flag that prints usage including '--chart-dir DIR' and '--namespace NS'; (2) accept --chart-dir DIR and --namespace NS required options; (3) print 'Deploying chart: $chart_dir to namespace: $namespace' before running; (4) invoke 'helm upgrade --install' for the given chart and namespace. Script must pass shellcheck -S error with set -euo pipefail at the top.",
+      "acceptanceCriteria": [
+        "platform/deploy.sh exists: ls platform/deploy.sh exits 0",
+        "shellcheck -S error platform/deploy.sh exits 0",
+        "bash -n platform/deploy.sh exits 0",
+        "bash platform/deploy.sh --help 2>&1 | grep -q 'chart-dir' exits 0",
+        "grep -q 'helm upgrade --install' platform/deploy.sh exits 0 (script contains the helm invocation)"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "ls platform/deploy.sh && shellcheck -S error platform/deploy.sh && bash -n platform/deploy.sh && bash platform/deploy.sh --help 2>&1 | grep 'chart-dir' && grep 'helm upgrade --install' platform/deploy.sh && echo 'all checks passed'; show all output verbatim",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 3,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
     },
     {
       "id": "RESTRUCTURE-001c",
@@ -1024,7 +1154,7 @@
       "points": 2,
       "branchName": "feature/ha-gate-script",
       "title": "HA gate script validates all platform charts have replicaCount>=2, PDB, and podAntiAffinity",
-      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm.",
+      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm. IMPORTANT FIX (from sprint-23 review): The grep pipeline for extracting replicaCount must use '|| true' to prevent set -euo pipefail from killing the script when processing charts that have no top-level replicaCount field (e.g. platform/charts/_globals/). Pattern: replica_count=$(grep -E '^replicaCount:' \"$chart/values.yaml\" || true | awk ...)",
       "acceptanceCriteria": [
         "scripts/ha-gate.sh exists and passes shellcheck -S error: shellcheck -S error scripts/ha-gate.sh exits 0",
         "bash -n scripts/ha-gate.sh exits 0 (syntax check)",
@@ -1045,7 +1175,9 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
     },
     {
       "id": "HA-002",
@@ -1489,7 +1621,6 @@
       "description": "Configure the @backstage/plugin-catalog-backend-module-gitlab catalog provider in app-config.yaml to discover all repositories in the sovereign GitLab group and register them as Component entities on a 15-minute schedule. No manual catalog-info.yaml in each repo should be required. Configure integrations.gitlab and catalog.providers.gitlab sections in the Backstage chart values. The GitLab token must be injected from a SealedSecret \u2014 no plaintext credentials in values.yaml or templates.",
       "epicId": "E11",
       "themeId": "T3",
-      "phase": 7,
       "priority": 3,
       "points": 2,
       "branchName": "feature/backstage-gitlab-catalog-provider",
@@ -1577,7 +1708,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-007a has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-006",
@@ -1585,7 +1717,6 @@
       "description": "Configure ReportPortal's OAuth2 / OIDC integration to authenticate users via the sovereign Keycloak realm. Add a Keycloak OIDC client for ReportPortal to the platform/charts/keycloak/ realm configuration. All ReportPortal credentials (client secret, superadmin password) must be stored in SealedSecrets \u2014 no plaintext in values.yaml or templates. After this story, a Keycloak-authenticated user can log in to ReportPortal without a local ReportPortal account.",
       "epicId": "E12",
       "themeId": "T3",
-      "phase": 7,
       "priority": 3,
       "points": 2,
       "branchName": "feature/reportportal-keycloak-sso",
@@ -1619,7 +1750,6 @@
       "description": "Create a reusable GitLab CI include template at platform/ci-templates/reportportal-upload.yml that uploads JUnit XML artifacts to ReportPortal after test jobs complete. The job uses the ReportPortal HTTP API (POST /api/v1/{project}/launch/import) and reads RP_ENDPOINT and RP_TOKEN from CI environment variables (backed by cluster SealedSecrets). Create .gitlab-ci.yml at the repo root that includes this template. No plaintext credentials may appear in any committed file \u2014 RP_TOKEN must reference a masked CI variable.",
       "epicId": "E12",
       "themeId": "T3",
-      "phase": 7,
       "priority": 3,
       "points": 2,
       "branchName": "feature/reportportal-ci-upload",
@@ -1646,6 +1776,199 @@
         "notes": "Not yet SMART-scored."
       },
       "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "KAIZEN-012",
+      "title": "Kaizen: Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart \u2014 it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",
+        "The requirement text includes an explicit note about bash set -euo pipefail with grep pipelines: use '|| true' when grep results may be empty",
+        "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md (or equivalent) returns at least one match confirming the guidance is present"
+      ],
+      "testPlan": "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md and grep -n 'pipefail\\||| true' scripts/ralph/ceremonies/smart.md \u2014 show output verbatim. Both must return matches.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/chart-iteration-script-gate",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+    },
+    {
+      "id": "DEVEX-008",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 12,
+      "points": 2,
+      "branchName": "feature/backstage-keycloak-oidc",
+      "title": "Backstage: configure Keycloak OIDC auth provider \u2014 users log in with sovereign realm credentials",
+      "description": "Update platform/charts/backstage to configure Keycloak as Backstage's OIDC auth provider. The Backstage app-config.yaml ConfigMap must include auth.providers.oidc with the Keycloak realm URL referencing {{ .Values.global.domain }} (never hardcoded). Values must expose keycloak.realm and keycloak.clientId as Helm values with sensible defaults. Unauthenticated access should redirect to Keycloak login. This story covers the auth layer only \u2014 service auto-discovery is DEVEX-002.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ shows a ConfigMap containing auth.providers.oidc with {{ .Values.global.domain }} in the issuer URL \u2014 not a hardcoded hostname",
+        "platform/charts/backstage/values.yaml has a backstage.keycloak section with realm and clientId fields",
+        "helm lint platform/charts/backstage/ exits 0",
+        "Autarky gate passes: grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ 2>/dev/null; exit code 1 (no matches) with echo PASS",
+        "helm template platform/charts/backstage/ | python3 scripts/check-limits.py exits 0 (all containers have resource limits)"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -A8 'auth.providers' && grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/backstage/templates/ 2>/dev/null && echo 'AUTARKY FAIL' || echo 'AUTARKY PASS'; show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "PLATFORM-004"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-004 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "DEVEX-009",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 13,
+      "points": 1,
+      "branchName": "feature/code-server-workspace-pvc",
+      "title": "code-server chart: PersistentVolumeClaim for /home/coder so workspace survives pod restarts",
+      "description": "Add platform/charts/code-server/templates/pvc.yaml: a PersistentVolumeClaim for the code-server workspace. The storageClass must reference {{ .Values.global.storageClass }} (never hardcoded). Size must be configurable via values.yaml (default 5Gi). Update the Deployment template to add a volumeMount at /home/coder and a corresponding volume referencing the PVC. This ensures that agent workspaces, cloned git repos, and shell history survive pod restarts.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/templates/pvc.yaml exists \u2014 ls platform/charts/code-server/templates/pvc.yaml exits 0",
+        "helm template platform/charts/code-server/ shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}",
+        "helm template platform/charts/code-server/ shows a VolumeMount with mountPath: /home/coder",
+        "platform/charts/code-server/values.yaml has a persistence.size field \u2014 grep 'persistence:' platform/charts/code-server/values.yaml exits 0",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-010",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 14,
+      "points": 2,
+      "branchName": "feature/backstage-grafana-plugin",
+      "title": "Backstage Grafana plugin: platform metrics dashboards linked in service catalog entities",
+      "description": "Configure the Backstage Grafana plugin in platform/charts/backstage so that catalog entities annotated with grafana/dashboard-selector show embedded Grafana links. The Grafana base URL must reference {{ .Values.global.domain }} (never hardcoded). Add a backstage.grafana.domain Helm value. This closes the observability-to-catalog integration loop: a developer viewing any platform service in Backstage sees a direct link to its Grafana dashboard.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ shows a ConfigMap containing grafana with a domain value referencing {{ .Values.global.domain }} (grep 'grafana' should exit 0)",
+        "platform/charts/backstage/values.yaml has a backstage.grafana.domain field \u2014 grep 'grafana:' platform/charts/backstage/values.yaml exits 0",
+        "helm lint platform/charts/backstage/ exits 0",
+        "Autarky gate: grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ 2>/dev/null; exit code 1 (no matches)",
+        "helm template platform/charts/backstage/ | grep -i 'grafana' exits 0 (plugin config present in rendered ConfigMap)"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -i grafana | head -10 && grep 'grafana:' platform/charts/backstage/values.yaml && (grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/backstage/templates/ 2>/dev/null && echo 'AUTARKY FAIL' || echo 'AUTARKY PASS'); show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "HA-007",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 5,
+      "points": 2,
+      "branchName": "feature/ha-gate-ci-workflow",
+      "title": "GitHub Actions workflow: ha-gate.sh --dry-run runs on every PR touching platform/charts/",
+      "description": "Create .github/workflows/ha-gate.yml: a GitHub Actions workflow that triggers on pull_request for paths: [platform/charts/**]. The job must (1) run shellcheck -S error scripts/ha-gate.sh and (2) run scripts/ha-gate.sh --dry-run. The --dry-run mode lists all charts without invoking helm, so this gate requires no live cluster and is safe for CI. This enforces the HA invariants (replicaCount, PDB, podAntiAffinity) as a merge gate before any chart change lands on main.",
+      "acceptanceCriteria": [
+        ".github/workflows/ha-gate.yml exists \u2014 ls .github/workflows/ha-gate.yml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml exits 0 (valid YAML)",
+        "grep 'platform/charts' .github/workflows/ha-gate.yml exits 0 (path filter is present)",
+        "grep 'shellcheck' .github/workflows/ha-gate.yml exits 0 (shellcheck step is present)",
+        "grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml exits 0 (dry-run invocation present)",
+        "shellcheck -S error scripts/ha-gate.sh exits 0 (ha-gate.sh itself is shellcheck-clean before adding CI)"
+      ],
+      "testPlan": "ls .github/workflows/ha-gate.yml && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml && grep 'platform/charts' .github/workflows/ha-gate.yml && grep 'shellcheck' .github/workflows/ha-gate.yml && grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml && shellcheck -S error scripts/ha-gate.sh; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "HA-001"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency HA-001 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "HA-008",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 6,
+      "points": 2,
+      "branchName": "feature/chaos-pdb-validation",
+      "title": "Chaos Mesh PodChaos experiment YAML + README validates PDB prevents simultaneous pod eviction",
+      "description": "Create test/chaos/pdb-validation.yaml: a Chaos Mesh PodChaos experiment targeting a platform service (e.g. grafana namespace, mode: all) to simultaneously terminate all pods. The PDB minAvailable:1 should prevent the last pod from being evicted. Create test/chaos/README.md explaining how to apply the experiment against a kind cluster running Chaos Mesh (TEST-004), what PDB-enforcement behavior to observe, and how to clean up. The YAML is a static test artifact \u2014 it does not run in CI. This covers the 'PDB chaos validation' goal from E15.",
+      "acceptanceCriteria": [
+        "test/chaos/pdb-validation.yaml exists \u2014 ls test/chaos/pdb-validation.yaml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml exits 0 (valid YAML)",
+        "grep 'kind: PodChaos' test/chaos/pdb-validation.yaml exits 0",
+        "grep 'mode: all' test/chaos/pdb-validation.yaml exits 0 (targets all replicas to exercise PDB)",
+        "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
+      ],
+      "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
     }
   ]
 }

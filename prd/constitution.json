@@ -11,10 +11,10 @@
       "id": "G1",
       "title": "Delivery machine is self-orienting and self-healing",
       "themeId": "T3",
-      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else. The monorepo restructure risk is resolved; current fragility is that file_exists does not catch a ceremony script that exists but has a syntax error or broken import — a silent failure that stalls the loop with no andon.",
+      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else. Current fragility: py_compile catches syntax errors but not broken imports — a missing dependency or bad import statement causes a ModuleNotFoundError at runtime, stalling the loop with no gate signal. Indicator now includes an import smoke test so broken imports surface before the loop attempts to run.",
       "indicator": {
         "type": "gate_passing",
-        "command": "bash -c 'python3 -m py_compile scripts/ralph/ceremonies.py || (echo \"G1 FAIL: ceremonies.py has syntax error\" && exit 1); python3 -m py_compile scripts/ralph/lib/orient.py || (echo \"G1 FAIL: orient.py has syntax error\" && exit 1); python3 -m py_compile scripts/ralph/lib/gates.py || (echo \"G1 FAIL: gates.py has syntax error\" && exit 1); echo \"G1 PASS: ceremony scripts compile clean\"'"
+        "command": "bash -c 'python3 -m py_compile scripts/ralph/ceremonies.py || (echo \"G1 FAIL: ceremonies.py has syntax error\" && exit 1); python3 -m py_compile scripts/ralph/lib/orient.py || (echo \"G1 FAIL: orient.py has syntax error\" && exit 1); python3 -m py_compile scripts/ralph/lib/gates.py || (echo \"G1 FAIL: gates.py has syntax error\" && exit 1); PYTHONPATH=. python3 -c \"from scripts.ralph.lib import orient, gates\" || (echo \"G1 FAIL: broken import in orient or gates\" && exit 1); echo \"G1 PASS: ceremony scripts compile clean and imports resolve\"'"
       }
     },
     {

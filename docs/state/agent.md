@@ -128,6 +128,22 @@ Common fixes:
 - Empty array safety: `"${ARRAY[@]+"${ARRAY[@]}"}` instead of `"${ARRAY[@]}"` with `set -u`
 - Don't source `interface.sh` (has `exit 1` stubs that fire SC2317 unreachable code)
 
+**`set -euo pipefail` + grep on optional YAML fields is a footgun**: any shell script that greps
+for an optional field in a YAML file (e.g., `replicaCount`) must use `|| true` on the grep
+pipeline (e.g., `grep -E '^replicaCount:' file || true`). Without it, `pipefail` kills the
+script silently when the field is absent — the script exits non-zero with no output.
+
+**Test chart-iterating scripts against the real corpus first**: shell script stories that iterate
+`platform/charts/` must run against all existing charts before creating any synthetic test
+fixtures. The real chart corpus contains edge cases (charts with no `replicaCount`, underscore-
+prefixed directories like `_globals`) that synthetic fixtures will not expose. This is an explicit
+AC requirement for any E15 story or any story whose description mentions iterating `platform/charts/`.
+
+**macOS bash 3.2 is the target shell**: treat macOS bash 3.2 as the minimum target for all scripts
+until the dev environment explicitly standardises on a newer version. `pipefail` subshell behavior
+diverges between bash 3.2 and GNU bash 5.x. When shell behavior is version-sensitive, document
+the constraint in the story's `testPlan`.
+
 **vendor scripts**: every script in `vendor/*.sh` must support both `--dry-run` AND `--backup`
 flags. CI checks for both with grep. Missing either causes CI failure.
 
@@ -307,21 +323,26 @@ KIND-001b and returned to backlog. Increment 21 added as pending.),
 21 (platform-foundations — 0/1 stories accepted: GGE-G5-andon returned to backlog before Ralph
 ran any implementation cycles. Sprint closed without execution.),
 22 (remediation — 6/7 accepted: GGE-G5-andon, KAIZEN-007r plan ceremony pending-stub auto-prime,
-RESTRUCTURE-001a contract layer validator + test fixtures, KAIZEN-008 E15 targetIncrement updated,
-KAIZEN-005 retro-patch naming normalized, KAIZEN-006 phase field removed from backlog stories;
-KAIZEN-004r pre-retro guard returned to backlog as KAIZEN-010r — unit test AC needed)
+KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch naming normalized, KAIZEN-006
+phase field removed from backlog stories; KAIZEN-004r pre-retro guard returned as KAIZEN-010r),
+23 (pending-stub — 8/9 accepted: KAIZEN-010r pre-retro guard unit test, RESTRUCTURE-001a contract
+layer validator + test fixtures (G7), KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch
+naming normalized, KAIZEN-006 phase field removed from backlog, HA-006 cost-gate.sh, DEVEX-007a
+code-server toolchainInit values, DEVEX-007b code-server toolchain initContainer; HA-001 ha-gate.sh
+returned to backlog — grep pipefail fix documented in reviewNotes)
 
-Increment active: 22 is complete; advance ceremony will move pointer to increment 23 (pending stub).
-Increment 23 is a placeholder — plan ceremony will populate it with stories from the backlog.
+Increment active: 23 is complete; advance ceremony will move pointer to increment 24 (pending stub).
+Increment 24 is a placeholder — plan ceremony will populate it with stories from the backlog.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; stories 027a
-full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube +
-ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration story 052 pending),
-E13 (testing infrastructure + HA validation), E15 (HA integration testing — targetIncrement: 22)
+Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; code-server has
+toolchain initContainer; stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending),
+E12 (code quality — SonarQube + ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration
+story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA integration testing —
+HA-006 cost-gate.sh done; HA-001 ha-gate.sh pending with grep pipefail fix needed; targetIncrement: 22)
 
 ---
 
@@ -348,5 +369,5 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing — ta
 
 ## Known model inconsistencies
 
-- KAIZEN-004r (pre-retro guard): guard code implemented at ceremonies.py:538-558 but AC2 (fixture-based test) is unverifiable as written; KAIZEN-010r will add a unit test of the guard logic — then KAIZEN-004r can be re-verified with the updated AC
 - 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
+- HA-001 (ha-gate.sh) returned to backlog twice: exact fix (`|| true` guard on grep pipeline when field absent) is in `reviewNotes[1]` — apply it before next attempt.

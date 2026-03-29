@@ -42,6 +42,7 @@ The word "phase" is retired from code and data. If you see it in Python or JSON,
 | Bootstrapping | `cluster/kind/bootstrap.sh` (kind) and `bootstrap/bootstrap.sh` (VPS) are the only manual steps. Everything after is ArgoCD. |
 | Helm charts | Platform-level service charts in `platform/charts/<service>/`. Kind cluster bootstrap charts in `cluster/kind/charts/<service>/`. The root `charts/` directory is empty and retired. |
 | Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces autarky invariants (externalEgressBlocked=true) before any cluster is provisioned. |
+| Bootstrap cost gate | `scripts/gates/cost-gate.sh` validates chart resource requests fit within per-node budget (default: 4 CPU, 8Gi RAM) by reading Helm values — no running cluster required. |
 | Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
 | ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. Validate with `yq e '.'` — not `kubectl apply --dry-run` (CRDs not installed locally). |
 
@@ -97,7 +98,7 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 | Service | Role |
 |---|---|
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
-| code-server | Browser-based VS Code IDE for agents and developers. Helm chart and ArgoCD Application deployed. |
+| code-server | Browser-based VS Code IDE for agents and developers. Helm chart and ArgoCD Application deployed. An initContainer (image: `{{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}`) copies kubectl, helm, and k9s into `/home/coder/workspace/bin` via a shared emptyDir volume. |
 | Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. |
 | SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 | ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
