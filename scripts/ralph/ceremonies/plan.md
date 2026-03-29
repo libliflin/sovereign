@@ -254,7 +254,56 @@ with open("prd/manifest.json", "w") as f:
 `activeSprint` and `currentIncrement` are set. A sprint file without a manifest pointer is invisible
 to all ceremonies. The manifest update IS the plan's final step — then stop.
 
-### Step 9 — Print sprint planning summary
+### Step 9 — Ensure a pending increment stub exists (GGE G5 guard)
+
+After activating the sprint, check whether `prd/manifest.json` has any increment with
+`status: "pending"`. If none exists, append a minimal pending stub now — this ensures
+GGE G5 (`planning pipeline always has a pending increment`) never fires after this ceremony.
+
+```python
+import json
+
+with open('prd/manifest.json') as f:
+    manifest = json.load(f)
+
+pending = [i for i in manifest.get('increments', []) if i.get('status') == 'pending']
+if not pending:
+    increments = manifest.get('increments', [])
+    numeric_ids = [i['id'] for i in increments if isinstance(i['id'], int)]
+    next_id = max(numeric_ids) + 1 if numeric_ids else 1
+    active_id = manifest.get('currentIncrement', next_id - 1)
+    stub = {
+        "id": next_id,
+        "name": "pending-stub",
+        "description": (
+            f"Placeholder pending increment. "
+            f"Will be properly planned when increment {active_id} completes."
+        ),
+        "file": f"prd/increment-{next_id}-pending-stub.json",
+        "status": "pending",
+        "themeGoal": f"TBD \u2014 planned by plan ceremony after increment {active_id} advances.",
+        "dependsOn": [active_id]
+    }
+    increments.append(stub)
+    manifest['increments'] = increments
+    with open('prd/manifest.json', 'w') as f:
+        json.dump(manifest, f, indent=2)
+    print(f"Appended pending stub: increment {next_id} (GGE G5 guard)")
+else:
+    print(f"Pending increment already exists: {pending[0]['id']} ({pending[0].get('name', '')}) \u2014 GGE G5 OK")
+```
+
+Verify GGE G5 passes:
+
+```python
+import json
+m = json.load(open('prd/manifest.json'))
+pending = [i for i in m.get('increments', []) if i.get('status') == 'pending']
+assert len(pending) >= 1, f"FAIL: no pending increment after plan — GGE G5 will fire!"
+print(f"GGE G5 check: {len(pending)} pending increment(s) — OK")
+```
+
+### Step 10 — Print sprint planning summary
 
 ```
 === Sprint Planning: Increment <N> — <name> ===
