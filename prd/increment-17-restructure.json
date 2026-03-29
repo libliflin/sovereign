@@ -77,7 +77,7 @@
         "ls cluster/kind/charts/ contains all 3 cluster charts: cert-manager cilium sealed-secrets",
         "root charts/ is empty: [ -z \"$(ls charts/ 2>/dev/null)\" ] exits 0"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "ls platform/charts/; ls cluster/kind/charts/; [ -z \"$(ls charts/ 2>/dev/null)\" ] && echo 'root charts/ empty'; show all output verbatim.",
       "dependencies": [
@@ -88,12 +88,12 @@
       "attempts": 0,
       "priority": 3,
       "smart": {
-        "specific": 3,
+        "specific": 2,
         "measurable": 5,
-        "achievable": 4,
+        "achievable": 3,
         "relevant": 5,
-        "timeBound": 4,
-        "notes": "Specific score 3 (downgraded from 4): the 25+3 chart lists are explicit, but the story omits a critical cross-cutting requirement: ArgoCD app manifests in argocd-apps/ currently reference 'path: charts/<name>' (old root path) and must be updated to 'path: platform/charts/<name>' or 'path: cluster/kind/charts/<name>' — without this, ArgoCD breaks after the migration. This is a missing required task, not a minor gap. Time-bound score 4: the unmentioned ArgoCD manifest updates (20+ files) represent unstated scope. Achievable score 4: moving 28 chart directories is mechanical but high in file-operation volume; the hidden ArgoCD reference updates add more work than the 2-point budget suggests."
+        "timeBound": 3,
+        "notes": "Specific score 2 (downgraded from 3): the 25+3 chart lists are explicit, but a critical required task is absent from the ACs — the 24 ArgoCD Application manifests under platform/argocd-apps/ reference 'path: charts/<name>' (old root). Root charts/ is now empty, so ArgoCD is broken after the chart migration. Confirmed by working tree: grep -r 'path: charts/' platform/argocd-apps/ returns 24 hits. Add an explicit AC: all ArgoCD app manifests must reference 'path: platform/charts/<name>' or 'path: cluster/kind/charts/<name>' with a grep check showing 0 stale references. Achievable score 3 (downgraded from 4): 28 chart directory moves + 24 ArgoCD manifest edits is borderline for a 2-point story — at the top of the budget. Time-bound score 3 (downgraded from 4): 24 unstated ArgoCD edits represent significant hidden scope that must be added to the ACs before implementation."
       }
     },
     {

@@ -23,10 +23,11 @@ jobs:
       - name: List charts with Chart.yaml
         id: list
         run: |
-          CHARTS=$(ls charts/*/Chart.yaml 2>/dev/null \
-            | sed 's|charts/||;s|/Chart.yaml||' \
-            | sort \
-            | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().split()))")
+          CHARTS=$(
+            { ls platform/charts/*/Chart.yaml 2>/dev/null; ls cluster/kind/charts/*/Chart.yaml 2>/dev/null; } \
+              | sed 's|/Chart.yaml||' \
+              | sort \
+              | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().split()))")
           echo "charts=$CHARTS" >> "$GITHUB_OUTPUT"
           echo "Discovered charts: $CHARTS"
 
@@ -56,33 +57,36 @@ jobs:
       - name: Cache Helm deps
         uses: actions/cache@v4
         with:
-          path: charts/${{ matrix.chart }}/charts
-          key: helm-${{ matrix.chart }}-${{ hashFiles(format('charts/{0}/Chart.lock', matrix.chart)) }}
+          path: ${{ matrix.chart }}/charts
+          key: helm-${{ matrix.chart }}-${{ hashFiles(format('{0}/Chart.lock', matrix.chart)) }}
           restore-keys: helm-${{ matrix.chart }}-
 
       - name: Helm dependency update
         run: |
-          if [ -f "charts/${{ matrix.chart }}/Chart.yaml" ]; then
-            helm dependency update "charts/${{ matrix.chart }}/" 2>/dev/null || true
+          if [ -f "${{ matrix.chart }}/Chart.yaml" ]; then
+            helm dependency update "${{ matrix.chart }}/" 2>/dev/null || true
           fi
 
       - name: Helm lint
         run: |
-          helm lint "charts/${{ matrix.chart }}/"
+          helm lint "${{ matrix.chart }}/"
+
+      - name: Set safe chart name for filenames
+        run: echo "CHART_SAFE=$(echo '${{ matrix.chart }}' | tr '/' '_')" >> "$GITHUB_ENV"
 
       - name: Helm template (render)
         id: template
         run: |
-          helm template sovereign "charts/${{ matrix.chart }}/" \
+          helm template sovereign "${{ matrix.chart }}/" \
             --set global.domain=sovereign-autarky.dev \
-            > /tmp/rendered-${{ matrix.chart }}.yaml
-          echo "Rendered $(wc -l < /tmp/rendered-${{ matrix.chart }}.yaml) lines"
+            > "/tmp/rendered-${CHART_SAFE}.yaml"
+          echo "Rendered $(wc -l < "/tmp/rendered-${CHART_SAFE}.yaml") lines"
 
       - name: Assert PodDisruptionBudget present
         run: |
-          if grep -q "kind: Deployment\|kind: StatefulSet" /tmp/rendered-${{ matrix.chart }}.yaml; then
-            if ! grep -q "kind: PodDisruptionBudget" /tmp/rendered-${{ matrix.chart }}.yaml; then
-              echo "ERROR: chart/${{ matrix.chart }} has a Deployment/StatefulSet but no PodDisruptionBudget"
+          if grep -q "kind: Deployment\|kind: StatefulSet" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+            if ! grep -q "kind: PodDisruptionBudget" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+              echo "ERROR: ${{ matrix.chart }} has a Deployment/StatefulSet but no PodDisruptionBudget"
               exit 1
             fi
             echo "✓ PodDisruptionBudget found"
@@ -92,9 +96,9 @@ jobs:
 
       - name: Assert podAntiAffinity present
         run: |
-          if grep -q "kind: Deployment\|kind: StatefulSet" /tmp/rendered-${{ matrix.chart }}.yaml; then
-            if ! grep -q "podAntiAffinity" /tmp/rendered-${{ matrix.chart }}.yaml; then
-              echo "ERROR: chart/${{ matrix.chart }} has a Deployment/StatefulSet but no podAntiAffinity"
+          if grep -q "kind: Deployment\|kind: StatefulSet" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+            if ! grep -q "podAntiAffinity" "/tmp/rendered-${CHART_SAFE}.yaml"; then
+              echo "ERROR: ${{ matrix.chart }} has a Deployment/StatefulSet but no podAntiAffinity"
               exit 1
             fi
             echo "✓ podAntiAffinity found"
@@ -104,15 +108,15 @@ jobs:
 
       - name: Assert replicaCount >= 2 in values.yaml
         run: |
-          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          VALUES="${{ matrix.chart }}/values.yaml"
           if [ ! -f "$VALUES" ]; then
             echo "No values.yaml — skipping replicaCount check"
             exit 0
           fi
           # Check for ha_exception in vendor/VENDORS.yaml for this chart
           HA_EXCEPTION=$(python3 -c "
-          import yaml, sys
-          chart = '${{ matrix.chart }}'
+          import yaml, sys, os
+          chart = os.path.basename('${{ matrix.chart }}')
           try:
               with open('vendor/VENDORS.yaml') as f:
                   data = yaml.safe_load(f)
@@ -142,7 +146,7 @@ jobs:
           if [ "$REPLICA" = "NONE" ]; then
             echo "INFO: replicaCount not set in values.yaml (may be inherited from subchart)"
           elif [ "$REPLICA" -lt 2 ] 2>/dev/null; then
-            echo "ERROR: charts/${{ matrix.chart }}/values.yaml has replicaCount=$REPLICA (must be >= 2)"
+            echo "ERROR: ${{ matrix.chart }}/values.yaml has replicaCount=$REPLICA (must be >= 2)"
             exit 1
           else
             echo "✓ replicaCount=$REPLICA"
@@ -150,10 +154,10 @@ jobs:
 
       - name: "Assert no :latest image tags in values.yaml"
         run: |
-          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          VALUES="${{ matrix.chart }}/values.yaml"
           if [ ! -f "$VALUES" ]; then exit 0; fi
           if grep -qE ":\s*latest\b|tag:\s*latest\b" "$VALUES"; then
-            echo "ERROR: charts/${{ matrix.chart }}/values.yaml contains :latest image tag"
+            echo "ERROR: ${{ matrix.chart }}/values.yaml contains :latest image tag"
             grep -nE ":\s*latest\b|tag:\s*latest\b" "$VALUES"
             exit 1
           fi
@@ -161,7 +165,7 @@ jobs:
 
       - name: Assert image.repository uses global.imageRegistry
         run: |
-          VALUES="charts/${{ matrix.chart }}/values.yaml"
+          VALUES="${{ matrix.chart }}/values.yaml"
           if [ ! -f "$VALUES" ]; then exit 0; fi
           # Only check if image.repository is explicitly set (not via subchart)
           if python3 -c "
