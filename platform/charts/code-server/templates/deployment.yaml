@@ -33,6 +33,28 @@ spec:
                     {{- include "code-server.selectorLabels" . | nindent 20 }}
                 topologyKey: kubernetes.io/hostname
       initContainers:
+        # Copy kubectl, helm, and k9s binaries from the toolchain image into a shared volume
+        - name: install-toolchain
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              mkdir -p {{ .Values.toolchainInit.workspaceBinPath }}
+              for bin in kubectl helm k9s; do
+                if command -v "${bin}" >/dev/null 2>&1; then
+                  cp "$(command -v "${bin}")" {{ .Values.toolchainInit.workspaceBinPath }}/
+                  chmod +x {{ .Values.toolchainInit.workspaceBinPath }}/"${bin}"
+                  echo "Installed ${bin}"
+                fi
+              done
+          resources:
+            {{- toYaml .Values.toolchainInit.resources | nindent 12 }}
+          volumeMounts:
+            - name: toolchain-bin
+              mountPath: {{ .Values.toolchainInit.workspaceBinPath }}
         # Install VS Code extensions into the persistent home directory
         - name: install-extensions
           image: {{ include "code-server.image" . }}
@@ -90,6 +112,8 @@ spec:
           volumeMounts:
             - name: workspace
               mountPath: /home/coder
+            - name: toolchain-bin
+              mountPath: {{ .Values.toolchainInit.workspaceBinPath }}
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -145,3 +169,5 @@ spec:
         - name: workspace
           persistentVolumeClaim:
             claimName: {{ include "code-server.fullname" . }}-workspace
+        - name: toolchain-bin
+          emptyDir: {}
