@@ -58,7 +58,7 @@
       ],
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
-      "returnedReason": "Sprint closed before iteration; AC2 fixed \u2014 no longer references increment-17",
+      "returnedReason": "AC2 unverifiable: ceremonies.py has no --sprint flag for fixture-based testing; guard code confirmed implemented at ceremonies.py:538-558 but test cannot run without live AI ceremony invocation",
       "phase": 22,
       "smart": {
         "specific": 3,
@@ -67,7 +67,8 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Specific score 3: implementation approach not specified (bash guard vs Python call vs new ceremony step). Measurable score 4: AC2 assumes ceremonies.sh supports --start-at flag; if absent, test plan is blocked. Achievable score 4: fixture creation adds scope beyond the guard logic. Time-bound score 4: AC2 fixture creation is implicit extra work not called out in points estimate."
-      }
+      },
+      "returnedToBacklog": true
     },
     {
       "id": "KAIZEN-007r",

@@ -269,12 +269,17 @@
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGE-G5 and resolves priority-0 blockers.",
       "file": "prd/increment-22-remediation.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "Restore platform health: GGE-G5 green, plan ceremony self-primes, contract layer foundation.",
       "dependsOn": [],
       "startDate": "2026-03-29T19:51:20.913233+00:00",
       "pointsTotal": 9,
-      "storiesTotal": 7
+      "storiesTotal": 7,
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 8,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 14.3
     },
     {
       "id": 23,
@@ -289,5 +294,26 @@
     }
   ],
   "activeSprint": "prd/increment-22-remediation.json",
-  "currentIncrement": 22
+  "currentIncrement": 22,
+  "sprintHistory": [
+    {
+      "increment": 22,
+      "name": "remediation",
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 8,
+      "storiesTotal": 7,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 14.3
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 22,
+      "pointsCompleted": 8,
+      "storiesAccepted": 6,
+      "reviewPassRate": 14.3,
+      "date": "2026-03-29T00:00:00+00:00"
+    }
+  ]
 }
