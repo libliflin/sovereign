@@ -247,6 +247,20 @@
       "storiesAccepted": 3,
       "storiesIncomplete": 1,
       "reviewPassRate": 75.0
+    },
+    {
+      "id": 18,
+      "name": "remediation",
+      "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
+      "file": "prd/increment-18-remediation.json",
+      "status": "active",
+      "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
+      "dependsOn": [],
+      "startDate": "2026-03-29T17:59:47.978979+00:00",
+      "pointsTotal": 1,
+      "storiesTotal": 1
     }
-  ]
+  ],
+  "activeSprint": "prd/increment-18-remediation.json",
+  "currentIncrement": 18
 }
