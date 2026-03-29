@@ -42,10 +42,10 @@
       "branchName": "kaizen/pre-retro-review-guard",
       "priority": 1,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
         "ceremonies.sh (or the retro ceremony wrapper) checks for passes:true reviewed:false stories before running retro",
