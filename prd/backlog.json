@@ -521,7 +521,8 @@
       ],
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-22-remediation.json",
-      "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist"
+      "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist",
+      "readinessNote": "NOT READY: AC2 and testPlan require 'ceremonies.sh --start-at <fixture-file>' capability that does not exist in ceremonies.py (no --sprint or --prd flag). After 2 failed attempts this AC has been confirmed permanently unverifiable as written. Must revise AC2 to use a direct Python unit test of the guard logic (see KAIZEN-010r) before this story can be attempted again."
     },
     {
       "id": "DEVEX-001",
@@ -1285,7 +1286,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "Dependency '029' not found in backlog \u2014 verify it has passes: true in a completed sprint file before pulling this story into a sprint."
     },
     {
       "id": "TEST-006",
@@ -1319,7 +1321,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "Dependency '031a' not found in backlog \u2014 verify it has passes: true in a completed sprint file before pulling this story into a sprint."
     },
     {
       "id": "TEST-007",
@@ -1511,7 +1514,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
     },
     {
       "id": "DEVEX-007",
@@ -1576,7 +1580,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-007",
@@ -1609,7 +1614,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
     }
   ]
 }
