@@ -254,7 +254,10 @@
       "dependsOn": [
         20
       ],
-      "themeGoal": "T1 Sovereignty \u2014 platform foundations: deploy core charts into kind cluster"
+      "themeGoal": "T1 Sovereignty \u2014 platform foundations: deploy core charts into kind cluster",
+      "startDate": "2026-03-29T19:37:51.352158+00:00",
+      "pointsTotal": 1,
+      "storiesTotal": 1
     }
   ],
   "activeSprint": "prd/increment-21-platform-foundations.json",
