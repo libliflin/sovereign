@@ -184,13 +184,13 @@
         "grep -q 'global.domain' platform/argocd-apps/platform/keycloak-app.yaml exits 0",
         "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" exits 0 (all YAML valid)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 12,
       "smart": {
         "specific": 4,
