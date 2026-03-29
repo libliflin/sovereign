@@ -4,28 +4,6 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
-      "id": "KAIZEN-011",
-      "title": "Kaizen: Strengthen G1 indicator to catch broken imports, not just syntax errors",
-      "description": "The G1 gate runs python3 -m py_compile on ceremonies.py, orient.py, and gates.py. This catches syntax errors but not broken imports \u2014 a missing dependency or bad import statement causes a ModuleNotFoundError at runtime, not at compile time. The loop would stall on the first ceremony invocation with no actionable error in the gate output. Fix: augment G1's indicator command to also run 'python3 -c \"import scripts.ralph.lib.orient; import scripts.ralph.lib.gates\"' (or equivalent import smoke test) so broken imports surface as a gate failure before the loop attempts to run.",
-      "acceptanceCriteria": [
-        "G1 indicator command in prd/constitution.json is updated to include an import smoke test (e.g. python3 -c 'import importlib.util; ...' or PYTHONPATH=. python3 -c 'from scripts.ralph.lib import orient, gates') in addition to py_compile",
-        "bash -c '<updated G1 command>' exits 0 with 'G1 PASS' on the current codebase",
-        "If a deliberate broken import is introduced (e.g. 'import nonexistent_module' added to orient.py), the updated G1 command exits nonzero \u2014 then revert the deliberate break",
-        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 after any modifications to constitution.json"
-      ],
-      "testPlan": "Run the updated G1 indicator command directly and show output. Then introduce a broken import, confirm G1 fails, revert, confirm G1 passes again.",
-      "epicId": "E1",
-      "themeId": "T3",
-      "branchName": "kaizen/g1-import-smoke-test",
-      "priority": 10,
-      "points": 1,
-      "passes": false,
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "dependencies": []
-    },
-    {
       "id": "KAIZEN-010r",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
@@ -88,26 +66,6 @@
       "attempts": 0,
       "dependencies": [],
       "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
-    },
-    {
-      "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
-      "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
-      "acceptanceCriteria": [
-        "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
-      ],
-      "priority": 0,
-      "points": 1,
-      "passes": false,
-      "reviewed": false,
-      "epicId": "E1",
-      "themeId": "T3",
-      "branchName": "fix/gge-g5-andon",
-      "dependencies": [],
-      "attempts": 0,
-      "returnedFromSprint": "prd/increment-21-platform-foundations.json",
-      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle.",
-      "readinessNote": "NOT READY: missing testPlan \u2014 add concrete commands and expected outputs before pulling into a sprint."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -1668,6 +1626,173 @@
       "dependencies": [],
       "returnedFromSprint": "prd/increment-23-pending-stub.json",
       "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+    },
+    {
+      "id": "DEVEX-008",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 12,
+      "points": 2,
+      "branchName": "feature/backstage-keycloak-oidc",
+      "title": "Backstage: configure Keycloak OIDC auth provider \u2014 users log in with sovereign realm credentials",
+      "description": "Update platform/charts/backstage to configure Keycloak as Backstage's OIDC auth provider. The Backstage app-config.yaml ConfigMap must include auth.providers.oidc with the Keycloak realm URL referencing {{ .Values.global.domain }} (never hardcoded). Values must expose keycloak.realm and keycloak.clientId as Helm values with sensible defaults. Unauthenticated access should redirect to Keycloak login. This story covers the auth layer only \u2014 service auto-discovery is DEVEX-002.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ shows a ConfigMap containing auth.providers.oidc with {{ .Values.global.domain }} in the issuer URL \u2014 not a hardcoded hostname",
+        "platform/charts/backstage/values.yaml has a backstage.keycloak section with realm and clientId fields",
+        "helm lint platform/charts/backstage/ exits 0",
+        "Autarky gate passes: grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ 2>/dev/null; exit code 1 (no matches) with echo PASS",
+        "helm template platform/charts/backstage/ | python3 scripts/check-limits.py exits 0 (all containers have resource limits)"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -A8 'auth.providers' && grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/backstage/templates/ 2>/dev/null && echo 'AUTARKY FAIL' || echo 'AUTARKY PASS'; show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "PLATFORM-004"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-009",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 13,
+      "points": 1,
+      "branchName": "feature/code-server-workspace-pvc",
+      "title": "code-server chart: PersistentVolumeClaim for /home/coder so workspace survives pod restarts",
+      "description": "Add platform/charts/code-server/templates/pvc.yaml: a PersistentVolumeClaim for the code-server workspace. The storageClass must reference {{ .Values.global.storageClass }} (never hardcoded). Size must be configurable via values.yaml (default 5Gi). Update the Deployment template to add a volumeMount at /home/coder and a corresponding volume referencing the PVC. This ensures that agent workspaces, cloned git repos, and shell history survive pod restarts.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/templates/pvc.yaml exists \u2014 ls platform/charts/code-server/templates/pvc.yaml exits 0",
+        "helm template platform/charts/code-server/ shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}",
+        "helm template platform/charts/code-server/ shows a VolumeMount with mountPath: /home/coder",
+        "platform/charts/code-server/values.yaml has a persistence.size field \u2014 grep 'persistence:' platform/charts/code-server/values.yaml exits 0",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-010",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 14,
+      "points": 2,
+      "branchName": "feature/backstage-grafana-plugin",
+      "title": "Backstage Grafana plugin: platform metrics dashboards linked in service catalog entities",
+      "description": "Configure the Backstage Grafana plugin in platform/charts/backstage so that catalog entities annotated with grafana/dashboard-selector show embedded Grafana links. The Grafana base URL must reference {{ .Values.global.domain }} (never hardcoded). Add a backstage.grafana.domain Helm value. This closes the observability-to-catalog integration loop: a developer viewing any platform service in Backstage sees a direct link to its Grafana dashboard.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ shows a ConfigMap containing grafana with a domain value referencing {{ .Values.global.domain }} (grep 'grafana' should exit 0)",
+        "platform/charts/backstage/values.yaml has a backstage.grafana.domain field \u2014 grep 'grafana:' platform/charts/backstage/values.yaml exits 0",
+        "helm lint platform/charts/backstage/ exits 0",
+        "Autarky gate: grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ 2>/dev/null; exit code 1 (no matches)",
+        "helm template platform/charts/backstage/ | grep -i 'grafana' exits 0 (plugin config present in rendered ConfigMap)"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -i grafana | head -10 && grep 'grafana:' platform/charts/backstage/values.yaml && (grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/backstage/templates/ 2>/dev/null && echo 'AUTARKY FAIL' || echo 'AUTARKY PASS'); show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "HA-007",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 5,
+      "points": 2,
+      "branchName": "feature/ha-gate-ci-workflow",
+      "title": "GitHub Actions workflow: ha-gate.sh --dry-run runs on every PR touching platform/charts/",
+      "description": "Create .github/workflows/ha-gate.yml: a GitHub Actions workflow that triggers on pull_request for paths: [platform/charts/**]. The job must (1) run shellcheck -S error scripts/ha-gate.sh and (2) run scripts/ha-gate.sh --dry-run. The --dry-run mode lists all charts without invoking helm, so this gate requires no live cluster and is safe for CI. This enforces the HA invariants (replicaCount, PDB, podAntiAffinity) as a merge gate before any chart change lands on main.",
+      "acceptanceCriteria": [
+        ".github/workflows/ha-gate.yml exists \u2014 ls .github/workflows/ha-gate.yml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml exits 0 (valid YAML)",
+        "grep 'platform/charts' .github/workflows/ha-gate.yml exits 0 (path filter is present)",
+        "grep 'shellcheck' .github/workflows/ha-gate.yml exits 0 (shellcheck step is present)",
+        "grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml exits 0 (dry-run invocation present)",
+        "shellcheck -S error scripts/ha-gate.sh exits 0 (ha-gate.sh itself is shellcheck-clean before adding CI)"
+      ],
+      "testPlan": "ls .github/workflows/ha-gate.yml && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml && grep 'platform/charts' .github/workflows/ha-gate.yml && grep 'shellcheck' .github/workflows/ha-gate.yml && grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml && shellcheck -S error scripts/ha-gate.sh; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "HA-001"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "HA-008",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 6,
+      "points": 2,
+      "branchName": "feature/chaos-pdb-validation",
+      "title": "Chaos Mesh PodChaos experiment YAML + README validates PDB prevents simultaneous pod eviction",
+      "description": "Create test/chaos/pdb-validation.yaml: a Chaos Mesh PodChaos experiment targeting a platform service (e.g. grafana namespace, mode: all) to simultaneously terminate all pods. The PDB minAvailable:1 should prevent the last pod from being evicted. Create test/chaos/README.md explaining how to apply the experiment against a kind cluster running Chaos Mesh (TEST-004), what PDB-enforcement behavior to observe, and how to clean up. The YAML is a static test artifact \u2014 it does not run in CI. This covers the 'PDB chaos validation' goal from E15.",
+      "acceptanceCriteria": [
+        "test/chaos/pdb-validation.yaml exists \u2014 ls test/chaos/pdb-validation.yaml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml exits 0 (valid YAML)",
+        "grep 'kind: PodChaos' test/chaos/pdb-validation.yaml exits 0",
+        "grep 'mode: all' test/chaos/pdb-validation.yaml exits 0 (targets all replicas to exercise PDB)",
+        "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
+      ],
+      "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
     }
   ]
 }
