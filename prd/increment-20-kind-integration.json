@@ -60,7 +60,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: implementation target is 'plan.md (or the plan ceremony runner)' \u2014 both files should be named explicitly. Measurable score 4: AC1 ('contains logic to append...') is structural assertion, not a runnable command; should be a grep for the specific function name or added code block."
+        "notes": "Specific score 4: AC targets 'plan.md (or the plan ceremony runner)' \u2014 both candidate files should be named explicitly so Ralph knows exactly which file to edit. Measurable score 4: AC1 ('contains logic to append a pending increment stub') is a prose assertion, not a runnable command; replace with a grep for the specific function or code pattern added."
       }
     },
     {
@@ -92,7 +92,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: AC references increment-17-restructure.json in the verification command, but the guard should work for the *active* sprint file \u2014 test plan should use a generic fixture, not a named completed sprint. Measurable score 4: AC1 ('checks for passes:true reviewed:false stories') is prose; should be a grep for the guard code."
+        "notes": "Specific score 4: AC2 hard-codes 'increment-17-restructure.json' as the test target \u2014 a completed sprint. The guard must work for the active sprint file; AC should use a temporary fixture file, not a named completed increment. Measurable score 4: AC1 ('checks for passes:true reviewed:false stories') is prose; should be grep/python command that verifies the guard code exists in ceremonies.sh."
       }
     },
     {
@@ -129,7 +129,7 @@
         "achievable": 3,
         "relevant": 5,
         "timeBound": 4,
-        "notes": "Achievable score 3: 3-point story requires writing cluster/kind/bootstrap.sh from scratch plus installing Cilium (kindnet disabled), cert-manager, sealed-secrets, MinIO, local-path-provisioner, and a contract validator \u2014 eight moving parts that together likely exceed a single 2000-token Ralph iteration. Consider splitting into KIND-001a (bootstrap.sh + 3-node cluster + contract validator) and KIND-001b (Cilium + cert-manager + sealed-secrets + MinIO). Time-bound score 4: MinIO and local-path-provisioner are not mentioned in the sprint goal or description but appear in the ACs \u2014 minor scope creep risk."
+        "notes": "Achievable score 3: 3-point story requires authoring cluster/kind/bootstrap.sh from scratch PLUS installing Cilium (with kindnet disabled), cert-manager, sealed-secrets, MinIO, local-path-provisioner, and a contract validator \u2014 eight integration points that together exceed a single Ralph iteration budget. Recommend splitting: KIND-001a (bootstrap.sh + 3-node cluster + contract/validate.py) and KIND-001b (Cilium + cert-manager + sealed-secrets + MinIO). Time-bound score 4: MinIO and local-path-provisioner appear in ACs but not in the sprint goal or story description \u2014 minor scope creep risk that could expand during implementation."
       }
     },
     {
@@ -159,7 +159,7 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Relevant score 4: naming consistency kaizen is useful but not blocking the sprint goal (kind cluster bootstrap). Could be deferred without impact to KIND-001."
+        "notes": "Relevant score 4: naming consistency kaizen is valuable but not on the critical path to the sprint goal (kind cluster bootstrap). Can be deferred without blocking KIND-001."
       }
     },
     {
@@ -188,7 +188,7 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Relevant score 4: data model cleanup is valuable but not on the critical path to the sprint goal. Could be deferred without blocking kind cluster work."
+        "notes": "Relevant score 4: data model cleanup is useful but not blocking the sprint goal. Can be deferred without impact to KIND-001."
       }
     }
   ]
