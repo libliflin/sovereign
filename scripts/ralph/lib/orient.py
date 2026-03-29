@@ -739,7 +739,16 @@ def assess(repo_root: Path) -> Assessment:
 
     # ── KPI 6: Epic coverage ────────────────────────────────────────────────
     story_epic_ids = {s.get("epicId") for s in all_stories if s.get("epicId")}
-    empty_epics = [e for e in epics if e.get("id") not in story_epic_ids]
+    # Only flag epics that still need work: not complete/killed, and whose
+    # targetIncrement has not already shipped. Complete epics have no backlog
+    # stories by design; epics targeting finished increments are closed work.
+    complete_inc_ids = {str(p.get("id")) for p in phases if p.get("status") == "complete"}
+    actionable_epics = [
+        e for e in epics
+        if e.get("status") not in ("complete", "killed")
+        and str(e.get("targetIncrement", "")) not in complete_inc_ids
+    ]
+    empty_epics = [e for e in actionable_epics if e.get("id") not in story_epic_ids]
     epic_status = "FAIL" if empty_epics else "OK"
     epic_detail = (
         f"{', '.join(e['id'] for e in empty_epics[:3])}{'…' if len(empty_epics) > 3 else ''} need stories"
