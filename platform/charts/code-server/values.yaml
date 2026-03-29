@@ -85,7 +85,7 @@ serviceAccount:
 toolchainInit:
   # Init container image name (without registry prefix).
   # Combined at template render time as {{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}
-  image: sovereign/toolchain:latest
+  image: sovereign/toolchain:1.0.0
   # Destination path in the shared emptyDir volume where binaries are copied
   workspaceBinPath: /home/coder/workspace/bin
   resources:
