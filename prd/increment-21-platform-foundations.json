@@ -22,7 +22,15 @@
       "dependencies": [],
       "attempts": 0,
       "phase": 21,
-      "reviewNotes": []
+      "reviewNotes": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     }
   ]
 }
