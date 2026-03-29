@@ -442,12 +442,14 @@ def main() -> int:
                     # doesn't see a dirty tree when it tries to checkout
                     _git_commit("clear-failures", [str(active_sprint)])
                     ralph_exit = ai_lib.run_ralph(SCRIPT_DIR / "ralph.sh", sprint_file, args.tool, 10, log_file)
+                    _git_commit("execute", [str(active_sprint)])
                     if ralph_exit != 0:
-                        print(f"  WARNING: ralph.sh exited {ralph_exit}")
+                        print(f"\n  EXECUTE FAILED (ralph.sh exited {ralph_exit}).")
+                        print(f"  Andon cord pulled — stopping the line. Fix the failure before re-running.")
+                        return 1
                     sprint = sprint_lib.load(sprint_file)
                     passing = sprint_lib.stories_passing(sprint)
                     print(f"\n  Passing: {len(passing)}/{len(sprint.get('stories', []))}")
-                    _git_commit("execute", [str(active_sprint)])
 
             # SMOKE
             log_step("smoke")
