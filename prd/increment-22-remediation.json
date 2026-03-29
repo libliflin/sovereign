@@ -216,7 +216,5 @@
         "notes": "Specific score 4: 'update the story schema to mark it as deprecated' does not name the schema file. Time-bound score 4: the schema update sub-task is open-ended without a named file. Relevant score 4: data model hygiene, useful but does not block the sprint goal."
       }
     }
-  ],
-  "_lastSmokeTestFailures": [],
-  "_lastProofOfWorkFailures": []
+  ]
 }
