@@ -88,12 +88,12 @@
       "attempts": 0,
       "priority": 3,
       "smart": {
-        "specific": 4,
+        "specific": 3,
         "measurable": 5,
         "achievable": 4,
         "relevant": 5,
         "timeBound": 4,
-        "notes": "Specific score 4: the 25+3 chart lists are explicit, but the story omits a required cross-cutting task: ArgoCD app manifests in platform/argocd-apps/ currently reference 'path: charts/<name>' (old root path) and must be updated to 'path: platform/charts/<name>' or 'path: cluster/kind/charts/<name>' \u2014 without this, ArgoCD breaks after the migration. This work is not mentioned in the description or AC. Time-bound score 4: the unmentioned ArgoCD manifest updates (20+ files) represent unstated scope that could expand the story significantly. Achievable score 4: moving 28 chart directories is mechanical but high in file-operation volume; the hidden ArgoCD reference updates add more work than the 2-point budget suggests."
+        "notes": "Specific score 3 (downgraded from 4): the 25+3 chart lists are explicit, but the story omits a critical cross-cutting requirement: ArgoCD app manifests in argocd-apps/ currently reference 'path: charts/<name>' (old root path) and must be updated to 'path: platform/charts/<name>' or 'path: cluster/kind/charts/<name>' \u2014 without this, ArgoCD breaks after the migration. This is a missing required task, not a minor gap. Time-bound score 4: the unmentioned ArgoCD manifest updates (20+ files) represent unstated scope. Achievable score 4: moving 28 chart directories is mechanical but high in file-operation volume; the hidden ArgoCD reference updates add more work than the 2-point budget suggests."
       }
     },
     {
