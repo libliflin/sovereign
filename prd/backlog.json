@@ -21,29 +21,95 @@
       "attempts": 0
     },
     {
-      "id": "RESTRUCTURE-001",
-      "title": "Monorepo restructure: contract/, cluster/kind/, platform/",
-      "description": "Establish the clean separation between cluster provider and platform. Create contract/v1/cluster.schema.yaml, cluster/kind/ skeleton, platform/ with deploy.sh. Archive all non-kind providers. This story is the rough shape \u2014 subsequent stories make each layer operational.",
-      "acceptanceCriteria": [
-        "contract/v1/cluster.schema.yaml exists and is valid YAML",
-        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
-        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with AUTARKY VIOLATION message",
-        "cluster/kind/bootstrap.sh exists and passes shellcheck -S error",
-        "platform/deploy.sh exists and passes shellcheck -S error",
-        "bootstrap/providers/ is removed from working tree (archived in git history)",
-        "All platform charts are under platform/charts/",
-        "All cluster charts are under cluster/kind/charts/"
-      ],
-      "priority": 1,
-      "points": 3,
-      "passes": false,
-      "reviewed": false,
+      "id": "RESTRUCTURE-001a",
       "epicId": "E2",
       "themeId": "T1",
       "branchName": "restructure/monorepo",
+      "title": "Contract layer: cluster.schema.yaml, validate.py, test fixtures",
+      "description": "Create contract/v1/cluster.schema.yaml defining the sovereign cluster contract invariants. Create contract/validate.py that validates a cluster config YAML against the schema and exits 1 with an 'AUTARKY VIOLATION' message on constraint failures. Create test fixtures: contract/v1/tests/valid.yaml (passes validation) and contract/v1/tests/invalid-egress-not-blocked.yaml (fails with AUTARKY VIOLATION).",
+      "acceptanceCriteria": [
+        "contract/v1/cluster.schema.yaml exists and is valid YAML: python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" exits 0",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
+        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with exact runnable commands (e.g., shellcheck cluster/kind/bootstrap.sh; python3 contract/validate.py contract/v1/tests/valid.yaml; git log --oneline bootstrap/providers/) and expected outputs."
+      "priority": 1,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
+      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
+      "acceptanceCriteria": [
+        "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
+        "bootstrap/providers/ does not exist in working tree: [ ! -d bootstrap/providers ] exits 0"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; shellcheck -S error platform/deploy.sh; [ ! -d bootstrap/providers ] && echo 'providers archived OK'; show all output verbatim.",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 2,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001c",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Chart migration: platform/charts/ and cluster/kind/charts/ explicit placement",
+      "description": "Migrate (and verify) all chart directories to the correct tier. Platform-layer charts (_globals, argocd, backstage, chaos-mesh, code-server, crossplane, falco, gitlab, harbor, istio, k6-operator, keycloak, kiali, loki, mailhog, opa-gatekeeper, prometheus-stack, reportportal, selenium-grid, sonarqube, sovereign-pm, tempo, thanos, trivy-operator, wiremock) must be under platform/charts/. Cluster-layer charts (cert-manager, cilium, sealed-secrets) must be under cluster/kind/charts/. The root charts/ directory must be empty to confirm no charts remain in the old location.",
+      "acceptanceCriteria": [
+        "ls platform/charts/ contains all 25 platform charts: _globals argocd backstage chaos-mesh code-server crossplane falco gitlab harbor istio k6-operator keycloak kiali loki mailhog opa-gatekeeper prometheus-stack reportportal selenium-grid sonarqube sovereign-pm tempo thanos trivy-operator wiremock",
+        "ls cluster/kind/charts/ contains all 3 cluster charts: cert-manager cilium sealed-secrets",
+        "root charts/ is empty: [ -z \"$(ls charts/ 2>/dev/null)\" ] exits 0"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "ls platform/charts/; ls cluster/kind/charts/; [ -z \"$(ls charts/ 2>/dev/null)\" ] && echo 'root charts/ empty'; show all output verbatim.",
+      "dependencies": [
+        "RESTRUCTURE-001b"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 3,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
     },
     {
       "id": "KIND-001",
@@ -68,10 +134,10 @@
       "themeId": "T3",
       "branchName": "feature/kind-bootstrap",
       "dependencies": [
-        "RESTRUCTURE-001"
+        "RESTRUCTURE-001c"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with exact commands (e.g., ./cluster/kind/bootstrap.sh --dry-run; kind get clusters; kubectl get nodes; python3 contract/validate.py cluster-values.yaml) and expected outputs. Unresolved dependency: RESTRUCTURE-001 must pass first."
+      "readinessNote": "Missing testPlan. Unresolved dependency: RESTRUCTURE-001 must pass first."
     },
     {
       "id": "KIND-002",
@@ -94,7 +160,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed. Vague ACs: 'A CiliumClusterwideNetworkPolicy...is applied' and 'Internal pod-to-pod communication still works' have no runnable verification commands \u2014 replace with kubectl get ciliumclusterwidenetworkpolicy and explicit curl/wget probe commands. Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "Missing testPlan. Vague ACs (no runnable verification commands for egress probe and internal comms). Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-001",
@@ -117,7 +183,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --cluster-values cluster-values.yaml --only cert-manager; kubectl get pods -n cert-manager; kubectl get certificate -n cert-manager-test; show output verbatim. Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "Missing testPlan. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-002",
@@ -140,7 +206,7 @@
         "KIND-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only sealed-secrets; kubectl get pods -n sealed-secrets; kubeseal < test-secret.yaml > sealed.yaml; kubectl apply -f sealed.yaml; kubectl get secret test-secret -o jsonpath='{.data.value}' | base64 -d; show output verbatim. Unresolved dependency: KIND-001 must pass first."
+      "readinessNote": "Missing testPlan. Unresolved dependency: KIND-001 must pass first."
     },
     {
       "id": "PLATFORM-003",
@@ -165,7 +231,7 @@
         "PLATFORM-001"
       ],
       "attempts": 0,
-      "readinessNote": "Missing testPlan: no concrete commands listed to verify the story. Add a testPlan with: ./platform/deploy.sh --only harbor; kubectl get pods -n harbor; curl https://harbor.sovereign.local/api/v2.0/ping (via port-forward); docker push test; show output verbatim. Unresolved dependencies: KIND-001 and PLATFORM-001 must pass first."
+      "readinessNote": "Missing testPlan. Unresolved dependencies: KIND-001 and PLATFORM-001 must pass first."
     },
     {
       "id": "PLATFORM-004",
@@ -275,7 +341,7 @@
       "reviewed": false,
       "attempts": 0,
       "dependencies": [
-        "RESTRUCTURE-001"
+        "RESTRUCTURE-001c"
       ],
       "acceptanceCriteria": [
         "contract/v1/tests/invalid-no-imageregistry.yaml exists and fails validate.py with a message referencing imageRegistry",
@@ -299,7 +365,7 @@
       "reviewed": false,
       "attempts": 0,
       "dependencies": [
-        "RESTRUCTURE-001"
+        "RESTRUCTURE-001c"
       ],
       "acceptanceCriteria": [
         "grep -r 'kind/setup.sh' docs/ README.md returns no matches",
@@ -308,7 +374,7 @@
         "markdownlint docs/quickstart.md exits 0"
       ],
       "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (the new monorepo paths being documented do not exist until RESTRUCTURE-001 completes)."
+      "readinessNote": "Unresolved dependency: RESTRUCTURE-001 must pass first (new monorepo paths being documented do not exist until RESTRUCTURE-001 completes)."
     },
     {
       "id": "KAIZEN-003",
@@ -604,6 +670,186 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b",
+      "epicId": "E2",
+      "themeId": "T1",
+      "title": "Chart migration batch 1: foundations \u2014 _globals, crossplane, argocd, keycloak, gitlab",
+      "description": "Move 5 foundation/gitops-tier chart directories from charts/ to platform/charts/ using git mv. Update any argocd-apps manifests that reference the old chart paths. Verify helm lint passes for each chart from its new location.",
+      "acceptanceCriteria": [
+        "test -d platform/charts/_globals && echo PASS exits 0",
+        "test -d platform/charts/crossplane && echo PASS exits 0",
+        "test -d platform/charts/argocd && echo PASS exits 0",
+        "test -d platform/charts/keycloak && echo PASS exits 0",
+        "test -d platform/charts/gitlab && echo PASS exits 0",
+        "test ! -d charts/_globals && test ! -d charts/crossplane && test ! -d charts/argocd && test ! -d charts/keycloak && test ! -d charts/gitlab && echo PASS exits 0",
+        "helm lint platform/charts/_globals/ platform/charts/crossplane/ platform/charts/argocd/ platform/charts/keycloak/ platform/charts/gitlab/ exits 0"
+      ],
+      "testPlan": "Run each test -d check. Run helm lint against all 5 new paths. Show verbatim output.",
+      "phase": 18,
+      "priority": 25,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "branchName": "restructure/chart-migration-batch-1",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "5 charts named explicitly. Each AC is a concrete shell command. Bounded scope: exactly these 5 charts."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001c",
+      "epicId": "E2",
+      "themeId": "T1",
+      "title": "Chart migration batch 2: security mesh \u2014 harbor, istio, kiali, opa-gatekeeper, falco",
+      "description": "Move 5 security/service-mesh chart directories from charts/ to platform/charts/ using git mv. Update argocd-apps references. Verify helm lint.",
+      "acceptanceCriteria": [
+        "test -d platform/charts/harbor && echo PASS exits 0",
+        "test -d platform/charts/istio && echo PASS exits 0",
+        "test -d platform/charts/kiali && echo PASS exits 0",
+        "test -d platform/charts/opa-gatekeeper && echo PASS exits 0",
+        "test -d platform/charts/falco && echo PASS exits 0",
+        "test ! -d charts/harbor && test ! -d charts/istio && test ! -d charts/kiali && test ! -d charts/opa-gatekeeper && test ! -d charts/falco && echo PASS exits 0",
+        "helm lint platform/charts/harbor/ platform/charts/istio/ platform/charts/kiali/ platform/charts/opa-gatekeeper/ platform/charts/falco/ exits 0"
+      ],
+      "testPlan": "Run each test -d check. Run helm lint against all 5 new paths. Show verbatim output.",
+      "phase": 18,
+      "priority": 26,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "branchName": "restructure/chart-migration-batch-2",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "5 charts named explicitly. Bounded scope."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001d",
+      "epicId": "E2",
+      "themeId": "T1",
+      "title": "Chart migration batch 3: observability \u2014 prometheus-stack, loki, thanos, tempo, trivy-operator",
+      "description": "Move 5 observability/security chart directories from charts/ to platform/charts/ using git mv. Update argocd-apps references. Verify helm lint.",
+      "acceptanceCriteria": [
+        "test -d platform/charts/prometheus-stack && echo PASS exits 0",
+        "test -d platform/charts/loki && echo PASS exits 0",
+        "test -d platform/charts/thanos && echo PASS exits 0",
+        "test -d platform/charts/tempo && echo PASS exits 0",
+        "test -d platform/charts/trivy-operator && echo PASS exits 0",
+        "test ! -d charts/prometheus-stack && test ! -d charts/loki && test ! -d charts/thanos && test ! -d charts/tempo && test ! -d charts/trivy-operator && echo PASS exits 0",
+        "helm lint platform/charts/prometheus-stack/ platform/charts/loki/ platform/charts/thanos/ platform/charts/tempo/ platform/charts/trivy-operator/ exits 0"
+      ],
+      "testPlan": "Run each test -d check. Run helm lint against all 5 new paths. Show verbatim output.",
+      "phase": 18,
+      "priority": 27,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "branchName": "restructure/chart-migration-batch-3",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "5 charts named explicitly. Bounded scope."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001e",
+      "epicId": "E2",
+      "themeId": "T1",
+      "title": "Chart migration batch 4: devex \u2014 backstage, code-server, sonarqube, reportportal, sovereign-pm",
+      "description": "Move 5 developer-experience chart directories from charts/ to platform/charts/ using git mv. Update argocd-apps references. Verify helm lint.",
+      "acceptanceCriteria": [
+        "test -d platform/charts/backstage && echo PASS exits 0",
+        "test -d platform/charts/code-server && echo PASS exits 0",
+        "test -d platform/charts/sonarqube && echo PASS exits 0",
+        "test -d platform/charts/reportportal && echo PASS exits 0",
+        "test -d platform/charts/sovereign-pm && echo PASS exits 0",
+        "test ! -d charts/backstage && test ! -d charts/code-server && test ! -d charts/sonarqube && test ! -d charts/reportportal && test ! -d charts/sovereign-pm && echo PASS exits 0",
+        "helm lint platform/charts/backstage/ platform/charts/code-server/ platform/charts/sonarqube/ platform/charts/reportportal/ platform/charts/sovereign-pm/ exits 0"
+      ],
+      "testPlan": "Run each test -d check. Run helm lint against all 5 new paths. Show verbatim output.",
+      "phase": 18,
+      "priority": 28,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "branchName": "restructure/chart-migration-batch-4",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "5 charts named explicitly. Bounded scope."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001f",
+      "epicId": "E2",
+      "themeId": "T1",
+      "title": "Chart migration batch 5: testing \u2014 chaos-mesh, k6-operator, mailhog, selenium-grid, wiremock",
+      "description": "Move the final 5 testing chart directories from charts/ to platform/charts/ using git mv. Update argocd-apps references. After this story all 25 original charts reside under platform/charts/.",
+      "acceptanceCriteria": [
+        "test -d platform/charts/chaos-mesh && echo PASS exits 0",
+        "test -d platform/charts/k6-operator && echo PASS exits 0",
+        "test -d platform/charts/mailhog && echo PASS exits 0",
+        "test -d platform/charts/selenium-grid && echo PASS exits 0",
+        "test -d platform/charts/wiremock && echo PASS exits 0",
+        "test ! -d charts/chaos-mesh && test ! -d charts/k6-operator && test ! -d charts/mailhog && test ! -d charts/selenium-grid && test ! -d charts/wiremock && echo PASS exits 0",
+        "helm lint platform/charts/chaos-mesh/ platform/charts/k6-operator/ platform/charts/mailhog/ platform/charts/selenium-grid/ platform/charts/wiremock/ exits 0"
+      ],
+      "testPlan": "Run each test -d check. Run helm lint against all 5 new paths. Show verbatim output.",
+      "phase": 18,
+      "priority": 29,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "branchName": "restructure/chart-migration-batch-5",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "5 charts named explicitly. Bounded scope. Completes the full 25-chart migration."
       }
     }
   ]
