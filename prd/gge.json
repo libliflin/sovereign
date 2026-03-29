@@ -2,14 +2,14 @@
   "_comment": "Golden Goose Eggs — the 3-5 outcomes that matter most right now. Defined and redefined by theme-review. Orient checks these first. A failing GGE triggers an immediate priority-0 backlog story.",
   "limit": {
     "min": 3,
-    "max": 6
+    "max": 5
   },
   "eggs": [
     {
       "id": "G1",
       "title": "Delivery machine is self-orienting and self-healing",
       "themeId": "T3",
-      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else.",
+      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else. Fragility elevated after monorepo restructure — ceremony scripts may reference old paths (bootstrap/, charts/, vendor/) that no longer exist at the same locations.",
       "indicator": {
         "type": "files_exist",
         "paths": [
@@ -23,7 +23,7 @@
       "id": "G2",
       "title": "Living state docs answer 'where are we' without reading history",
       "themeId": "T3",
-      "rationale": "Every agent that touches this repo must be able to orient in under 2 minutes by reading two files. Without this, every session starts with archaeology. Rewritten each sprint by the sync ceremony.",
+      "rationale": "Every agent that touches this repo must be able to orient in under 2 minutes by reading two files. Without this, every session starts with archaeology. Rewritten each sprint by the sync ceremony. Currently fragile: agent.md shows increment 16 as active after the restructure that moved to increment 17 pending.",
       "indicator": {
         "type": "files_exist",
         "paths": [
@@ -33,30 +33,10 @@
       }
     },
     {
-      "id": "G3",
-      "title": "Cluster contract is current, enforced, and machine-checked",
-      "themeId": "T1",
-      "rationale": "Sovereignty means nothing if the cluster contract is a document nobody reads. It must be a gate — orient checks it exists and is current, and the bootstrap process references it explicitly. Healthy for 10 consecutive sprints — approaching table stakes, but retained because CLAUDE.md governance section references it as a hard gate for all cluster-level architectural decisions.",
-      "indicator": {
-        "type": "file_exists",
-        "path": "docs/governance/cluster-contract.md"
-      }
-    },
-    {
-      "id": "G4",
-      "title": "Mental model is coherent — one vocabulary, one hierarchy",
-      "themeId": "T3",
-      "rationale": "Phase vs increment vs sprint — vocabulary fractures compound into delivery failures. Migration complete: manifest uses 'increments'/'currentIncrement', stories have no standalone phase field, sprint files are increment-N-*.json. The sync ceremony re-checks this each sprint.",
-      "indicator": {
-        "type": "gate_passing",
-        "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); assert 'increments' in m, 'increments key missing'; assert 'phases' not in m, 'old phases key still present — vocabulary migration incomplete'; print('vocabulary OK')\""
-      }
-    },
-    {
       "id": "G5",
       "title": "Planning pipeline always has a pending increment to execute",
       "themeId": "T3",
-      "rationale": "The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently — no error, no alert, just nothing to plan. This egg catches that stall state immediately. First triggered when increment 9 completed with no successor increment defined.",
+      "rationale": "The plan ceremony cannot run without a pending increment in manifest.json. When all increments complete, the machine stalls silently. This egg has triggered three remediation sprints (11, 13, 15) — it is the most proven fragility in the delivery machine.",
       "indicator": {
         "type": "gate_passing",
         "command": "python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1, f'No pending increments — plan ceremony will stall. Run theme-review to create one.'; print(f'{len(pending)} pending increment(s) — OK')\""
@@ -66,11 +46,35 @@
       "id": "G6",
       "title": "Zero external registry references in Helm chart templates",
       "themeId": "T1",
-      "rationale": "Sovereignty requires that no chart template ever hard-codes an external registry (docker.io, quay.io, ghcr.io, gcr.io, registry.k8s.io). Every image reference must use {{ .Values.global.imageRegistry }}. A single hard-coded reference breaks autarky silently — the cluster works during bootstrap but pulls from external registries in production. This egg catches that class of defect continuously.",
+      "rationale": "Sovereignty requires that no chart template ever hard-codes an external registry. Every image reference must use {{ .Values.global.imageRegistry }}. IMPORTANT: indicator updated from charts/*/templates/ to platform/charts/*/templates/ after monorepo restructure — the old path pointed at an empty directory and produced a vacuous PASS, providing no protection.",
       "indicator": {
         "type": "gate_passing",
-        "command": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" charts/*/templates/ 2>/dev/null); [ -z \"$result\" ] && echo \"G6 PASS: no external registries in templates\" || (echo \"G6 FAIL:\" && echo \"$result\" && exit 1)'"
+        "command": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/*/templates/ 2>/dev/null); [ -z \"$result\" ] && echo \"G6 PASS: no external registries in templates\" || (echo \"G6 FAIL:\" && echo \"$result\" && exit 1)'"
       }
+    },
+    {
+      "id": "G7",
+      "title": "Contract validator enforces sovereignty invariants — test suite passes",
+      "themeId": "T1",
+      "rationale": "contract/validate.py is the new machine-enforced sovereignty gate introduced in the monorepo restructure. It is the only mechanism that guarantees autarky.externalEgressBlocked=true before any cluster is provisioned. If the test suite breaks (valid.yaml rejected or invalid-egress-not-blocked.yaml accepted), the sovereignty invariant is silently unenforced. G3 (governance doc file_exists) retired — the validator replaces it with actual enforcement. Fragile now because the validator is new and its test corpus is minimal.",
+      "indicator": {
+        "type": "gate_passing",
+        "command": "bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 || (echo \"G7 FAIL: valid.yaml rejected by validator\" && exit 1); python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && (echo \"G7 FAIL: invalid contract accepted — autarky invariant not enforced\" && exit 1); echo \"G7 PASS: contract validator enforces sovereignty invariants\"'"
+      }
+    }
+  ],
+  "_retired": [
+    {
+      "id": "G3",
+      "title": "Cluster contract is current, enforced, and machine-checked",
+      "retiredReason": "Graduated to table stakes. The file_exists check on docs/governance/cluster-contract.md has been healthy for 10+ consecutive sprints. The monorepo restructure introduced contract/validate.py which provides actual machine enforcement — that is now tracked by G7. A governance document is not the right indicator when a real validator exists.",
+      "retiredAt": "increment-17-restructure"
+    },
+    {
+      "id": "G4",
+      "title": "Mental model is coherent — one vocabulary, one hierarchy",
+      "retiredReason": "Graduated to table stakes. Vocabulary migration (increments/phases) completed many sprints ago. The gate_passing check always passes and has never triggered a remediation sprint. The word 'phases' does not appear in new code and the hard-stop rule in agent.md enforces this at the implementation level. Retiring frees a slot for fragility that is real and current.",
+      "retiredAt": "increment-17-restructure"
     }
   ]
 }
