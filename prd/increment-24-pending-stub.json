@@ -1,0 +1,184 @@
+{
+  "increment": 24,
+  "name": "pending-stub",
+  "description": "HA gate script (with documented pipefail fix), monorepo restructure skeleton scripts, chaos PDB test artifact, ArgoCD domain injection, and code-server workspace PVC. Advances the kind-cluster delivery chain and hardens toolchain autarky.",
+  "sprintGoal": "Deliver a working HA gate script, advance monorepo restructure toward kind cluster, close ArgoCD domain injection gap, and add code-server workspace persistence.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "HA-001",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/ha-gate-script",
+      "title": "HA gate script validates all platform charts have replicaCount>=2, PDB, and podAntiAffinity",
+      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm. IMPORTANT FIX (from sprint-23 review): The grep pipeline for extracting replicaCount must use '|| true' to prevent set -euo pipefail from killing the script when processing charts that have no top-level replicaCount field (e.g. platform/charts/_globals/). Pattern: replica_count=$(grep -E '^replicaCount:' \"$chart/values.yaml\" || true | awk ...)",
+      "acceptanceCriteria": [
+        "scripts/ha-gate.sh exists and passes shellcheck -S error: shellcheck -S error scripts/ha-gate.sh exits 0",
+        "bash -n scripts/ha-gate.sh exits 0 (syntax check)",
+        "scripts/ha-gate.sh --dry-run prints the list of charts it will check with output containing each chart directory name, then exits 0",
+        "For a chart that has replicaCount: 1 in values.yaml, scripts/ha-gate.sh outputs FAIL:<chart>:replicaCount < 2 and exits non-zero",
+        "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart",
+        "scripts/ha-gate.sh runs against all existing platform/charts/ without crashing on charts that lack a top-level replicaCount field (e.g. _globals): bash scripts/ha-gate.sh --dry-run 2>&1 | grep -v 'replicaCount' exits 0 for every chart listed"
+      ],
+      "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output. ALSO run scripts/ha-gate.sh against all existing platform/charts/ to confirm no crash on charts missing replicaCount.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      },
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
+    },
+    {
+      "id": "KAIZEN-012",
+      "title": "Kaizen: Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart — it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",
+        "The requirement text includes an explicit note about bash set -euo pipefail with grep pipelines: use '|| true' when grep results may be empty",
+        "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md (or equivalent) returns at least one match confirming the guidance is present"
+      ],
+      "testPlan": "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md and grep -n 'pipefail\\||| true' scripts/ralph/ceremonies/smart.md — show output verbatim. Both must return matches.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/chart-iteration-script-gate",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+    },
+    {
+      "id": "RESTRUCTURE-001b",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
+      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history — [ ! -d bootstrap/providers ] passes).",
+      "acceptanceCriteria": [
+        "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
+        "bootstrap/providers/ does not exist in working tree: [ ! -d bootstrap/providers ] exits 0"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; shellcheck -S error platform/deploy.sh; [ ! -d bootstrap/providers ] && echo 'providers archived OK'; show all output verbatim.",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 2,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "HA-008",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 22,
+      "priority": 6,
+      "points": 2,
+      "branchName": "feature/chaos-pdb-validation",
+      "title": "Chaos Mesh PodChaos experiment YAML + README validates PDB prevents simultaneous pod eviction",
+      "description": "Create test/chaos/pdb-validation.yaml: a Chaos Mesh PodChaos experiment targeting a platform service (e.g. grafana namespace, mode: all) to simultaneously terminate all pods. The PDB minAvailable:1 should prevent the last pod from being evicted. Create test/chaos/README.md explaining how to apply the experiment against a kind cluster running Chaos Mesh (TEST-004), what PDB-enforcement behavior to observe, and how to clean up. The YAML is a static test artifact — it does not run in CI. This covers the 'PDB chaos validation' goal from E15.",
+      "acceptanceCriteria": [
+        "test/chaos/pdb-validation.yaml exists — ls test/chaos/pdb-validation.yaml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml exits 0 (valid YAML)",
+        "grep 'kind: PodChaos' test/chaos/pdb-validation.yaml exits 0",
+        "grep 'mode: all' test/chaos/pdb-validation.yaml exits 0 (targets all replicas to exercise PDB)",
+        "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
+      ],
+      "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "KAIZEN-009",
+      "title": "Kaizen: ArgoCD Application manifests must inject global.domain parameter",
+      "description": "16 ArgoCD Application manifests reference their chart's values.yaml but do not inject global.domain as a Helm parameter. At deploy time, charts will use their values.yaml default (sovereign-autarky.dev) regardless of the cluster's actual domain. Fix: add a helm.parameters entry for global.domain sourced from a cluster-level ApplicationSet parameter or a top-level values file, OR add a valueFiles reference to a cluster-specific values override. Affects: cert-manager, crossplane, gitlab, harbor, keycloak, sealed-secrets, vault, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator, argocd-image-updater.",
+      "acceptanceCriteria": [
+        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches — every app either injects global.domain or is documented as domain-agnostic",
+        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 — all YAML is valid after edits"
+      ],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/argocd-global-domain-injection",
+      "priority": 12,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml — must return no output. Show verbatim."
+    },
+    {
+      "id": "DEVEX-009",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 13,
+      "points": 1,
+      "branchName": "feature/code-server-workspace-pvc",
+      "title": "code-server chart: PersistentVolumeClaim for /home/coder so workspace survives pod restarts",
+      "description": "Add platform/charts/code-server/templates/pvc.yaml: a PersistentVolumeClaim for the code-server workspace. The storageClass must reference {{ .Values.global.storageClass }} (never hardcoded). Size must be configurable via values.yaml (default 5Gi). Update the Deployment template to add a volumeMount at /home/coder and a corresponding volume referencing the PVC. This ensures that agent workspaces, cloned git repos, and shell history survive pod restarts.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/templates/pvc.yaml exists — ls platform/charts/code-server/templates/pvc.yaml exits 0",
+        "helm template platform/charts/code-server/ shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}",
+        "helm template platform/charts/code-server/ shows a VolumeMount with mountPath: /home/coder",
+        "platform/charts/code-server/values.yaml has a persistence.size field — grep 'persistence:' platform/charts/code-server/values.yaml exits 0",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    }
+  ],
+  "storiesTotal": 6,
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
+}
