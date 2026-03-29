@@ -1119,7 +1119,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
     },
     {
       "id": "DEVEX-005",
@@ -1151,7 +1152,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-003",
@@ -1184,7 +1186,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency QUALITY-001 has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-004",
@@ -1216,7 +1219,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency QUALITY-001 has passes=false. Resolve that story first."
     },
     {
       "id": "QUALITY-005",
@@ -1319,7 +1323,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency TEST-002 has passes=false. Resolve that story first."
     },
     {
       "id": "TEST-008",
@@ -1352,7 +1357,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency TEST-001 has passes=false. Resolve that story first."
     },
     {
       "id": "HA-004",
@@ -1384,7 +1390,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
     },
     {
       "id": "HA-005",
@@ -1416,7 +1423,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency HA-004 has passes=false. Resolve that story first."
     },
     {
       "id": "HA-006",
