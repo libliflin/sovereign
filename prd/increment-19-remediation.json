@@ -20,7 +20,15 @@
       "themeId": "T3",
       "branchName": "fix/gge-g5-andon",
       "dependencies": [],
-      "attempts": 0
+      "attempts": 0,
+      "smart": {
+        "specific": 3,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 3: the story says 'add a pending increment' but does not specify which increment to add (id, name, description, themeGoal, dependsOn). Ralph must guess the content. To bring to 5: add a concrete example or reference to what the next planned increment should be."
+      }
     }
   ]
 }
