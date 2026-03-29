@@ -248,28 +248,5 @@
       "storiesIncomplete": 1,
       "reviewPassRate": 75.0
     }
-  ],
-  "activeSprint": "prd/increment-17-restructure.json",
-  "currentIncrement": 17,
-  "sprintHistory": [
-    {
-      "increment": 17,
-      "name": "restructure",
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsCompleted": 5,
-      "storiesTotal": 4,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 75.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 17,
-      "pointsCompleted": 5,
-      "storiesAccepted": 3,
-      "reviewPassRate": 75.0,
-      "date": "2026-03-29T00:00:00+00:00"
-    }
   ]
 }
