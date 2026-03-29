@@ -6,7 +6,7 @@
     {
       "id": "KAIZEN-008",
       "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
-      "description": "E15 epic ('HA validation and integration testing — kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
+      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
       "acceptanceCriteria": [
         "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
         "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
@@ -21,7 +21,7 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" — must show a non-complete increment ID. Show output verbatim."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
     },
     {
       "id": "GGE-G5-andon",
@@ -38,7 +38,9 @@
       "themeId": "T3",
       "branchName": "fix/gge-g5-andon",
       "dependencies": [],
-      "attempts": 0
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-21-platform-foundations.json",
+      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle."
     },
     {
       "id": "RESTRUCTURE-001a",

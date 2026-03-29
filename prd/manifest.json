@@ -250,16 +250,42 @@
       "name": "platform-foundations",
       "description": "Platform foundations: deploy core sovereign Helm charts (Cilium, cert-manager, sealed-secrets, OpenBao) into kind cluster. Follows KIND-001 kind bootstrap.",
       "file": "prd/increment-21-platform-foundations.json",
-      "status": "active",
+      "status": "complete",
       "dependsOn": [
         20
       ],
       "themeGoal": "T1 Sovereignty \u2014 platform foundations: deploy core charts into kind cluster",
       "startDate": "2026-03-29T19:37:51.352158+00:00",
       "pointsTotal": 1,
-      "storiesTotal": 1
+      "storiesTotal": 1,
+      "endDate": "2026-03-29T19:40:24.552406+00:00",
+      "pointsCompleted": 0,
+      "storiesAccepted": 0,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 0.0
     }
   ],
   "activeSprint": "prd/increment-21-platform-foundations.json",
-  "currentIncrement": 21
+  "currentIncrement": 21,
+  "sprintHistory": [
+    {
+      "increment": 21,
+      "name": "platform-foundations",
+      "endDate": "2026-03-29T19:40:24.552406+00:00",
+      "pointsCompleted": 0,
+      "storiesTotal": 1,
+      "storiesAccepted": 0,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 0.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 21,
+      "pointsCompleted": 0,
+      "storiesAccepted": 0,
+      "reviewPassRate": 0.0,
+      "date": "2026-03-29T19:40:24.552406+00:00"
+    }
+  ]
 }

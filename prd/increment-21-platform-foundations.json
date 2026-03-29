@@ -30,7 +30,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green."
-      }
+      },
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle; story already exists in backlog."
     }
   ],
   "_lastSmokeTestFailures": [],
