@@ -30,5 +30,7 @@
         "notes": "Specific score 3: the story says 'add a pending increment' but does not specify which increment to add (id, name, description, themeGoal, dependsOn). Ralph must guess the content. To bring to 5: add a concrete example or reference to what the next planned increment should be."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
