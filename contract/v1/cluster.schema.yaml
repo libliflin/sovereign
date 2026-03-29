@@ -1,0 +1,124 @@
+##############################################################################
+# Sovereign Cluster Contract — v1
+#
+# This is the API between a cluster provider and sovereign-platform.
+#
+# A cluster provider (cluster/kind/, cluster/hetzner/, etc.) runs bootstrap.sh
+# and outputs a cluster-values.yaml that conforms to this schema.
+#
+# sovereign-platform/deploy.sh validates cluster-values.yaml against this
+# schema before deploying anything. Invalid input = hard stop.
+#
+# Design rules:
+#   - required: true  → must be present and non-empty
+#   - const: true     → this field must equal exactly this value. not configurable.
+#   - NO field exists for external registries, external egress, or disabled policies.
+#     If it is not in this schema, it cannot be expressed.
+##############################################################################
+
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterContract
+
+fields:
+
+  # ── Runtime identity ──────────────────────────────────────────────────────
+  runtime.domain:
+    type: string
+    required: true
+    description: >
+      The base domain for the platform. All services are deployed as
+      subdomains of this domain (gitlab.DOMAIN, harbor.DOMAIN, etc.).
+    example: "sovereign.local"
+
+  runtime.imageRegistry.internal:
+    type: string
+    required: true
+    description: >
+      Internal OCI registry endpoint. ALL platform images must be pulled
+      from here after bootstrap. There is no external registry field.
+      External registries do not exist in this contract.
+      Empty string is valid during initial bootstrap only, before Harbor is running.
+    example: "harbor.sovereign.local/sovereign"
+
+  # ── Storage ───────────────────────────────────────────────────────────────
+  storage.block.storageClassName:
+    type: string
+    required: true
+    description: >
+      StorageClass name for ReadWriteOnce (block) PVCs.
+      Provided by: Rook/Ceph (production), local-path-provisioner (kind).
+    example: "standard"
+
+  storage.file.storageClassName:
+    type: string
+    required: true
+    description: >
+      StorageClass name for ReadWriteMany (file) PVCs.
+      Provided by: CephFS (production), local-path-provisioner (kind, RWO only).
+    example: "standard"
+
+  storage.object.endpoint:
+    type: string
+    required: true
+    description: >
+      S3-compatible object storage endpoint. Must be cluster-internal.
+      Used by Harbor, Loki, Thanos for artifact/log/metric storage.
+      Provided by: CephObjectStore (production), MinIO (kind).
+    example: "http://minio.minio.svc:9000"
+
+  storage.object.credentialsSecret:
+    type: string
+    required: true
+    description: >
+      Name of the Kubernetes Secret containing S3 access credentials.
+      Must exist in the namespace where the platform is deployed.
+      Keys: access-key, secret-key.
+    example: "minio-credentials"
+
+  # ── Network ───────────────────────────────────────────────────────────────
+  network.ingressClass:
+    type: string
+    required: true
+    description: >
+      Ingress controller class name. All platform Ingress resources
+      use this class.
+    example: "nginx"
+
+  network.networkPolicyEnforced:
+    type: boolean
+    const: true
+    description: >
+      NetworkPolicy enforcement MUST be active. The CNI must enforce
+      deny-all + explicit allow rules. This field exists only to assert
+      the invariant — it is not configurable. A cluster where NetworkPolicy
+      is not enforced does not satisfy this contract.
+
+  # ── PKI ───────────────────────────────────────────────────────────────────
+  pki.clusterIssuer:
+    type: string
+    required: true
+    description: >
+      cert-manager ClusterIssuer name. All platform TLS certificates
+      are issued by this issuer.
+    example: "selfsigned-cluster-issuer"
+
+  # ── Autarky invariants ────────────────────────────────────────────────────
+  # These fields are assertions. They must be true. They are not configurable.
+  # A cluster-values.yaml that sets any of these to false is invalid.
+
+  autarky.externalEgressBlocked:
+    type: boolean
+    const: true
+    description: >
+      The cluster MUST enforce egress policy that blocks traffic to external
+      internet addresses. Validated by: attempting to reach an external IP
+      from a test pod and expecting failure.
+
+  autarky.imagesFromInternalRegistryOnly:
+    type: boolean
+    const: true
+    description: >
+      After initial bootstrap, ALL workloads MUST pull images from
+      runtime.imageRegistry.internal only. No chart template may
+      reference docker.io, quay.io, ghcr.io, gcr.io, or registry.k8s.io.
+      Enforced by: G6 GGE check on every chart story.

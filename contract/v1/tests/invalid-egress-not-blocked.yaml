@@ -1,0 +1,31 @@
+##############################################################################
+# Test fixture: invalid — egress not blocked
+# Must FAIL contract validation with a clear error.
+##############################################################################
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterValues
+
+runtime:
+  domain: sovereign.local
+  imageRegistry:
+    internal: harbor.sovereign.local/sovereign
+
+storage:
+  block:
+    storageClassName: standard
+  file:
+    storageClassName: standard
+  object:
+    endpoint: http://minio.minio.svc:9000
+    credentialsSecret: minio-credentials
+
+network:
+  ingressClass: nginx
+  networkPolicyEnforced: true
+
+pki:
+  clusterIssuer: selfsigned-cluster-issuer
+
+autarky:
+  externalEgressBlocked: false        # INVALID — must be true
+  imagesFromInternalRegistryOnly: true

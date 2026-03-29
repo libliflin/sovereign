@@ -1,0 +1,24 @@
+##############################################################################
+# Test fixture: invalid — missing required storage fields
+# Must FAIL contract validation with a clear error.
+##############################################################################
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterValues
+
+runtime:
+  domain: sovereign.local
+  imageRegistry:
+    internal: harbor.sovereign.local/sovereign
+
+# storage block entirely missing — should fail validation
+
+network:
+  ingressClass: nginx
+  networkPolicyEnforced: true
+
+pki:
+  clusterIssuer: selfsigned-cluster-issuer
+
+autarky:
+  externalEgressBlocked: true
+  imagesFromInternalRegistryOnly: true

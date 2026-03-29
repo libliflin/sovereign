@@ -1,0 +1,31 @@
+##############################################################################
+# Test fixture: valid cluster-values.yaml
+# Must pass contract validation.
+##############################################################################
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterValues
+
+runtime:
+  domain: sovereign.local
+  imageRegistry:
+    internal: ""  # empty during kind bootstrap; set to harbor.sovereign.local/sovereign after Harbor deploy
+
+storage:
+  block:
+    storageClassName: standard
+  file:
+    storageClassName: standard
+  object:
+    endpoint: http://minio.minio.svc:9000
+    credentialsSecret: minio-credentials
+
+network:
+  ingressClass: nginx
+  networkPolicyEnforced: true
+
+pki:
+  clusterIssuer: selfsigned-cluster-issuer
+
+autarky:
+  externalEgressBlocked: true
+  imagesFromInternalRegistryOnly: true

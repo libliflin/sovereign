@@ -233,14 +233,12 @@
     },
     {
       "id": 17,
-      "name": "platform-hardening",
-      "description": "Next sprint — to be planned by the plan ceremony. Candidate work: GitHub CI comprehensive gate, OpenBao chart, bootstrap HA multi-node, Cloudflare front door.",
-      "file": "prd/increment-17-platform-hardening.json",
+      "name": "restructure",
+      "description": "Monorepo restructure: contract/, cluster/kind/, platform/. Establishes clean separation between cluster provider and platform. Archives all non-kind providers. First increment of the new architecture.",
+      "file": "prd/increment-17-restructure.json",
       "status": "pending",
-      "dependsOn": [
-        16
-      ],
-      "themeGoal": "T1 Sovereignty + T5 Resilience \u2014 CI hardening, OpenBao chart, bootstrap HA, front door"
+      "dependsOn": [],
+      "themeGoal": "T1 Sovereignty — establish contract-driven architecture: cluster/kind/, platform/, contract/v1/"
     }
   ]
 }

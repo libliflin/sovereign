@@ -1,0 +1,19 @@
+##############################################################################
+# kind cluster configuration for sovereign-test
+#
+# 3 nodes: 1 control-plane + 2 workers.
+# kindnet is disabled — Cilium is installed by bootstrap.sh instead.
+# Cilium is the only CNI that enforces NetworkPolicy correctly in kind.
+##############################################################################
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+
+networking:
+  disableDefaultCNI: true       # Cilium replaces kindnet
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
