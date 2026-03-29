@@ -700,8 +700,8 @@
     },
     {
       "id": "KAIZEN-005",
-      "title": "Kaizen: Rename retro-patch-phase*.md → retro-patch-increment*.md",
-      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model — all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
+      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/retro-patch-naming",
@@ -718,12 +718,12 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ — must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
     },
     {
       "id": "KAIZEN-006",
       "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
-      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId → targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
+      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/remove-phase-field",
@@ -739,7 +739,28 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" — must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+    },
+    {
+      "id": "KAIZEN-007r",
+      "title": "Plan ceremony: always queue a pending increment stub when creating an active sprint",
+      "description": "GGE G5 fires every sprint because the plan ceremony creates an active increment but never queues a follow-on pending increment. The fix: at the end of the plan ceremony, if no increment has status='pending' in manifest.json, automatically append a minimal pending increment stub (id, name, description, status='pending', dependsOn current). This ensures GGE G5 never fires again and the planning pipeline is always primed.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/plan.md (or the plan ceremony runner) contains logic to append a pending increment stub if none exists",
+        "After running plan ceremony on a fresh sprint, python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\" exits 0",
+        "shellcheck -S error scripts/ralph/ceremonies/*.sh exits 0 (if any .sh files are modified)"
+      ],
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "fix/plan-ceremony-pending-increment",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "points": 2,
+      "priority": 1,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-19-remediation.json",
+      "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle."
     }
   ]
 }
