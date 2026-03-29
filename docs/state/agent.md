@@ -197,6 +197,12 @@ runs, `manifest.json` must contain at least one increment with `status: "pending
 backlog is drained and no pending increment exists, GGE G5 will fail and the pipeline stalls.
 When planning a new sprint, verify the pending increment exists before closing the plan ceremony.
 
+**Kind cluster bootstrap is not yet end-to-end**: `cluster/kind/bootstrap.sh` exists as the
+declared entry point but the full kind cluster bootstrap (KIND-001a, KIND-001b) has not been
+implemented. Stories that depend on a running kind cluster (`kind get clusters` showing
+`sovereign-test`) are blocked until KIND-001a is accepted. Do not assume a working kind cluster
+exists — verify with `kind get clusters` first.
+
 ---
 
 ## How to implement a story
@@ -223,8 +229,8 @@ When planning a new sprint, verify the pending increment exists before closing t
      grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/ cluster/kind/charts/*/templates/ 2>/dev/null \
        && echo "FAIL" && exit 1 || echo "PASS: no external registries in templates"
      ```
-6. Set `passes: true` in the sprint file
-7. Push the branch, open a PR, wait for CI to pass, merge to main
+7. Set `passes: true` in the sprint file
+8. Push the branch, open a PR, wait for CI to pass, merge to main
 
 Do not mark `passes: true` if any gate fails. Do not self-certify — gates will re-run.
 
@@ -260,11 +266,14 @@ returned to backlog: kubectl dry-run gate fails for ArgoCD CRDs not installed in
 17 (restructure — contract/v1/ schema, cluster/kind/bootstrap.sh, platform/deploy.sh,
 charts migrated to platform/charts/ and cluster/kind/charts/),
 18 (remediation — zero stories accepted; GGE-G5-andon returned to backlog before execute ran),
-19 (remediation — GGE G5 restored: increment 20 kind-integration added as pending; 1/1 accepted)
+19 (remediation — GGE G5 restored: increment 20 kind-integration added as pending; 1/1 accepted),
+20 (kind-integration — 1/6 stories accepted: GGE-G5-andon only. Kind cluster bootstrap was NOT
+delivered: KIND-001 was split into KIND-001a + KIND-001b and returned to backlog. Increment 21
+now has pending status in manifest.json.)
 
-Increment pending: 20 (kind-integration) — kind cluster bootstrap delivering a running
-`sovereign-test` cluster with Cilium CNI, cert-manager, sealed-secrets, and autarky egress
-policy verified end-to-end. Activated by the advance ceremony that follows this sync.
+Increment active/pending: 21 (platform-foundations) — deploy core sovereign Helm charts into
+kind cluster. Depends on KIND-001a and KIND-001b which are in the backlog. The plan ceremony
+must pull KIND-001a/KIND-001b before or alongside platform-foundations stories.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -273,7 +282,8 @@ E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and
 Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; stories 027a
 full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube +
 ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration story 052 pending),
-E13 (testing infrastructure + HA validation), E15 (HA integration testing)
+E13 (testing infrastructure + HA validation), E15 (HA integration testing — targetIncrement stale,
+see Known model inconsistencies)
 
 ---
 
@@ -299,6 +309,8 @@ E13 (testing infrastructure + HA validation), E15 (HA integration testing)
 
 ## Known model inconsistencies
 
-- `phase` field on backlog stories is redundant with `epicId` (8 stories affected) → KAIZEN-006 will remove it
+- `phase` field on 8 backlog stories is redundant with `epicId` (DEVEX-001/002/003, QUALITY-001/002, TEST-001/002/003) → KAIZEN-006 will remove it
 - `retro-patch-phase*.md` filenames use "phase" instead of "increment" — vocabulary inconsistency in ceremonies generation code → KAIZEN-005 will rename the pattern to `retro-patch-increment*.md`
 - KAIZEN-004r (pre-retro guard): ceremonies.sh does not check for minimum execute cycles before firing retro. A sprint with zero attempts and zero accepted stories can reach retro without any work happening. KAIZEN-004r will add the guard.
+- E15 `targetIncrement` is stale ("2i" — already complete). E15 stories (KIND integration testing, HA validation) target current kind-cluster work. → KAIZEN-008 will update E15 targetIncrement to align with active increment.
+- 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001 superseded, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). The `themeId` field on a story may be intentional cross-theme attribution or drift — no migration story yet. Flag if causing planning confusion.
