@@ -318,14 +318,14 @@ if command -v jq &>/dev/null && [[ -f "$PRD_FILE" ]]; then
     echo "  Branch: $STORY_BRANCH"
     git fetch origin main 2>/dev/null || true
 
-    # Refuse to proceed if the working tree is dirty — ceremonies should
-    # have committed everything. A dirty tree means a bug upstream.
+    # If the working tree is dirty, commit the leftovers. Ceremonies should
+    # commit after each step, but if one forgets, warn and fix it rather
+    # than stopping the entire pipeline over uncommitted ceremony output.
     if ! git diff --quiet || ! git diff --cached --quiet; then
-      echo "  ERROR: uncommitted changes detected before branch checkout:" >&2
-      git diff --name-only 2>&1 | sed 's/^/    /' >&2
-      git diff --cached --name-only 2>&1 | sed 's/^/    (staged) /' >&2
-      echo "  This is a bug — the ceremony that modified these files should have committed them." >&2
-      exit 1
+      echo "  WARNING: uncommitted changes left by ceremony — auto-committing:"
+      git diff --name-only 2>&1 | sed 's/^/    /'
+      git add -A
+      git commit -m "ceremonies: auto-commit uncommitted ceremony output" 2>/dev/null || true
     fi
 
     if git rev-parse --verify "origin/$STORY_BRANCH" &>/dev/null; then
