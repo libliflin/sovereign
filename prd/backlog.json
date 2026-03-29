@@ -8,8 +8,8 @@
       "title": "Kaizen: ArgoCD Application manifests must inject global.domain parameter",
       "description": "16 ArgoCD Application manifests reference their chart's values.yaml but do not inject global.domain as a Helm parameter. At deploy time, charts will use their values.yaml default (sovereign-autarky.dev) regardless of the cluster's actual domain. Fix: add a helm.parameters entry for global.domain sourced from a cluster-level ApplicationSet parameter or a top-level values file, OR add a valueFiles reference to a cluster-specific values override. Affects: cert-manager, crossplane, gitlab, harbor, keycloak, sealed-secrets, vault, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator, argocd-image-updater.",
       "acceptanceCriteria": [
-        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches \u2014 every app either injects global.domain or is documented as domain-agnostic",
-        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 \u2014 all YAML is valid after edits"
+        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches — every app either injects global.domain or is documented as domain-agnostic",
+        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 — all YAML is valid after edits"
       ],
       "epicId": "E2",
       "themeId": "T1",
@@ -21,12 +21,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml \u2014 must return no output. Show verbatim."
+      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml — must return no output. Show verbatim."
     },
     {
       "id": "KAIZEN-008",
       "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
-      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
+      "description": "E15 epic ('HA validation and integration testing — kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
       "acceptanceCriteria": [
         "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
         "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
@@ -41,11 +41,11 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" — must show a non-complete increment ID. Show output verbatim."
     },
     {
       "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
+      "title": "ANDON: Restore broken GGE — Planning pipeline always has a pending increment",
       "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
       "acceptanceCriteria": [
         "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
@@ -60,7 +60,8 @@
       "dependencies": [],
       "attempts": 0,
       "returnedFromSprint": "prd/increment-21-platform-foundations.json",
-      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle."
+      "returnedReason": "Sprint closed without implementation — Ralph never ran this sprint cycle.",
+      "readinessNote": "NOT READY: missing testPlan — add concrete commands and expected outputs before pulling into a sprint."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -97,7 +98,7 @@
       "themeId": "T1",
       "branchName": "restructure/monorepo",
       "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
-      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
+      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history — [ ! -d bootstrap/providers ] passes).",
       "acceptanceCriteria": [
         "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
         "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
@@ -192,7 +193,7 @@
     },
     {
       "id": "KIND-002",
-      "title": "Egress is blocked in kind cluster \u2014 autarky invariant verified",
+      "title": "Egress is blocked in kind cluster — autarky invariant verified",
       "description": "After KIND-001, verify that the autarky.externalEgressBlocked invariant actually holds. Apply a Cilium egress deny policy and confirm test pods cannot reach the internet.",
       "acceptanceCriteria": [
         "A CiliumClusterwideNetworkPolicy denying external egress is applied",
@@ -216,7 +217,7 @@
     {
       "id": "PLATFORM-001",
       "title": "platform/deploy.sh installs cert-manager and verifies it issues a certificate",
-      "description": "First working step of deploy.sh. Reads cluster-values.yaml, validates contract, installs cert-manager into the kind cluster, and verifies it can actually issue a certificate. This is the first behavioral test \u2014 not just 'pods running' but 'it does its job'.",
+      "description": "First working step of deploy.sh. Reads cluster-values.yaml, validates contract, installs cert-manager into the kind cluster, and verifies it can actually issue a certificate. This is the first behavioral test — not just 'pods running' but 'it does its job'.",
       "acceptanceCriteria": [
         "./platform/deploy.sh --cluster-values cluster-values.yaml --only cert-manager exits 0",
         "kubectl get pods -n cert-manager shows all Running",
@@ -335,7 +336,7 @@
     {
       "id": "PLATFORM-006",
       "title": "ArgoCD deploys and syncs a manifest from GitLab",
-      "description": "deploy.sh installs ArgoCD. Behavioral test: create an ArgoCD Application pointing at a GitLab repo, push a manifest, verify ArgoCD syncs it to the cluster. This is the GitOps handoff \u2014 after this story, ArgoCD manages all subsequent platform upgrades.",
+      "description": "deploy.sh installs ArgoCD. Behavioral test: create an ArgoCD Application pointing at a GitLab repo, push a manifest, verify ArgoCD syncs it to the cluster. This is the GitOps handoff — after this story, ArgoCD manages all subsequent platform upgrades.",
       "acceptanceCriteria": [
         "./platform/deploy.sh --cluster-values cluster-values.yaml --only argocd exits 0",
         "kubectl get pods -n argocd shows all Running",
@@ -381,8 +382,8 @@
     },
     {
       "id": "KAIZEN-001",
-      "title": "Kaizen: Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
-      "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants \u2014 there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
+      "title": "Kaizen: Expand contract validator test corpus — cover imageRegistry and storageClass invariants",
+      "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants — there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
       "epicId": "E2",
       "themeId": "T1",
       "branchName": "kaizen/contract-test-corpus",
@@ -405,7 +406,7 @@
     },
     {
       "id": "KAIZEN-002",
-      "title": "Kaizen: Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
+      "title": "Kaizen: Fix docs developer on-ramp — update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
       "description": "The monorepo restructure (increment 17) moved kind setup from kind/setup.sh to cluster/kind/bootstrap.sh and charts from charts/ to platform/charts/. Any documentation referencing old paths gives developers incorrect instructions. Scan docs/ and README.md for stale references and update them.",
       "epicId": "E11",
       "themeId": "T3",
@@ -429,7 +430,7 @@
     },
     {
       "id": "KAIZEN-003",
-      "title": "Kaizen: Fix attempts field \u2014 initialize to 0, increment only on review re-open",
+      "title": "Kaizen: Fix attempts field — initialize to 0, increment only on review re-open",
       "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
       "epicId": "E1",
       "themeId": "T3",
@@ -452,7 +453,7 @@
     },
     {
       "id": "KAIZEN-004r",
-      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "title": "Kaizen: Pre-retro guard — auto-run review before retro if passes:true stories exist",
       "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
       "epicId": "E1",
       "themeId": "T3",
@@ -472,14 +473,14 @@
       ],
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
-      "returnedReason": "Sprint closed before iteration; AC2 fixed \u2014 no longer references increment-17"
+      "returnedReason": "Sprint closed before iteration; AC2 fixed — no longer references increment-17"
     },
     {
       "id": "DEVEX-001",
       "epicId": "E11",
       "themeId": "T3",
       "title": "code-server deploys and serves VS Code in browser with Keycloak SSO",
-      "description": "platform/deploy.sh installs code-server into the kind cluster. Behavioral test: code-server responds with HTTP 200 on the /healthz endpoint. Keycloak OAuth2 proxy protects the route \u2014 unauthenticated requests redirect to Keycloak. This is the primary browser IDE for agents and developers.",
+      "description": "platform/deploy.sh installs code-server into the kind cluster. Behavioral test: code-server responds with HTTP 200 on the /healthz endpoint. Keycloak OAuth2 proxy protects the route — unauthenticated requests redirect to Keycloak. This is the primary browser IDE for agents and developers.",
       "acceptanceCriteria": [
         "./platform/deploy.sh --cluster-values cluster-values.yaml --only code-server exits 0",
         "kubectl get pods -n code-server shows all Running within 2 minutes",
@@ -759,8 +760,8 @@
     },
     {
       "id": "KAIZEN-005",
-      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
-      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
+      "title": "Kaizen: Rename retro-patch-phase*.md → retro-patch-increment*.md",
+      "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model — all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/retro-patch-naming",
@@ -777,12 +778,12 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ — must return no matches. Show output verbatim."
     },
     {
       "id": "KAIZEN-006",
       "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
-      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
+      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId → targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/remove-phase-field",
@@ -798,7 +799,7 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" — must exit 0 and print OK. Show output verbatim."
     },
     {
       "id": "KAIZEN-007r",
@@ -819,12 +820,13 @@
       "priority": 1,
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
-      "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle."
+      "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
+      "readinessNote": "NOT READY: missing testPlan — add concrete commands and expected outputs before pulling into a sprint."
     },
     {
       "id": "KIND-001a",
       "title": "kind bootstrap: cluster/kind/bootstrap.sh + 3-node cluster + contract/validate.py",
-      "description": "Split of KIND-001 (achievable=3). Deliver only the cluster scaffolding half: write cluster/kind/bootstrap.sh that creates a 3-node kind cluster named sovereign-test and emits cluster-values.yaml; write contract/validate.py that validates cluster-values.yaml against contract/v1/cluster.schema.yaml. No platform components (Cilium, cert-manager, etc.) \u2014 those are KIND-001b.",
+      "description": "Split of KIND-001 (achievable=3). Deliver only the cluster scaffolding half: write cluster/kind/bootstrap.sh that creates a 3-node kind cluster named sovereign-test and emits cluster-values.yaml; write contract/validate.py that validates cluster-values.yaml against contract/v1/cluster.schema.yaml. No platform components (Cilium, cert-manager, etc.) — those are KIND-001b.",
       "acceptanceCriteria": [
         "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
         "./cluster/kind/bootstrap.sh --dry-run exits 0 and prints intended actions",
@@ -845,8 +847,8 @@
       "reviewNotes": [],
       "attempts": 0,
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
-      "returnedReason": "Split from KIND-001 (achievable=3 \u2014 too many integration points for one story)",
-      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; ./cluster/kind/bootstrap.sh --dry-run; ./cluster/kind/bootstrap.sh; kind get clusters; kubectl get nodes --context kind-sovereign-test; python3 contract/validate.py cluster-values.yaml \u2014 show all output verbatim.",
+      "returnedReason": "Split from KIND-001 (achievable=3 — too many integration points for one story)",
+      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; ./cluster/kind/bootstrap.sh --dry-run; ./cluster/kind/bootstrap.sh; kind get clusters; kubectl get nodes --context kind-sovereign-test; python3 contract/validate.py cluster-values.yaml — show all output verbatim.",
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -881,8 +883,8 @@
       "reviewNotes": [],
       "attempts": 0,
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
-      "returnedReason": "Split from KIND-001 (achievable=3 \u2014 too many integration points for one story)",
-      "testPlan": "kubectl get pods -n kube-system | grep cilium; kubectl get pods -n cert-manager; kubectl get pods -n sealed-secrets; kubectl get pods -n minio; kubectl get storageclass \u2014 show all output verbatim. All pods must show Running/Completed. local-path must be default.",
+      "returnedReason": "Split from KIND-001 (achievable=3 — too many integration points for one story)",
+      "testPlan": "kubectl get pods -n kube-system | grep cilium; kubectl get pods -n cert-manager; kubectl get pods -n sealed-secrets; kubectl get pods -n minio; kubectl get storageclass — show all output verbatim. All pods must show Running/Completed. local-path must be default.",
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -931,7 +933,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
     },
     {
       "id": "TEST-005",
@@ -971,7 +974,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
     },
     {
       "id": "HA-001",
@@ -1041,7 +1045,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
     },
     {
       "id": "HA-003",
@@ -1080,7 +1085,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
     }
   ]
 }
