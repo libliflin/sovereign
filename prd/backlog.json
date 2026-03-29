@@ -239,7 +239,7 @@
       "branchName": "feature/platform-prometheus",
       "dependencies": ["KIND-001"],
       "attempts": 0
-    },
+    }
 
   ]
 }

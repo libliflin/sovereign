@@ -30,25 +30,18 @@ def preflight(repo_root: Path, sprint: dict) -> tuple[bool, list[str]]:
             print(f"  MISSING (required): {tool}")
             missing.append(tool)
 
-    # kind/docker: only if any story requires it
-    needs_kind = any(
-        "kind" in s.get("requiredCapabilities", [])
-        for s in sprint.get("stories", [])
-    )
-    if needs_kind:
-        if check_tool("kind"):
-            print(f"  ok kind ({shutil.which('kind')})")
-            rc, _ = _run("docker info", cwd=repo_root)
-            if rc == 0:
-                print("  ok Docker running")
-            else:
-                print("  Docker not running")
-                missing.append("docker")
+    # kind/docker: always checked — the whole stack runs on kind
+    if check_tool("kind"):
+        print(f"  ok kind ({shutil.which('kind')})")
+        rc, _ = _run("docker info", cwd=repo_root)
+        if rc == 0:
+            print("  ok Docker running")
         else:
-            print("  MISSING: kind  -> Fix: brew install kind")
-            missing.append("kind")
+            print("  Docker not running  -> Fix: start Docker Desktop")
+            missing.append("docker")
     else:
-        print("  ~ kind/Docker not required by any story in this sprint")
+        print("  MISSING: kind  -> Fix: brew install kind")
+        missing.append("kind")
 
     # git remote
     rc, _ = _run("git ls-remote origin HEAD", cwd=repo_root)
@@ -80,27 +73,35 @@ def _git_tracked(repo_root: Path, pattern: str = "") -> list[Path]:
 
 
 def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
-    """Run helm lint, shellcheck, JSON validation, yq on argocd-apps. Returns (passed, failures).
+    """Run helm lint, shellcheck, JSON validation, yq on argocd-apps, contract validation,
+    and G6 autarky gate. Returns (passed, failures).
     All file discovery uses git ls-files — only tracked files, .gitignore respected."""
     failures = []
 
-    # 1. helm lint all charts (charts/ is tracked, glob is safe and scoped)
+    # 1. helm lint all charts — platform/charts/ and cluster/kind/charts/
     print("  helm lint:")
-    for chart_yaml in sorted((repo_root / "charts").glob("*/Chart.yaml")):
-        chart_dir = chart_yaml.parent
-        name = chart_dir.name
-        rc, out = _run(f"helm lint {chart_dir}")
-        print(out)
-        if rc == 0:
-            print(f"    ok {name}")
-        else:
-            print(f"    FAIL: {name}")
-            failures.append({
-                "type": "helm-lint",
-                "target": f"charts/{name}",
-                "output": out[:1500]
-            })
-    if not failures:
+    chart_dirs = [
+        repo_root / "platform" / "charts",
+        repo_root / "cluster" / "kind" / "charts",
+    ]
+    helm_fail = False
+    for charts_root in chart_dirs:
+        for chart_yaml in sorted(charts_root.glob("*/Chart.yaml")):
+            chart_dir = chart_yaml.parent
+            rel = str(chart_dir.relative_to(repo_root))
+            rc, out = _run(f"helm lint {chart_dir}")
+            print(out)
+            if rc == 0:
+                print(f"    ok {rel}")
+            else:
+                print(f"    FAIL: {rel}")
+                failures.append({
+                    "type": "helm-lint",
+                    "target": rel,
+                    "output": out[:1500]
+                })
+                helm_fail = True
+    if not helm_fail:
         print("    all charts passed")
 
     # 2. bash -n + shellcheck — only git-tracked .sh files (respects .gitignore)
@@ -141,10 +142,13 @@ def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
     if not json_fail:
         print("    all JSON files valid")
 
-    # 4. yq YAML syntax check — only git-tracked .yaml files under argocd-apps/
-    print("  YAML syntax check (argocd-apps/):")
+    # 4. yq YAML syntax check — only git-tracked .yaml files under platform/argocd-apps/
+    print("  YAML syntax check (platform/argocd-apps/):")
     yaml_fail = False
-    yaml_files = sorted(_git_tracked(repo_root, "'argocd-apps/**/*.yaml' 'argocd-apps/*.yaml'"))
+    yaml_files = sorted(_git_tracked(
+        repo_root,
+        "'platform/argocd-apps/**/*.yaml' 'platform/argocd-apps/*.yaml'"
+    ))
     if yaml_files:
         for yf in yaml_files:
             rel = str(yf.relative_to(repo_root))
@@ -158,7 +162,55 @@ def smoke_test(repo_root: Path) -> tuple[bool, list[dict]]:
         if not yaml_fail:
             print("    all ArgoCD manifests valid")
     else:
-        print("    (no tracked argocd-apps/ YAML found, skipping)")
+        print("    (no tracked platform/argocd-apps/ YAML found, skipping)")
+
+    # 5. Contract validation — validate test fixtures to prove the validator works
+    print("  contract validation:")
+    validate_py = repo_root / "contract" / "validate.py"
+    valid_yaml = repo_root / "contract" / "v1" / "tests" / "valid.yaml"
+    invalid_yaml = repo_root / "contract" / "v1" / "tests" / "invalid-egress-not-blocked.yaml"
+    if validate_py.exists() and valid_yaml.exists() and invalid_yaml.exists():
+        # valid.yaml must exit 0
+        rc, out = _run(f"python3 {validate_py} {valid_yaml}")
+        if rc == 0:
+            print(f"    ok valid.yaml accepted")
+        else:
+            print(f"    FAIL: valid.yaml rejected (should pass)")
+            failures.append({"type": "contract-validator", "target": "contract/v1/tests/valid.yaml", "output": out[:500]})
+        # invalid-egress-not-blocked.yaml must exit 1 with AUTARKY VIOLATION
+        rc2, out2 = _run(f"python3 {validate_py} {invalid_yaml}")
+        if rc2 != 0 and "AUTARKY VIOLATION" in out2:
+            print(f"    ok invalid-egress-not-blocked.yaml rejected with AUTARKY VIOLATION")
+        else:
+            print(f"    FAIL: invalid-egress-not-blocked.yaml should fail with AUTARKY VIOLATION")
+            failures.append({"type": "contract-validator", "target": "contract/v1/tests/invalid-egress-not-blocked.yaml", "output": out2[:500]})
+    else:
+        print("    (contract/validate.py or test fixtures not found, skipping)")
+
+    # 6. G6 autarky gate — no hard-coded external registry refs in chart templates
+    print("  G6 autarky gate (no external registries in templates):")
+    external_registries = r"docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io"
+    template_dirs = [
+        repo_root / "platform" / "charts",
+        repo_root / "cluster" / "kind" / "charts",
+    ]
+    autarky_fail = False
+    for tdir in template_dirs:
+        if not tdir.exists():
+            continue
+        rc, out = _run(
+            f"grep -rn '{external_registries}' {tdir}/*/templates/ 2>/dev/null || true"
+        )
+        if out.strip():
+            print(f"    FAIL: external registry reference found:\n{out[:800]}")
+            failures.append({
+                "type": "autarky-violation",
+                "target": str(tdir.relative_to(repo_root)),
+                "output": out[:800]
+            })
+            autarky_fail = True
+    if not autarky_fail:
+        print("    PASS: no external registry references in templates")
 
     return len(failures) == 0, failures
 
