@@ -254,15 +254,7 @@
       "dependsOn": [
         20
       ],
-      "themeGoal": "T1 Sovereignty \u2014 platform foundations: deploy core charts into kind cluster",
-      "startDate": "2026-03-29T19:37:51.352158+00:00",
-      "pointsTotal": 1,
-      "storiesTotal": 1,
-      "endDate": "2026-03-29T19:40:24.552406+00:00",
-      "pointsCompleted": 0,
-      "storiesAccepted": 0,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      "themeGoal": "T1 Sovereignty \u2014 platform foundations: deploy core charts into kind cluster"
     },
     {
       "id": 22,
@@ -271,49 +263,20 @@
       "file": "prd/increment-22-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: GGE-G5 green, plan ceremony self-primes, contract layer foundation.",
-      "dependsOn": [],
-      "startDate": "2026-03-29T19:51:20.913233+00:00",
-      "pointsTotal": 9,
-      "storiesTotal": 7,
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsCompleted": 8,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 14.3
+      "dependsOn": []
     },
     {
       "id": 23,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 22 completes.",
       "file": "prd/increment-23-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 22 advances.",
       "dependsOn": [
         22
       ]
     }
   ],
-  "activeSprint": "prd/increment-22-remediation.json",
-  "currentIncrement": 22,
-  "sprintHistory": [
-    {
-      "increment": 22,
-      "name": "remediation",
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsCompleted": 8,
-      "storiesTotal": 7,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 14.3
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 22,
-      "pointsCompleted": 8,
-      "storiesAccepted": 6,
-      "reviewPassRate": 14.3,
-      "date": "2026-03-29T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-23-pending-stub.json",
+  "currentIncrement": 23
 }
