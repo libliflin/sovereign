@@ -119,8 +119,14 @@
         "027b",
         "028",
         "049",
+        "DEVEX-001",
+        "DEVEX-002",
+        "DEVEX-003",
         "DEVEX-004",
-        "DEVEX-005"
+        "DEVEX-005",
+        "DEVEX-006",
+        "DEVEX-007",
+        "KAIZEN-002"
       ]
     },
     {
@@ -134,9 +140,13 @@
         "029",
         "041r",
         "052",
+        "QUALITY-001",
+        "QUALITY-002",
         "QUALITY-003",
         "QUALITY-004",
-        "QUALITY-005"
+        "QUALITY-005",
+        "QUALITY-006",
+        "QUALITY-007"
       ]
     },
     {
@@ -154,6 +164,9 @@
         "031b-4",
         "031b-5",
         "031b-6",
+        "TEST-001",
+        "TEST-002",
+        "TEST-003",
         "TEST-004",
         "TEST-005",
         "TEST-006",

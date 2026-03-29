@@ -4,6 +4,28 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
+      "id": "KAIZEN-011",
+      "title": "Kaizen: Strengthen G1 indicator to catch broken imports, not just syntax errors",
+      "description": "The G1 gate runs python3 -m py_compile on ceremonies.py, orient.py, and gates.py. This catches syntax errors but not broken imports \u2014 a missing dependency or bad import statement causes a ModuleNotFoundError at runtime, not at compile time. The loop would stall on the first ceremony invocation with no actionable error in the gate output. Fix: augment G1's indicator command to also run 'python3 -c \"import scripts.ralph.lib.orient; import scripts.ralph.lib.gates\"' (or equivalent import smoke test) so broken imports surface as a gate failure before the loop attempts to run.",
+      "acceptanceCriteria": [
+        "G1 indicator command in prd/constitution.json is updated to include an import smoke test (e.g. python3 -c 'import importlib.util; ...' or PYTHONPATH=. python3 -c 'from scripts.ralph.lib import orient, gates') in addition to py_compile",
+        "bash -c '<updated G1 command>' exits 0 with 'G1 PASS' on the current codebase",
+        "If a deliberate broken import is introduced (e.g. 'import nonexistent_module' added to orient.py), the updated G1 command exits nonzero \u2014 then revert the deliberate break",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 after any modifications to constitution.json"
+      ],
+      "testPlan": "Run the updated G1 indicator command directly and show output. Then introduce a broken import, confirm G1 fails, revert, confirm G1 passes again.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/g1-import-smoke-test",
+      "priority": 10,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": []
+    },
+    {
       "id": "KAIZEN-010r",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
@@ -1449,6 +1471,137 @@
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-006",
+      "title": "Backstage GitLab catalog provider auto-discovers all sovereign GitLab group projects as catalog entities",
+      "description": "Configure the @backstage/plugin-catalog-backend-module-gitlab catalog provider in app-config.yaml to discover all repositories in the sovereign GitLab group and register them as Component entities on a 15-minute schedule. No manual catalog-info.yaml in each repo should be required. Configure integrations.gitlab and catalog.providers.gitlab sections in the Backstage chart values. The GitLab token must be injected from a SealedSecret \u2014 no plaintext credentials in values.yaml or templates.",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/backstage-gitlab-catalog-provider",
+      "acceptanceCriteria": [
+        "platform/charts/backstage/values.yaml contains catalog.providers.gitlab configuration block referencing the sovereign GitLab group URL",
+        "helm lint platform/charts/backstage/ exits 0",
+        "helm template platform/charts/backstage/ | grep -i 'gitlab' returns at least one match referencing the catalog provider or GitLab integration",
+        "grep -n 'token\\|password' platform/charts/backstage/values.yaml | grep -v '#\\|secretRef\\|secretName\\|sealed' returns no matches \u2014 no plaintext GitLab token in values"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -i gitlab \u2014 show verbatim. Also: grep -n 'token' platform/charts/backstage/values.yaml | grep -v '#\\|secretRef' must return no matches.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-007",
+      "title": "code-server init container pre-installs sovereign toolchain (kubectl, helm, k9s) into workspace volume",
+      "description": "Add an init container to the code-server Deployment that copies kubectl, helm, and k9s binaries into /home/coder/workspace/bin before the main container starts. This ensures every browser-based session has the sovereign toolchain available without network access during the session (autarky). Binaries must be sourced from the platform Harbor registry via {{ .Values.global.imageRegistry }} \u2014 no external registry references. The init container must use a distroless-compatible base image.",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/code-server-toolchain-init",
+      "acceptanceCriteria": [
+        "helm template platform/charts/code-server/ | grep -A5 'initContainers' returns at least one init container spec",
+        "helm template platform/charts/code-server/ | grep '.Values.global.imageRegistry' returns at least one match within the init container image reference",
+        "helm template platform/charts/code-server/ | grep -E 'kubectl|helm|k9s' returns matches showing toolchain binary installation",
+        "helm lint platform/charts/code-server/ exits 0",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches \u2014 G6 passes"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers \u2014 show verbatim output confirming init container mounts toolchain binaries from Harbor.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "QUALITY-006",
+      "title": "ReportPortal configured with Keycloak OIDC SSO \u2014 no local admin passwords in cluster",
+      "description": "Configure ReportPortal's OAuth2 / OIDC integration to authenticate users via the sovereign Keycloak realm. Add a Keycloak OIDC client for ReportPortal to the platform/charts/keycloak/ realm configuration. All ReportPortal credentials (client secret, superadmin password) must be stored in SealedSecrets \u2014 no plaintext in values.yaml or templates. After this story, a Keycloak-authenticated user can log in to ReportPortal without a local ReportPortal account.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/reportportal-keycloak-sso",
+      "acceptanceCriteria": [
+        "helm template platform/charts/reportportal/ | grep -i 'SealedSecret\\|secretRef' returns at least one match \u2014 credentials sourced from sealed secrets",
+        "grep -n 'password' platform/charts/reportportal/values.yaml | grep -v '#\\|secretRef\\|secretName' returns no matches \u2014 no plaintext passwords in values",
+        "helm template platform/charts/reportportal/ | grep -i 'keycloak\\|oidc\\|oauth2' returns matches confirming the OIDC provider is configured",
+        "helm lint platform/charts/reportportal/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/reportportal/ && grep -v '#' platform/charts/reportportal/values.yaml | grep -i password \u2014 second command must return no matches. Also: helm template platform/charts/reportportal/ | grep -i keycloak must show config. Show both verbatim.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "QUALITY-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "QUALITY-007",
+      "title": "GitLab CI pipeline submits JUnit test results to ReportPortal on every merge request",
+      "description": "Create a reusable GitLab CI include template at platform/ci-templates/reportportal-upload.yml that uploads JUnit XML artifacts to ReportPortal after test jobs complete. The job uses the ReportPortal HTTP API (POST /api/v1/{project}/launch/import) and reads RP_ENDPOINT and RP_TOKEN from CI environment variables (backed by cluster SealedSecrets). Create .gitlab-ci.yml at the repo root that includes this template. No plaintext credentials may appear in any committed file \u2014 RP_TOKEN must reference a masked CI variable.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/reportportal-ci-upload",
+      "acceptanceCriteria": [
+        "cat platform/ci-templates/reportportal-upload.yml exits 0 and contains RP_ENDPOINT and RP_TOKEN variable references",
+        "python3 -c \"import yaml; yaml.safe_load(open('platform/ci-templates/reportportal-upload.yml')); print('YAML valid')\" exits 0",
+        "grep 'reportportal-upload' .gitlab-ci.yml returns at least one match \u2014 template is included in the repo CI config",
+        "grep -rn 'RP_TOKEN\\s*:' platform/ci-templates/ returns no matches \u2014 no hardcoded token values"
+      ],
+      "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('platform/ci-templates/reportportal-upload.yml')); print('YAML valid')\" && grep reportportal-upload .gitlab-ci.yml \u2014 show both outputs verbatim.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "QUALITY-002"
+      ],
       "smart": {
         "specific": 0,
         "measurable": 0,
