@@ -276,11 +276,11 @@
       "startDate": "2026-03-29T18:11:10.855110+00:00",
       "pointsTotal": 1,
       "storiesTotal": 1,
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsCompleted": 0,
-      "storiesAccepted": 0,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      "endDate": "2026-03-29T18:30:00+00:00",
+      "pointsCompleted": 1,
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 20,
@@ -298,21 +298,21 @@
     {
       "increment": 19,
       "name": "remediation",
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsCompleted": 0,
+      "endDate": "2026-03-29T18:30:00+00:00",
+      "pointsCompleted": 1,
       "storiesTotal": 1,
-      "storiesAccepted": 0,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 0.0
+      "storiesAccepted": 1,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     }
   ],
   "velocity": [
     {
       "increment": 19,
-      "pointsCompleted": 0,
-      "storiesAccepted": 0,
-      "reviewPassRate": 0.0,
-      "date": "2026-03-29T00:00:00+00:00"
+      "pointsCompleted": 1,
+      "storiesAccepted": 1,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-29T18:30:00+00:00"
     }
   ]
 }

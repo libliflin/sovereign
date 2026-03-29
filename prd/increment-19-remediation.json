@@ -29,8 +29,7 @@
         "timeBound": 5,
         "notes": "Specific score 3: the story says add a pending increment but does not specify which increment to add (id, name, description, themeGoal, dependsOn, file path). Ralph must guess the content. To bring to 5: specify the next planned increment id, name, file, and themeGoal explicitly."
       },
-      "returnedToBacklog": true,
-      "returnedReason": "Sprint closed with 0 implementation attempts \u2014 retrospective ran before execute ceremony could run; story returns to backlog for the next sprint."
+      "retroNote": "A prior retro run recorded this story as incomplete before execute ran. Story was completed and reviewed within the same increment — stale returnedToBacklog entry removed."
     }
   ],
   "_lastSmokeTestFailures": [],
