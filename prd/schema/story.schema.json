@@ -88,6 +88,7 @@
     "attempts": {
       "type": "integer",
       "minimum": 0,
+      "default": 0,
       "description": "Number of times this story has been re-opened by the review ceremony"
     },
     "epicId": { "type": "string", "pattern": "^E[0-9]+$", "description": "Parent epic ID" },
