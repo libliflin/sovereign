@@ -24,7 +24,7 @@
         "RESTRUCTURE-001b-1",
         "RESTRUCTURE-001b-2"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 3,
@@ -57,7 +57,7 @@
       "testPlan": "helm lint platform/charts/sonarqube/; helm lint platform/charts/reportportal/; helm template platform/charts/sonarqube/ | grep PodDisruptionBudget; helm template platform/charts/reportportal/ | grep PodDisruptionBudget; show all output verbatim.",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -91,7 +91,7 @@
       "dependencies": [
         "DEVEX-007a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 5,
@@ -119,7 +119,7 @@
       "priority": 1,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -134,5 +134,7 @@
         "notes": "All SMART dimensions green. ACs are static-analysis-only (grep + py_compile), no live cluster needed."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

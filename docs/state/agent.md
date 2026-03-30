@@ -418,20 +418,26 @@ HA-007 .github/workflows/ha-gate.yml CI workflow confirmed — 100% first-review
 (attempts == 1 in retro.md:206); QUALITY-005r smart-check.md count-assertion guidance confirmed;
 CEREMONY-009 retro first-pass formula fix confirmed (attempts == 1 in retro.md);
 5 stories returned to backlog — root cause: sprint assembled with 4 pre-accepted stories (44%
-of capacity) that required no implementation, crowding out 5 new stories before execute reached them)
+of capacity) that required no implementation, crowding out 5 new stories before execute reached them),
+30 (chart-migration-and-toolchain — 4/4 accepted: RESTRUCTURE-001c chart migration complete
+(platform/charts/ has all 25 platform charts, cluster/kind/charts/ has 3 cluster charts, root charts/
+empty); QUALITY-005 SonarQube + ReportPortal Helm charts pass HA gate (PDB + podAntiAffinity);
+DEVEX-007b code-server toolchain initContainer confirmed (kubectl, helm, k9s copied via emptyDir);
+CEREMONY-011 plan ceremony warns when >50% sprint capacity is pre-accepted stories — 100% first-review
+pass rate, uniform 2-point sizing)
 
-Increment 29 complete. Increment 30 is pending — plan ceremony will populate it.
+Increment 30 complete. Increment 31 is pending — plan ceremony will populate it.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
 Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; code-server has
-toolchain initContainer + workspace PVC + toolchainInit values interface; stories 027a full Keycloak
-OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube + ReportPortal Helm
-charts and ArgoCD apps exist; GitLab CI integration story 052 pending), E13 (testing infrastructure
-+ HA validation), E15 (HA integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact
-done; targetIncrement: 28)
+toolchain initContainer + workspace PVC + toolchainInit values interface (DEVEX-007a, 007b, 009 done);
+stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality —
+SonarQube + ReportPortal Helm charts, ArgoCD apps, and HA gate compliance done; GitLab CI integration
+story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA integration testing —
+HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; targetIncrement: 28)
 
 ---
 

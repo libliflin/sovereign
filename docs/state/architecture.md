@@ -100,8 +100,8 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
 | code-server | Browser-based VS Code IDE for agents and developers. An initContainer copies kubectl, helm, and k9s into `/home/coder/workspace/bin` via a shared emptyDir volume. Workspace persists across pod restarts via a PersistentVolumeClaim at `/home/coder` (`persistence.size` in values.yaml, default 5Gi, storageClass via `{{ .Values.global.storageClass }}`). The `toolchainInit` values section defines the init container image name and workspace bin mount path. |
 | Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. |
-| SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
-| ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. Multi-component chart: one PDB per component (API, UI). |
+| SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`); PDB and podAntiAffinity templates present. Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
+| ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Multi-component chart: one PDB per component (API, UI); podAntiAffinity present. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 
 Sovereign PM uses a multi-stage Dockerfile: Vite builds the React frontend, tsc builds the
 Express backend, combined in a single production image. Database: bitnami/postgresql subchart
