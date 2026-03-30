@@ -145,7 +145,6 @@
       "id": "HA-010",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 28,
       "priority": 4,
       "points": 2,
       "branchName": "feature/ha-010-e13-ha-coverage",
@@ -166,7 +165,7 @@
         "TEST-006a",
         "TEST-006b"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
