@@ -1807,8 +1807,7 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "BLOCKED: dependency HA-001 has passes=false. Resolve that story first."
+      }
     },
     {
       "id": "HA-008",
