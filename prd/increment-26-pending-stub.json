@@ -58,7 +58,15 @@
       "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-22-remediation.json",
-      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
+      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead",
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: the guard function name in ceremonies.py is not named \u2014 implementer must search ceremonies.py:538-558 to identify it. Achievable score 4: requires locating and importing internal ceremony logic; 2 points is appropriate. Time-bound score 4: description mentions KAIZEN-004r re-verification as a follow-on \u2014 implementer may be tempted to do both in one iteration."
+      }
     },
     {
       "id": "KAIZEN-013",
@@ -109,7 +117,15 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: metadata fix helps planning ceremony accuracy but does not advance feature delivery. All other dimensions green."
+      }
     },
     {
       "id": "KAIZEN-005",
@@ -131,7 +147,15 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 4,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'any existing retro-patch-phase*.md files' is open-ended \u2014 no count of files is given; implementer must discover them with glob. Achievable score 4: corpus of existing files is unknown upfront, but likely small. Relevant score 4: vocabulary cleanup, maintenance-only. Time-bound score 4: 'any existing retro-patch-phase*.md files' could expand scope if many files exist."
+      }
     },
     {
       "id": "KAIZEN-006",
@@ -152,7 +176,15 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 3,
+        "notes": "Specific score 4: description says 'update the story schema to mark it as deprecated' but does not name which schema file; no AC covers this. Measurable score 4: the schema deprecation mentioned in the description has no AC \u2014 only the JSON cleanup is verified. Time-bound score 3: 'update the story schema to mark it as deprecated' is an 'and also...' with no acceptance criterion and no named file \u2014 open-ended scope creep."
+      }
     },
     {
       "id": "HA-006",
@@ -175,12 +207,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: YAML field extraction from nested values.yaml (resources.requests.cpu/memory) is described but no implementation approach is specified \u2014 shell YAML parsing of nested keys is non-trivial. Achievable score 3: (a) no AC requires running against all existing charts in platform/charts/ \u2014 7 charts lack a 'resources:' field entirely, so any grep without '|| true' will exit 1 and kill the script under set -euo pipefail silently; (b) the test plan runs against the real corpus but does not explicitly verify each chart passes. Required fix: add '|| true' to all grep pipelines on optional fields, and add an explicit AC: 'bash scripts/gates/cost-gate.sh processes all charts in platform/charts/ without silent exit'."
       }
     },
     {
@@ -204,12 +236,12 @@
       "attempts": 0,
       "priority": 4,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: values-only change that establishes an interface for DEVEX-007b \u2014 delivers no running functionality itself, but is a necessary prerequisite. All other dimensions green."
       }
     },
     {
@@ -238,12 +270,12 @@
         "HA-001"
       ],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: --dry-run mode is confirmed to exist in ha-gate.sh (line 18) so the dependency is satisfied; however the exact GitHub Actions runner environment and permissions are not specified. Achievable score 4: straightforward YAML file creation \u2014 ha-gate.sh --dry-run verified to exist; 2 points appropriate for workflow + shellcheck verification. Time-bound score 4: story is focused but enforcement scope ('replicaCount, PDB, podAntiAffinity as a merge gate') could tempt adding additional CI steps beyond what ACs require."
       }
     }
   ]
