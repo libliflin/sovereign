@@ -304,7 +304,7 @@
         "Run the corpus check command: 'for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS' \u2014 must print ALL_16_PASS",
         "python3 -c \"import yaml; files=['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml','platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml','platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml','platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']; [yaml.safe_load(open(f)) for f in files]; print('ALL_YAML_VALID')\" exits 0 and prints ALL_YAML_VALID"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS; show all output verbatim.",
       "dependencies": [
@@ -315,7 +315,7 @@
       ],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 16,
       "smart": {
         "specific": 5,
