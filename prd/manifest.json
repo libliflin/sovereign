@@ -296,7 +296,15 @@
       "themeGoal": "T3/T5 \u2014 delivery machine health (retro formula, E15 targeting, vocabulary cleanup) and HA gate CI enforcement.",
       "dependsOn": [
         24
-      ]
+      ],
+      "startDate": "2026-03-30T00:27:37.031513+00:00",
+      "pointsTotal": 10,
+      "storiesTotal": 8,
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 9,
+      "storiesAccepted": 7,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 87.5
     },
     {
       "id": 26,
@@ -325,5 +333,26 @@
     }
   ],
   "activeSprint": "prd/increment-26-pending-stub.json",
-  "currentIncrement": 26
+  "currentIncrement": 26,
+  "sprintHistory": [
+    {
+      "increment": 25,
+      "name": "kaizen",
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 9,
+      "storiesTotal": 8,
+      "storiesAccepted": 7,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 87.5
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 25,
+      "pointsCompleted": 9,
+      "storiesAccepted": 7,
+      "reviewPassRate": 87.5,
+      "date": "2026-03-29T00:00:00+00:00"
+    }
+  ]
 }
