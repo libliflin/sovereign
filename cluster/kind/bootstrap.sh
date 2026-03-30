@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # cluster/kind/bootstrap.sh
 #
-# Provisions a local kind cluster that satisfies the sovereign cluster contract.
-# Outputs: cluster-values.yaml conforming to contract/v1/cluster.schema.yaml
+# KIND-001a: Provisions a 3-node local kind cluster (sovereign-test) and
+# emits cluster-values.yaml conforming to contract/v1/cluster.schema.yaml.
+#
+# Platform components (Cilium, cert-manager, sealed-secrets, MinIO) are
+# installed by platform/deploy.sh in KIND-001b — not this script.
 #
 # Usage:
-#   ./cluster/kind/bootstrap.sh [--domain sovereign.local] [--output cluster-values.yaml]
-#   ./cluster/kind/bootstrap.sh --dry-run
+#   ./cluster/kind/bootstrap.sh [--domain DOMAIN] [--output PATH] [--dry-run]
 #
 # Prerequisites:
-#   brew install kind kubectl helm
+#   brew install kind kubectl
 
 set -euo pipefail
 
@@ -17,9 +19,10 @@ DOMAIN="sovereign.local"
 OUTPUT="cluster-values.yaml"
 DRY_RUN=false
 CLUSTER_NAME="sovereign-test"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 usage() {
-  echo "Usage: $0 [--cluster-name NAME (default: sovereign-test)] [--domain DOMAIN] [--output PATH] [--dry-run]"
+  echo "Usage: $0 [--cluster-name NAME] [--domain DOMAIN] [--output PATH] [--dry-run]"
   exit 1
 }
 
@@ -38,89 +41,28 @@ log() { echo "==> $*"; }
 
 if [[ "$DRY_RUN" == "true" ]]; then
   log "DRY RUN — no cluster will be created"
-  log "Would create: kind cluster '${CLUSTER_NAME}' (3 nodes, Cilium CNI)"
-  log "Would install: cert-manager, sealed-secrets, local-path-provisioner, MinIO"
-  log "Would write: ${OUTPUT}"
+  log "Would create: kind cluster '${CLUSTER_NAME}' (3 nodes: 1 control-plane + 2 workers)"
+  log "Would write: ${OUTPUT} (cluster-values.yaml conforming to contract/v1)"
+  log "Would validate: python3 contract/validate.py ${OUTPUT}"
   exit 0
 fi
 
+# ── 1. Create kind cluster ────────────────────────────────────────────────────
 log "Bootstrapping kind cluster: ${CLUSTER_NAME}"
-
-# ── 1. Create kind cluster ────────────────────────────────────────────────
-log "Creating kind cluster '${CLUSTER_NAME}'..."
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
   log "Cluster '${CLUSTER_NAME}' already exists — skipping creation"
 else
+  log "Creating kind cluster '${CLUSTER_NAME}' (3 nodes)..."
   kind create cluster \
     --name "${CLUSTER_NAME}" \
-    --config "$(dirname "$0")/kind-config.yaml" \
-    --wait 60s
+    --config "${SCRIPT_DIR}/kind-config.yaml" \
+    --wait 90s
 fi
 
 KUBE_CONTEXT="kind-${CLUSTER_NAME}"
 log "Cluster ready. Context: ${KUBE_CONTEXT}"
 
-# ── 2. Install Cilium (replaces kindnet — enforces NetworkPolicy) ────────
-log "Installing Cilium CNI..."
-helm upgrade --install cilium "$(dirname "$0")/charts/cilium/" \
-  --kube-context "${KUBE_CONTEXT}" \
-  --namespace kube-system \
-  --wait --timeout 3m
-
-# ── 3. Install cert-manager ───────────────────────────────────────────────
-log "Installing cert-manager..."
-helm upgrade --install cert-manager "$(dirname "$0")/charts/cert-manager/" \
-  --kube-context "${KUBE_CONTEXT}" \
-  --namespace cert-manager --create-namespace \
-  --wait --timeout 3m
-
-# Create a self-signed ClusterIssuer
-kubectl --context "${KUBE_CONTEXT}" apply -f - <<EOF
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: selfsigned-cluster-issuer
-spec:
-  selfSigned: {}
-EOF
-
-# ── 4. Install Sealed Secrets ─────────────────────────────────────────────
-log "Installing Sealed Secrets..."
-helm upgrade --install sealed-secrets "$(dirname "$0")/charts/sealed-secrets/" \
-  --kube-context "${KUBE_CONTEXT}" \
-  --namespace sealed-secrets --create-namespace \
-  --wait --timeout 2m
-
-# ── 5. Install local-path-provisioner (block + file storage for kind) ────
-log "Installing local-path-provisioner..."
-kubectl --context "${KUBE_CONTEXT}" apply -f \
-  https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.26/deploy/local-path-storage.yaml
-
-# NOTE: this is the one external URL call — only during cluster bootstrap,
-# never during platform operation. Replace with vendored copy in a future story.
-
-kubectl --context "${KUBE_CONTEXT}" patch storageclass local-path \
-  -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-
-# ── 6. Install MinIO (S3-compatible object storage for kind) ─────────────
-log "Installing MinIO..."
-helm upgrade --install minio oci://registry-1.docker.io/bitnamicharts/minio \
-  --kube-context "${KUBE_CONTEXT}" \
-  --namespace minio --create-namespace \
-  --set auth.rootUser=sovereign \
-  --set auth.rootPassword=sovereign \
-  --set persistence.storageClass=local-path \
-  --wait --timeout 3m
-
-# NOTE: MinIO image also fetched externally during bootstrap — same note as above.
-
-# Create S3 credentials secret in default namespace for platform use
-kubectl --context "${KUBE_CONTEXT}" create secret generic minio-credentials \
-  --from-literal=access-key=sovereign \
-  --from-literal=secret-key=sovereign \
-  --dry-run=client -o yaml | kubectl --context "${KUBE_CONTEXT}" apply -f -
-
-# ── 7. Write cluster-values.yaml ─────────────────────────────────────────
+# ── 2. Write cluster-values.yaml ─────────────────────────────────────────────
 log "Writing ${OUTPUT}..."
 cat > "${OUTPUT}" <<EOF
 apiVersion: sovereign.dev/cluster/v1
@@ -133,33 +75,33 @@ kind: ClusterValues
 runtime:
   domain: ${DOMAIN}
   imageRegistry:
-    internal: ""  # empty during bootstrap — set to harbor.${DOMAIN}/sovereign after platform deploy
+    internal: ""  # empty during bootstrap; set to harbor.${DOMAIN}/sovereign after Harbor deploy
 
 storage:
   block:
-    storageClassName: local-path
+    storageClassName: standard
   file:
-    storageClassName: local-path    # kind: RWO only; acceptable for local testing
+    storageClassName: standard  # kind: RWO only (local-path); acceptable for local testing
   object:
-    endpoint: http://minio.minio.svc:9000
+    endpoint: http://minio.minio.svc:9000  # installed by platform/deploy.sh (KIND-001b)
     credentialsSecret: minio-credentials
 
 network:
   ingressClass: nginx
-  networkPolicyEnforced: true
+  networkPolicyEnforced: true  # enforced by Cilium (installed by platform/deploy.sh)
 
 pki:
-  clusterIssuer: selfsigned-cluster-issuer
+  clusterIssuer: selfsigned-cluster-issuer  # created by cert-manager (installed by platform/deploy.sh)
 
 autarky:
   externalEgressBlocked: true
   imagesFromInternalRegistryOnly: true
 EOF
 
-# ── 8. Validate output against contract ──────────────────────────────────
+# ── 3. Validate output against contract ──────────────────────────────────────
 log "Validating ${OUTPUT} against contract..."
-python3 "$(dirname "$0")/../../contract/validate.py" "${OUTPUT}"
+python3 "${SCRIPT_DIR}/../../contract/validate.py" "${OUTPUT}"
 
 log ""
-log "Kind cluster ready. Next step:"
-log "  cd platform && ./deploy.sh --cluster-values ../${OUTPUT}"
+log "Kind cluster ready: ${CLUSTER_NAME}"
+log "Next step: platform/deploy.sh --cluster-values ${OUTPUT}"

@@ -21,7 +21,7 @@
       "priority": 1,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -53,7 +53,7 @@
       "priority": 1,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -84,7 +84,7 @@
       "priority": 2,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -113,7 +113,7 @@
       "priority": 2,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -137,7 +137,7 @@
       "priority": 3,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -167,7 +167,7 @@
       "priority": 4,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -203,7 +203,7 @@
       "testPlan": "shellcheck -S error scripts/gates/cost-gate.sh && echo 'shellcheck OK'; bash scripts/gates/cost-gate.sh; show full output verbatim including final PASS/FAIL line.",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -231,7 +231,7 @@
       "points": 1,
       "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 4,
@@ -263,7 +263,7 @@
       ],
       "testPlan": "ls .github/workflows/ha-gate.yml && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml && grep 'platform/charts' .github/workflows/ha-gate.yml && grep 'shellcheck' .github/workflows/ha-gate.yml && grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml && shellcheck -S error scripts/ha-gate.sh; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [
@@ -278,5 +278,7 @@
         "notes": "Specific score 4: --dry-run mode is confirmed to exist in ha-gate.sh (line 18) so the dependency is satisfied; however the exact GitHub Actions runner environment and permissions are not specified. Achievable score 4: straightforward YAML file creation \u2014 ha-gate.sh --dry-run verified to exist; 2 points appropriate for workflow + shellcheck verification. Time-bound score 4: story is focused but enforcement scope ('replicaCount, PDB, podAntiAffinity as a merge gate') could tempt adding additional CI steps beyond what ACs require."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

@@ -453,8 +453,7 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
     },
     {
       "id": "KAIZEN-002",
@@ -477,8 +476,7 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      "testPlan": "Run grep checks above. Show output verbatim."
     },
     {
       "id": "KAIZEN-003",
@@ -903,8 +901,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      }
     },
     {
       "id": "KIND-001b",
@@ -1294,8 +1291,7 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "Dependency '029' not found in backlog \u2014 verify it has passes: true in a completed sprint file before pulling this story into a sprint."
+      }
     },
     {
       "id": "TEST-006",

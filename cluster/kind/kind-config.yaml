@@ -9,7 +9,8 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 
 networking:
-  disableDefaultCNI: true       # Cilium replaces kindnet
+  # disableDefaultCNI: true is set when Cilium is installed (KIND-001b).
+  # KIND-001a uses the default kindnet CNI so nodes reach Ready state.
   podSubnet: "10.244.0.0/16"
   serviceSubnet: "10.96.0.0/12"
 
