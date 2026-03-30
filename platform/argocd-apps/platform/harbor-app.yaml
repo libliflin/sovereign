@@ -22,6 +22,8 @@ spec:
       valueFiles:
         - values.yaml
       parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
         - name: harbor.expose.ingress.hosts.core
           value: "harbor.sovereign-autarky.dev"
         - name: harbor.externalURL
