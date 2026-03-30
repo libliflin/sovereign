@@ -88,10 +88,10 @@
       ],
       "testPlan": "helm lint platform/charts/chaos-mesh/; helm template platform/charts/chaos-mesh/ | grep PodDisruptionBudget; helm template platform/charts/chaos-mesh/ | grep podAntiAffinity; grep replicaCount platform/charts/chaos-mesh/values.yaml; show all output verbatim.",
       "dependencies": [],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,

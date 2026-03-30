@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "chaos-mesh.fullname" . }}-controller-manager-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chaos-mesh.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller-manager
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "chaos-mesh.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: controller-manager
