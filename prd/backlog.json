@@ -2531,6 +2531,26 @@
         "timeBound": 5,
         "notes": "Both ACs are self-contained one-liners operating only on prd/backlog.json. Verified against current state: 14 stale-complete and 6 stale-blocked entries exist as of increment 33."
       }
+    },
+    {
+      "id": "KAIZEN-016",
+      "title": "Kaizen: ArgoCD root-app.yaml hardcodes github.com repoURL \u2014 migrate to internal GitLab after platform bootstrap",
+      "themeId": "T1",
+      "priority": 12,
+      "points": 2,
+      "branchName": "kaizen/argocd-repourl-internal-gitlab",
+      "description": "platform/argocd-apps/root-app.yaml hardcodes repoURL: https://github.com/libliflin/sovereign. Once GitLab (PLATFORM-005) is deployed and operational, ArgoCD should point to the internal GitLab instance rather than the external GitHub URL. Until this migration is made, the platform's GitOps engine depends on an external service \u2014 violating the T1 Sovereignty invariant. This was identified during constitution-review increment-35 by noting root-app.yaml was the only ArgoCD app without global.domain and that it references an external host.",
+      "ac": [
+        "root-app.yaml repoURL points to the internal GitLab hostname using {{ .Values.global.domain }} or an equivalent variable pattern",
+        "ArgoCD successfully syncs from the internal GitLab URL in a kind cluster with GitLab deployed",
+        "G6 check passes: no external registry references remain in chart templates",
+        "grep -r 'github.com' platform/argocd-apps/ shows no hardcoded github.com URLs in sync sources"
+      ],
+      "blockers": [
+        "PLATFORM-005 (GitLab deploys and accepts a git push) must be complete before this story can be verified end-to-end"
+      ],
+      "passes": false,
+      "reviewed": false
     }
   ]
 }
