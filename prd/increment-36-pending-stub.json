@@ -21,7 +21,7 @@
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 1,
@@ -55,7 +55,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 2,
@@ -86,7 +86,7 @@
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -125,7 +125,7 @@
         "TEST-006b"
       ],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -166,7 +166,7 @@
         "TEST-006b"
       ],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -196,7 +196,7 @@
       ],
       "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\"",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 0,
       "reviewNotes": [],
       "smart": {
@@ -208,5 +208,7 @@
         "notes": "All SMART dimensions green."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
