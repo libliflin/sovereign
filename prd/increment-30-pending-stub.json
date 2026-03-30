@@ -85,7 +85,7 @@
         "helm lint platform/charts/code-server/ exits 0",
         "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches \u2014 G6 passes"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers; grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml; grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ \u2014 show all output verbatim.",
       "dependencies": [
