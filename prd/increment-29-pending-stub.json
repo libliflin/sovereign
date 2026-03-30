@@ -65,7 +65,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+        "notes": "All SMART dimensions green. Implementation already correct in retro.md; this story is verification-only with corrected file path."
       }
     },
     {
@@ -92,7 +92,7 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. ACs corrected: smart.md \u2192 smart-check.md (the actual file). Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
+        "notes": "Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
       }
     },
     {
@@ -208,10 +208,10 @@
       "smart": {
         "specific": 5,
         "measurable": 5,
-        "achievable": 5,
+        "achievable": 3,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Script already exists at scripts/gates/cost-gate.sh using Python yaml parsing (not shell grep), so the pipefail+grep risk does not apply."
+        "notes": "Achievable score 3: description mentions iterating platform/charts/ but no AC explicitly states 'run against all existing charts in platform/charts/' \u2014 AC2 implicitly runs the script against real charts but does not call this out explicitly, per shell-script quality gate rule."
       }
     },
     {
@@ -274,7 +274,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support, so the dependency on HA-001 is satisfied."
+        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support; story creates only the CI workflow YAML."
       }
     }
   ]
