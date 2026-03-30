@@ -318,49 +318,20 @@
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 26 advances.",
       "dependsOn": [
         26
-      ],
-      "startDate": "2026-03-30T01:44:38.079298+00:00",
-      "pointsTotal": 6,
-      "storiesTotal": 4,
-      "endDate": "2026-03-30T02:23:11.016448+00:00",
-      "pointsCompleted": 4,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 75.0
+      ]
     },
     {
       "id": 28,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 27 completes.",
       "file": "prd/increment-28-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 27 advances.",
       "dependsOn": [
         27
       ]
     }
   ],
-  "activeSprint": "prd/increment-27-pending-stub.json",
-  "currentIncrement": 27,
-  "sprintHistory": [
-    {
-      "increment": 27,
-      "name": "pending-stub",
-      "endDate": "2026-03-30T02:23:11.016448+00:00",
-      "pointsCompleted": 4,
-      "storiesTotal": 4,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 75.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 27,
-      "pointsCompleted": 4,
-      "storiesAccepted": 3,
-      "reviewPassRate": 75.0,
-      "date": "2026-03-30T02:23:11.016448+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-28-pending-stub.json",
+  "currentIncrement": 28
 }
