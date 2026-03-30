@@ -81,9 +81,9 @@
       "themeId": "T3",
       "priority": 1,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
-      "attempts": 0,
+      "attempts": 1,
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
       "returnedReason": "Root cause of QUALITY-005 failure: SMART measurable prompt did not catch brittle exact-count assertion on a multi-component chart",
       "smart": {
