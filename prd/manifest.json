@@ -279,16 +279,21 @@
     {
       "id": 24,
       "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 23 completes.",
+      "description": "HA gate script, monorepo restructure bootstrap scripts, chaos PDB artifact, ArgoCD global.domain injection (all 16 app manifests), code-server workspace PVC.",
       "file": "prd/increment-24-pending-stub.json",
-      "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 23 advances.",
+      "status": "complete",
+      "themeGoal": "T1/T3/T5 \u2014 HA gate script, restructure scripts, chaos PDB artifact, ArgoCD global.domain injection, code-server PVC",
       "dependsOn": [
         23
       ],
       "startDate": "2026-03-29T00:00:00+00:00",
-      "pointsTotal": 9,
-      "storiesTotal": 6
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsTotal": 16,
+      "storiesTotal": 11,
+      "pointsCompleted": 16,
+      "storiesAccepted": 11,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 25,
@@ -303,5 +308,26 @@
     }
   ],
   "activeSprint": "prd/increment-24-pending-stub.json",
-  "currentIncrement": 24
+  "currentIncrement": 24,
+  "sprintHistory": [
+    {
+      "increment": 24,
+      "name": "pending-stub",
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 16,
+      "storiesTotal": 11,
+      "storiesAccepted": 11,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 24,
+      "pointsCompleted": 16,
+      "storiesAccepted": 11,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-29T00:00:00+00:00"
+    }
+  ]
 }

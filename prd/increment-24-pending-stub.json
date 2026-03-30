@@ -359,7 +359,10 @@
       }
     }
   ],
-  "storiesTotal": 6,
+  "storiesTotal": 11,
   "_lastSmokeTestFailures": [],
-  "_lastProofOfWorkFailures": []
+  "_lastProofOfWorkFailures": [],
+  "retroClosed": true,
+  "retroClosedDate": "2026-03-29T00:00:00+00:00",
+  "retroPatch": "prd/retro-patch-increment24.md"
 }
