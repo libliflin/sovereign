@@ -8,11 +8,11 @@
       "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
       "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
       "acceptanceCriteria": [
-        "grep -n 'attempts' scripts/ralph/ceremonies.py | grep -E '== 0|== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
+        "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep -E '== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
         "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; print('stale entries:', stale)\" prints an empty list (entries removed or marked complete)",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies.py to locate the first-pass formula; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md to confirm the formula uses == 1; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/retro-first-pass-formula",
@@ -30,7 +30,9 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
-      }
+      },
+      "returnedFromSprint": "prd/increment-25-pending-stub.json",
+      "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
     },
     {
       "id": "KAIZEN-010r",
@@ -1805,8 +1807,7 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "BLOCKED: dependency HA-001 has passes=false. Resolve that story first."
+      }
     },
     {
       "id": "HA-008",
@@ -1837,6 +1838,37 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "KAIZEN-013r",
+      "title": "Verify KAIZEN-013 implementation: confirm retro.md first-pass formula is correct",
+      "description": "KAIZEN-013 was returned from sprint 25 because AC1 checked ceremonies.py but the implementation lives in scripts/ralph/ceremonies/retro.md. The formula at retro.md:206 already uses attempts == 1 (correct). This story re-verifies the implementation with the corrected AC that checks the right file, and verifies the KAIZEN-009a-e stale backlog cleanup was also done.",
+      "acceptanceCriteria": [
+        "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep '== 1' exits 0 and shows the formula",
+        "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; assert len(stale) == 0, f'stale: {stale}'; print('OK')\" exits 0 and prints OK",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep '== 1'; python3 -c validation for stale entries; py_compile \u2014 show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-first-pass-verify",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-25-pending-stub.json",
+      "returnedReason": "KAIZEN-013 AC pointed to wrong file; implementation already correct in retro.md \u2014 this story just re-verifies with corrected AC",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
       }
     }
   ]

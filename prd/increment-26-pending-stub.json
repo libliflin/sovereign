@@ -1,10 +1,41 @@
 {
-  "increment": 25,
-  "name": "kaizen",
-  "description": "Delivery machine kaizen, ceremony metric fixes, toolchain autarky groundwork, and HA CI gate. Retires legacy vocabulary remnants, fixes the retro first-pass formula, advances E15 targeting, and wires ha-gate.sh into GitHub Actions.",
-  "sprintGoal": "Delivery machine is accurately reporting metrics and ceremony language is clean; HA gate runs on every PR; code-server toolchain values interface is established.",
+  "increment": 26,
+  "name": "pending-stub",
+  "description": "Placeholder pending increment. Will be properly planned when increment 25 completes.",
+  "sprintGoal": "Restore delivery machine metrics accuracy, build unit test infrastructure for ceremony guards, fix planning metadata (E15 targeting), and wire HA gate into CI.",
   "capacity": 12,
   "stories": [
+    {
+      "id": "KAIZEN-013r",
+      "title": "Verify KAIZEN-013 implementation: confirm retro.md first-pass formula is correct",
+      "description": "KAIZEN-013 was returned from sprint 25 because AC1 checked ceremonies.py but the implementation lives in scripts/ralph/ceremonies/retro.md. The formula at retro.md:206 already uses attempts == 1 (correct). This story re-verifies the implementation with the corrected AC that checks the right file, and verifies the KAIZEN-009a-e stale backlog cleanup was also done.",
+      "acceptanceCriteria": [
+        "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep '== 1' exits 0 and shows the formula",
+        "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; assert len(stale) == 0, f'stale: {stale}'; print('OK')\" exits 0 and prints OK",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep '== 1'; python3 -c validation for stale entries; py_compile \u2014 show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-first-pass-verify",
+      "priority": 1,
+      "points": 1,
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 1,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-25-pending-stub.json",
+      "returnedReason": "KAIZEN-013 AC pointed to wrong file; implementation already correct in retro.md \u2014 this story just re-verifies with corrected AC",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+      }
+    },
     {
       "id": "KAIZEN-010r",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
@@ -21,20 +52,20 @@
       "branchName": "kaizen/retro-guard-unit-test",
       "priority": 1,
       "points": 2,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-22-remediation.json",
       "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead",
       "smart": {
-        "specific": 5,
+        "specific": 4,
         "measurable": 5,
-        "achievable": 5,
+        "achievable": 4,
         "relevant": 5,
-        "timeBound": 5,
-        "notes": "All SMART dimensions green."
+        "timeBound": 4,
+        "notes": "Specific score 4: the guard function name in ceremonies.py is not named \u2014 implementer must search ceremonies.py:538-558 to identify it. Achievable score 4: requires locating and importing internal ceremony logic; 2 points is appropriate. Time-bound score 4: description mentions KAIZEN-004r re-verification as a follow-on \u2014 implementer may be tempted to do both in one iteration."
       }
     },
     {
@@ -42,11 +73,11 @@
       "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
       "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
       "acceptanceCriteria": [
-        "grep -n 'attempts' scripts/ralph/ceremonies.py | grep -E '== 0|== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
+        "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep -E '== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
         "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; print('stale entries:', stale)\" prints an empty list (entries removed or marked complete)",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies.py to locate the first-pass formula; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md to confirm the formula uses == 1; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/retro-first-pass-formula",
@@ -54,21 +85,19 @@
       "points": 1,
       "passes": false,
       "reviewed": false,
-      "reviewNotes": [
-        "[Review 2] AC failed: 'grep -n 'attempts' scripts/ralph/ceremonies.py | grep -E '== 0|== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)'. Command: grep -n 'attempts' scripts/ralph/ceremonies.py | grep -E '== 0|== 1'. Output: (empty, exit 1). Detail: The first-pass formula does NOT exist in ceremonies.py. It lives in scripts/ralph/ceremonies/retro.md:206 as `first_pass = len([s for s in accepted if s.get('attempts', 1) == 1])` which correctly uses == 1. The AC points to the wrong file. Update AC1 to check retro.md, or confirm the fix is accepted as-is and rewrite the AC."
-      ],
-      "attempts": 2,
+      "reviewNotes": [],
+      "attempts": 0,
       "dependencies": [],
-      "returnedToBacklog": true,
-      "returnedReason": "AC1 checks ceremonies.py but the first-pass formula lives in ceremonies/retro.md:206; implementation is correct but AC points to wrong file",
       "smart": {
         "specific": 5,
         "measurable": 5,
         "achievable": 5,
-        "relevant": 5,
+        "relevant": 4,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Sprint goal explicitly names accurate metric reporting; retro formula fix is direct delivery."
-      }
+        "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
+      },
+      "returnedFromSprint": "prd/increment-25-pending-stub.json",
+      "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
     },
     {
       "id": "KAIZEN-008",
@@ -83,19 +112,19 @@
       "branchName": "kaizen/e15-target-increment",
       "priority": 2,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim.",
       "smart": {
         "specific": 5,
         "measurable": 5,
         "achievable": 5,
-        "relevant": 5,
+        "relevant": 4,
         "timeBound": 5,
-        "notes": "All SMART dimensions green."
+        "notes": "Relevant score 4: metadata fix helps planning ceremony accuracy but does not advance feature delivery. All other dimensions green."
       }
     },
     {
@@ -107,10 +136,10 @@
       "branchName": "kaizen/retro-patch-naming",
       "priority": 3,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
@@ -120,12 +149,12 @@
       ],
       "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
       "smart": {
-        "specific": 5,
-        "measurable": 4,
-        "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Measurable score 4: description says to rename existing retro-patch-phase*.md files but no AC verifies those existing files were renamed (or confirms none exist to rename). Add: grep -r 'retro-patch-phase' . (repo-wide) or ls docs/ to confirm."
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 4,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'any existing retro-patch-phase*.md files' is open-ended \u2014 no count of files is given; implementer must discover them with glob. Achievable score 4: corpus of existing files is unknown upfront, but likely small. Relevant score 4: vocabulary cleanup, maintenance-only. Time-bound score 4: 'any existing retro-patch-phase*.md files' could expand scope if many files exist."
       }
     },
     {
@@ -137,10 +166,10 @@
       "branchName": "kaizen/remove-phase-field",
       "priority": 4,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "acceptanceCriteria": [
         "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
@@ -152,38 +181,9 @@
         "specific": 4,
         "measurable": 4,
         "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: description says to update the story schema to mark 'phase' as deprecated but no schema file is named. Measurable score 4: no AC verifies the schema deprecation step \u2014 only the backlog.json cleanup is verified."
-      }
-    },
-    {
-      "id": "DEVEX-007a",
-      "epicId": "E11",
-      "themeId": "T3",
-      "branchName": "feature/code-server-toolchain-values",
-      "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
-      "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
-      "acceptanceCriteria": [
-        "grep 'toolchainInit' platform/charts/code-server/values.yaml returns a match",
-        "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
-        "helm lint platform/charts/code-server/ exits 0"
-      ],
-      "passes": true,
-      "points": 1,
-      "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
-      "dependencies": [],
-      "reviewed": true,
-      "reviewNotes": [],
-      "attempts": 1,
-      "priority": 4,
-      "smart": {
-        "specific": 5,
-        "measurable": 5,
-        "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "All SMART dimensions green."
+        "relevant": 4,
+        "timeBound": 3,
+        "notes": "Specific score 4: description says 'update the story schema to mark it as deprecated' but does not name which schema file; no AC covers this. Measurable score 4: the schema deprecation mentioned in the description has no AC \u2014 only the JSON cleanup is verified. Time-bound score 3: 'update the story schema to mark it as deprecated' is an 'and also...' with no acceptance criterion and no named file \u2014 open-ended scope creep."
       }
     },
     {
@@ -202,17 +202,46 @@
       ],
       "testPlan": "shellcheck -S error scripts/gates/cost-gate.sh && echo 'shellcheck OK'; bash scripts/gates/cost-gate.sh; show full output verbatim including final PASS/FAIL line.",
       "dependencies": [],
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: YAML field extraction from nested values.yaml (resources.requests.cpu/memory) is described but no implementation approach is specified \u2014 shell YAML parsing of nested keys is non-trivial. Achievable score 3: (a) no AC requires running against all existing charts in platform/charts/ \u2014 7 charts lack a 'resources:' field entirely, so any grep without '|| true' will exit 1 and kill the script under set -euo pipefail silently; (b) the test plan runs against the real corpus but does not explicitly verify each chart passes. Required fix: add '|| true' to all grep pipelines on optional fields, and add an explicit AC: 'bash scripts/gates/cost-gate.sh processes all charts in platform/charts/ without silent exit'."
+      }
+    },
+    {
+      "id": "DEVEX-007a",
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "feature/code-server-toolchain-values",
+      "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
+      "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
+      "acceptanceCriteria": [
+        "grep 'toolchainInit' platform/charts/code-server/values.yaml returns a match",
+        "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 4,
       "smart": {
         "specific": 5,
         "measurable": 5,
-        "achievable": 3,
+        "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Achievable score 3: extracting nested YAML (resources.requests.cpu/memory) in a shell script requires yq, python, or complex sed/awk; memory unit conversion (Gi, Mi, m) adds further complexity. Story does not specify how to parse nested YAML or handle unit normalization, and gives no guidance on || true guards for grep on optional fields \u2014 a set -euo pipefail script will die silently on charts missing these fields. Relevant score 4: cost-gate is HA-adjacent but not explicitly named in the sprint goal ('HA gate runs on every PR' refers to ha-gate.sh, not this script)."
+        "notes": "Relevant score 4: values-only change that establishes an interface for DEVEX-007b \u2014 delivers no running functionality itself, but is a necessary prerequisite. All other dimensions green."
       }
     },
     {
@@ -233,10 +262,10 @@
         "shellcheck -S error scripts/ha-gate.sh exits 0 (ha-gate.sh itself is shellcheck-clean before adding CI)"
       ],
       "testPlan": "ls .github/workflows/ha-gate.yml && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml && grep 'platform/charts' .github/workflows/ha-gate.yml && grep 'shellcheck' .github/workflows/ha-gate.yml && grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml && shellcheck -S error scripts/ha-gate.sh; show all output verbatim",
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [
         "HA-001"
       ],
@@ -245,11 +274,9 @@
         "measurable": 5,
         "achievable": 4,
         "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: description assumes ha-gate.sh supports --dry-run mode (lists charts without invoking helm) but does not clarify whether that mode already exists or must be added in this story. Achievable score 4: if --dry-run is not yet implemented in ha-gate.sh, adding it is hidden work not reflected in the 2-point budget."
+        "timeBound": 4,
+        "notes": "Specific score 4: --dry-run mode is confirmed to exist in ha-gate.sh (line 18) so the dependency is satisfied; however the exact GitHub Actions runner environment and permissions are not specified. Achievable score 4: straightforward YAML file creation \u2014 ha-gate.sh --dry-run verified to exist; 2 points appropriate for workflow + shellcheck verification. Time-bound score 4: story is focused but enforcement scope ('replicaCount, PDB, podAntiAffinity as a merge gate') could tempt adding additional CI steps beyond what ACs require."
       }
     }
-  ],
-  "_lastSmokeTestFailures": [],
-  "_lastProofOfWorkFailures": []
+  ]
 }

@@ -214,6 +214,14 @@ option B", the implementer must pick one before writing code. Leaving it open cr
 ambiguity and rework risk. Future grooming should resolve all OR-choices before pulling a
 story into a sprint.
 
+**Verify file paths before writing grep-based ACs**: when a story's acceptance criterion uses
+`grep <pattern> <file>`, run that exact command on the current codebase before committing the
+AC. If the file doesn't exist or the pattern returns empty, the AC is wrong — not the
+implementation. This matters especially in multi-file systems like Ralph where logic is split
+across `ceremonies.py` and `ceremonies/*.md`. A grep AC that targets the wrong file has
+`smart.measurable ≤ 4` and will produce a false failure at review even when the implementation
+is correct. The "test contract first" norm applies at authoring time, not just post-implementation.
+
 **ANDON stories must inline the verification command, and it must be a runnable one-liner**:
 ANDON remediation stories must include the exact verification command in `acceptanceCriteria` —
 a self-contained Python or bash one-liner that proves the gate passes without navigating to an
@@ -360,10 +368,18 @@ podAntiAffinity, replicaCount across all charts), KAIZEN-012 smart.md chart-iter
 guidance, RESTRUCTURE-001b-1 cluster/kind/bootstrap.sh scaffold, RESTRUCTURE-001b-2
 platform/deploy.sh scaffold, HA-008 test/chaos/pdb-validation.yaml + README, KAIZEN-009a through
 KAIZEN-009e global.domain injection in all 16 targeted ArgoCD app manifests, DEVEX-009
-code-server workspace PVC at /home/coder)
+code-server workspace PVC at /home/coder),
+25 (kaizen — 7/8 accepted: KAIZEN-010r pre-retro guard unit test
+(scripts/ralph/tests/test_retro_guard.py), KAIZEN-008 E15 targetIncrement updated to 22,
+KAIZEN-005 retro-patch naming normalized to retro-patch-increment*.md, KAIZEN-006 legacy
+`phase` field removed from all backlog stories, DEVEX-007a code-server toolchainInit values
+interface in values.yaml, HA-006 scripts/gates/cost-gate.sh, HA-007
+.github/workflows/ha-gate.yml CI enforcement on every PR touching platform/charts/;
+KAIZEN-013 retro first-pass formula returned to backlog — implementation in retro.md:206 is
+correct but AC pointed to wrong file)
 
-Increment active: 24 is complete; advance ceremony will move pointer to increment 25 (pending stub).
-Increment 25 is a placeholder — plan ceremony will populate it with stories from the backlog.
+Increment active: 25 is complete; advance ceremony will move pointer to increment 26 (pending stub).
+Increment 26 is a placeholder — plan ceremony will populate it with stories from the backlog.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -401,5 +417,4 @@ integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; 
 ## Known model inconsistencies
 
 - 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
-- KAIZEN-009a through KAIZEN-009e were completed in sprint 24 but still have stale entries in `backlog.json` (`passes: false`); the plan ceremony did not update lifecycle status when pulling them. Sprint file is authoritative. → story KAIZEN-013 will fix the retro formula and plan lifecycle hygiene.
-- Retro ceremony first-pass formula uses `attempts == 0` which never matches accepted stories (all have `attempts >= 1`). Reports 0% first-pass rate even when all stories pass first attempt. → story KAIZEN-013 will fix.
+- Retro ceremony first-pass formula: implementation in `scripts/ralph/ceremonies/retro.md:206` is correct (`attempts == 1`). Story KAIZEN-013 was returned to backlog because AC1 targeted `ceremonies.py` instead of `retro.md`. No functional bug — only the story's AC needs correction before it can be closed.
