@@ -37,7 +37,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Focused split: cluster scaffolding only. No platform components in scope."
+        "notes": "Achievable score 4: two distinct deliverables (bootstrap.sh + contract/validate.py) plus live cluster creation puts this near the top of the story budget."
       }
     },
     {
@@ -66,12 +66,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
       }
     },
     {
@@ -95,7 +95,15 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: the 4th AC is a complex bash one-liner with inverted exit logic that is hard to verify at a glance; the first three ACs are clean binary checks."
+      }
     },
     {
       "id": "KAIZEN-002",
@@ -118,7 +126,15 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim."
+      "testPlan": "Run grep checks above. Show output verbatim.",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'scan docs/ and README.md' is open-ended \u2014 only 2 specific stale patterns are named; other stale paths are not enumerated. Measurable score 4: markdownlint assumed installed; no check if additional docs files beyond quickstart.md reference old paths. Relevant score 4: useful for T3 developer on-ramp but not on the critical path to the sprint goal (kind bootstrap, HA hardening, contract validator). Time-bound score 4: 'scan and update' framing could expand scope if more files contain stale references beyond the two patterns checked."
+      }
     }
   ]
 }
