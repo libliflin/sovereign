@@ -285,6 +285,48 @@ Write the sprint file at the path defined in `NEXT_INCREMENT.file` (e.g. `prd/in
 
 Each story in the sprint file must match the schema at `prd/schema/story.schema.json`.
 
+### Step 6b — Pre-accepted story capacity audit
+
+After assembling the sprint stories, check whether already-accepted stories (passes:true, reviewed:true)
+or review-confirmation stories (passes:true, reviewed:false) crowd out implementation work.
+Sprints with too many pre-accepted stories consume ceremony pipeline slots without requiring any
+implementation, leaving new stories starved of execution capacity.
+
+```python
+import json
+
+sprint_stories = [<the story list you just assembled>]
+
+total_points = sum(s.get('points', 1) for s in sprint_stories)
+pre_accepted_points = sum(
+    s.get('points', 1) for s in sprint_stories
+    if s.get('passes') is True and s.get('reviewed') is True
+)
+review_confirmation_points = sum(
+    s.get('points', 1) for s in sprint_stories
+    if s.get('passes') is True and s.get('reviewed') is False
+)
+
+crowded_points = pre_accepted_points + review_confirmation_points
+crowded_pct = (crowded_points / total_points * 100) if total_points > 0 else 0
+
+if crowded_pct > 50:
+    print(f"WARNING: {crowded_pct:.0f}% of sprint capacity ({crowded_points}/{total_points} pts) "
+          f"is already-accepted or review-confirmation stories.")
+    print("These stories require no implementation work but consume ceremony pipeline slots.")
+    print("SUGGESTION: Remove pre-accepted stories (passes:true, reviewed:true) from this sprint.")
+    print("They do not need to be re-executed — the review ceremony will pick them up automatically.")
+    print("Freed capacity should be filled with implementation-pending stories (passes:false).")
+else:
+    print(f"Capacity audit OK: {crowded_pct:.0f}% pre-accepted/review-confirmation "
+          f"({crowded_points}/{total_points} pts) — under 50% threshold.")
+```
+
+> This check is advisory — it does not block the sprint from being created. But if the WARNING fires,
+> strongly consider removing the already-accepted stories before writing the sprint file. A sprint
+> crowded with review-confirmations will exhaust the execute pipeline on stories requiring no code,
+> and implementation-pending stories will be returned to backlog unimplemented at retro.
+
 ### Step 7 — Update backlog.json
 
 For stories that were **not ready**, add the `readinessNote` field to their entry in `prd/backlog.json`.

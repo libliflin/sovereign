@@ -118,7 +118,7 @@
       "branchName": "kaizen/plan-ceremony-capacity-audit",
       "priority": 1,
       "points": 2,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
