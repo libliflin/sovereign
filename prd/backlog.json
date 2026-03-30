@@ -92,7 +92,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
-      }
+      },
+      "readinessNote": "Stale target: the story asserts targetIncrement == 28, but increment 28 is now complete (active increment is 29). Update the AC assertion from == 28 to == 29 (or the current active increment) before pulling into a sprint, otherwise the story will pass with a stale/completed-increment value."
     },
     {
       "id": "RESTRUCTURE-001a",
