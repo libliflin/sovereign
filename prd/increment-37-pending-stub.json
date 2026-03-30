@@ -30,12 +30,12 @@
       "attempts": 0,
       "priority": 3,
       "smart": {
-        "specific": 4,
-        "measurable": 4,
+        "specific": 5,
+        "measurable": 5,
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -66,7 +66,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
+        "notes": "All SMART dimensions green."
       },
       "readinessNote": "UNBLOCKED: dependency HA-004 has status:complete (delivered in sprint 32 per increment-32-pending-stub.json). No remaining blocks. READY."
     },
@@ -93,12 +93,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -137,7 +137,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 4,
-        "notes": "Runtime-verifiable split of TEST-004 (Strategy D). Correct path platform/charts/chaos-mesh/ specified. ACs use exact kubectl/helm commands. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted in sprints 31 and 32). TimeBound score 4: 120s window for phase=Finished is empirical but reasonable."
+        "notes": "Specific score 4: service name assumed from chart convention, not cross-referenced to chart service template. Measurable score 4: AC3 'shows phase=Finished within 120 seconds' requires polling \u2014 no kubectl wait command specified, making the check timing-dependent rather than a single binary command. Achievable score 4: requires running kind-sovereign-test cluster (KIND-001a, KIND-001b). TimeBound score 4: 120s empirical window for phase=Finished introduces non-determinism in the pass/fail boundary."
       },
       "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-004a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm)."
     },
@@ -177,7 +177,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Runtime-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. AC3 (curl returns 201) and AC4 (curl returns 'ok') verify actual runtime admin API behavior. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted). TimeBound score 5: all ACs have deterministic expected outputs."
+        "notes": "Specific score 4: service name 'svc/wiremock' assumed from chart convention but not cross-referenced to the chart's service template name. Measurable score 4: AC3 uses a background port-forward (& sleep 2) before curl \u2014 the 2s sleep is not guaranteed to be sufficient, making the check timing-sensitive rather than deterministically binary. Achievable score 4: requires running kind-sovereign-test cluster (KIND-001a, KIND-001b)."
       },
       "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-005a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm)."
     },
@@ -204,12 +204,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: AC2 states 'helm template shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}' \u2014 helm template renders the Go template expression to an empty string when no value is set, so the grep target is ambiguous. The AC should either pass --set global.storageClass=standard or grep the template source for the expression literal."
       }
     },
     {
@@ -233,7 +233,15 @@
       "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-23-pending-stub.json",
-      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: target file specified as 'scripts/ralph/ceremonies/smart.md (or equivalent)' \u2014 'or equivalent' leaves the actual file path ambiguous; the test plan assumes the specific path. Measurable score 4: the same 'or equivalent' ambiguity means the AC grep commands may not match the actual file if a different equivalent is chosen."
+      }
     }
   ]
 }

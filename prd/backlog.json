@@ -1165,7 +1165,8 @@
         "notes": "Not yet SMART-scored."
       },
       "returnedFromSprint": "prd/increment-23-pending-stub.json",
-      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)",
+      "readinessNote": "COMPLETED IN SPRINT 36: passes:true, reviewed:true in prd/increment-36-pending-stub.json. Do not re-pull."
     },
     {
       "id": "HA-002",
@@ -2432,7 +2433,8 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "READY: dependencies TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All deps resolved."
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 36: passes:true, reviewed:true in prd/increment-36-pending-stub.json. Do not re-pull."
     },
     {
       "id": "HA-009",
@@ -2515,7 +2517,8 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "READY: HA-001 passes:true; TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All dependencies resolved."
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 36: passes:true, reviewed:true in prd/increment-36-pending-stub.json. Do not re-pull."
     },
     {
       "id": "KAIZEN-004",
@@ -2541,7 +2544,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Trivial field removal with binary verification. One-liner AC."
-      }
+      },
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 36: passes:true, reviewed:true in prd/increment-36-pending-stub.json. Do not re-pull."
     },
     {
       "id": "KAIZEN-015",
