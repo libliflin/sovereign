@@ -1,3 +1,5 @@
+replicaCount: 1  # ha_exception: see vendor/VENDORS.yaml
+
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
@@ -5,3 +7,24 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+image:
+  repository: "mailhog/mailhog"
+  name: "mailhog/mailhog"
+  tag: "v1.0.1-abc1234-p0"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+podDisruptionBudget:
+  minAvailable: 1
+
+service:
+  smtpPort: 1025
+  httpPort: 8025

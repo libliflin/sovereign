@@ -1,3 +1,5 @@
+replicaCount: 2
+
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
@@ -5,3 +7,23 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+hub:
+  image:
+    repository: "selenium/hub"
+    name: "selenium/hub"
+    tag: "4.20.0-abc1234-p0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+podDisruptionBudget:
+  minAvailable: 1
+
+service:
+  port: 4444
