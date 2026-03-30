@@ -296,6 +296,13 @@ Stories that depend on a bare kind cluster are unblocked. Stories that depend on
 (Cilium CNI, cert-manager, sealed-secrets) are blocked until KIND-001b is accepted. Verify with
 `kind get clusters` before assuming a running cluster exists.
 
+**Pre-accepted story crowding blocks execution capacity**: when stories with `passes:true, reviewed:true`
+are pulled into a sprint, they consume ceremony pipeline slots without requiring implementation work. If
+they make up a large fraction of the sprint, new implementation stories will never be reached. The plan
+ceremony warns when pre-accepted stories exceed 50% of sprint capacity (CEREMONY-011). Before the execute
+cycle, check: if `>50%` of sprint points are already-accepted stories, remove them to free capacity for
+real work.
+
 ---
 
 ## How to implement a story
@@ -405,9 +412,15 @@ QUALITY-005r smart-check.md updated with count-assertion guidance (at-least vs e
 KAIZEN-008 E15 targetIncrement updated to 28; KAIZEN-005 retro-patch-phase* → retro-patch-increment*
 naming confirmed; KAIZEN-006 legacy phase field absent from all backlog stories confirmed;
 HA-006 cost-gate.sh confirmed; DEVEX-007a code-server toolchainInit values confirmed;
-HA-007 .github/workflows/ha-gate.yml CI workflow confirmed — 100% first-review pass rate)
+HA-007 .github/workflows/ha-gate.yml CI workflow confirmed — 100% first-review pass rate),
+29 (pending-stub — 4/9 accepted: CEREMONY-007 pre-retro guard unit test confirmed
+(scripts/ralph/tests/test_retro_guard.py); CEREMONY-010 retro first-pass formula verified
+(attempts == 1 in retro.md:206); QUALITY-005r smart-check.md count-assertion guidance confirmed;
+CEREMONY-009 retro first-pass formula fix confirmed (attempts == 1 in retro.md);
+5 stories returned to backlog — root cause: sprint assembled with 4 pre-accepted stories (44%
+of capacity) that required no implementation, crowding out 5 new stories before execute reached them)
 
-Increment 28 complete. Increment 29 is a pending stub — plan ceremony will populate it.
+Increment 29 complete. Increment 30 is pending — plan ceremony will populate it.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
