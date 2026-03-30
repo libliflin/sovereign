@@ -1597,8 +1597,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
-      },
-      "readinessNote": "BLOCKED: dependency HA-004 has passes:false (stale backlog entry \u2014 confirmed done in sprint 32). Story is otherwise ready (all ACs verifiable, testPlan concrete). This block will self-clear once HA-004 stale entry is corrected."
+      }
     },
     {
       "id": "HA-005b",
@@ -2202,7 +2201,6 @@
       "id": "DEVEX-012",
       "epicId": "E11",
       "themeId": "T1",
-      "phase": 7,
       "priority": 2,
       "points": 2,
       "branchName": "feature/devex-012-autarky-gate",
@@ -2239,7 +2237,6 @@
       "id": "DEVEX-013",
       "epicId": "E11",
       "themeId": "T3",
-      "phase": 7,
       "priority": 3,
       "points": 2,
       "branchName": "feature/devex-013-argocd-apps",
@@ -2279,7 +2276,6 @@
       "id": "QUALITY-008",
       "epicId": "E12",
       "themeId": "T3",
-      "phase": 7,
       "priority": 2,
       "points": 2,
       "branchName": "feature/quality-008-sonarqube-quality-gate",
@@ -2318,7 +2314,6 @@
       "id": "QUALITY-009",
       "epicId": "E12",
       "themeId": "T1",
-      "phase": 7,
       "priority": 3,
       "points": 1,
       "branchName": "feature/quality-009-autarky-gate",
@@ -2356,7 +2351,6 @@
       "id": "TEST-009",
       "epicId": "E13",
       "themeId": "T4",
-      "phase": 8,
       "priority": 2,
       "points": 2,
       "branchName": "feature/test-009-chaos-grafana-dashboard",
@@ -2395,7 +2389,6 @@
       "id": "TEST-010",
       "epicId": "E13",
       "themeId": "T1",
-      "phase": 8,
       "priority": 3,
       "points": 1,
       "branchName": "feature/test-010-autarky-gate",
@@ -2410,7 +2403,10 @@
       ],
       "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/selenium-grid/templates/ platform/charts/k6-operator/templates/ platform/charts/chaos-mesh/templates/ platform/charts/mailhog/templates/ platform/charts/wiremock/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
       "dependencies": [
-        "TEST-006"
+        "TEST-004a",
+        "TEST-005a",
+        "TEST-006a",
+        "TEST-006b"
       ],
       "passes": false,
       "reviewed": false,
@@ -2427,13 +2423,12 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
+      "readinessNote": "READY: dependencies TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All deps resolved."
     },
     {
       "id": "HA-009",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 28,
       "priority": 3,
       "points": 2,
       "branchName": "feature/ha-009-e11-e12-ha-coverage",
@@ -2476,7 +2471,6 @@
       "id": "HA-010",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 28,
       "priority": 4,
       "points": 2,
       "branchName": "feature/ha-010-e13-ha-coverage",
@@ -2492,7 +2486,10 @@
       "testPlan": "for chart in platform/charts/selenium-grid platform/charts/k6-operator platform/charts/chaos-mesh platform/charts/mailhog platform/charts/wiremock; do echo \"=== $chart ===\"; helm template $chart | grep -E 'PodDisruptionBudget|podAntiAffinity' | wc -l; done",
       "dependencies": [
         "HA-001",
-        "TEST-006"
+        "TEST-004a",
+        "TEST-005a",
+        "TEST-006a",
+        "TEST-006b"
       ],
       "passes": false,
       "reviewed": false,
@@ -2509,7 +2506,7 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
+      "readinessNote": "READY: HA-001 passes:true; TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All dependencies resolved."
     },
     {
       "id": "KAIZEN-004",
@@ -2584,7 +2581,46 @@
       ],
       "passes": false,
       "reviewed": false,
-      "readinessNote": "NOT READY: (1) testPlan is missing \u2014 add specific commands to verify each AC. (2) AC2 ('ArgoCD successfully syncs from internal GitLab URL in a kind cluster with GitLab deployed') requires a running cluster with GitLab \u2014 not independently verifiable as written; rewrite as a static grep/template check or add PLATFORM-005 as an explicit dependency."
+      "readinessNote": "NOT READY: (1) testPlan is missing \u2014 add specific commands to verify each AC. (2) AC2 ('ArgoCD successfully syncs from internal GitLab URL in a kind cluster with GitLab deployed') requires a running cluster with GitLab \u2014 not independently verifiable as written; rewrite as a static grep/template check or add PLATFORM-005 as an explicit dependency.",
+      "epicId": "E5"
+    },
+    {
+      "id": "KAIZEN-017",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 8,
+      "points": 2,
+      "branchName": "kaizen/backlog-themeid-drift",
+      "title": "Backlog kaizen: correct themeId drift on 8 open stories",
+      "description": "The following open backlog stories carry a themeId that does not match their parent epic's themeId: KIND-002 (story T2, epic E1 T1), PLATFORM-001 (story T3, epic E7 T2), PLATFORM-002 (story T1, epic E7 T2), PLATFORM-004 (story T2, epic E1 T1), PLATFORM-005 (story T3, epic E1 T1), PLATFORM-006 (story T3, epic E1 T1), QUALITY-009 (story T1, epic E12 T3), TEST-009 (story T4, epic E13 T5), TEST-010 (story T1, epic E13 T5). Update each story's themeId to match its parent epic's themeId. The correct themeId is the epic's themeId \u2014 the story's themeId should agree.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); e=json.load(open('prd/epics.json')); epic_theme={x['id']:x.get('themeId') for x in e['epics']}; drift=[s['id'] for s in b['stories'] if s.get('epicId') and s.get('status','open') not in ('complete','superseded') and s.get('themeId') and s['themeId'] != epic_theme.get(s['epicId'])]; assert drift==[], f'themeId drift: {drift}'; print('PASS: no themeId drift on open stories')\" exits 0 and prints PASS"
+      ],
+      "testPlan": "Run the AC one-liner verbatim and show output.",
+      "passes": false,
+      "reviewed": false,
+      "readinessNote": "READY: self-contained JSON edit. Verify by running the AC one-liner."
+    },
+    {
+      "id": "KAIZEN-018",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 15,
+      "points": 2,
+      "branchName": "kaizen/smart-score-open-backlog",
+      "title": "Kaizen: SMART-score all 16 unscored open backlog stories to clear planning WARN",
+      "description": "The orient KPI 'SMART readiness' reports 34% scored (25/74 stories), well below the 80% threshold. 16 open product stories have no SMART field. Each planning cycle raises a WARN signal that the team must mentally filter. The fix: evaluate each unscored open story against the 5 SMART dimensions (specific, measurable, achievable, relevant, timeBound), add a 'smart' object with scores 1-5 and a 'notes' string, and rewrite any acceptanceCriteria that score below 4 on measurable. Stories that are genuinely unachievable without a running cluster should note that in the achievable score. Stories that cannot be made measurable without command-output ACs should be rewritten or retired to backlog comments.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); unscored=[s['id'] for s in b['stories'] if s.get('status','open')=='open' and not s.get('smart')]; assert unscored==[], f'unscored: {unscored}'; print('PASS: all open stories SMART-scored')\" exits 0 and prints PASS",
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); low=[s['id'] for s in b['stories'] if s.get('status','open')=='open' and s.get('smart',{}).get('measurable',5)<3]; print(f'low measurable: {low}')\" prints an empty list"
+      ],
+      "testPlan": "Run AC1 one-liner verbatim and show output. Run AC2 one-liner verbatim and show output.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": null,
+      "readinessNote": "READY: no dependencies, static analysis only, no cluster required."
     }
   ]
 }
