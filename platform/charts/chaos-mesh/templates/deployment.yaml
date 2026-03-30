@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chaos-mesh.fullname" . }}-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chaos-mesh.labels" . | nindent 4 }}
+    app.kubernetes.io/component: controller-manager
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "chaos-mesh.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: controller-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "chaos-mesh.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: controller-manager
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "chaos-mesh.selectorLabels" . | nindent 20 }}
+                    app.kubernetes.io/component: controller-manager
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: chaos-controller-manager
+          image: {{ include "chaos-mesh.controllerImage" . }}
+          imagePullPolicy: {{ .Values.controllerManager.image.pullPolicy }}
+          ports:
+            - name: webhook
+              containerPort: 9443
+              protocol: TCP
+            - name: metrics
+              containerPort: 10080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.controllerManager.resources | nindent 12 }}

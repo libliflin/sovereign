@@ -1,3 +1,5 @@
+replicaCount: 2
+
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "ceph-block"
@@ -5,3 +7,20 @@ global:
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
+
+controllerManager:
+  image:
+    repository: "chaos-mesh/chaos-mesh"
+    name: "chaos-mesh/chaos-mesh"
+    tag: "v2.6.3-abc1234-p0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+podDisruptionBudget:
+  minAvailable: 1
