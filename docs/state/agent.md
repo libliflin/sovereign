@@ -61,6 +61,9 @@ grep replicaCount platform/charts/<name>/values.yaml                   # must be
 helm template platform/charts/<name>/ | python3 scripts/check-limits.py  # every container must have requests AND limits
 ```
 
+Convenience: `bash scripts/ha-gate.sh` runs the PDB, podAntiAffinity, and replicaCount checks
+across all charts in one pass. `bash scripts/ha-gate.sh --dry-run` lists charts without running helm.
+
 This applies to upstream wrapper charts too. Setting `affinity` in `values.yaml` is not
 sufficient — verify the rendered output actually contains `podAntiAffinity`. If the upstream
 chart does not propagate it, add a dedicated affinity template that merges the required rule.
@@ -109,6 +112,22 @@ wrapper-level `templates/poddisruptionbudget.yaml` and disable the subchart PDB 
 causes review failure. Validate YAML with `yq e '.'` (not `kubectl apply --dry-run` — ArgoCD CRDs
 are not installed locally).
 
+**ArgoCD global.domain injection**: the correct pattern for injecting the cluster domain into
+ArgoCD-managed Helm charts is `spec.source.helm.parameters`:
+
+```yaml
+spec:
+  source:
+    helm:
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
+```
+
+Do not use `valueFiles` for domain injection — `spec.source.helm.parameters` is the authoritative
+pattern. All 16 targeted app manifests across platform, observability, and security tiers use this
+pattern. Domain-agnostic or non-Helm apps (cilium, rook-ceph, prometheus-stack, etc.) are exempt.
+
 **kubectl dry-run does not work for CRD-backed resources**: `kubectl apply --dry-run=client`
 silently fails with "no matches for kind X" for any custom resource (ArgoCD Application,
 Crossplane XR/XRC, etc.) unless the operator CRDs are pre-installed in the target cluster.
@@ -120,6 +139,12 @@ python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"
 This is the correct gate for any `.yaml` file that is not a core K8s resource. Core resources
 (Deployment, Service, Ingress, PDB, ConfigMap) can still use `kubectl apply --dry-run=client`.
 
+**Helm template ACs reference resolved values, not raw expressions**: when writing ACs that
+check `helm template` output for `.Values.*`, use the resolved default value or the key name —
+not the raw Go template expression. The template is rendered — `{{ .Values.global.storageClass }}`
+will not appear in output. Grep for the key (e.g., `storageClassName:`) or a known default
+value (e.g., `standard`) instead.
+
 **shellcheck**: all `.sh` files must pass `shellcheck -S error` (matches CI's shellcheck 0.10.0).
 Common fixes:
 
@@ -127,6 +152,22 @@ Common fixes:
 - Split `local` + command substitution: `local x; x=$(cmd)` — not `local x=$(cmd)` (SC2155)
 - Empty array safety: `"${ARRAY[@]+"${ARRAY[@]}"}` instead of `"${ARRAY[@]}"` with `set -u`
 - Don't source `interface.sh` (has `exit 1` stubs that fire SC2317 unreachable code)
+
+**`set -euo pipefail` + grep on optional YAML fields is a footgun**: any shell script that greps
+for an optional field in a YAML file (e.g., `replicaCount`) must use `|| true` on the grep
+pipeline (e.g., `grep -E '^replicaCount:' file || true`). Without it, `pipefail` kills the
+script silently when the field is absent — the script exits non-zero with no output.
+
+**Test chart-iterating scripts against the real corpus first**: shell script stories that iterate
+`platform/charts/` must run against all existing charts before creating any synthetic test
+fixtures. The real chart corpus contains edge cases (charts with no `replicaCount`, underscore-
+prefixed directories like `_globals`) that synthetic fixtures will not expose. This is an explicit
+AC requirement for any E15 story or any story whose description mentions iterating `platform/charts/`.
+
+**macOS bash 3.2 is the target shell**: treat macOS bash 3.2 as the minimum target for all scripts
+until the dev environment explicitly standardises on a newer version. `pipefail` subshell behavior
+diverges between bash 3.2 and GNU bash 5.x. When shell behavior is version-sensitive, document
+the constraint in the story's `testPlan`.
 
 **vendor scripts**: every script in `vendor/*.sh` must support both `--dry-run` AND `--backup`
 flags. CI checks for both with grep. Missing either causes CI failure.
@@ -173,6 +214,14 @@ option B", the implementer must pick one before writing code. Leaving it open cr
 ambiguity and rework risk. Future grooming should resolve all OR-choices before pulling a
 story into a sprint.
 
+**Verify file paths before writing grep-based ACs**: when a story's acceptance criterion uses
+`grep <pattern> <file>`, run that exact command on the current codebase before committing the
+AC. If the file doesn't exist or the pattern returns empty, the AC is wrong — not the
+implementation. This matters especially in multi-file systems like Ralph where logic is split
+across `ceremonies.py` and `ceremonies/*.md`. A grep AC that targets the wrong file has
+`smart.measurable ≤ 4` and will produce a false failure at review even when the implementation
+is correct. The "test contract first" norm applies at authoring time, not just post-implementation.
+
 **ANDON stories must inline the verification command, and it must be a runnable one-liner**:
 ANDON remediation stories must include the exact verification command in `acceptanceCriteria` —
 a self-contained Python or bash one-liner that proves the gate passes without navigating to an
@@ -192,10 +241,10 @@ and remains unimplemented. Check `backlog.json` — the story will have been ret
 The planning ceremony that follows will typically resolve the root condition (e.g., adding a
 pending increment resolves GGE-G5). If not, the backlog story covers the fallback.
 
-**Plan ceremony must always leave a pending increment queued**: before the advance ceremony
-runs, `manifest.json` must contain at least one increment with `status: "pending"`. If the
-backlog is drained and no pending increment exists, GGE G5 will fail and the pipeline stalls.
-When planning a new sprint, verify the pending increment exists before closing the plan ceremony.
+**Plan ceremony must always leave a pending increment queued**: the plan ceremony automatically
+appends a pending increment stub after creating an active sprint (KAIZEN-007r). Before the advance
+ceremony runs, verify `manifest.json` contains at least one increment with `status: "pending"`.
+If the pending stub is missing, the next GGE G5 check will fail and the pipeline stalls.
 
 **Plan ceremony must mark pulled stories as active in backlog**: when the plan ceremony pulls a
 story into a sprint file, it must set `status: "active"` on that story in `backlog.json` (or
@@ -209,6 +258,19 @@ within sprint capacity in points. The achievable score captures bundled scope th
 a single Ralph iteration budget. If achievable=3 reached the sprint, the story will almost
 certainly be returned to backlog incomplete. Split first.
 
+**SMART achievable must validate test command flags**: before accepting a story, verify that every
+shell command in `testPlan` and `acceptanceCriteria` uses only flags and invocation paths that
+actually exist in the codebase. A command referencing a flag like `--sprint` must be rejected if
+that flag is not implemented. Run `<cmd> --help` or grep the source for the flag. A story whose
+testPlan references an unimplemented flag has `smart.achievable ≤ 3` and must be fixed at
+grooming — it will fail review.
+
+**Integration test ACs must be self-contained**: if an AC requires temporarily mutating a system
+file (e.g. manifest.json) or invoking a live AI ceremony to verify, it is not verifiable in a
+CI-safe way. Rewrite such ACs as unit tests that import and call the logic directly with mock
+data. An AC that cannot be run without side-effecting the live manifest is an unverifiable AC —
+the review ceremony will correctly refuse to accept it.
+
 **Acceptance criteria must not reference specific completed sprint files by name**: an AC like
 "run against `prd/increment-17-restructure.json`" creates a dependency on a file whose content
 may change or whose path may be retired. Use a temp fixture file instead:
@@ -219,11 +281,27 @@ python3 script.py /tmp/test-manifest.json
 Stories with ACs that reference named completed sprint files have measurability score ≤ 4
 and will be flagged by SMART review. Fix at grooming.
 
-**Kind cluster bootstrap is not yet end-to-end**: `cluster/kind/bootstrap.sh` exists as the
-declared entry point but the full kind cluster bootstrap (KIND-001a, KIND-001b) has not been
-implemented. Stories that depend on a running kind cluster (`kind get clusters` showing
-`sovereign-test`) are blocked until KIND-001a is accepted. Do not assume a working kind cluster
-exists — verify with `kind get clusters` first.
+**Count assertions in ACs must use "at least N" not "== N" for resources that scale with component count**:
+`grep -c PodDisruptionBudget` (and similar count checks) must assert `>= N`, not an exact count, unless
+the architecture guarantees a fixed number. Multi-component charts (separate API/UI/worker deployments)
+emit one PDB per deployable component — an exact-count AC fails when the implementation is correct.
+This applies to PDBs, Services, and Deployments that scale with chart component topology. Exact counts
+(`== 1`, `== 2`) are only valid when a fixed count is architecturally guaranteed and documented in the
+story. If uncertain, use "at least N" and note why in the AC.
+
+**Kind cluster provides a bare cluster — platform components not yet deployed**: `cluster/kind/bootstrap.sh`
+creates a 3-node kind cluster named `sovereign-test` and emits `cluster-values.yaml` (contract-validated).
+KIND-001b (Cilium, cert-manager, sealed-secrets, OpenBao deployed into kind) is still in the backlog.
+Stories that depend on a bare kind cluster are unblocked. Stories that depend on platform components
+(Cilium CNI, cert-manager, sealed-secrets) are blocked until KIND-001b is accepted. Verify with
+`kind get clusters` before assuming a running cluster exists.
+
+**Pre-accepted story crowding blocks execution capacity**: when stories with `passes:true, reviewed:true`
+are pulled into a sprint, they consume ceremony pipeline slots without requiring implementation work. If
+they make up a large fraction of the sprint, new implementation stories will never be reached. The plan
+ceremony warns when pre-accepted stories exceed 50% of sprint capacity (CEREMONY-011). Before the execute
+cycle, check: if `>50%` of sprint points are already-accepted stories, remove them to free capacity for
+real work.
 
 ---
 
@@ -266,7 +344,7 @@ Do not mark `passes: true` if any gate fails. Do not self-certify — gates will
 - **Retro**: closes the sprint, returns incomplete work to backlog with 5 Whys
 - **Sync**: rewrites `docs/state/architecture.md` and `docs/state/agent.md`
 - **Advance**: moves the increment pointer in manifest.json
-- **Plan**: populates the next sprint file with stories from the backlog
+- **Plan**: populates the next sprint file with stories from the backlog; auto-queues a pending increment stub
 
 You implement. Ceremonies verify. Don't conflate the two.
 
@@ -292,22 +370,68 @@ charts migrated to platform/charts/ and cluster/kind/charts/),
 20 (kind-integration — 1/6 stories accepted: GGE-G5-andon only. KIND-001 split into KIND-001a +
 KIND-001b and returned to backlog. Increment 21 added as pending.),
 21 (platform-foundations — 0/1 stories accepted: GGE-G5-andon returned to backlog before Ralph
-ran any implementation cycles. Sprint closed without execution. No pending increment queued —
-pipeline stalled pending plan ceremony.)
+ran any implementation cycles. Sprint closed without execution.),
+22 (remediation — 6/7 accepted: GGE-G5-andon, KAIZEN-007r plan ceremony pending-stub auto-prime,
+KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch naming normalized, KAIZEN-006
+phase field removed from backlog stories; KAIZEN-004r pre-retro guard returned as KAIZEN-010r),
+23 (pending-stub — 8/9 accepted: KAIZEN-010r pre-retro guard unit test, RESTRUCTURE-001a contract
+layer validator + test fixtures (G7), KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch
+naming normalized, KAIZEN-006 phase field removed from backlog, HA-006 cost-gate.sh, DEVEX-007a
+code-server toolchainInit values, DEVEX-007b code-server toolchain initContainer; HA-001 ha-gate.sh
+returned to backlog — grep pipefail fix documented in reviewNotes),
+24 (pending-stub — 11/11 accepted: HA-001 ha-gate.sh (scripts/ha-gate.sh validates PDB,
+podAntiAffinity, replicaCount across all charts), KAIZEN-012 smart.md chart-iteration pipefail
+guidance, RESTRUCTURE-001b-1 cluster/kind/bootstrap.sh scaffold, RESTRUCTURE-001b-2
+platform/deploy.sh scaffold, HA-008 test/chaos/pdb-validation.yaml + README, KAIZEN-009a through
+KAIZEN-009e global.domain injection in all 16 targeted ArgoCD app manifests, DEVEX-009
+code-server workspace PVC at /home/coder),
+25 (kaizen — 7/8 accepted: KAIZEN-010r pre-retro guard unit test
+(scripts/ralph/tests/test_retro_guard.py), KAIZEN-008 E15 targetIncrement updated to 22,
+KAIZEN-005 retro-patch naming normalized to retro-patch-increment*.md, KAIZEN-006 legacy
+`phase` field removed from all backlog stories, DEVEX-007a code-server toolchainInit values
+interface in values.yaml, HA-006 scripts/gates/cost-gate.sh, HA-007
+.github/workflows/ha-gate.yml CI enforcement on every PR touching platform/charts/;
+KAIZEN-013 retro first-pass formula returned to backlog — implementation in retro.md:206 is
+correct but AC pointed to wrong file),
+26 (pending-stub — 9/9 accepted: KAIZEN-013r retro AC corrected (r-suffix pattern confirmed),
+KAIZEN-010r pre-retro guard unit test (scripts/ralph/tests/test_retro_guard.py),
+KAIZEN-013 retro first-pass formula verified (attempts == 1 in retro.md:206),
+KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch naming normalized,
+KAIZEN-006 legacy phase field removed from backlog, HA-006 cost-gate.sh,
+DEVEX-007a code-server toolchainInit values, HA-007 ha-gate.yml — 100% first-review pass rate),
+27 (pending-stub — 3/4 accepted: KIND-001a cluster/kind/bootstrap.sh creates sovereign-test 3-node
+kind cluster + contract/validate.py validates cluster-values.yaml; KAIZEN-001 contract validator
+test corpus expanded to cover imageRegistry and storageClass invariants; KAIZEN-002 docs on-ramp
+paths updated from old bootstrap/ structure to new monorepo structure; QUALITY-005 SonarQube +
+ReportPortal HA hardening returned to backlog — AC used exact-count assertion for multi-component
+chart, implementation was correct),
+28 (pending-stub — 10/10 accepted: KAIZEN-010r pre-retro guard unit test confirmed
+(scripts/ralph/tests/test_retro_guard.py); KAIZEN-013 + KAIZEN-013r retro first-pass formula
+verified correct (attempts == 1 in retro.md:206, both original and r-suffix story closed);
+QUALITY-005r smart-check.md updated with count-assertion guidance (at-least vs exact);
+KAIZEN-008 E15 targetIncrement updated to 28; KAIZEN-005 retro-patch-phase* → retro-patch-increment*
+naming confirmed; KAIZEN-006 legacy phase field absent from all backlog stories confirmed;
+HA-006 cost-gate.sh confirmed; DEVEX-007a code-server toolchainInit values confirmed;
+HA-007 .github/workflows/ha-gate.yml CI workflow confirmed — 100% first-review pass rate),
+29 (pending-stub — 4/9 accepted: CEREMONY-007 pre-retro guard unit test confirmed
+(scripts/ralph/tests/test_retro_guard.py); CEREMONY-010 retro first-pass formula verified
+(attempts == 1 in retro.md:206); QUALITY-005r smart-check.md count-assertion guidance confirmed;
+CEREMONY-009 retro first-pass formula fix confirmed (attempts == 1 in retro.md);
+5 stories returned to backlog — root cause: sprint assembled with 4 pre-accepted stories (44%
+of capacity) that required no implementation, crowding out 5 new stories before execute reached them)
 
-Increment active: 21 is `currentIncrement` and `activeSprint` in manifest.json but was closed
-by retro with 0 accepted stories. The advance ceremony will move the pointer. No pending increment
-exists in manifest.json — the plan ceremony must add one before GGE G5 passes.
+Increment 29 complete. Increment 30 is pending — plan ceremony will populate it.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
-Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; stories 027a
-full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube +
-ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration story 052 pending),
-E13 (testing infrastructure + HA validation), E15 (HA integration testing — targetIncrement stale,
-see Known model inconsistencies)
+Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; code-server has
+toolchain initContainer + workspace PVC + toolchainInit values interface; stories 027a full Keycloak
+OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube + ReportPortal Helm
+charts and ArgoCD apps exist; GitLab CI integration story 052 pending), E13 (testing infrastructure
++ HA validation), E15 (HA integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact
+done; targetIncrement: 28)
 
 ---
 
@@ -334,8 +458,4 @@ see Known model inconsistencies)
 
 ## Known model inconsistencies
 
-- `phase` field on 8 backlog stories is redundant with `epicId` (DEVEX-001/002/003, QUALITY-001/002, TEST-001/002/003) → KAIZEN-006 will remove it
-- Retro patch filename inconsistency: `retro-patch-increment20.md` vs `retro-patch-increment-21.md` (missing hyphen before number in increment 20) → KAIZEN-005 covers vocabulary normalization; filename pattern is a side effect
-- KAIZEN-004r (pre-retro guard): ceremonies.sh does not check for minimum execute cycles before firing retro. A sprint with zero attempts and zero accepted stories can reach retro without any work happening. KAIZEN-004r will add the guard.
-- E15 `targetIncrement` is stale ("2i" — already complete). E15 stories (KIND integration testing, HA validation) target current kind-cluster work. → KAIZEN-008 will update E15 targetIncrement to align with active increment.
-- 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001 superseded, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). The `themeId` field on a story may be intentional cross-theme attribution or drift — no migration story yet. Flag if causing planning confusion.
+- 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.

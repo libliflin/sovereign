@@ -4,31 +4,76 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
-      "id": "KAIZEN-009",
-      "title": "Kaizen: ArgoCD Application manifests must inject global.domain parameter",
-      "description": "16 ArgoCD Application manifests reference their chart's values.yaml but do not inject global.domain as a Helm parameter. At deploy time, charts will use their values.yaml default (sovereign-autarky.dev) regardless of the cluster's actual domain. Fix: add a helm.parameters entry for global.domain sourced from a cluster-level ApplicationSet parameter or a top-level values file, OR add a valueFiles reference to a cluster-specific values override. Affects: cert-manager, crossplane, gitlab, harbor, keycloak, sealed-secrets, vault, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator, argocd-image-updater.",
+      "id": "CEREMONY-009",
+      "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
+      "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
       "acceptanceCriteria": [
-        "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml returns no matches \u2014 every app either injects global.domain or is documented as domain-agnostic",
-        "python3 -c \"import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('platform/argocd-apps/**/*.yaml', recursive=True)]\" exits 0 \u2014 all YAML is valid after edits"
+        "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep -E '== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
+        "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; print('stale entries:', stale)\" prints an empty list (entries removed or marked complete)",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-injection",
-      "priority": 12,
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md to confirm the formula uses == 1; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-first-pass-formula",
+      "priority": 2,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
+      },
+      "returnedFromSprint": "prd/increment-25-pending-stub.json",
+      "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file",
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
+    },
+    {
+      "id": "CEREMONY-007",
+      "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
+      "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
+      "acceptanceCriteria": [
+        "A unit test file exists (e.g. scripts/ralph/tests/test_retro_guard.py) that imports the pre-retro guard logic from ceremonies.py and calls it with mock sprint data containing one passes:true reviewed:false story",
+        "python3 scripts/ralph/tests/test_retro_guard.py exits 0 with output confirming the guard correctly detects the limbo story",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 after any modifications",
+        "shellcheck -S error scripts/ralph/ceremonies.sh exits 0"
+      ],
+      "testPlan": "python3 scripts/ralph/tests/test_retro_guard.py \u2014 must exit 0 and print confirmation. Show output verbatim. Also run py_compile and shellcheck.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-guard-unit-test",
+      "priority": 1,
       "points": 2,
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "grep -rL 'global.domain' platform/argocd-apps/**/*.yaml \u2014 must return no output. Show verbatim."
+      "returnedFromSprint": "prd/increment-22-remediation.json",
+      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
-      "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
-      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
+      "id": "CEREMONY-006",
+      "title": "Update E15 targetIncrement from 22 (complete) to 28 (active increment)",
+      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: 22 which is a completed increment. Update E15.targetIncrement in epics.json to 28 (the active increment) so the planning ceremony correctly associates HA validation stories with the active delivery stream.",
       "acceptanceCriteria": [
-        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
+        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] == 28, f'wrong targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement is 28')\" exits 0 and prints OK",
         "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
       ],
       "epicId": "E1",
@@ -41,27 +86,16 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
-    },
-    {
-      "id": "GGE-G5-andon",
-      "title": "ANDON: Restore broken GGE \u2014 Planning pipeline always has a pending increment",
-      "description": "GGE G5 indicator is failing. Add a pending increment to manifest.json.",
-      "acceptanceCriteria": [
-        "GGE G5 indicator passes: python3 -c \"import json; m=json.load(open('prd/manifest.json')); pending=[i for i in m.get('increments',[]) if i.get('status')=='pending']; assert len(pending)>=1; print('OK')\""
-      ],
-      "priority": 0,
-      "points": 1,
-      "passes": false,
-      "reviewed": false,
-      "epicId": "E1",
-      "themeId": "T3",
-      "branchName": "fix/gge-g5-andon",
-      "dependencies": [],
-      "attempts": 0,
-      "returnedFromSprint": "prd/increment-21-platform-foundations.json",
-      "returnedReason": "Sprint closed without implementation \u2014 Ralph never ran this sprint cycle.",
-      "readinessNote": "NOT READY: missing testPlan \u2014 add concrete commands and expected outputs before pulling into a sprint."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must print 28. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull. E15 targetIncrement was updated to 28 in that sprint."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -75,7 +109,7 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
         "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
@@ -93,20 +127,23 @@
       }
     },
     {
-      "id": "RESTRUCTURE-001b",
+      "id": "RESTRUCTURE-001b-1",
       "epicId": "E2",
       "themeId": "T1",
-      "branchName": "restructure/monorepo",
-      "title": "Cluster skeleton: cluster/kind/bootstrap.sh and platform/deploy.sh",
-      "description": "Create cluster/kind/bootstrap.sh (kind cluster provisioner script) and platform/deploy.sh (platform deployment orchestrator). Both scripts must pass shellcheck -S error. Confirm bootstrap/providers/ is removed from the working tree (archived in git history \u2014 [ ! -d bootstrap/providers ] passes).",
+      "branchName": "restructure/kind-bootstrap-script",
+      "title": "cluster/kind/bootstrap.sh: kind cluster provisioner with --help, --cluster-name, and kind create cluster invocation",
+      "description": "Create cluster/kind/bootstrap.sh. The script must: (1) support --help flag that prints usage including '--cluster-name NAME (default: sovereign-test)'; (2) accept --cluster-name NAME option defaulting to 'sovereign-test'; (3) print 'Bootstrapping kind cluster: $cluster_name' before running; (4) invoke 'kind create cluster --name \"$cluster_name\"'. Script must pass shellcheck -S error with set -euo pipefail at the top. Also verify that bootstrap/providers/ is not present in the working tree (it should have been removed in RESTRUCTURE-001a).",
       "acceptanceCriteria": [
-        "cluster/kind/bootstrap.sh exists and shellcheck -S error cluster/kind/bootstrap.sh exits 0",
-        "platform/deploy.sh exists and shellcheck -S error platform/deploy.sh exits 0",
-        "bootstrap/providers/ does not exist in working tree: [ ! -d bootstrap/providers ] exits 0"
+        "cluster/kind/bootstrap.sh exists: ls cluster/kind/bootstrap.sh exits 0",
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "bash -n cluster/kind/bootstrap.sh exits 0",
+        "bash cluster/kind/bootstrap.sh --help 2>&1 | grep -q 'cluster-name' exits 0",
+        "grep -q 'kind create cluster' cluster/kind/bootstrap.sh exits 0 (script contains the kind invocation)",
+        "[ ! -d bootstrap/providers ] exits 0 (bootstrap/providers/ not in working tree)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
-      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; shellcheck -S error platform/deploy.sh; [ ! -d bootstrap/providers ] && echo 'providers archived OK'; show all output verbatim.",
+      "testPlan": "ls cluster/kind/bootstrap.sh && shellcheck -S error cluster/kind/bootstrap.sh && bash -n cluster/kind/bootstrap.sh && bash cluster/kind/bootstrap.sh --help 2>&1 | grep 'cluster-name' && grep 'kind create cluster' cluster/kind/bootstrap.sh && [ ! -d bootstrap/providers ] && echo 'all checks passed'; show all output verbatim",
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
@@ -115,12 +152,46 @@
       "attempts": 0,
       "priority": 2,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
+    },
+    {
+      "id": "RESTRUCTURE-001b-2",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/platform-deploy-script",
+      "title": "platform/deploy.sh: Helm deployment orchestrator with --help, --chart-dir, --namespace, and helm upgrade --install invocation",
+      "description": "Create platform/deploy.sh. The script must: (1) support --help flag that prints usage including '--chart-dir DIR' and '--namespace NS'; (2) accept --chart-dir DIR and --namespace NS required options; (3) print 'Deploying chart: $chart_dir to namespace: $namespace' before running; (4) invoke 'helm upgrade --install' for the given chart and namespace. Script must pass shellcheck -S error with set -euo pipefail at the top.",
+      "acceptanceCriteria": [
+        "platform/deploy.sh exists: ls platform/deploy.sh exits 0",
+        "shellcheck -S error platform/deploy.sh exits 0",
+        "bash -n platform/deploy.sh exits 0",
+        "bash platform/deploy.sh --help 2>&1 | grep -q 'chart-dir' exits 0",
+        "grep -q 'helm upgrade --install' platform/deploy.sh exits 0 (script contains the helm invocation)"
+      ],
+      "passes": true,
+      "points": 1,
+      "testPlan": "ls platform/deploy.sh && shellcheck -S error platform/deploy.sh && bash -n platform/deploy.sh && bash platform/deploy.sh --help 2>&1 | grep 'chart-dir' && grep 'helm upgrade --install' platform/deploy.sh && echo 'all checks passed'; show all output verbatim",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 3,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
       },
       "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
     },
@@ -140,7 +211,8 @@
       "points": 2,
       "testPlan": "ls platform/charts/; ls cluster/kind/charts/; [ -z \"$(ls charts/ 2>/dev/null)\" ] && echo 'root charts/ empty'; show all output verbatim.",
       "dependencies": [
-        "RESTRUCTURE-001b"
+        "RESTRUCTURE-001b-1",
+        "RESTRUCTURE-001b-2"
       ],
       "reviewed": false,
       "reviewNotes": [],
@@ -153,8 +225,7 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001b has passes=false. Resolve that story first."
+      }
     },
     {
       "id": "KIND-001",
@@ -209,10 +280,10 @@
       "themeId": "T2",
       "branchName": "feature/kind-egress-policy",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-001",
@@ -232,10 +303,10 @@
       "themeId": "T3",
       "branchName": "feature/platform-cert-manager",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-002",
@@ -255,10 +326,10 @@
       "themeId": "T1",
       "branchName": "feature/platform-sealed-secrets",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-003",
@@ -279,11 +350,11 @@
       "themeId": "T1",
       "branchName": "feature/platform-harbor",
       "dependencies": [
-        "KIND-001",
+        "KIND-001b",
         "PLATFORM-001"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-004",
@@ -375,14 +446,14 @@
       "themeId": "T4",
       "branchName": "feature/platform-prometheus",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
-      "id": "KAIZEN-001",
-      "title": "Kaizen: Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
+      "id": "CONTRACT-001",
+      "title": "Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
       "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants \u2014 there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
       "epicId": "E2",
       "themeId": "T1",
@@ -402,11 +473,11 @@
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
       "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-002",
-      "title": "Kaizen: Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
+      "id": "DEVEX-011",
+      "title": "Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
       "description": "The monorepo restructure (increment 17) moved kind setup from kind/setup.sh to cluster/kind/bootstrap.sh and charts from charts/ to platform/charts/. Any documentation referencing old paths gives developers incorrect instructions. Scan docs/ and README.md for stale references and update them.",
       "epicId": "E11",
       "themeId": "T3",
@@ -426,11 +497,11 @@
         "markdownlint docs/quickstart.md exits 0"
       ],
       "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-003",
-      "title": "Kaizen: Fix attempts field \u2014 initialize to 0, increment only on review re-open",
+      "id": "CEREMONY-001",
+      "title": "Fix attempts field \u2014 initialize to 0, increment only on review re-open",
       "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
       "epicId": "E1",
       "themeId": "T3",
@@ -452,8 +523,8 @@
       "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Review ceremony in next sprint can accept it immediately."
     },
     {
-      "id": "KAIZEN-004r",
-      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "id": "CEREMONY-002",
+      "title": "Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
       "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
       "epicId": "E1",
       "themeId": "T3",
@@ -462,8 +533,10 @@
       "points": 1,
       "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
+      "reviewNotes": [
+        "[Review 2 in sprint-22] AC2 ('verify review ceremony invoked first via fixture sprint') UNVERIFIABLE: ceremonies.py has no --sprint/--prd flag; the only way to test would be to mutate manifest.json and invoke a live AI ceremony. ACs 1, 3, 4 pass. Root cause: AC2 was written against a testing capability (fixture-based ceremony invocation) that the infrastructure does not provide. Fix AC2 before re-attempting: replace with a Python unit test that calls the guard logic function directly (no AI invocation needed)."
+      ],
+      "attempts": 2,
       "dependencies": [],
       "acceptanceCriteria": [
         "ceremonies.sh (or the retro ceremony wrapper) checks for passes:true reviewed:false stories before running retro",
@@ -472,8 +545,9 @@
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0 (if Python-based)"
       ],
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
-      "returnedFromSprint": "prd/increment-20-kind-integration.json",
-      "returnedReason": "Sprint closed before iteration; AC2 fixed \u2014 no longer references increment-17"
+      "returnedFromSprint": "prd/increment-22-remediation.json",
+      "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist",
+      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work). Implement CEREMONY-007 (retro guard unit test) first; then rewrite AC2 to use 'python3 scripts/ralph/tests/test_retro_guard.py' as the verification mechanism."
     },
     {
       "id": "DEVEX-001",
@@ -489,7 +563,6 @@
         "helm lint platform/charts/code-server/ exits 0"
       ],
       "testPlan": "helm install code-server platform/charts/code-server/ --kube-context kind-sovereign-test --namespace code-server --create-namespace --wait --timeout 2m; kubectl get pods -n code-server; kubectl port-forward svc/code-server 8080:8080 -n code-server & sleep 3; curl -v http://localhost:8080/healthz; show output verbatim",
-      "phase": 7,
       "priority": 15,
       "points": 2,
       "passes": false,
@@ -524,7 +597,6 @@
         "helm lint platform/charts/backstage/ exits 0"
       ],
       "testPlan": "helm install backstage platform/charts/backstage/ --kube-context kind-sovereign-test --namespace backstage --create-namespace --wait --timeout 3m; kubectl get pods -n backstage; kubectl port-forward svc/backstage 7007:7007 -n backstage & sleep 5; curl -s http://localhost:7007/api/catalog/entities | python3 -m json.tool; show output verbatim",
-      "phase": 7,
       "priority": 16,
       "points": 3,
       "passes": false,
@@ -559,7 +631,6 @@
         "helm lint platform/charts/backstage/ exits 0 after techdocs config added to app-config.yaml"
       ],
       "testPlan": "Add catalog-info.yaml and mkdocs.yml to repo. Restart Backstage. curl techdocs API. Show output verbatim.",
-      "phase": 7,
       "priority": 17,
       "points": 2,
       "passes": false,
@@ -595,7 +666,6 @@
         "helm lint platform/charts/sonarqube/ exits 0"
       ],
       "testPlan": "helm install sonarqube platform/charts/sonarqube/ --kube-context kind-sovereign-test --namespace sonarqube --create-namespace --wait --timeout 3m; kubectl get pods -n sonarqube; kubectl port-forward svc/sonarqube 9000:9000 -n sonarqube & sleep 5; curl -s http://localhost:9000/api/system/health; show output verbatim",
-      "phase": 7,
       "priority": 18,
       "points": 2,
       "passes": false,
@@ -631,7 +701,6 @@
         "helm lint platform/charts/reportportal/ exits 0"
       ],
       "testPlan": "helm install reportportal platform/charts/reportportal/ --kube-context kind-sovereign-test --namespace reportportal --create-namespace --wait --timeout 5m; kubectl get pods -n reportportal; port-forward and POST test XML; show output verbatim",
-      "phase": 7,
       "priority": 19,
       "points": 3,
       "passes": false,
@@ -666,7 +735,6 @@
         "helm lint platform/charts/selenium-grid/ exits 0"
       ],
       "testPlan": "helm install selenium-grid platform/charts/selenium-grid/ --kube-context kind-sovereign-test --namespace selenium --create-namespace --wait --timeout 2m; kubectl get pods -n selenium; port-forward 4444; run selenium test; show output verbatim",
-      "phase": 8,
       "priority": 20,
       "points": 2,
       "passes": false,
@@ -702,7 +770,6 @@
         "helm lint platform/charts/k6-operator/ exits 0"
       ],
       "testPlan": "helm install k6-operator platform/charts/k6-operator/ --kube-context kind-sovereign-test --namespace k6-operator --create-namespace --wait --timeout 2m; apply smoke TestRun CR; kubectl wait for job completion; show output verbatim",
-      "phase": 8,
       "priority": 21,
       "points": 2,
       "passes": false,
@@ -737,7 +804,6 @@
         "helm lint platform/charts/mailhog/ exits 0"
       ],
       "testPlan": "helm install mailhog platform/charts/mailhog/ --kube-context kind-sovereign-test --namespace mailhog --create-namespace --wait --timeout 2m; kubectl get pods -n mailhog; port-forward 1025 and 8025; send SMTP email; curl messages API; show output verbatim",
-      "phase": 8,
       "priority": 22,
       "points": 1,
       "passes": false,
@@ -746,7 +812,7 @@
       "attempts": 0,
       "branchName": "feature/test-mailhog",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "smart": {
         "specific": 0,
@@ -756,11 +822,11 @@
         "timebound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
-      "id": "KAIZEN-005",
-      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "id": "CEREMONY-003",
+      "title": "Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
       "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
       "themeId": "T3",
@@ -772,17 +838,27 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
         "scripts/ralph/ceremonies/sync.md no longer contains the string 'retro-patch-phase'",
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: legacy vocabulary cleanup supports platform health but does not advance feature delivery."
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
-      "id": "KAIZEN-006",
-      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "id": "CEREMONY-004",
+      "title": "Remove legacy 'phase' field from backlog stories",
       "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
       "themeId": "T3",
@@ -794,15 +870,25 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "acceptanceCriteria": [
         "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: data model cleanup supports delivery hygiene but does not advance feature delivery."
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
-      "id": "KAIZEN-007r",
+      "id": "CEREMONY-005",
       "title": "Plan ceremony: always queue a pending increment stub when creating an active sprint",
       "description": "GGE G5 fires every sprint because the plan ceremony creates an active increment but never queues a follow-on pending increment. The fix: at the end of the plan ceremony, if no increment has status='pending' in manifest.json, automatically append a minimal pending increment stub (id, name, description, status='pending', dependsOn current). This ensures GGE G5 never fires again and the planning pipeline is always primed.",
       "acceptanceCriteria": [
@@ -821,7 +907,7 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
       "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
-      "readinessNote": "NOT READY: missing testPlan \u2014 add concrete commands and expected outputs before pulling into a sprint."
+      "readinessNote": "NOT READY: testPlan field is empty. Must describe specific commands to verify that the plan ceremony appends a pending stub when none exists. Add a testPlan before pulling into a sprint."
     },
     {
       "id": "KIND-001a",
@@ -857,7 +943,7 @@
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
       },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
       "id": "KIND-001b",
@@ -899,7 +985,6 @@
       "id": "TEST-004",
       "epicId": "E13",
       "themeId": "T5",
-      "phase": 8,
       "priority": 3,
       "points": 2,
       "branchName": "feature/chaos-mesh-chart",
@@ -940,7 +1025,6 @@
       "id": "TEST-005",
       "epicId": "E13",
       "themeId": "T5",
-      "phase": 8,
       "priority": 4,
       "points": 2,
       "branchName": "feature/wiremock-chart",
@@ -981,12 +1065,11 @@
       "id": "HA-001",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 22,
       "priority": 1,
       "points": 2,
       "branchName": "feature/ha-gate-script",
       "title": "HA gate script validates all platform charts have replicaCount>=2, PDB, and podAntiAffinity",
-      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm.",
+      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm. IMPORTANT FIX (from sprint-23 review): The grep pipeline for extracting replicaCount must use '|| true' to prevent set -euo pipefail from killing the script when processing charts that have no top-level replicaCount field (e.g. platform/charts/_globals/). Pattern: replica_count=$(grep -E '^replicaCount:' \"$chart/values.yaml\" || true | awk ...)",
       "acceptanceCriteria": [
         "scripts/ha-gate.sh exists and passes shellcheck -S error: shellcheck -S error scripts/ha-gate.sh exits 0",
         "bash -n scripts/ha-gate.sh exits 0 (syntax check)",
@@ -995,7 +1078,7 @@
         "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart"
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -1007,13 +1090,14 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
     },
     {
       "id": "HA-002",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 22,
       "priority": 2,
       "points": 3,
       "branchName": "feature/pdb-drain-validation",
@@ -1052,7 +1136,6 @@
       "id": "HA-003",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 22,
       "priority": 3,
       "points": 2,
       "branchName": "feature/rolling-update-smoke-test",
@@ -1092,7 +1175,6 @@
       "id": "DEVEX-004",
       "epicId": "E11",
       "themeId": "T3",
-      "phase": 7,
       "priority": 3,
       "points": 3,
       "branchName": "feature/backstage-scaffolder-template",
@@ -1126,7 +1208,6 @@
       "id": "DEVEX-005",
       "epicId": "E11",
       "themeId": "T3",
-      "phase": 7,
       "priority": 4,
       "points": 2,
       "branchName": "feature/backstage-argocd-plugin",
@@ -1159,7 +1240,6 @@
       "id": "QUALITY-003",
       "epicId": "E12",
       "themeId": "T3",
-      "phase": 7,
       "priority": 3,
       "points": 2,
       "branchName": "feature/sonarqube-keycloak-oidc",
@@ -1193,7 +1273,6 @@
       "id": "QUALITY-004",
       "epicId": "E12",
       "themeId": "T3",
-      "phase": 7,
       "priority": 4,
       "points": 2,
       "branchName": "feature/sonarqube-gitlab-ci",
@@ -1226,42 +1305,40 @@
       "id": "QUALITY-005",
       "epicId": "E12",
       "themeId": "T3",
-      "phase": 7,
       "priority": 5,
       "points": 2,
       "branchName": "feature/sonarqube-reportportal-ha",
       "title": "SonarQube and ReportPortal Helm charts pass HA gate: replicaCount>=2, PDB, podAntiAffinity",
       "description": "Harden the SonarQube and ReportPortal Helm charts to meet the platform HA standard. Both charts must have: replicaCount defaulting to 2, a PodDisruptionBudget with minAvailable=1, and podAntiAffinity preferredDuringSchedulingIgnoredDuringExecution on hostname. Run the HA gate script against both charts to confirm.",
       "acceptanceCriteria": [
-        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns at least 1",
         "helm template platform/charts/sonarqube/ | grep -c podAntiAffinity returns at least 1",
-        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns at least 1",
         "helm template platform/charts/reportportal/ | grep -c podAntiAffinity returns at least 1",
         "helm lint platform/charts/sonarqube/ exits 0",
         "helm lint platform/charts/reportportal/ exits 0"
       ],
       "testPlan": "helm lint platform/charts/sonarqube/; helm lint platform/charts/reportportal/; helm template platform/charts/sonarqube/ | grep PodDisruptionBudget; helm template platform/charts/reportportal/ | grep PodDisruptionBudget; show all output verbatim.",
-      "dependencies": [
-        "029"
-      ],
+      "dependencies": [],
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
-      }
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
+      },
+      "returnedFromSprint": "prd/increment-27-pending-stub.json",
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'"
     },
     {
       "id": "TEST-006",
       "epicId": "E13",
       "themeId": "T5",
-      "phase": 8,
       "priority": 3,
       "points": 2,
       "branchName": "feature/testing-charts-ha-gate",
@@ -1290,13 +1367,13 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency '031a' found in increment-8-testing-and-ha.json with passes=false. Resolve story 031a before pulling this story into a sprint."
     },
     {
       "id": "TEST-007",
       "epicId": "E13",
       "themeId": "T5",
-      "phase": 8,
       "priority": 4,
       "points": 2,
       "branchName": "feature/k6-reportportal-integration",
@@ -1330,7 +1407,6 @@
       "id": "TEST-008",
       "epicId": "E13",
       "themeId": "T5",
-      "phase": 8,
       "priority": 5,
       "points": 2,
       "branchName": "feature/selenium-keycloak-e2e",
@@ -1364,7 +1440,6 @@
       "id": "HA-004",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 22,
       "priority": 2,
       "points": 2,
       "branchName": "feature/kind-multinode-ha-cluster",
@@ -1397,7 +1472,6 @@
       "id": "HA-005",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 22,
       "priority": 3,
       "points": 2,
       "branchName": "feature/kind-chart-smoke-tests",
@@ -1430,10 +1504,10 @@
       "id": "HA-006",
       "epicId": "E15",
       "themeId": "T5",
-      "phase": 22,
       "priority": 4,
       "points": 1,
       "branchName": "feature/bootstrap-cost-gate",
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "title": "Bootstrap cost-gate script validates chart resource requests fit within per-node budget",
       "description": "Create scripts/gates/cost-gate.sh that iterates over all platform/charts/*/values.yaml files, extracts resources.requests.cpu and resources.requests.memory for each chart, sums them, and fails if the total exceeds a configurable per-node budget (default: 4 CPU, 8Gi RAM). Print a per-chart table and a PASS/FAIL verdict. The script does not require a running cluster \u2014 it reads Helm values only.",
       "acceptanceCriteria": [
@@ -1448,12 +1522,451 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Script already exists at scripts/gates/cost-gate.sh using Python yaml parsing (not shell grep), so the pipefail+grep risk does not apply."
+      }
+    },
+    {
+      "id": "DEVEX-006",
+      "title": "Backstage GitLab catalog provider auto-discovers all sovereign GitLab group projects as catalog entities",
+      "description": "Configure the @backstage/plugin-catalog-backend-module-gitlab catalog provider in app-config.yaml to discover all repositories in the sovereign GitLab group and register them as Component entities on a 15-minute schedule. No manual catalog-info.yaml in each repo should be required. Configure integrations.gitlab and catalog.providers.gitlab sections in the Backstage chart values. The GitLab token must be injected from a SealedSecret \u2014 no plaintext credentials in values.yaml or templates.",
+      "epicId": "E11",
+      "themeId": "T3",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/backstage-gitlab-catalog-provider",
+      "acceptanceCriteria": [
+        "platform/charts/backstage/values.yaml contains catalog.providers.gitlab configuration block referencing the sovereign GitLab group URL",
+        "helm lint platform/charts/backstage/ exits 0",
+        "helm template platform/charts/backstage/ | grep -i 'gitlab' returns at least one match referencing the catalog provider or GitLab integration",
+        "grep -n 'token\\|password' platform/charts/backstage/values.yaml | grep -v '#\\|secretRef\\|secretName\\|sealed' returns no matches \u2014 no plaintext GitLab token in values"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -i gitlab \u2014 show verbatim. Also: grep -n 'token' platform/charts/backstage/values.yaml | grep -v '#\\|secretRef' must return no matches.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "smart": {
         "specific": 0,
         "measurable": 0,
         "achievable": 0,
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "DEVEX-007a",
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "feature/code-server-toolchain-values",
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
+      "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
+      "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
+      "acceptanceCriteria": [
+        "grep 'toolchainInit' platform/charts/code-server/values.yaml returns a match",
+        "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "passes": false,
+      "points": 1,
+      "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 4,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
+    },
+    {
+      "id": "DEVEX-007b",
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "feature/code-server-toolchain-init",
+      "title": "code-server chart: add initContainer to Deployment template copying toolchain binaries (kubectl, helm, k9s)",
+      "description": "Add an initContainers section to platform/charts/code-server/templates/deployment.yaml. The init container image must be constructed in the template source as '{{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}'. The init container copies kubectl, helm, and k9s binaries into /home/coder/workspace/bin via a shared emptyDir volume. No external registry literals may appear in templates \u2014 all image refs must use global.imageRegistry. Depends on DEVEX-007a for the values interface.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/code-server/ | grep -A5 'initContainers' returns at least one init container spec",
+        "grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml returns at least one match confirming the init container image is sourced from the platform registry (source file grep, not rendered output)",
+        "helm template platform/charts/code-server/ | grep -E 'kubectl|helm|k9s' returns matches showing toolchain binary installation",
+        "helm lint platform/charts/code-server/ exits 0",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches \u2014 G6 passes"
+      ],
+      "passes": false,
+      "points": 2,
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers; grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml; grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ \u2014 show all output verbatim.",
+      "dependencies": [
+        "DEVEX-007a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 5,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      },
+      "readinessNote": "UNBLOCKED: dependency DEVEX-007a was completed in sprint 28 (passes:true, reviewed:true in prd/increment-28-pending-stub.json). Pulled into sprint 30."
+    },
+    {
+      "id": "QUALITY-006",
+      "title": "ReportPortal configured with Keycloak OIDC SSO \u2014 no local admin passwords in cluster",
+      "description": "Configure ReportPortal's OAuth2 / OIDC integration to authenticate users via the sovereign Keycloak realm. Add a Keycloak OIDC client for ReportPortal to the platform/charts/keycloak/ realm configuration. All ReportPortal credentials (client secret, superadmin password) must be stored in SealedSecrets \u2014 no plaintext in values.yaml or templates. After this story, a Keycloak-authenticated user can log in to ReportPortal without a local ReportPortal account.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/reportportal-keycloak-sso",
+      "acceptanceCriteria": [
+        "helm template platform/charts/reportportal/ | grep -i 'SealedSecret\\|secretRef' returns at least one match \u2014 credentials sourced from sealed secrets",
+        "grep -n 'password' platform/charts/reportportal/values.yaml | grep -v '#\\|secretRef\\|secretName' returns no matches \u2014 no plaintext passwords in values",
+        "helm template platform/charts/reportportal/ | grep -i 'keycloak\\|oidc\\|oauth2' returns matches confirming the OIDC provider is configured",
+        "helm lint platform/charts/reportportal/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/reportportal/ && grep -v '#' platform/charts/reportportal/values.yaml | grep -i password \u2014 second command must return no matches. Also: helm template platform/charts/reportportal/ | grep -i keycloak must show config. Show both verbatim.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "QUALITY-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "QUALITY-007",
+      "title": "GitLab CI pipeline submits JUnit test results to ReportPortal on every merge request",
+      "description": "Create a reusable GitLab CI include template at platform/ci-templates/reportportal-upload.yml that uploads JUnit XML artifacts to ReportPortal after test jobs complete. The job uses the ReportPortal HTTP API (POST /api/v1/{project}/launch/import) and reads RP_ENDPOINT and RP_TOKEN from CI environment variables (backed by cluster SealedSecrets). Create .gitlab-ci.yml at the repo root that includes this template. No plaintext credentials may appear in any committed file \u2014 RP_TOKEN must reference a masked CI variable.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/reportportal-ci-upload",
+      "acceptanceCriteria": [
+        "cat platform/ci-templates/reportportal-upload.yml exits 0 and contains RP_ENDPOINT and RP_TOKEN variable references",
+        "python3 -c \"import yaml; yaml.safe_load(open('platform/ci-templates/reportportal-upload.yml')); print('YAML valid')\" exits 0",
+        "grep 'reportportal-upload' .gitlab-ci.yml returns at least one match \u2014 template is included in the repo CI config",
+        "grep -rn 'RP_TOKEN\\s*:' platform/ci-templates/ returns no matches \u2014 no hardcoded token values"
+      ],
+      "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('platform/ci-templates/reportportal-upload.yml')); print('YAML valid')\" && grep reportportal-upload .gitlab-ci.yml \u2014 show both outputs verbatim.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "QUALITY-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "CEREMONY-008",
+      "title": "Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart \u2014 it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",
+        "The requirement text includes an explicit note about bash set -euo pipefail with grep pipelines: use '|| true' when grep results may be empty",
+        "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md (or equivalent) returns at least one match confirming the guidance is present"
+      ],
+      "testPlan": "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md and grep -n 'pipefail\\||| true' scripts/ralph/ceremonies/smart.md \u2014 show output verbatim. Both must return matches.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/chart-iteration-script-gate",
+      "priority": 1,
+      "points": 1,
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+    },
+    {
+      "id": "DEVEX-008",
+      "epicId": "E11",
+      "themeId": "T3",
+      "priority": 12,
+      "points": 2,
+      "branchName": "feature/backstage-keycloak-oidc",
+      "title": "Backstage: configure Keycloak OIDC auth provider \u2014 users log in with sovereign realm credentials",
+      "description": "Update platform/charts/backstage to configure Keycloak as Backstage's OIDC auth provider. The Backstage app-config.yaml ConfigMap must include auth.providers.oidc with the Keycloak realm URL referencing {{ .Values.global.domain }} (never hardcoded). Values must expose keycloak.realm and keycloak.clientId as Helm values with sensible defaults. Unauthenticated access should redirect to Keycloak login. This story covers the auth layer only \u2014 service auto-discovery is DEVEX-002.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ shows a ConfigMap containing auth.providers.oidc with {{ .Values.global.domain }} in the issuer URL \u2014 not a hardcoded hostname",
+        "platform/charts/backstage/values.yaml has a backstage.keycloak section with realm and clientId fields",
+        "helm lint platform/charts/backstage/ exits 0",
+        "Autarky gate passes: grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ 2>/dev/null; exit code 1 (no matches) with echo PASS",
+        "helm template platform/charts/backstage/ | python3 scripts/check-limits.py exits 0 (all containers have resource limits)"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -A8 'auth.providers' && grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/backstage/templates/ 2>/dev/null && echo 'AUTARKY FAIL' || echo 'AUTARKY PASS'; show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "PLATFORM-004"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency PLATFORM-004 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "DEVEX-009",
+      "epicId": "E11",
+      "themeId": "T3",
+      "priority": 13,
+      "points": 1,
+      "branchName": "feature/code-server-workspace-pvc",
+      "title": "code-server chart: PersistentVolumeClaim for /home/coder so workspace survives pod restarts",
+      "description": "Add platform/charts/code-server/templates/pvc.yaml: a PersistentVolumeClaim for the code-server workspace. The storageClass must reference {{ .Values.global.storageClass }} (never hardcoded). Size must be configurable via values.yaml (default 5Gi). Update the Deployment template to add a volumeMount at /home/coder and a corresponding volume referencing the PVC. This ensures that agent workspaces, cloned git repos, and shell history survive pod restarts.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/templates/pvc.yaml exists \u2014 ls platform/charts/code-server/templates/pvc.yaml exits 0",
+        "helm template platform/charts/code-server/ shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}",
+        "helm template platform/charts/code-server/ shows a VolumeMount with mountPath: /home/coder",
+        "platform/charts/code-server/values.yaml has a persistence.size field \u2014 grep 'persistence:' platform/charts/code-server/values.yaml exits 0",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "DEVEX-010",
+      "epicId": "E11",
+      "themeId": "T3",
+      "priority": 14,
+      "points": 2,
+      "branchName": "feature/backstage-grafana-plugin",
+      "title": "Backstage Grafana plugin: platform metrics dashboards linked in service catalog entities",
+      "description": "Configure the Backstage Grafana plugin in platform/charts/backstage so that catalog entities annotated with grafana/dashboard-selector show embedded Grafana links. The Grafana base URL must reference {{ .Values.global.domain }} (never hardcoded). Add a backstage.grafana.domain Helm value. This closes the observability-to-catalog integration loop: a developer viewing any platform service in Backstage sees a direct link to its Grafana dashboard.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ shows a ConfigMap containing grafana with a domain value referencing {{ .Values.global.domain }} (grep 'grafana' should exit 0)",
+        "platform/charts/backstage/values.yaml has a backstage.grafana.domain field \u2014 grep 'grafana:' platform/charts/backstage/values.yaml exits 0",
+        "helm lint platform/charts/backstage/ exits 0",
+        "Autarky gate: grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ 2>/dev/null; exit code 1 (no matches)",
+        "helm template platform/charts/backstage/ | grep -i 'grafana' exits 0 (plugin config present in rendered ConfigMap)"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -i grafana | head -10 && grep 'grafana:' platform/charts/backstage/values.yaml && (grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io' platform/charts/backstage/templates/ 2>/dev/null && echo 'AUTARKY FAIL' || echo 'AUTARKY PASS'); show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes=false. Resolve that story first."
+    },
+    {
+      "id": "HA-007",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 5,
+      "points": 2,
+      "branchName": "feature/ha-gate-ci-workflow",
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
+      "title": "GitHub Actions workflow: ha-gate.sh --dry-run runs on every PR touching platform/charts/",
+      "description": "Create .github/workflows/ha-gate.yml: a GitHub Actions workflow that triggers on pull_request for paths: [platform/charts/**]. The job must (1) run shellcheck -S error scripts/ha-gate.sh and (2) run scripts/ha-gate.sh --dry-run. The --dry-run mode lists all charts without invoking helm, so this gate requires no live cluster and is safe for CI. This enforces the HA invariants (replicaCount, PDB, podAntiAffinity) as a merge gate before any chart change lands on main.",
+      "acceptanceCriteria": [
+        ".github/workflows/ha-gate.yml exists \u2014 ls .github/workflows/ha-gate.yml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml exits 0 (valid YAML)",
+        "grep 'platform/charts' .github/workflows/ha-gate.yml exits 0 (path filter is present)",
+        "grep 'shellcheck' .github/workflows/ha-gate.yml exits 0 (shellcheck step is present)",
+        "grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml exits 0 (dry-run invocation present)",
+        "shellcheck -S error scripts/ha-gate.sh exits 0 (ha-gate.sh itself is shellcheck-clean before adding CI)"
+      ],
+      "testPlan": "ls .github/workflows/ha-gate.yml && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml && grep 'platform/charts' .github/workflows/ha-gate.yml && grep 'shellcheck' .github/workflows/ha-gate.yml && grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml && shellcheck -S error scripts/ha-gate.sh; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "HA-001"
+      ],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support, so the dependency on HA-001 is satisfied."
+      }
+    },
+    {
+      "id": "HA-008",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 6,
+      "points": 2,
+      "branchName": "feature/chaos-pdb-validation",
+      "title": "Chaos Mesh PodChaos experiment YAML + README validates PDB prevents simultaneous pod eviction",
+      "description": "Create test/chaos/pdb-validation.yaml: a Chaos Mesh PodChaos experiment targeting a platform service (e.g. grafana namespace, mode: all) to simultaneously terminate all pods. The PDB minAvailable:1 should prevent the last pod from being evicted. Create test/chaos/README.md explaining how to apply the experiment against a kind cluster running Chaos Mesh (TEST-004), what PDB-enforcement behavior to observe, and how to clean up. The YAML is a static test artifact \u2014 it does not run in CI. This covers the 'PDB chaos validation' goal from E15.",
+      "acceptanceCriteria": [
+        "test/chaos/pdb-validation.yaml exists \u2014 ls test/chaos/pdb-validation.yaml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml exits 0 (valid YAML)",
+        "grep 'kind: PodChaos' test/chaos/pdb-validation.yaml exits 0",
+        "grep 'mode: all' test/chaos/pdb-validation.yaml exits 0 (targets all replicas to exercise PDB)",
+        "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
+      ],
+      "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "CEREMONY-010",
+      "title": "Verify KAIZEN-013 implementation: confirm retro.md first-pass formula is correct",
+      "description": "KAIZEN-013 was returned from sprint 25 because AC1 checked ceremonies.py but the implementation lives in scripts/ralph/ceremonies/retro.md. The formula at retro.md:206 already uses attempts == 1 (correct). This story re-verifies the implementation with the corrected AC that checks the right file, and verifies the KAIZEN-009a-e stale backlog cleanup was also done.",
+      "acceptanceCriteria": [
+        "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep '== 1' exits 0 and shows the formula",
+        "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; assert len(stale) == 0, f'stale: {stale}'; print('OK')\" exits 0 and prints OK",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md | grep '== 1'; python3 -c validation for stale entries; py_compile \u2014 show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-first-pass-verify",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-25-pending-stub.json",
+      "returnedReason": "KAIZEN-013 AC pointed to wrong file; implementation already correct in retro.md \u2014 this story just re-verifies with corrected AC",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+      }
+    },
+    {
+      "id": "CEREMONY-011",
+      "title": "Plan ceremony: warn when >50% of sprint capacity is already-accepted stories",
+      "description": "Sprint 29 retro identified that 4 of 9 stories were already accepted (passes:true, reviewed:true) when pulled into the sprint. These review-confirmation stories consumed ceremony pipeline execution time without requiring implementation work, leaving 5 unimplemented stories with zero execution capacity. The plan ceremony must check, after assembling a sprint, whether implementation-pending stories (passes:false) are outnumbered or crowded out by review-confirmation stories (passes:true, reviewed:false) or already-accepted stories (passes:true, reviewed:true). If pre-accepted stories make up >50% of the sprint point total, emit a WARNING and suggest removing them from the sprint (they don't need to be re-executed). This prevents sprints from being filled with low-effort confirmations at the expense of new delivery.",
+      "acceptanceCriteria": [
+        "grep -n 'already.accepted\\|pre.accepted\\|passes.*true.*reviewed.*true\\|review.confirmation' scripts/ralph/ceremonies/plan.md returns at least one match showing the check is present",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'already.accepted\\|review.confirmation' scripts/ralph/ceremonies/plan.md \u2014 must return at least one line. python3 -m py_compile scripts/ralph/ceremonies.py \u2014 must exit 0. Show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/plan-ceremony-capacity-audit",
+      "priority": 1,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
+      "returnedReason": "Sprint 29: 4 pre-accepted stories consumed execute pipeline, 5 new stories never started; plan ceremony has no guard against this pattern.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs are static-analysis-only (grep + py_compile), no live cluster needed."
+      }
+    },
+    {
+      "id": "QUALITY-005r",
+      "title": "SMART gate: flag exact count assertions for multi-component charts",
+      "description": "The SMART measurable check does not distinguish between exact-count ACs ('returns 1') and minimum-count ACs ('returns at least 1'). For charts that may have multiple components (each with their own PDB), exact counts are brittle \u2014 the implementation can be correct while the AC fails. Update the SMART measurable scoring prompt to explicitly ask: 'do count-based ACs use at-least rather than exact assertions for resources that scale with component count?'",
+      "acceptanceCriteria": [
+        "grep -n 'at least\\|at-least\\|minimum' scripts/ralph/ceremonies/smart-check.md shows the updated measurable prompt includes guidance on count assertion types",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'at least' scripts/ralph/ceremonies/smart-check.md to show the prompt change. python3 -m py_compile scripts/ralph/ceremonies.py. Show output verbatim.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-27-pending-stub.json",
+      "returnedReason": "Root cause of QUALITY-005 failure: SMART measurable prompt did not catch brittle exact-count assertion on a multi-component chart",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs corrected: smart.md \u2192 smart-check.md (the actual file). Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
       }
     }
   ]

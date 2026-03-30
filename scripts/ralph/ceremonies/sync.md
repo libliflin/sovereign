@@ -52,7 +52,7 @@ epics_backlog  = [e for e in epics.get('epics', []) if e.get('status') == 'backl
 
 Also read the retro patch for this sprint if it exists:
 ```bash
-cat prd/retro-patch-phase*.md 2>/dev/null | tail -100
+cat prd/retro-patch-increment*.md 2>/dev/null | tail -100
 ```
 
 And read the current versions of both living documents:
@@ -152,7 +152,7 @@ for phases that are now complete and whose patterns have been incorporated:
 import os
 from pathlib import Path
 
-patches = list(Path('prd').glob('retro-patch-phase*.md'))
+patches = list(Path('prd').glob('retro-patch-increment*.md'))
 for patch in patches:
     content = open(patch).read()
     # Only delete if the patch's phase is complete in manifest

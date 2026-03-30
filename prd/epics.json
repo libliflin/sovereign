@@ -25,7 +25,10 @@
       "description": "Cilium CNI with deny-all NetworkPolicy. cert-manager with self-signed CA. Sealed Secrets. Crossplane core. OpenBao dev mode.",
       "targetIncrement": 2,
       "status": "complete",
-      "storyIds": []
+      "storyIds": [
+        "PLATFORM-001",
+        "PLATFORM-002"
+      ]
     },
     {
       "id": "E4",
@@ -34,7 +37,9 @@
       "description": "Keycloak with sovereign realm, OIDC clients for all platform services. Replaces any external identity provider dependency.",
       "targetIncrement": 2,
       "status": "complete",
-      "storyIds": []
+      "storyIds": [
+        "PLATFORM-004"
+      ]
     },
     {
       "id": "E5",
@@ -43,7 +48,11 @@
       "description": "Self-hosted Git (GitLab), GitOps (ArgoCD App-of-Apps), container registry (Harbor). No dependency on GitHub, DockerHub, or any external Git host.",
       "targetIncrement": 3,
       "status": "complete",
-      "storyIds": []
+      "storyIds": [
+        "PLATFORM-003",
+        "PLATFORM-005",
+        "PLATFORM-006"
+      ]
     },
     {
       "id": "E6",
@@ -92,7 +101,9 @@
       "description": "kube-prometheus-stack, Keycloak OIDC for Grafana, AlertManager, pre-loaded dashboards for all platform components.",
       "targetIncrement": 6,
       "status": "complete",
-      "storyIds": []
+      "storyIds": [
+        "PLATFORM-007"
+      ]
     },
     {
       "id": "E10",
@@ -119,8 +130,18 @@
         "027b",
         "028",
         "049",
+        "DEVEX-001",
+        "DEVEX-002",
+        "DEVEX-003",
         "DEVEX-004",
-        "DEVEX-005"
+        "DEVEX-005",
+        "DEVEX-006",
+        "DEVEX-007a",
+        "DEVEX-007b",
+        "DEVEX-008",
+        "DEVEX-009",
+        "DEVEX-010",
+        "DEVEX-011"
       ]
     },
     {
@@ -134,9 +155,13 @@
         "029",
         "041r",
         "052",
+        "QUALITY-001",
+        "QUALITY-002",
         "QUALITY-003",
         "QUALITY-004",
-        "QUALITY-005"
+        "QUALITY-005",
+        "QUALITY-006",
+        "QUALITY-007"
       ]
     },
     {
@@ -154,6 +179,9 @@
         "031b-4",
         "031b-5",
         "031b-6",
+        "TEST-001",
+        "TEST-002",
+        "TEST-003",
         "TEST-004",
         "TEST-005",
         "TEST-006",
@@ -180,7 +208,7 @@
       "themeId": "T5",
       "title": "HA validation and integration testing \u2014 kind-based",
       "description": "kind cluster setup, chart smoke tests in kind, cost gate on bootstrap scripts, PDB chaos validation.",
-      "targetIncrement": "2i",
+      "targetIncrement": 28,
       "status": "backlog",
       "storyIds": [
         "038",
@@ -192,7 +220,9 @@
         "HA-003",
         "HA-004",
         "HA-005",
-        "HA-006"
+        "HA-006",
+        "HA-007",
+        "HA-008"
       ]
     }
   ]

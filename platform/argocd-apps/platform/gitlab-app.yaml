@@ -22,6 +22,8 @@ spec:
       valueFiles:
         - values.yaml
       parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
         - name: gitlab.global.hosts.domain
           value: "sovereign-autarky.dev"
   destination:

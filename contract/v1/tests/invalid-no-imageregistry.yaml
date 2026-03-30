@@ -1,0 +1,30 @@
+##############################################################################
+# Test fixture: invalid — imageRegistry section absent
+# Must FAIL contract validation with a message referencing imageRegistry.
+##############################################################################
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterValues
+
+runtime:
+  domain: sovereign.local
+  # imageRegistry section entirely absent — must fail validation
+
+storage:
+  block:
+    storageClassName: standard
+  file:
+    storageClassName: standard
+  object:
+    endpoint: http://minio.minio.svc:9000
+    credentialsSecret: minio-credentials
+
+network:
+  ingressClass: nginx
+  networkPolicyEnforced: true
+
+pki:
+  clusterIssuer: selfsigned-cluster-issuer
+
+autarky:
+  externalEgressBlocked: true
+  imagesFromInternalRegistryOnly: true

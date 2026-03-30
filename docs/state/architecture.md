@@ -41,9 +41,10 @@ The word "phase" is retired from code and data. If you see it in Python or JSON,
 | Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
 | Bootstrapping | `cluster/kind/bootstrap.sh` (kind) and `bootstrap/bootstrap.sh` (VPS) are the only manual steps. Everything after is ArgoCD. |
 | Helm charts | Platform-level service charts in `platform/charts/<service>/`. Kind cluster bootstrap charts in `cluster/kind/charts/<service>/`. The root `charts/` directory is empty and retired. |
-| Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` runs pre-deployment validation against this schema. |
+| Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces autarky invariants — `externalEgressBlocked=true`, `imageRegistry` present, and `storageClass` present — before any cluster is provisioned. |
+| Bootstrap cost gate | `scripts/gates/cost-gate.sh` validates chart resource requests fit within per-node budget (default: 4 CPU, 8Gi RAM) by reading Helm values — no running cluster required. |
 | Helm standards | Every chart templates `{{ .Values.global.domain }}` — no hardcoded domains in templates. Defaults in `values.yaml` may use the dogfood domain `sovereign-autarky.dev`. |
-| ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. Validate with `yq e '.'` — not `kubectl apply --dry-run` (CRDs not installed locally). |
+| ArgoCD apps | Every Application manifest must have `spec.revisionHistoryLimit: 3`. Domain-aware charts receive `global.domain` via `spec.source.helm.parameters` (not valueFiles). Validate with `yq e '.'` — not `kubectl apply --dry-run` (CRDs not installed locally). |
 
 ---
 
@@ -97,10 +98,10 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 | Service | Role |
 |---|---|
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
-| code-server | Browser-based VS Code IDE for agents and developers. Helm chart and ArgoCD Application deployed. |
+| code-server | Browser-based VS Code IDE for agents and developers. An initContainer copies kubectl, helm, and k9s into `/home/coder/workspace/bin` via a shared emptyDir volume. Workspace persists across pod restarts via a PersistentVolumeClaim at `/home/coder` (`persistence.size` in values.yaml, default 5Gi, storageClass via `{{ .Values.global.storageClass }}`). The `toolchainInit` values section defines the init container image name and workspace bin mount path. |
 | Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. |
 | SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`). Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
-| ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
+| ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. Multi-component chart: one PDB per component (API, UI). |
 
 Sovereign PM uses a multi-stage Dockerfile: Vite builds the React frontend, tsc builds the
 Express backend, combined in a single production image. Database: bitnami/postgresql subchart
@@ -139,6 +140,8 @@ Every story must pass before `reviewed: true`:
 10. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
 11. `helm template platform/charts/<name>/ | grep -i datasource` — required for all observability charts
 12. Branch pushed to remote + PR merged to main — proof of work
+
+Convenience: `scripts/ha-gate.sh` runs gates 3–5 across all charts automatically. `bash scripts/ha-gate.sh --dry-run` lists charts without running helm. `.github/workflows/ha-gate.yml` runs shellcheck + `ha-gate.sh --dry-run` on every PR touching `platform/charts/`.
 
 ---
 

@@ -1,0 +1,146 @@
+{
+  "increment": 27,
+  "name": "pending-stub",
+  "description": "kind cluster bootstrap scaffolding, contract validator expansion, and code-quality HA hardening. Clears the critical path to HA validation chain.",
+  "sprintGoal": "Establish the kind cluster bootstrap foundation (KIND-001a) to unlock the HA validation chain, harden SonarQube/ReportPortal charts to HA standard, and expand the contract validator test corpus.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "KIND-001a",
+      "title": "kind bootstrap: cluster/kind/bootstrap.sh + 3-node cluster + contract/validate.py",
+      "description": "Split of KIND-001 (achievable=3). Deliver only the cluster scaffolding half: write cluster/kind/bootstrap.sh that creates a 3-node kind cluster named sovereign-test and emits cluster-values.yaml; write contract/validate.py that validates cluster-values.yaml against contract/v1/cluster.schema.yaml. No platform components (Cilium, cert-manager, etc.) \u2014 those are KIND-001b.",
+      "acceptanceCriteria": [
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "./cluster/kind/bootstrap.sh --dry-run exits 0 and prints intended actions",
+        "./cluster/kind/bootstrap.sh runs without error: kind get clusters shows sovereign-test",
+        "kubectl get nodes --context kind-sovereign-test shows 3 nodes all Ready",
+        "cluster-values.yaml is emitted and python3 contract/validate.py cluster-values.yaml exits 0 with output containing 'CONTRACT VALID'"
+      ],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "feature/kind-bootstrap",
+      "dependencies": [
+        "RESTRUCTURE-001c"
+      ],
+      "priority": 2,
+      "points": 2,
+      "passes": true,
+      "reviewed": true,
+      "reviewNotes": [],
+      "attempts": 1,
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Split from KIND-001 (achievable=3 \u2014 too many integration points for one story)",
+      "testPlan": "shellcheck -S error cluster/kind/bootstrap.sh; ./cluster/kind/bootstrap.sh --dry-run; ./cluster/kind/bootstrap.sh; kind get clusters; kubectl get nodes --context kind-sovereign-test; python3 contract/validate.py cluster-values.yaml \u2014 show all output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: two distinct deliverables (bootstrap.sh + contract/validate.py) plus live cluster creation puts this near the top of the story budget."
+      }
+    },
+    {
+      "id": "QUALITY-005",
+      "epicId": "E12",
+      "themeId": "T3",
+      "priority": 5,
+      "points": 2,
+      "branchName": "feature/sonarqube-reportportal-ha",
+      "title": "SonarQube and ReportPortal Helm charts pass HA gate: replicaCount>=2, PDB, podAntiAffinity",
+      "description": "Harden the SonarQube and ReportPortal Helm charts to meet the platform HA standard. Both charts must have: replicaCount defaulting to 2, a PodDisruptionBudget with minAvailable=1, and podAntiAffinity preferredDuringSchedulingIgnoredDuringExecution on hostname. Run the HA gate script against both charts to confirm.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/sonarqube/ | grep -c podAntiAffinity returns at least 1",
+        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/reportportal/ | grep -c podAntiAffinity returns at least 1",
+        "helm lint platform/charts/sonarqube/ exits 0",
+        "helm lint platform/charts/reportportal/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/sonarqube/; helm lint platform/charts/reportportal/; helm template platform/charts/sonarqube/ | grep PodDisruptionBudget; helm template platform/charts/reportportal/ | grep PodDisruptionBudget; show all output verbatim.",
+      "dependencies": [
+        "029"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [
+        "[Review 2] AC failed: 'helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1'. Command: helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget. Output: 2. The chart renders 2 PodDisruptionBudget resources (reportportal-api-pdb and reportportal-ui-pdb). The AC as written expects exactly 1; actual count is 2. Either fix the AC to say 'returns at least 1' or verify the implementation only emits one PDB as intended."
+      ],
+      "attempts": 2,
+      "returnedToBacklog": true,
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); fix: update AC to 'returns at least 1'",
+      "smart": {
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
+      }
+    },
+    {
+      "id": "CONTRACT-001",
+      "title": "Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
+      "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants \u2014 there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "kaizen/contract-test-corpus",
+      "priority": 12,
+      "points": 1,
+      "passes": true,
+      "reviewed": true,
+      "attempts": 1,
+      "dependencies": [
+        "RESTRUCTURE-001c"
+      ],
+      "acceptanceCriteria": [
+        "contract/v1/tests/invalid-no-imageregistry.yaml exists and fails validate.py with a message referencing imageRegistry",
+        "contract/v1/tests/invalid-no-storageclass.yaml exists and fails validate.py with a message referencing storageClass",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
+        "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
+      ],
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: the 4th AC is a complex bash one-liner with inverted exit logic that is hard to verify at a glance; the first three ACs are clean binary checks."
+      }
+    },
+    {
+      "id": "DEVEX-011",
+      "title": "Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
+      "description": "The monorepo restructure (increment 17) moved kind setup from kind/setup.sh to cluster/kind/bootstrap.sh and charts from charts/ to platform/charts/. Any documentation referencing old paths gives developers incorrect instructions. Scan docs/ and README.md for stale references and update them.",
+      "epicId": "E11",
+      "themeId": "T3",
+      "branchName": "kaizen/docs-path-update",
+      "priority": 13,
+      "points": 1,
+      "passes": true,
+      "reviewed": true,
+      "attempts": 1,
+      "dependencies": [
+        "RESTRUCTURE-001c"
+      ],
+      "acceptanceCriteria": [
+        "grep -r 'kind/setup.sh' docs/ README.md returns no matches",
+        "grep -r 'bootstrap/providers' docs/ README.md returns no matches",
+        "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
+        "markdownlint docs/quickstart.md exits 0"
+      ],
+      "testPlan": "Run grep checks above. Show output verbatim.",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'scan docs/ and README.md' is open-ended \u2014 only 2 specific stale patterns are named; other stale paths are not enumerated. Measurable score 4: markdownlint assumed installed; no check if additional docs files beyond quickstart.md reference old paths. Relevant score 4: useful for T3 developer on-ramp but not on the critical path to the sprint goal (kind bootstrap, HA hardening, contract validator). Time-bound score 4: 'scan and update' framing could expand scope if more files contain stale references beyond the two patterns checked."
+      }
+    }
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
+}

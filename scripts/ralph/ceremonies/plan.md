@@ -74,7 +74,83 @@ print(f"Created remediation increment {next_id}: {new_inc['file']}")
 
 Set `NEXT_INCREMENT` to this new entry. Continue to Step 2.
 
-### Step 2 — Read the backlog
+### Step 2 — Read the terrain (Shi 勢)
+
+Before reading stories, read the strategic situation. Shi is not velocity — it is
+positioning. Where should we focus to get the most leverage from the least effort?
+
+```python
+import json
+from collections import defaultdict
+from pathlib import Path
+
+with open('prd/manifest.json') as f:
+    manifest = json.load(f)
+with open('prd/constitution.json') as f:
+    constitution = json.load(f)
+with open('prd/epics.json') as f:
+    epics = json.load(f)
+with open('prd/backlog.json') as f:
+    backlog = json.load(f)
+
+themes = {t['id']: t['name'] for t in constitution.get('themes', [])}
+epic_theme = {e['id']: e.get('themeId', '') for e in epics.get('epics', [])}
+
+# Count accepted vs returned points per theme from sprint history
+accepted = defaultdict(int)
+returned = defaultdict(int)
+for inc in manifest.get('increments', []):
+    if inc.get('status') != 'complete':
+        continue
+    sf = Path(inc.get('file', ''))
+    if not sf.exists():
+        continue
+    sprint = json.load(open(sf))
+    for s in sprint.get('stories', []):
+        tid = s.get('themeId') or epic_theme.get(s.get('epicId', ''), '')
+        if not tid:
+            continue
+        pts = s.get('points', 1)
+        if s.get('passes') and s.get('reviewed'):
+            accepted[tid] += pts
+        elif s.get('returnedToBacklog'):
+            returned[tid] += pts
+
+# Count unblocked stories per theme in the backlog
+unblocked = defaultdict(list)
+all_story_ids = {s['id'] for s in backlog.get('stories', [])}
+for s in backlog.get('stories', []):
+    if s.get('passes') or s.get('status') == 'killed':
+        continue
+    tid = s.get('themeId') or epic_theme.get(s.get('epicId', ''), '')
+    deps = s.get('dependencies', [])
+    blocked = any(
+        d not in {st['id'] for st in backlog.get('stories', []) if st.get('passes')}
+        for d in deps
+    )
+    if not blocked:
+        unblocked[tid].append(s['id'])
+
+print("=== Shi Reading ===")
+for tid, name in sorted(themes.items()):
+    a, r = accepted.get(tid, 0), returned.get(tid, 0)
+    ub = unblocked.get(tid, [])
+    print(f"  {tid} {name}: {a}pts accepted, {r}pts returned, {len(ub)} unblocked stories")
+print()
+```
+
+Now answer these questions before selecting stories:
+1. **Where is the leverage?** Which single story or chain, if completed, would unblock the
+   most downstream work across all themes?
+2. **Where is the energy?** Which themes have momentum and unblocked work ready to flow?
+3. **Where should we NOT focus?** Which themes are blocked by long dependency chains that
+   can't be resolved this sprint?
+
+**Use this analysis to influence story selection in Step 6.** Don't just sort by priority
+number — if the shi reading shows that a lower-priority story is the key to unblocking
+10 other stories, pull it ahead of a higher-priority story that only unblocks itself.
+
+### Step 3 — Read the backlog
 
 ```bash
 cat prd/backlog.json
@@ -163,15 +239,32 @@ For each candidate story, verify all of the following:
 A story is **ready** if it passes all five checks. Otherwise add a `readinessNote` field with the
 specific issue and leave it in the backlog.
 
-### Step 6 — Select stories for the sprint (respect WIP ceiling)
+### Step 6 — Select stories for the sprint (shi-informed, respect WIP ceiling)
 
-Collect all **ready** candidate stories, ordered by `priority` (ascending).
+**Use the shi reading from Step 2 to guide selection.** Priority numbers are a
+starting point, but leverage matters more than priority. A story that unblocks 10
+downstream stories is more valuable than a story that only completes itself, even
+if its priority number is higher.
+
+**E1 ceremony story cap:** Stories with `epicId == "E1"` improve the delivery machine,
+not the platform. They have real value but must never crowd out product work. Apply this
+hard rule:
+
+1. Select all product stories (`epicId != "E1"`) first, up to WIP ceiling.
+2. Only after product stories are selected, fill remaining capacity with E1 stories — **maximum 1 E1 story per sprint**, regardless of remaining capacity.
+3. If there are no ready product stories at all (everything blocked), up to 3 E1 stories are allowed — but note this explicitly in the sprint summary as a signal to run groom and unblock the product pipeline.
+
+Selection order:
+1. **Priority-0 stories first** — pulled regardless of phase or WIP ceiling.
+2. **Highest-leverage product stories** — from the shi analysis, which story or chain
+   unblocks the most downstream work? Pull those next.
+3. **Remaining ready product stories by priority** — fill remaining product capacity.
+4. **E1 ceremony stories (max 1)** — fill any remaining capacity, highest priority first.
+
 Add stories until the next story would exceed `wip_ceiling` total points.
-
-- Priority-0 stories are pulled first, regardless of phase or WIP ceiling.
 - If a story would push the total over the ceiling, skip it and continue checking remaining stories
   (a 2-point story may fit even if a 5-point story didn't).
-- Record why each skipped story was not included (over WIP / not ready / oversized).
+- Record why each skipped story was not included (over WIP / not ready / oversized / lower leverage / E1 cap).
 
 ### Step 6 — Write the increment sprint file
 
@@ -191,6 +284,48 @@ Write the sprint file at the path defined in `NEXT_INCREMENT.file` (e.g. `prd/in
 ```
 
 Each story in the sprint file must match the schema at `prd/schema/story.schema.json`.
+
+### Step 6b — Pre-accepted story capacity audit
+
+After assembling the sprint stories, check whether already-accepted stories (passes:true, reviewed:true)
+or review-confirmation stories (passes:true, reviewed:false) crowd out implementation work.
+Sprints with too many pre-accepted stories consume ceremony pipeline slots without requiring any
+implementation, leaving new stories starved of execution capacity.
+
+```python
+import json
+
+sprint_stories = [<the story list you just assembled>]
+
+total_points = sum(s.get('points', 1) for s in sprint_stories)
+pre_accepted_points = sum(
+    s.get('points', 1) for s in sprint_stories
+    if s.get('passes') is True and s.get('reviewed') is True
+)
+review_confirmation_points = sum(
+    s.get('points', 1) for s in sprint_stories
+    if s.get('passes') is True and s.get('reviewed') is False
+)
+
+crowded_points = pre_accepted_points + review_confirmation_points
+crowded_pct = (crowded_points / total_points * 100) if total_points > 0 else 0
+
+if crowded_pct > 50:
+    print(f"WARNING: {crowded_pct:.0f}% of sprint capacity ({crowded_points}/{total_points} pts) "
+          f"is already-accepted or review-confirmation stories.")
+    print("These stories require no implementation work but consume ceremony pipeline slots.")
+    print("SUGGESTION: Remove pre-accepted stories (passes:true, reviewed:true) from this sprint.")
+    print("They do not need to be re-executed — the review ceremony will pick them up automatically.")
+    print("Freed capacity should be filled with implementation-pending stories (passes:false).")
+else:
+    print(f"Capacity audit OK: {crowded_pct:.0f}% pre-accepted/review-confirmation "
+          f"({crowded_points}/{total_points} pts) — under 50% threshold.")
+```
+
+> This check is advisory — it does not block the sprint from being created. But if the WARNING fires,
+> strongly consider removing the already-accepted stories before writing the sprint file. A sprint
+> crowded with review-confirmations will exhaust the execute pipeline on stories requiring no code,
+> and implementation-pending stories will be returned to backlog unimplemented at retro.
 
 ### Step 7 — Update backlog.json
 

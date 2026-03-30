@@ -15,6 +15,9 @@ spec:
     chart: argocd-image-updater
     targetRevision: "0.9.6"
     helm:
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
       values: |
         config:
           # Registries: Harbor as primary, plus Docker Hub fallback during bootstrap
