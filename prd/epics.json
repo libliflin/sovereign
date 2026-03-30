@@ -208,7 +208,7 @@
       "themeId": "T5",
       "title": "HA validation and integration testing \u2014 kind-based",
       "description": "kind cluster setup, chart smoke tests in kind, cost gate on bootstrap scripts, PDB chaos validation.",
-      "targetIncrement": 22,
+      "targetIncrement": 28,
       "status": "backlog",
       "storyIds": [
         "038",
