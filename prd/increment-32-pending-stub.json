@@ -96,7 +96,7 @@
         "helm template of the test chart used confirms strategy.rollingUpdate.maxUnavailable is 0: helm template <test-chart> | grep -A5 'rollingUpdate' shows 'maxUnavailable: 0'"
       ],
       "testPlan": "shellcheck -S error kind/smoke-test/rolling-update.sh && bash -n kind/smoke-test/rolling-update.sh && kind/smoke-test/rolling-update.sh --dry-run && kind/smoke-test/rolling-update.sh; show all output verbatim including the per-poll pod counts",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
