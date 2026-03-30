@@ -23,9 +23,10 @@ push branches, open PRs. Ceremonies verify your work. You do not run ceremonies.
 | Strategic direction | `prd/themes.json`, `prd/epics.json` |
 | Platform service charts | `platform/charts/<service>/` |
 | Kind bootstrap charts | `cluster/kind/charts/<service>/` |
+| Kind HA fixtures | `kind/fixtures/` and `kind/smoke-test/` |
 | ArgoCD apps | `argocd-apps/<tier>/<service>-app.yaml` |
 | Contract schema | `contract/v1/` — validated by `contract/validate.py` |
-| Bootstrap scripts | `bootstrap/` (VPS) and `cluster/kind/bootstrap.sh` (kind) |
+| Bootstrap scripts | `bootstrap/` (VPS), `cluster/kind/bootstrap.sh` (kind standard), `cluster/kind/ha-bootstrap.sh` (kind HA) |
 | Governance rules | `docs/governance/` |
 | Architecture decisions | `docs/state/architecture.md` (this directory) |
 
@@ -289,12 +290,26 @@ This applies to PDBs, Services, and Deployments that scale with chart component 
 (`== 1`, `== 2`) are only valid when a fixed count is architecturally guaranteed and documented in the
 story. If uncertain, use "at least N" and note why in the AC.
 
-**Kind cluster provides a bare cluster — platform components not yet deployed**: `cluster/kind/bootstrap.sh`
-creates a 3-node kind cluster named `sovereign-test` and emits `cluster-values.yaml` (contract-validated).
-KIND-001b (Cilium, cert-manager, sealed-secrets, OpenBao deployed into kind) is still in the backlog.
-Stories that depend on a bare kind cluster are unblocked. Stories that depend on platform components
-(Cilium CNI, cert-manager, sealed-secrets) are blocked until KIND-001b is accepted. Verify with
-`kind get clusters` before assuming a running cluster exists.
+**Kind cluster foundation state**: `cluster/kind/bootstrap.sh` creates a 3-node kind cluster named
+`sovereign-test` with Cilium CNI, cert-manager, sealed-secrets, local-path-provisioner (default
+StorageClass), and MinIO installed and running. Verify with `kind get clusters` before assuming
+a running cluster. Stories that depend on these platform foundation components are unblocked.
+
+**Kind HA integration story pattern — script + dry-run + shellcheck**: all kind integration stories
+(HA validation, smoke tests, fixture scripts) must follow this pattern: create a script in
+`kind/fixtures/` or `kind/smoke-test/`, support `--dry-run`, pass `shellcheck -S error`. This
+pattern produced 100% first-review acceptance across HA-002, HA-003, and HA-004. The decomposition
+approach (split complex stories by phase: cluster bootstrap / component install) is validated and
+should be reused for future multi-component stories.
+
+**Autarky gate for chart stories**: when a story touches Helm chart templates, include the autarky
+grep check as an explicit AC:
+```bash
+grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/<name>/templates/ \
+  && echo "FAIL" || echo "PASS: no external registries"
+```
+This check is fast and reliable — suitable for a 2-point story. Recommend adding it to the
+pre-flight gate for all chart stories going forward.
 
 **Review-confirmation stories carry `attempts: 0` by convention**: when a story was implemented in a
 prior sprint and is pulled into the current sprint solely to clear the review pipeline, it correctly
@@ -434,9 +449,17 @@ pass rate, uniform 2-point sizing),
 + contract/validate.py validates cluster-values.yaml; CONTRACT-001 contract validator test corpus
 expanded to cover imageRegistry and storageClass invariants; DEVEX-011 docs on-ramp paths updated from
 old bootstrap/ structure to new monorepo structure; RESTRUCTURE-001a, RESTRUCTURE-001b-1, HA-001 review
-confirmations cleared — 100% first-review pass rate for new implementation work)
+confirmations cleared — 100% first-review pass rate for new implementation work),
+32 (kind-bootstrap-chain/pending-stub — 6/6 accepted: KIND-001b Cilium CNI + cert-manager +
+sealed-secrets + local-path-provisioner + MinIO installed into kind cluster; HA-002 PDB drain
+validation fixture (kind/fixtures/pdb-test.yaml) — kubectl drain blocked when last pod would
+be evicted; HA-003 rolling update smoke test (kind/smoke-test/rolling-update.sh) — zero pod
+unavailability during Helm upgrade verified; HA-004 HA bootstrap script (cluster/kind/ha-bootstrap.sh
++ cluster/kind/kind-ha-config.yaml, 3 control-plane nodes); DEVEX-012 Backstage + code-server
+Helm chart templates pass autarky G6 gate; DEVEX-009 code-server workspace PVC confirmed —
+100% first-review pass rate)
 
-Increment 31 complete. Increment 32 is pending — plan ceremony will populate it.
+Increment 32 complete. Increment 33 is pending — plan ceremony will populate it.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -444,10 +467,12 @@ E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and
 
 Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; code-server has
 toolchain initContainer + workspace PVC + toolchainInit values interface (DEVEX-007a, 007b, 009 done);
+Backstage and code-server charts pass autarky G6 gate (DEVEX-012 done);
 stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality —
 SonarQube + ReportPortal Helm charts, ArgoCD apps, and HA gate compliance done; GitLab CI integration
 story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA integration testing —
-HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; targetIncrement: 28)
+HA-001 ha-gate.sh done; HA-002 PDB drain validation done; HA-003 rolling update smoke test done;
+HA-004 HA bootstrap script done; HA-008 chaos PDB artifact done; targetIncrement: 28)
 
 ---
 
@@ -474,4 +499,5 @@ HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; targetIncrement: 28)
 
 ## Known model inconsistencies
 
-- 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
+- 11 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006, DEVEX-012, QUALITY-009, TEST-009, TEST-010). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
+- 8 backlog stories still carry a legacy `phase` field (DEVEX-012, DEVEX-013, QUALITY-008, QUALITY-009, TEST-009, TEST-010, HA-009, HA-010) despite KAIZEN-006 removing `phase` from all backlog stories. These entries were added after KAIZEN-006 ran. → KAIZEN-004 will remove them.

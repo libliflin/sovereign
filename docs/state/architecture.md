@@ -39,7 +39,8 @@ The word "phase" is retired from code and data. If you see it in Python or JSON,
 | GitOps engine | ArgoCD App-of-Apps. Root app watches `argocd-apps/`. All services are ArgoCD Applications. |
 | Infrastructure composition | Crossplane with Helm + Kubernetes providers. Cloud resources are XRDs, not scripts. |
 | Secret storage | Sealed Secrets for GitOps-safe at-rest encryption. OpenBao for runtime secret injection. |
-| Bootstrapping | `cluster/kind/bootstrap.sh` (kind) and `bootstrap/bootstrap.sh` (VPS) are the only manual steps. Everything after is ArgoCD. |
+| Bootstrapping | `cluster/kind/bootstrap.sh` (kind, 3-node) and `bootstrap/bootstrap.sh` (VPS) are the only manual steps. `cluster/kind/ha-bootstrap.sh` provisions a kind cluster with 3 control-plane nodes + 2 workers. Everything after bootstrap is ArgoCD. |
+| Kind cluster foundation | After `cluster/kind/bootstrap.sh`, the kind cluster has Cilium CNI, cert-manager, sealed-secrets, local-path-provisioner (default StorageClass), and MinIO installed and running. |
 | Helm charts | Platform-level service charts in `platform/charts/<service>/`. Kind cluster bootstrap charts in `cluster/kind/charts/<service>/`. The root `charts/` directory is empty and retired. |
 | Contract validation | `contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces autarky invariants — `externalEgressBlocked=true`, `imageRegistry` present, and `storageClass` present — before any cluster is provisioned. |
 | Bootstrap cost gate | `scripts/gates/cost-gate.sh` validates chart resource requests fit within per-node budget (default: 4 CPU, 8Gi RAM) by reading Helm values — no running cluster required. |
@@ -99,7 +100,7 @@ rely on DNS resolution working before Keycloak is fully provisioned.
 |---|---|
 | Sovereign PM | Self-hosted AI-native project management web app (Node.js/Express + React). Deployed at `pm.{{ .Values.global.domain }}`. Theme/Epic/Story UI, prd.json generation, Ralph run history. |
 | code-server | Browser-based VS Code IDE for agents and developers. An initContainer copies kubectl, helm, and k9s into `/home/coder/workspace/bin` via a shared emptyDir volume. Workspace persists across pod restarts via a PersistentVolumeClaim at `/home/coder` (`persistence.size` in values.yaml, default 5Gi, storageClass via `{{ .Values.global.storageClass }}`). The `toolchainInit` values section defines the init container image name and workspace bin mount path. |
-| Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. |
+| Backstage | Service catalog — `platform/charts/backstage/` and ArgoCD Application (`argocd-apps/devex/backstage-app.yaml`) exist. All templates pass the autarky G6 gate (no external registry refs). |
 | SonarQube | Static analysis history — `platform/charts/sonarqube/` deployed. CE is single-instance (`ha_exception: true` in `vendor/VENDORS.yaml`); PDB and podAntiAffinity templates present. Ingress at `sonar.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 | ReportPortal | Test result history — `platform/charts/reportportal/` deployed. Multi-component chart: one PDB per component (API, UI); podAntiAffinity present. Ingress at `reports.{{ .Values.global.domain }}`. ArgoCD Application deployed. |
 
