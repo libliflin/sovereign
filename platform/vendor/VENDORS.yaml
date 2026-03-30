@@ -363,6 +363,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "MailHog is a single-instance SMTP testing tool with no horizontal scaling support. PDB is present to prevent accidental eviction; replicaCount is set to 1 per the ha_exception pattern."
 
   - name: chaos-mesh
     upstream_url: https://github.com/chaos-mesh/chaos-mesh

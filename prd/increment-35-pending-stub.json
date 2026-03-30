@@ -83,10 +83,10 @@
       ],
       "testPlan": "helm lint platform/charts/k6-operator/; helm template platform/charts/k6-operator/ | grep PodDisruptionBudget; helm template platform/charts/k6-operator/ | grep podAntiAffinity; helm lint platform/charts/mailhog/; helm template platform/charts/mailhog/ | grep PodDisruptionBudget; show all output verbatim.",
       "dependencies": [],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,
