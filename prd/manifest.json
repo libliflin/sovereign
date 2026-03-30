@@ -329,10 +329,7 @@
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 27 advances.",
       "dependsOn": [
         27
-      ],
-      "startDate": "2026-03-30T02:36:47.856980+00:00",
-      "pointsTotal": 12,
-      "storiesTotal": 10
+      ]
     },
     {
       "id": 29,
@@ -343,49 +340,20 @@
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 28 advances.",
       "dependsOn": [
         28
-      ],
-      "startDate": "2026-03-30T03:09:44.684166+00:00",
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsTotal": 11,
-      "pointsCompleted": 5,
-      "storiesTotal": 9,
-      "storiesAccepted": 4,
-      "storiesIncomplete": 5,
-      "reviewPassRate": 44.4
+      ]
     },
     {
       "id": 30,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 29 completes.",
       "file": "prd/increment-30-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 29 advances.",
       "dependsOn": [
         29
       ]
     }
   ],
-  "activeSprint": "prd/increment-29-pending-stub.json",
-  "currentIncrement": 29,
-  "sprintHistory": [
-    {
-      "increment": 29,
-      "name": "pending-stub",
-      "endDate": "2026-03-29T00:00:00+00:00",
-      "pointsCompleted": 5,
-      "storiesTotal": 9,
-      "storiesAccepted": 4,
-      "storiesIncomplete": 5,
-      "reviewPassRate": 44.4
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 29,
-      "pointsCompleted": 5,
-      "storiesAccepted": 4,
-      "reviewPassRate": 44.4,
-      "date": "2026-03-29T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-30-pending-stub.json",
+  "currentIncrement": 30
 }
