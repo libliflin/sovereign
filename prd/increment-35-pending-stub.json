@@ -1,0 +1,158 @@
+{
+  "increment": 35,
+  "name": "pending-stub",
+  "description": "Harden all E13 testing infrastructure charts (chaos-mesh, wiremock, selenium-grid, k6, mailhog) to sovereign HA standard, and restore backlog hygiene by marking 14 confirmed-complete stale entries. Positions the platform for kind-cluster integration testing.",
+  "sprintGoal": "All five E13 testing charts pass the HA gate (PDB, podAntiAffinity, replicaCount\u22652) and 14 stale backlog entries are correctly marked complete.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "TEST-004a",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/chaos-mesh-ha-standard",
+      "title": "Enhance platform/charts/chaos-mesh/: add PDB, podAntiAffinity, probes, and resource limits",
+      "description": "Update the existing platform/charts/chaos-mesh/ Helm chart to meet the sovereign HA standard. Add a PodDisruptionBudget template with minAvailable=1, podAntiAffinity on hostname for chaos-controller-manager, readinessProbe and livenessProbe on chaos-controller-manager, and resource requests/limits on all containers. Set replicaCount>=2 for chaos-controller-manager in values.yaml. This is a static-verifiable change \u2014 no running cluster required.",
+      "acceptanceCriteria": [
+        "helm lint platform/charts/chaos-mesh/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/chaos-mesh/ | grep PodDisruptionBudget returns at least 1 match",
+        "helm template platform/charts/chaos-mesh/ | grep podAntiAffinity returns at least 1 match",
+        "grep replicaCount platform/charts/chaos-mesh/values.yaml shows a value >= 2"
+      ],
+      "testPlan": "helm lint platform/charts/chaos-mesh/; helm template platform/charts/chaos-mesh/ | grep PodDisruptionBudget; helm template platform/charts/chaos-mesh/ | grep podAntiAffinity; grep replicaCount platform/charts/chaos-mesh/values.yaml; show all output verbatim.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: the replicaCount AC ('shows a value >= 2') requires visual output inspection rather than a self-verifying binary exit-code command (e.g., grep -E 'replicaCount:[[:space:]]+[2-9]' ... exits 0)."
+      }
+    },
+    {
+      "id": "TEST-006a",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/selenium-grid-ha-standard",
+      "title": "Enhance platform/charts/selenium-grid/: add PDB, podAntiAffinity, probes, and resource limits",
+      "description": "Update the existing platform/charts/selenium-grid/ Helm chart to meet the sovereign HA standard. Add a PodDisruptionBudget template (templates/pdb.yaml) with minAvailable=1, podAntiAffinity on hostname for hub and node deployments, readinessProbe and livenessProbe on the hub container, and resource requests/limits on all containers. Set replicaCount>=2 for the hub in values.yaml. This is a static-verifiable change \u2014 no running cluster required.",
+      "acceptanceCriteria": [
+        "helm lint platform/charts/selenium-grid/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/selenium-grid/ | grep -c PodDisruptionBudget returns at least 1",
+        "helm template platform/charts/selenium-grid/ | grep -c podAntiAffinity returns at least 1",
+        "grep -E 'replicaCount:[[:space:]]+[2-9]' platform/charts/selenium-grid/values.yaml exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/selenium-grid/; helm template platform/charts/selenium-grid/ | grep PodDisruptionBudget; helm template platform/charts/selenium-grid/ | grep podAntiAffinity; grep -E 'replicaCount:[[:space:]]+[2-9]' platform/charts/selenium-grid/values.yaml; show all output verbatim.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs use binary exit-code commands; 'at least 1' language is correct for a multi-deployment chart (hub + node)."
+      }
+    },
+    {
+      "id": "TEST-006b",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 4,
+      "points": 3,
+      "branchName": "feature/k6-mailhog-ha-standard",
+      "title": "Add PDB, probes, and resource limits to platform/charts/k6-operator/ and platform/charts/mailhog/",
+      "description": "Update both charts to the sovereign HA standard. For platform/charts/k6-operator/: add PodDisruptionBudget template (templates/pdb.yaml) with minAvailable=1, podAntiAffinity on hostname, readinessProbe and livenessProbe on the operator container, and resource requests/limits. For platform/charts/mailhog/: add PodDisruptionBudget template (templates/pdb.yaml) with minAvailable=1 (single-instance mail server \u2014 PDB prevents accidental eviction), readinessProbe and livenessProbe, and resource requests/limits. Both are static-verifiable \u2014 no running cluster required.",
+      "acceptanceCriteria": [
+        "helm lint platform/charts/k6-operator/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/k6-operator/ | grep -c PodDisruptionBudget returns at least 1",
+        "helm template platform/charts/k6-operator/ | grep -c podAntiAffinity returns at least 1",
+        "helm lint platform/charts/mailhog/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/mailhog/ | grep -c PodDisruptionBudget returns at least 1"
+      ],
+      "testPlan": "helm lint platform/charts/k6-operator/; helm template platform/charts/k6-operator/ | grep PodDisruptionBudget; helm template platform/charts/k6-operator/ | grep podAntiAffinity; helm lint platform/charts/mailhog/; helm template platform/charts/mailhog/ | grep PodDisruptionBudget; show all output verbatim.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: two charts in one story (k6-operator + mailhog) means at least 4-6 file changes (pdb.yaml new + deployment.yaml modified + values.yaml per chart), which is near the top of the ~1-3 file per-iteration budget."
+      }
+    },
+    {
+      "id": "TEST-005a",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/wiremock-ha-standard",
+      "title": "Enhance platform/charts/wiremock/: add PDB, podAntiAffinity, probes, and resource limits",
+      "description": "Update the existing platform/charts/wiremock/ Helm chart to meet the sovereign HA standard. Add a PodDisruptionBudget template with minAvailable=1, podAntiAffinity on hostname, readinessProbe and livenessProbe, and resource requests/limits on all containers. Set replicaCount>=2 in values.yaml. This is a static-verifiable change \u2014 no running cluster required.",
+      "acceptanceCriteria": [
+        "helm lint platform/charts/wiremock/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/wiremock/ | grep PodDisruptionBudget returns at least 1 match",
+        "helm template platform/charts/wiremock/ | grep podAntiAffinity returns at least 1 match",
+        "grep replicaCount platform/charts/wiremock/values.yaml shows a value >= 2"
+      ],
+      "testPlan": "helm lint platform/charts/wiremock/; helm template platform/charts/wiremock/ | grep PodDisruptionBudget; helm template platform/charts/wiremock/ | grep podAntiAffinity; grep replicaCount platform/charts/wiremock/values.yaml; show all output verbatim.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: the replicaCount AC ('shows a value >= 2') requires visual output inspection rather than a self-verifying binary exit-code command (e.g., grep -E 'replicaCount:[[:space:]]+[2-9]' ... exits 0)."
+      }
+    },
+    {
+      "id": "KAIZEN-015",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 10,
+      "points": 2,
+      "branchName": "kaizen/backlog-hygiene-stale-complete",
+      "title": "Backlog hygiene: mark 14 confirmed-complete stories as status:complete and refresh stale dependency blocks",
+      "description": "The backlog contains 14 stories with readinessNote indicating 'COMPLETED IN SPRINT XX: passes:true, reviewed:true', but their status field is still 'open'. The grooming ceremony flags them but does not update lifecycle status. This means the planning ceremony sees them as open work and can accidentally re-pull already-delivered stories. The 14 stories are: CEREMONY-009, CEREMONY-007, CEREMONY-006, RESTRUCTURE-001c, CEREMONY-003, CEREMONY-004, QUALITY-005, HA-006, DEVEX-007a, DEVEX-007b, HA-007, CEREMONY-010, CEREMONY-011, QUALITY-005r. Additionally, 6 stories carry stale BLOCKED readinessNotes referencing 'KIND-001b has passes=false' \u2014 KIND-001b was accepted in increment 32. Update those readinessNotes to reflect the current state.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); stale=[s['id'] for s in b['stories'] if 'COMPLETED IN SPRINT' in s.get('readinessNote','') and s.get('status','open')!='complete']; assert stale==[], f'still open: {stale}'; print('PASS: all confirmed-complete stories marked complete')\" exits 0 and prints PASS",
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); stale=[s['id'] for s in b['stories'] if 'KIND-001b has passes=false' in s.get('readinessNote','')]; print(f'stale KIND-001b blocks: {stale}')\" prints an empty list",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "Run AC1 one-liner verbatim and show output. Run AC2 one-liner verbatim and show output. Run AC3 py_compile and show output.",
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "reviewNotes": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
+    }
+  ]
+}
