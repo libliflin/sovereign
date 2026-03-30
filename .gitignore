@@ -1,6 +1,9 @@
 # Bootstrap config with credentials — NEVER commit this
 bootstrap/config.yaml
 
+# Generated cluster contract output — local artifact, not tracked
+cluster-values.yaml
+
 # Kubeconfig files
 *.kubeconfig
 kubeconfig
