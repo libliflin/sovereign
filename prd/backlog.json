@@ -226,7 +226,8 @@
         "timeBound": 0,
         "notes": ""
       },
-      "status": "active"
+      "status": "active",
+      "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "KIND-001",
@@ -261,7 +262,7 @@
       ],
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
       "returnedReason": "Split into KIND-001a and KIND-001b (SMART achievable=3, 8 integration points)",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes=false. Resolve that story first."
+      "readinessNote": "SUPERSEDED by KIND-001a and KIND-001b. Dependency RESTRUCTURE-001c was completed in sprint 30 (passes:true). Do not re-pull \u2014 use KIND-001a and KIND-001b instead."
     },
     {
       "id": "KIND-002",
@@ -473,8 +474,7 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
     },
     {
       "id": "DEVEX-011",
@@ -497,8 +497,7 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
+      "testPlan": "Run grep checks above. Show output verbatim."
     },
     {
       "id": "CEREMONY-001",
@@ -943,8 +942,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
+      }
     },
     {
       "id": "KIND-001b",
@@ -1335,7 +1333,8 @@
       },
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
       "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'",
-      "status": "active"
+      "status": "active",
+      "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "TEST-006",
@@ -1370,7 +1369,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency '031a' found in increment-8-testing-and-ha.json with passes=false. Resolve story 031a before pulling this story into a sprint."
+      "readinessNote": "Ghost dep: '031a' is not in backlog.json. It was returned from increment-8 with passes:false (Cilium initContainer resource limits failed; rook-ceph volumeClaimTemplates AC was architecturally incorrect). TEST-006 ACs only run helm lint and grep on platform/charts/ \u2014 they do not require the _globals HA helpers from 031a. Remove '031a' from dependencies[] if platform/charts/_globals/templates/ already contains HA helpers (or if individual charts have inline PDB templates). Otherwise add a replacement story for the unfinished 031a work before pulling TEST-006 into a sprint."
     },
     {
       "id": "TEST-007",
@@ -1530,7 +1529,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. Script already exists at scripts/gates/cost-gate.sh using Python yaml parsing (not shell grep), so the pipefail+grep risk does not apply."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "DEVEX-006",
@@ -1593,7 +1593,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "DEVEX-007b",
@@ -1627,7 +1628,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "UNBLOCKED: dependency DEVEX-007a was completed in sprint 28 (passes:true, reviewed:true in prd/increment-28-pending-stub.json). Pulled into sprint 30.",
+      "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
       "status": "active"
     },
     {
@@ -1851,7 +1852,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support, so the dependency on HA-001 is satisfied."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "HA-008",
@@ -1913,7 +1915,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "CEREMONY-011",
@@ -1944,7 +1947,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs are static-analysis-only (grep + py_compile), no live cluster needed."
       },
-      "status": "active"
+      "status": "active",
+      "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "QUALITY-005r",
@@ -1971,7 +1975,8 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: smart.md \u2192 smart-check.md (the actual file). Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "KAIZEN-001",
@@ -1993,7 +1998,8 @@
       "reviewNotes": "",
       "attempts": 0,
       "dependencies": [],
-      "smart": ""
+      "smart": "",
+      "readinessNote": "NOT READY: AC2 ('All charts with no breaking changes updated to current stable') is not independently verifiable \u2014 'no breaking changes' requires human judgment, not a command. testPlan is vague ('Run helm lint on each updated chart') without explicit chart names or expected output for each. Rewrite AC2 as a specific command check and expand testPlan with named charts."
     },
     {
       "id": "KAIZEN-002",
@@ -2014,7 +2020,8 @@
       "reviewNotes": "",
       "attempts": 0,
       "dependencies": [],
-      "smart": ""
+      "smart": "",
+      "readinessNote": "NOT READY: AC3 ('No T2 story is assigned to an epic that has a different theme') has no verifiable command. Add a Python one-liner that checks all T2 stories have epicId pointing to an epic with themeId='T2', e.g.: python3 -c \"import json; b=json.load(open('prd/backlog.json')); e=json.load(open('prd/epics.json')); epic_themes={x['id']:x['themeId'] for x in e['epics']}; bad=[s['id'] for s in b['stories'] if s.get('themeId')=='T2' and epic_themes.get(s.get('epicId'))!='T2']; assert not bad; print('OK')\" exits 0."
     }
   ]
 }
