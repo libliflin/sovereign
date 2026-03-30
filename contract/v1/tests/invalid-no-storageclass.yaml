@@ -1,0 +1,31 @@
+##############################################################################
+# Test fixture: invalid — storage.block.storageClassName absent
+# Must FAIL contract validation with a message referencing storageClass.
+##############################################################################
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterValues
+
+runtime:
+  domain: sovereign.local
+  imageRegistry:
+    internal: harbor.sovereign.local/sovereign
+
+storage:
+  block:
+    # storageClassName absent — must fail validation
+  file:
+    storageClassName: standard
+  object:
+    endpoint: http://minio.minio.svc:9000
+    credentialsSecret: minio-credentials
+
+network:
+  ingressClass: nginx
+  networkPolicyEnforced: true
+
+pki:
+  clusterIssuer: selfsigned-cluster-issuer
+
+autarky:
+  externalEgressBlocked: true
+  imagesFromInternalRegistryOnly: true

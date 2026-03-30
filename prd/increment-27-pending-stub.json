@@ -83,9 +83,9 @@
       "branchName": "kaizen/contract-test-corpus",
       "priority": 12,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [
         "RESTRUCTURE-001c"
       ],
