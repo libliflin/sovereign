@@ -1057,7 +1057,8 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Runtime-verifiable split of TEST-004 (Strategy D). Correct path platform/charts/chaos-mesh/ specified. ACs use exact kubectl/helm commands. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted in sprints 31 and 32). TimeBound score 4: 120s window for phase=Finished is empirical but reasonable."
-      }
+      },
+      "readinessNote": "BLOCKED: dependencies KIND-001a and KIND-001b have passes:false (stale backlog entries \u2014 confirmed done in sprints 31 and 32 respectively); dependency TEST-004a also has passes:false. Resolve TEST-004a first; KIND-001a/KIND-001b stale entries do not block once TEST-004a passes."
     },
     {
       "id": "TEST-005a",
@@ -1126,7 +1127,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Runtime-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. AC3 (curl returns 201) and AC4 (curl returns 'ok') verify actual runtime admin API behavior. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted). TimeBound score 5: all ACs have deterministic expected outputs."
-      }
+      },
+      "readinessNote": "BLOCKED: dependencies KIND-001a and KIND-001b have passes:false (stale backlog entries \u2014 confirmed done in sprints 31 and 32 respectively); dependency TEST-005a also has passes:false. Resolve TEST-005a first; KIND-001a/KIND-001b stale entries do not block once TEST-005a passes."
     },
     {
       "id": "HA-001",
@@ -1566,7 +1568,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency HA-004 has passes:false (stale backlog entry \u2014 confirmed done in sprint 32). Story is otherwise ready (all ACs verifiable, testPlan concrete). This block will self-clear once HA-004 stale entry is corrected."
     },
     {
       "id": "HA-005b",
@@ -1601,7 +1604,8 @@
         "relevant": 5,
         "timeBound": 4,
         "notes": "Runtime-verifiable split of HA-005 (Strategy D). AC1 specifies exact command and expected output (>=4 PASS lines). Achievable score 3: requires kind-sovereign-test running (dependency on KIND-001a chain via HA-005a). Measurable score 4: PASS/FAIL output directly observable but exact format depends on HA-005a implementation."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency HA-005a has passes:false. Resolve HA-005a first."
     },
     {
       "id": "HA-006",
@@ -2338,7 +2342,7 @@
       ],
       "testPlan": "helm lint platform/charts/chaos-mesh/ && helm template platform/charts/chaos-mesh/ | grep -E 'kind: ServiceMonitor|grafana_dashboard' | wc -l  # must be >= 2",
       "dependencies": [
-        "TEST-004"
+        "TEST-004b"
       ],
       "passes": false,
       "reviewed": false,
@@ -2356,7 +2360,7 @@
         "helm",
         "kubectl"
       ],
-      "readinessNote": "BLOCKED: dependency TEST-004 has passes:false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency TEST-004b has passes:false (TEST-004 was split into TEST-004a and TEST-004b; TEST-004b 'Deploy chaos-mesh to kind and run pod failure experiment' is the correct successor). Resolve TEST-004b first."
     },
     {
       "id": "TEST-010",
@@ -2550,7 +2554,8 @@
         "PLATFORM-005 (GitLab deploys and accepts a git push) must be complete before this story can be verified end-to-end"
       ],
       "passes": false,
-      "reviewed": false
+      "reviewed": false,
+      "readinessNote": "NOT READY: (1) testPlan is missing \u2014 add specific commands to verify each AC. (2) AC2 ('ArgoCD successfully syncs from internal GitLab URL in a kind cluster with GitLab deployed') requires a running cluster with GitLab \u2014 not independently verifiable as written; rewrite as a static grep/template check or add PLATFORM-005 as an explicit dependency."
     }
   ]
 }
