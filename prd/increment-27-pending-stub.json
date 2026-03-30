@@ -61,10 +61,10 @@
       "dependencies": [
         "029"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 4,
         "measurable": 3,
