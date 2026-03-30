@@ -130,7 +130,8 @@
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "blocker": "AC1-AC3 require kind-sovereign-test running with Chaos Mesh CRDs installed. No kind cluster is available in this execution environment. AC4 is complete: kind/fixtures/podchaos-test.yaml created and validated as YAML.",
       "smart": {
         "specific": 4,
         "measurable": 4,
