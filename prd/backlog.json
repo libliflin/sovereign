@@ -2429,7 +2429,7 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "BLOCKED: ghost dependency TEST-006 resolved to successors [TEST-004a, TEST-005a, TEST-006a, TEST-006b] \u2014 the four E13 chart HA-hardening stories. All four have passes:false. Resolve those first."
+      "readinessNote": "READY: dependencies TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All deps resolved."
     },
     {
       "id": "HA-009",
@@ -2514,7 +2514,7 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "BLOCKED: ghost dependency TEST-006 resolved to successors [TEST-004a, TEST-005a, TEST-006a, TEST-006b] \u2014 the four E13 chart HA-hardening stories. HA-001 has passes:true. TEST-004a, TEST-005a, TEST-006a, TEST-006b all have passes:false \u2014 resolve those first."
+      "readinessNote": "READY: HA-001 passes:true; TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All dependencies resolved."
     },
     {
       "id": "KAIZEN-004",

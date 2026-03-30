@@ -26,12 +26,12 @@
       "attempts": 0,
       "priority": 1,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -60,12 +60,12 @@
       "attempts": 0,
       "priority": 2,
       "smart": {
-        "specific": 4,
-        "measurable": 4,
+        "specific": 5,
+        "measurable": 5,
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+        "notes": "All SMART dimensions green. Revised up from prior 4/4: every file is named, every flag and output is specified precisely, all ACs are binary shell commands."
       }
     },
     {
@@ -91,12 +91,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: ACs cover shellcheck, syntax, --dry-run, and a synthetic test-chart pass/fail, but no AC requires running ha-gate.sh against the full platform/charts/ corpus. Achievable score 3: per SMART check policy, any shell script that iterates platform/charts/ must include an explicit AC to run against all existing charts (including _globals/ which has no replicaCount field). That AC is absent; the real corpus will expose the set -euo pipefail + grep no-match failure on _globals/ even if the || true guard is in the description."
       },
       "returnedFromSprint": "prd/increment-23-pending-stub.json",
       "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
@@ -130,12 +130,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: five charts each with potentially multiple template files means 5-15 edits; within budget but near the top."
       },
       "requiredCapabilities": [
         "helm"
@@ -172,12 +172,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: it is unclear whether chart HA config (replicaCount, PDB, podAntiAffinity) must be added or whether the dependencies already supply it; the story should state this explicitly. Measurable score 3: ACs only check PDB/podAntiAffinity for 3 of 5 charts (mailhog and wiremock have no explicit helm template AC); no AC verifies replicaCount >= 2 for any E13 chart; no AC runs ha-gate.sh (non-dry-run) against the real E13 charts."
       },
       "requiredCapabilities": [
         "helm"
@@ -207,7 +207,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Trivial field removal with binary verification. One-liner AC."
+        "notes": "All SMART dimensions green."
       }
     }
   ]
