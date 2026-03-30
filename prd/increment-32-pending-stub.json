@@ -25,7 +25,7 @@
       "priority": 3,
       "points": 2,
       "passes": true,
-      "reviewed": true,
+      "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
