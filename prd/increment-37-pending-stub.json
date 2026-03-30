@@ -56,7 +56,7 @@
       "dependencies": [
         "HA-004"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
