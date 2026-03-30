@@ -292,14 +292,19 @@
       "name": "kaizen",
       "description": "Delivery machine kaizen, ceremony metric fixes, toolchain autarky groundwork, and HA CI gate. Retires legacy vocabulary remnants, fixes the retro first-pass formula, advances E15 targeting, and wires ha-gate.sh into GitHub Actions.",
       "file": "prd/increment-25-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "T3/T5 \u2014 delivery machine health (retro formula, E15 targeting, vocabulary cleanup) and HA gate CI enforcement.",
       "dependsOn": [
         24
       ],
       "startDate": "2026-03-30T00:27:37.031513+00:00",
       "pointsTotal": 10,
-      "storiesTotal": 8
+      "storiesTotal": 8,
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 9,
+      "storiesAccepted": 7,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 87.5
     },
     {
       "id": 26,
@@ -314,5 +319,26 @@
     }
   ],
   "activeSprint": "prd/increment-25-pending-stub.json",
-  "currentIncrement": 25
+  "currentIncrement": 25,
+  "sprintHistory": [
+    {
+      "increment": 25,
+      "name": "kaizen",
+      "endDate": "2026-03-29T00:00:00+00:00",
+      "pointsCompleted": 9,
+      "storiesTotal": 8,
+      "storiesAccepted": 7,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 87.5
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 25,
+      "pointsCompleted": 9,
+      "storiesAccepted": 7,
+      "reviewPassRate": 87.5,
+      "date": "2026-03-29T00:00:00+00:00"
+    }
+  ]
 }

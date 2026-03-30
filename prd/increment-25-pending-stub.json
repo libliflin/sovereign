@@ -59,6 +59,8 @@
       ],
       "attempts": 2,
       "dependencies": [],
+      "returnedToBacklog": true,
+      "returnedReason": "AC1 checks ceremonies.py but the first-pass formula lives in ceremonies/retro.md:206; implementation is correct but AC points to wrong file",
       "smart": {
         "specific": 5,
         "measurable": 5,
