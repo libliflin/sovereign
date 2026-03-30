@@ -83,10 +83,10 @@
       "branchName": "kaizen/retro-first-pass-formula",
       "priority": 2,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "smart": {
         "specific": 5,
