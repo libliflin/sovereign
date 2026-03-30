@@ -67,6 +67,8 @@
         "[Review 2] AC failed: 'helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1'. Command: helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget. Output: 2. The chart renders 2 PodDisruptionBudget resources (reportportal-api-pdb and reportportal-ui-pdb). The AC as written expects exactly 1; actual count is 2. Either fix the AC to say 'returns at least 1' or verify the implementation only emits one PDB as intended."
       ],
       "attempts": 2,
+      "returnedToBacklog": true,
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); fix: update AC to 'returns at least 1'",
       "smart": {
         "specific": 4,
         "measurable": 3,

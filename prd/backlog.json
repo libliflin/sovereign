@@ -1269,9 +1269,9 @@
       "title": "SonarQube and ReportPortal Helm charts pass HA gate: replicaCount>=2, PDB, podAntiAffinity",
       "description": "Harden the SonarQube and ReportPortal Helm charts to meet the platform HA standard. Both charts must have: replicaCount defaulting to 2, a PodDisruptionBudget with minAvailable=1, and podAntiAffinity preferredDuringSchedulingIgnoredDuringExecution on hostname. Run the HA gate script against both charts to confirm.",
       "acceptanceCriteria": [
-        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns at least 1",
         "helm template platform/charts/sonarqube/ | grep -c podAntiAffinity returns at least 1",
-        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns at least 1",
         "helm template platform/charts/reportportal/ | grep -c podAntiAffinity returns at least 1",
         "helm lint platform/charts/sonarqube/ exits 0",
         "helm lint platform/charts/reportportal/ exits 0"
@@ -1285,13 +1285,15 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
-      }
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
+      },
+      "returnedFromSprint": "prd/increment-27-pending-stub.json",
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'"
     },
     {
       "id": "TEST-006",
@@ -1865,6 +1867,33 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+      }
+    },
+    {
+      "id": "QUALITY-005r",
+      "title": "SMART gate: flag exact count assertions for multi-component charts",
+      "description": "The SMART measurable check does not distinguish between exact-count ACs ('returns 1') and minimum-count ACs ('returns at least 1'). For charts that may have multiple components (each with their own PDB), exact counts are brittle \u2014 the implementation can be correct while the AC fails. Update the SMART measurable scoring prompt to explicitly ask: 'do count-based ACs use at-least rather than exact assertions for resources that scale with component count?'",
+      "acceptanceCriteria": [
+        "grep -n 'at least\\|at-least\\|minimum' scripts/ralph/ceremonies/smart.md shows the updated measurable prompt includes guidance on count assertion types",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'at least' scripts/ralph/ceremonies/smart.md to show the prompt change. python3 -m py_compile scripts/ralph/ceremonies.py. Show output verbatim.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-27-pending-stub.json",
+      "returnedReason": "Root cause of QUALITY-005 failure: SMART measurable prompt did not catch brittle exact-count assertion on a multi-component chart",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Small, targeted change to the SMART ceremony prompt."
       }
     }
   ]
