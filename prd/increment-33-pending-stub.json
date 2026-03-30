@@ -6,18 +6,18 @@
   "capacity": 12,
   "stories": [
     {
-      "id": "HA-005",
+      "id": "HA-005a",
       "epicId": "E15",
       "themeId": "T5",
       "priority": 3,
       "points": 2,
-      "branchName": "feature/kind-chart-smoke-tests",
-      "title": "Platform chart smoke-test suite runs all PLATFORM-00x tests against kind cluster and passes",
-      "description": "Create scripts/test/kind-smoke.sh that runs all PLATFORM-00x acceptance criteria against a running kind cluster in sequence. The script must: source cluster/kind/ha-bootstrap.sh (or require a running kind cluster), run each PLATFORM-00x test command, and print a PASS/FAIL table at the end. At least PLATFORM-001 through PLATFORM-004 (cert-manager, sealed-secrets, Harbor, Keycloak) must pass.",
+      "branchName": "feature/kind-smoke-test-script",
+      "title": "Create scripts/test/kind-smoke.sh: static-verifiable scaffold covering PLATFORM-001 through PLATFORM-004",
+      "description": "Create scripts/test/kind-smoke.sh that encodes all PLATFORM-001 through PLATFORM-004 acceptance criteria as executable test functions (cert-manager, sealed-secrets, Harbor, Keycloak). The script must define one test function per PLATFORM story, print a PASS/FAIL summary table, and pass shellcheck -S error with no warnings. The exact commands for each test come from the acceptance criteria in prd/increment-21-platform-foundations.json.",
       "acceptanceCriteria": [
-        "scripts/test/kind-smoke.sh exists and passes shellcheck: shellcheck -S error scripts/test/kind-smoke.sh exits 0",
-        "scripts/test/kind-smoke.sh contains at least 4 test invocations (one per PLATFORM story): grep -c 'helm\\|kubectl' scripts/test/kind-smoke.sh returns >= 4",
-        "scripts/test/kind-smoke.sh prints a summary line containing PASS or FAIL: grep -E 'PASS|FAIL' scripts/test/kind-smoke.sh exits 0"
+        "shellcheck -S error scripts/test/kind-smoke.sh exits 0",
+        "grep -c 'helm\\|kubectl' scripts/test/kind-smoke.sh returns a value >= 4 (at least one invocation per PLATFORM-00x test)",
+        "grep -E 'PASS|FAIL' scripts/test/kind-smoke.sh exits 0 (PASS and FAIL literals appear in summary output logic)"
       ],
       "testPlan": "shellcheck -S error scripts/test/kind-smoke.sh; grep -c 'helm\\|kubectl' scripts/test/kind-smoke.sh; grep -E 'PASS|FAIL' scripts/test/kind-smoke.sh; show all output verbatim.",
       "dependencies": [
@@ -28,37 +28,97 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "READY: dependency HA-004 confirmed accepted in sprint 32 (passes:true, reviewed:true in prd/increment-32-pending-stub.json). All ACs are specific verifiable commands with testPlan present."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     },
     {
-      "id": "TEST-004",
-      "epicId": "E13",
+      "id": "HA-005b",
+      "epicId": "E15",
       "themeId": "T5",
-      "priority": 3,
+      "priority": 4,
       "points": 2,
-      "branchName": "feature/chaos-mesh-chart",
-      "title": "Chaos Mesh deploys and runs a pod failure experiment in kind",
-      "description": "Create charts/chaos-mesh/ Helm chart wrapping the upstream chaos-mesh Helm chart. Install into kind-sovereign-test in namespace chaos-testing. Apply a PodChaos experiment that kills a test pod. Verify the experiment completes (phase=Finished) and the pod recovers. The chart must include replicaCount>=2 for chaos-controller-manager, PDB with minAvailable=1, and podAntiAffinity. All containers must have readinessProbe, livenessProbe, resources.requests, and resources.limits.",
+      "branchName": "feature/kind-smoke-test-runtime",
+      "title": "Execute kind-smoke.sh against kind-sovereign-test and verify PLATFORM-001 through PLATFORM-004 print PASS",
+      "description": "Run scripts/test/kind-smoke.sh against the kind-sovereign-test cluster. The script must complete without errors and print PASS for PLATFORM-001 (cert-manager), PLATFORM-002 (sealed-secrets), PLATFORM-003 (Harbor), and PLATFORM-004 (Keycloak). Capture the full output verbatim as proof. If any chart is not yet deployed, document the exact failure and set passes:false.",
       "acceptanceCriteria": [
-        "helm lint charts/chaos-mesh/ exits 0 with '0 chart(s) failed'",
-        "helm install chaos-mesh charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m exits 0 and kubectl get pods -n chaos-testing --context kind-sovereign-test shows all pods Running",
-        "kubectl apply a PodChaos experiment YAML against kind-sovereign-test exits 0 and kubectl get podchaos -n chaos-testing --context kind-sovereign-test shows phase=Finished within 120 seconds",
-        "helm template charts/chaos-mesh/ | grep -c PodDisruptionBudget returns at least 1",
-        "helm template charts/chaos-mesh/ | grep -c podAntiAffinity returns at least 1"
+        "bash scripts/test/kind-smoke.sh --context kind-sovereign-test 2>&1 exits 0 and output contains at least 4 lines matching 'PASS'",
+        "Full output of kind-smoke.sh is captured verbatim in the story proof (no assertion without output)"
       ],
-      "testPlan": "helm lint charts/chaos-mesh/ && helm install chaos-mesh charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m && kubectl get pods -n chaos-testing --context kind-sovereign-test && kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test && sleep 30 && kubectl get podchaos -n chaos-testing --context kind-sovereign-test; show all output verbatim",
+      "testPlan": "bash scripts/test/kind-smoke.sh --context kind-sovereign-test 2>&1 | tee /tmp/kind-smoke-output.txt; cat /tmp/kind-smoke-output.txt; show all output verbatim.",
+      "dependencies": [
+        "HA-005a"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Achievable score 3: requires kind-sovereign-test running with PLATFORM-001 through PLATFORM-004 deployed (cert-manager, sealed-secrets, Harbor, Keycloak) \u2014 a heavy dependency chain beyond this story's own scope. Specific score 4: PASS-line format depends entirely on HA-005a implementation, which is not yet written. Measurable score 4: 'at least 4 lines matching PASS' is binary but tightly coupled to the output format HA-005a will produce. TimeBound score 4: the fallback clause ('If any chart is not yet deployed, document the exact failure and set passes:false') introduces an open-ended failure-documentation sub-task."
+      }
+    },
+    {
+      "id": "TEST-004a",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/chaos-mesh-ha-standard",
+      "title": "Enhance platform/charts/chaos-mesh/: add PDB, podAntiAffinity, probes, and resource limits",
+      "description": "Update the existing platform/charts/chaos-mesh/ Helm chart to meet the sovereign HA standard. Add a PodDisruptionBudget template with minAvailable=1, podAntiAffinity on hostname for chaos-controller-manager, readinessProbe and livenessProbe on chaos-controller-manager, and resource requests/limits on all containers. Set replicaCount>=2 for chaos-controller-manager in values.yaml. This is a static-verifiable change \u2014 no running cluster required.",
+      "acceptanceCriteria": [
+        "helm lint platform/charts/chaos-mesh/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/chaos-mesh/ | grep PodDisruptionBudget returns at least 1 match",
+        "helm template platform/charts/chaos-mesh/ | grep podAntiAffinity returns at least 1 match",
+        "grep replicaCount platform/charts/chaos-mesh/values.yaml shows a value >= 2"
+      ],
+      "testPlan": "helm lint platform/charts/chaos-mesh/; helm template platform/charts/chaos-mesh/ | grep PodDisruptionBudget; helm template platform/charts/chaos-mesh/ | grep podAntiAffinity; grep replicaCount platform/charts/chaos-mesh/values.yaml; show all output verbatim.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
+    },
+    {
+      "id": "TEST-004b",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/chaos-mesh-kind-deploy",
+      "title": "Deploy platform/charts/chaos-mesh/ to kind-sovereign-test and run a pod failure experiment",
+      "description": "Install platform/charts/chaos-mesh/ into kind-sovereign-test in namespace chaos-testing. Create kind/fixtures/podchaos-test.yaml PodChaos experiment fixture targeting a test pod. Apply the fixture and verify the experiment reaches phase=Finished within 120 seconds and the pod recovers. This validates runtime behavior beyond static lint.",
+      "acceptanceCriteria": [
+        "helm install chaos-mesh platform/charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m exits 0",
+        "kubectl get pods -n chaos-testing --context kind-sovereign-test shows all pods Running",
+        "kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test exits 0 and kubectl get podchaos -n chaos-testing --context kind-sovereign-test shows phase=Finished within 120 seconds",
+        "kind/fixtures/podchaos-test.yaml exists and is valid YAML"
+      ],
+      "testPlan": "helm install chaos-mesh platform/charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m && kubectl get pods -n chaos-testing --context kind-sovereign-test && kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test && sleep 30 && kubectl get podchaos -n chaos-testing --context kind-sovereign-test; show all output verbatim.",
       "dependencies": [
+        "TEST-004a",
         "KIND-001a",
         "KIND-001b"
       ],
@@ -67,15 +127,18 @@
         "kubectl",
         "helm"
       ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "READY: dependencies KIND-001a (sprint 31, passes:true) and KIND-001b (sprint 32, passes:true) are both confirmed accepted. All ACs are specific verifiable commands with testPlan present."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: the PodChaos fixture (kind/fixtures/podchaos-test.yaml) does not specify which test pod to target \u2014 the target selector is undefined. Measurable score 4: 'phase=Finished within 120 seconds' requires polling rather than a single deterministic command; exact polling mechanism is unspecified. Achievable score 4: requires kind-sovereign-test running with KIND-001a and KIND-001b accepted (both confirmed in sprints 31 and 32). TimeBound score 4: the 120-second polling window is empirical and the pod-recovery assertion after experiment completion is not explicitly capped."
+      }
     },
     {
       "id": "TEST-006",
@@ -101,36 +164,62 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 3,
+        "measurable": 3,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 3,
+        "notes": "Specific score 3: k6-operator appears in description and testPlan but has zero ACs \u2014 its HA compliance is unverified. Wiremock and chaos-mesh have only helm-lint ACs (no PDB or podAntiAffinity assertions), yet the description promises full HA treatment. Additionally, TEST-004a and TEST-005a (also in this sprint) already apply HA standard to chaos-mesh and wiremock respectively \u2014 TEST-006 does not list them as dependencies, so it is unclear whether this story performs implementation for those charts (duplicate work) or relies on the sibling stories (undeclared dependency). Measurable score 3: k6-operator is entirely absent from ACs despite being named in the title. TimeBound score 3: scope overlap with TEST-004a and TEST-005a makes the true implementation surface area ambiguous \u2014 it is unclear which charts this story is responsible for implementing vs only validating."
       }
     },
     {
-      "id": "TEST-005",
+      "id": "TEST-005a",
       "epicId": "E13",
       "themeId": "T5",
       "priority": 4,
       "points": 2,
-      "branchName": "feature/wiremock-chart",
-      "title": "Wiremock deploys and accepts API stub mappings via its admin REST API",
-      "description": "Create charts/wiremock/ Helm chart. Install into kind-sovereign-test in namespace wiremock-test. Verify the Wiremock admin API responds and accepts a stub mapping POST to /__admin/mappings. The stub mapping must be retrievable and matching GET requests must return the configured response body. Chart must meet HA standards: replicaCount>=2, PDB with minAvailable=1, podAntiAffinity, readinessProbe, livenessProbe, resource requests and limits.",
+      "branchName": "feature/wiremock-ha-standard",
+      "title": "Enhance platform/charts/wiremock/: add PDB, podAntiAffinity, probes, and resource limits",
+      "description": "Update the existing platform/charts/wiremock/ Helm chart to meet the sovereign HA standard. Add a PodDisruptionBudget template with minAvailable=1, podAntiAffinity on hostname, readinessProbe and livenessProbe, and resource requests/limits on all containers. Set replicaCount>=2 in values.yaml. This is a static-verifiable change \u2014 no running cluster required.",
       "acceptanceCriteria": [
-        "helm lint charts/wiremock/ exits 0 with '0 chart(s) failed'",
-        "helm install wiremock charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m exits 0 and kubectl get pods -n wiremock-test --context kind-sovereign-test shows all pods Running",
-        "kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 --context kind-sovereign-test & sleep 2 && curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/__admin/mappings -H 'Content-Type: application/json' -d '{\"request\":{\"method\":\"GET\",\"url\":\"/api/test\"},\"response\":{\"status\":200,\"body\":\"ok\"}}' returns 201",
-        "helm template charts/wiremock/ | grep -c PodDisruptionBudget returns at least 1",
-        "helm template charts/wiremock/ | grep -c podAntiAffinity returns at least 1"
+        "helm lint platform/charts/wiremock/ exits 0 with '0 chart(s) failed'",
+        "helm template platform/charts/wiremock/ | grep PodDisruptionBudget returns at least 1 match",
+        "helm template platform/charts/wiremock/ | grep podAntiAffinity returns at least 1 match",
+        "grep replicaCount platform/charts/wiremock/values.yaml shows a value >= 2"
       ],
-      "testPlan": "helm lint charts/wiremock/ && helm install wiremock charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m && kubectl get pods -n wiremock-test --context kind-sovereign-test && kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 & sleep 2 && curl -X POST http://localhost:8080/__admin/mappings ... && curl http://localhost:8080/api/test; show all output verbatim",
+      "testPlan": "helm lint platform/charts/wiremock/; helm template platform/charts/wiremock/ | grep PodDisruptionBudget; helm template platform/charts/wiremock/ | grep podAntiAffinity; grep replicaCount platform/charts/wiremock/values.yaml; show all output verbatim.",
+      "dependencies": [],
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
+    },
+    {
+      "id": "TEST-005b",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 5,
+      "points": 2,
+      "branchName": "feature/wiremock-kind-deploy",
+      "title": "Deploy platform/charts/wiremock/ to kind-sovereign-test and verify admin REST API accepts stub mappings",
+      "description": "Install platform/charts/wiremock/ into kind-sovereign-test in namespace wiremock-test. Port-forward the Wiremock service and verify the admin API accepts a stub mapping POST to /__admin/mappings (expect HTTP 201) and that a matching GET to the mapped URL returns the configured response body. This validates runtime behavior beyond static lint.",
+      "acceptanceCriteria": [
+        "helm install wiremock platform/charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m exits 0",
+        "kubectl get pods -n wiremock-test --context kind-sovereign-test shows all pods Running",
+        "kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 --context kind-sovereign-test & sleep 2 && curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/__admin/mappings -H 'Content-Type: application/json' -d '{\"request\":{\"method\":\"GET\",\"url\":\"/api/test\"},\"response\":{\"status\":200,\"body\":\"ok\"}}' returns 201",
+        "curl -s http://localhost:8080/api/test returns 'ok'"
+      ],
+      "testPlan": "helm install wiremock platform/charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m && kubectl get pods -n wiremock-test --context kind-sovereign-test && kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 --context kind-sovereign-test & sleep 2 && curl -X POST http://localhost:8080/__admin/mappings -H 'Content-Type: application/json' -d '...' && curl http://localhost:8080/api/test; show all output verbatim.",
       "dependencies": [
+        "TEST-005a",
         "KIND-001a",
         "KIND-001b"
       ],
@@ -139,15 +228,18 @@
         "kubectl",
         "helm"
       ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "READY: dependencies KIND-001a (sprint 31, passes:true) and KIND-001b (sprint 32, passes:true) are both confirmed accepted. All ACs are specific verifiable commands with testPlan present."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: the port-forward background-process pattern ('& sleep 2 &&') is fragile \u2014 no specification of what happens if port-forward fails before curl runs. Measurable score 4: AC3 (curl returns 201) depends on the background port-forward being ready after exactly 2 seconds, which is non-deterministic in CI environments. Achievable score 4: requires kind-sovereign-test running with KIND-001a and KIND-001b accepted."
+      }
     },
     {
       "id": "KAIZEN-015",
@@ -174,7 +266,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Both ACs are self-contained one-liners operating only on prd/backlog.json. Verified against current state: 14 stale-complete and 6 stale-blocked entries exist as of increment 33."
+        "notes": "All SMART dimensions green."
       }
     }
   ]
