@@ -26,6 +26,11 @@ extensions:
   - ms-python.python
   - dbaeumer.vscode-eslint
 
+# PVC for /home/coder — workspace persistence across pod restarts
+# storageClass is taken from global.storageClass
+persistence:
+  size: 5Gi
+
 # Persistent home directory: workspace + VS Code config + extensions
 workspace:
   # ceph-filesystem supports ReadWriteMany — required for replicaCount >= 2
