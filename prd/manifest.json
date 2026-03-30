@@ -413,14 +413,19 @@
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 35 completes.",
       "file": "prd/increment-36-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 35 advances.",
       "dependsOn": [
         35
       ],
       "startDate": "2026-03-30T00:00:00+00:00",
+      "endDate": "2026-03-30T00:00:00+00:00",
       "pointsTotal": 9,
-      "storiesTotal": 6
+      "storiesTotal": 6,
+      "pointsCompleted": 9,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 0.0
     },
     {
       "id": 37,
@@ -435,5 +440,26 @@
     }
   ],
   "activeSprint": "prd/increment-36-pending-stub.json",
-  "currentIncrement": 36
+  "currentIncrement": 36,
+  "sprintHistory": [
+    {
+      "increment": 36,
+      "name": "pending-stub",
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 9,
+      "storiesTotal": 6,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 0.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 36,
+      "pointsCompleted": 9,
+      "storiesAccepted": 6,
+      "reviewPassRate": 0.0,
+      "date": "2026-03-30T00:00:00+00:00"
+    }
+  ]
 }
