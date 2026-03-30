@@ -33,7 +33,8 @@
       },
       "returnedFromSprint": "prd/increment-25-pending-stub.json",
       "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file",
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "CEREMONY-007",
@@ -66,7 +67,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "CEREMONY-006",
@@ -95,7 +97,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull. E15 targetIncrement was updated to 28 in that sprint."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull. E15 targetIncrement was updated to 28 in that sprint.",
+      "status": "complete"
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -224,7 +227,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "status": "active",
+      "status": "complete",
       "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
@@ -473,7 +476,8 @@
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
       "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
-      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "DEVEX-011",
@@ -497,7 +501,8 @@
         "markdownlint docs/quickstart.md exits 0"
       ],
       "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "CEREMONY-001",
@@ -854,7 +859,8 @@
         "timeBound": 5,
         "notes": "Relevant score 4: legacy vocabulary cleanup supports platform health but does not advance feature delivery."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "CEREMONY-004",
@@ -885,7 +891,8 @@
         "timeBound": 5,
         "notes": "Relevant score 4: data model cleanup supports delivery hygiene but does not advance feature delivery."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "CEREMONY-005",
@@ -943,7 +950,8 @@
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
       },
-      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "KIND-001b",
@@ -979,7 +987,8 @@
         "timeBound": 5,
         "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
       },
-      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "TEST-004a",
@@ -1188,7 +1197,8 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "HA-003",
@@ -1227,7 +1237,8 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "DEVEX-004",
@@ -1392,7 +1403,7 @@
       },
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
       "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'",
-      "status": "active",
+      "status": "complete",
       "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
@@ -1523,7 +1534,8 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "HA-005a",
@@ -1620,7 +1632,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. Script already exists at scripts/gates/cost-gate.sh using Python yaml parsing (not shell grep), so the pipefail+grep risk does not apply."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "DEVEX-006",
@@ -1684,7 +1697,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "DEVEX-007b",
@@ -1719,7 +1733,7 @@
         "notes": ""
       },
       "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
-      "status": "active"
+      "status": "complete"
     },
     {
       "id": "QUALITY-006",
@@ -1943,7 +1957,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support, so the dependency on HA-001 is satisfied."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "HA-008",
@@ -2006,7 +2021,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "CEREMONY-011",
@@ -2037,7 +2053,7 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs are static-analysis-only (grep + py_compile), no live cluster needed."
       },
-      "status": "active",
+      "status": "complete",
       "readinessNote": "COMPLETED IN SPRINT 30: passes:true, reviewed:true in prd/increment-30-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
@@ -2066,7 +2082,8 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: smart.md \u2192 smart-check.md (the actual file). Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "KAIZEN-001",
@@ -2182,7 +2199,8 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull.",
+      "status": "complete"
     },
     {
       "id": "DEVEX-013",

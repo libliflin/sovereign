@@ -256,9 +256,9 @@
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
       "testPlan": "Run AC1 one-liner verbatim and show output. Run AC2 one-liner verbatim and show output. Run AC3 py_compile and show output.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
-      "attempts": 0,
+      "attempts": 1,
       "reviewNotes": [],
       "smart": {
         "specific": 5,
