@@ -405,6 +405,33 @@
       "storiesAccepted": 6,
       "storiesIncomplete": 0,
       "reviewPassRate": 100.0
+    },
+    {
+      "id": 35,
+      "name": "pending-stub",
+      "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
+      "file": "prd/increment-35-pending-stub.json",
+      "status": "active",
+      "themeGoal": "TBD \u2014 planned by plan ceremony from backlog.",
+      "dependsOn": [
+        34
+      ],
+      "startDate": "2026-03-30T21:57:19.137725+00:00",
+      "pointsTotal": 8,
+      "storiesTotal": 4
+    },
+    {
+      "id": 36,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 35 completes.",
+      "file": "prd/increment-36-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 35 advances.",
+      "dependsOn": [
+        35
+      ]
     }
-  ]
+  ],
+  "activeSprint": "prd/increment-35-pending-stub.json",
+  "currentIncrement": 35
 }
