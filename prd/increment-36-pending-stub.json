@@ -105,7 +105,6 @@
       "id": "TEST-010",
       "epicId": "E13",
       "themeId": "T1",
-      "phase": 8,
       "priority": 3,
       "points": 1,
       "branchName": "feature/test-010-autarky-gate",
@@ -125,7 +124,7 @@
         "TEST-006a",
         "TEST-006b"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
