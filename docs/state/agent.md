@@ -101,6 +101,12 @@ single-node Elasticsearch) architecturally cannot scale horizontally. For these:
 2. Set a top-level `replicaCount: 1` in `values.yaml` with a comment: `# ha_exception: see vendor/VENDORS.yaml`
 3. HA gate #5 passes only when BOTH conditions are met. Missing the VENDORS.yaml entry always fails.
 
+**HA replicaCount AC must use a binary-exit grep**: acceptance criteria that check `replicaCount` with "shows a value >= 2" (visual inspection) cap the SMART measurable score at 4 and create ambiguity at review. Always write the AC as a self-verifying command:
+```bash
+grep -E 'replicaCount:[[:space:]]+[2-9]' platform/charts/<name>/values.yaml
+```
+This exits 0 on success, non-zero on failure — no human interpretation required. Use this pattern for all HA replicaCount gates going forward.
+
 **Re-attempts after review failure — read reviewNotes first**: when a story has `attempts > 0`,
 the `reviewNotes[]` array contains the exact failure from the previous review. Before writing
 any code on a re-attempt, read and summarize the specific change described in `reviewNotes[0]`.
@@ -475,7 +481,12 @@ covering PLATFORM-001 through PLATFORM-004 (shellcheck clean, 15 helm/kubectl in
 HA-008 test/chaos/pdb-validation.yaml + README review confirmation; RESTRUCTURE-001b-2
 platform/deploy.sh review confirmation; CEREMONY-012 execute ceremony AC self-check enforcement
 (scripts/ralph/ceremonies/execute.md, >=15 AC verification references) — 100% first-review
-pass rate, 11/12 pts delivered)
+pass rate, 11/12 pts delivered),
+35 (pending-stub — 5/5 accepted: TEST-004a chaos-mesh HA standard confirmed; TEST-005a wiremock
+HA standard confirmed; TEST-006a selenium-grid HA standard (PDB, podAntiAffinity, replicaCount>=2);
+TEST-006b k6-operator + mailhog HA standard (PDB, podAntiAffinity on k6-operator; PDB on mailhog);
+KAIZEN-015 backlog hygiene (14 confirmed-complete stories marked status:complete, 6 stale KIND-001b
+blocks cleared) — 100% first-review pass rate, 11/8 pts delivered)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -486,9 +497,9 @@ toolchain initContainer + workspace PVC + toolchainInit values interface (DEVEX-
 Backstage and code-server charts pass autarky G6 gate (DEVEX-012 done);
 stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality —
 SonarQube + ReportPortal Helm charts, ArgoCD apps, and HA gate compliance done; GitLab CI integration
-story 052 pending), E13 (testing infrastructure — selenium-grid HA standard done (TEST-006);
-chaos-mesh HA standard done (TEST-004a); wiremock HA standard done (TEST-005a); deployment stories
-TEST-004b, TEST-005b still pending), E15 (HA integration testing — HA-001 ha-gate.sh done;
+story 052 pending), E13 (testing infrastructure — all five charts now at HA standard: selenium-grid (TEST-006a),
+chaos-mesh (TEST-004a), wiremock (TEST-005a), k6-operator (TEST-006b), mailhog (TEST-006b);
+deployment stories TEST-004b (chaos-mesh deploy), TEST-005b (wiremock deploy) still pending), E15 (HA integration testing — HA-001 ha-gate.sh done;
 HA-002 PDB drain validation done; HA-003 rolling update smoke test done; HA-004 HA bootstrap
 script done; HA-005a kind-smoke.sh scaffold done; HA-008 chaos PDB artifact done; targetIncrement: 28)
 
@@ -517,5 +528,5 @@ script done; HA-005a kind-smoke.sh scaffold done; HA-008 chaos PDB artifact done
 
 ## Known model inconsistencies
 
-- 11 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006, DEVEX-012, QUALITY-009, TEST-009, TEST-010). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
+- 8 open backlog stories have `themeId` that differs from their parent epic's `themeId` (KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006, QUALITY-009, TEST-009, TEST-010). KAIZEN-017 will correct all themeId fields to match their epic's themeId.
 - 8 backlog stories still carry a legacy `phase` field (DEVEX-012, DEVEX-013, QUALITY-008, QUALITY-009, TEST-009, TEST-010, HA-009, HA-010) despite KAIZEN-006 removing `phase` from all backlog stories. These entries were added after KAIZEN-006 ran. → KAIZEN-004 will remove them.
