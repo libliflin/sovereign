@@ -392,16 +392,46 @@
     {
       "id": 34,
       "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 33 completes.",
+      "description": "Fix execute ceremony AC self-check gap (CEREMONY-012); harden chaos-mesh and wiremock charts to HA standard (TEST-004a, TEST-005a); create kind smoke test scaffold (HA-005a); clear HA-008 and RESTRUCTURE-001b-2 review confirmations.",
       "file": "prd/increment-34-pending-stub.json",
-      "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 33 advances.",
+      "status": "complete",
+      "themeGoal": "Harden E13 testing charts to HA standard and fix the execute ceremony self-check gap \u2014 unblocking TEST-006 and the Chaos Mesh CRD chain while building the kind smoke test scaffold.",
       "dependsOn": [
         33
       ],
-      "startDate": "2026-03-30T00:00:00+00:00"
+      "startDate": "2026-03-30T00:00:00+00:00",
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 11,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    },
+    {
+      "id": 35,
+      "name": "pending-stub",
+      "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
+      "file": "prd/increment-35-pending-stub.json",
+      "status": "active",
+      "themeGoal": "TBD \u2014 planned by plan ceremony from backlog.",
+      "dependsOn": [
+        34
+      ],
+      "startDate": "2026-03-30T21:57:19.137725+00:00",
+      "pointsTotal": 8,
+      "storiesTotal": 4
+    },
+    {
+      "id": 36,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 35 completes.",
+      "file": "prd/increment-36-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 35 advances.",
+      "dependsOn": [
+        35
+      ]
     }
   ],
-  "activeSprint": "prd/increment-34-pending-stub.json",
-  "currentIncrement": 34
+  "activeSprint": "prd/increment-35-pending-stub.json",
+  "currentIncrement": 35
 }

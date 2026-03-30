@@ -25,7 +25,7 @@
       "testPlan": "helm lint platform/charts/chaos-mesh/; helm template platform/charts/chaos-mesh/ | grep PodDisruptionBudget; helm template platform/charts/chaos-mesh/ | grep podAntiAffinity; grep replicaCount platform/charts/chaos-mesh/values.yaml; show all output verbatim.",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "proofOutput": {
@@ -63,7 +63,7 @@
       "testPlan": "helm lint platform/charts/wiremock/; helm template platform/charts/wiremock/ | grep PodDisruptionBudget; helm template platform/charts/wiremock/ | grep podAntiAffinity; grep replicaCount platform/charts/wiremock/values.yaml; show all output verbatim.",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "proofOutput": {
@@ -102,13 +102,13 @@
         "HA-004"
       ],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "proofOutput": {
         "shellcheck": "exit 0",
         "helm_kubectl_count": "15",
-        "pass_fail_grep": "exit 0 — PASS and FAIL literals present in summary logic"
+        "pass_fail_grep": "exit 0 \u2014 PASS and FAIL literals present in summary logic"
       },
       "smart": {
         "specific": 5,
@@ -137,11 +137,11 @@
       ],
       "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "proofOutput": {
-        "ls": "test/chaos/pdb-validation.yaml test/chaos/README.md — exit 0",
+        "ls": "test/chaos/pdb-validation.yaml test/chaos/README.md \u2014 exit 0",
         "yaml_parse": "exit 0",
         "kind_grep": "kind: PodChaos",
         "mode_grep": "  mode: all",
@@ -177,11 +177,11 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "proofOutput": {
-        "ls": "platform/deploy.sh — exit 0",
+        "ls": "platform/deploy.sh \u2014 exit 0",
         "shellcheck": "exit 0",
         "bash_n": "exit 0",
         "help_grep": "chart-dir found in --help output",
@@ -214,7 +214,7 @@
       "testPlan": "grep -n 'self.check\\|acceptanceCriteria\\|run.*AC\\|verify.*criteria' scripts/ralph/ceremonies/execute.md | wc -l; python3 -m py_compile scripts/ralph/ceremonies.py; shellcheck -S error scripts/ralph/ceremonies.sh; show all output verbatim.",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "proofOutput": {

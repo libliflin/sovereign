@@ -24,6 +24,7 @@ push branches, open PRs. Ceremonies verify your work. You do not run ceremonies.
 | Platform service charts | `platform/charts/<service>/` |
 | Kind bootstrap charts | `cluster/kind/charts/<service>/` |
 | Kind HA fixtures | `kind/fixtures/` and `kind/smoke-test/` |
+| Kind smoke test scripts | `scripts/test/` |
 | ArgoCD apps | `argocd-apps/<tier>/<service>-app.yaml` |
 | Contract schema | `contract/v1/` — validated by `contract/validate.py` |
 | Bootstrap scripts | `bootstrap/` (VPS), `cluster/kind/bootstrap.sh` (kind standard), `cluster/kind/ha-bootstrap.sh` (kind HA) |
@@ -323,6 +324,12 @@ ceremony warns when pre-accepted stories exceed 50% of sprint capacity (CEREMONY
 cycle, check: if `>50%` of sprint points are already-accepted stories, remove them to free capacity for
 real work.
 
+**Execute ceremony enforces AC self-check — no self-certification**: the execute ceremony
+(`scripts/ralph/ceremonies/execute.md`) requires that every AC command from `acceptanceCriteria` is
+run and its output shown verbatim before `passes: true` is set. If any AC command fails, the story
+stays `passes: false`. Stories that create plausible artifacts but skip AC verification will be caught
+at proof and returned to backlog. Run your AC commands. Show the output. Do not assert results.
+
 ---
 
 ## How to implement a story
@@ -457,9 +464,18 @@ be evicted; HA-003 rolling update smoke test (kind/smoke-test/rolling-update.sh)
 unavailability during Helm upgrade verified; HA-004 HA bootstrap script (cluster/kind/ha-bootstrap.sh
 + cluster/kind/kind-ha-config.yaml, 3 control-plane nodes); DEVEX-012 Backstage + code-server
 Helm chart templates pass autarky G6 gate; DEVEX-009 code-server workspace PVC confirmed —
-100% first-review pass rate)
-
-Increment 32 complete. Increment 33 is pending — plan ceremony will populate it.
+100% first-review pass rate),
+33 (pending-stub — TEST-006 selenium-grid HA standard (PDB, podAntiAffinity, replicaCount>=2);
+KAIZEN-015 backlog hygiene (14 confirmed-complete stories marked status:done);
+TEST-004a, TEST-005a, HA-005a returned to increment 34 — execute created artifacts but proof
+found shellcheck/AC command failures; CEREMONY-012 returned from earlier sprint),
+34 (pending-stub — 6/6 accepted: TEST-004a chaos-mesh HA standard (PDB, podAntiAffinity,
+replicaCount>=2); TEST-005a wiremock HA standard; HA-005a scripts/test/kind-smoke.sh scaffold
+covering PLATFORM-001 through PLATFORM-004 (shellcheck clean, 15 helm/kubectl invocations);
+HA-008 test/chaos/pdb-validation.yaml + README review confirmation; RESTRUCTURE-001b-2
+platform/deploy.sh review confirmation; CEREMONY-012 execute ceremony AC self-check enforcement
+(scripts/ralph/ceremonies/execute.md, >=15 AC verification references) — 100% first-review
+pass rate, 11/12 pts delivered)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -470,9 +486,11 @@ toolchain initContainer + workspace PVC + toolchainInit values interface (DEVEX-
 Backstage and code-server charts pass autarky G6 gate (DEVEX-012 done);
 stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality —
 SonarQube + ReportPortal Helm charts, ArgoCD apps, and HA gate compliance done; GitLab CI integration
-story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA integration testing —
-HA-001 ha-gate.sh done; HA-002 PDB drain validation done; HA-003 rolling update smoke test done;
-HA-004 HA bootstrap script done; HA-008 chaos PDB artifact done; targetIncrement: 28)
+story 052 pending), E13 (testing infrastructure — selenium-grid HA standard done (TEST-006);
+chaos-mesh HA standard done (TEST-004a); wiremock HA standard done (TEST-005a); deployment stories
+TEST-004b, TEST-005b still pending), E15 (HA integration testing — HA-001 ha-gate.sh done;
+HA-002 PDB drain validation done; HA-003 rolling update smoke test done; HA-004 HA bootstrap
+script done; HA-005a kind-smoke.sh scaffold done; HA-008 chaos PDB artifact done; targetIncrement: 28)
 
 ---
 
