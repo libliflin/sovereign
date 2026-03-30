@@ -25,7 +25,7 @@
       "priority": 3,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
@@ -59,7 +59,7 @@
       ],
       "testPlan": "kind get clusters (verify kind-sovereign-test) && kubectl get nodes --context kind-sovereign-test && kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && WORKER=$(kubectl get nodes --context kind-sovereign-test --no-headers | grep -v control-plane | head -1 | awk '{print $1}') && kubectl drain $WORKER --delete-emptydir-data --ignore-daemonsets --context kind-sovereign-test 2>&1 | tee /tmp/drain.out && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && kubectl uncordon $WORKER --context kind-sovereign-test; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [
@@ -97,7 +97,7 @@
       ],
       "testPlan": "shellcheck -S error kind/smoke-test/rolling-update.sh && bash -n kind/smoke-test/rolling-update.sh && kind/smoke-test/rolling-update.sh --dry-run && kind/smoke-test/rolling-update.sh; show all output verbatim including the per-poll pod counts",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [
@@ -137,7 +137,7 @@
         "KIND-001a"
       ],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -170,7 +170,7 @@
       "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/backstage/templates/ platform/charts/code-server/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
       "dependencies": [],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -203,7 +203,7 @@
       ],
       "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -216,5 +216,7 @@
         "notes": "Measurable score 4: AC2 asserts 'storageClassName: {{ .Values.global.storageClass }}' but helm template renders the value, not the template syntax \u2014 the AC should specify --set global.storageClass=test-class and grep for 'storageClassName: test-class' to be binary-verifiable."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
