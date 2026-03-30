@@ -380,7 +380,7 @@
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 32 completes.",
       "file": "prd/increment-33-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 32 advances.",
       "dependsOn": [
         32
@@ -394,13 +394,14 @@
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 33 completes.",
       "file": "prd/increment-34-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 33 advances.",
       "dependsOn": [
         33
-      ]
+      ],
+      "startDate": "2026-03-30T00:00:00+00:00"
     }
   ],
-  "activeSprint": "prd/increment-33-pending-stub.json",
-  "currentIncrement": 33
+  "activeSprint": "prd/increment-34-pending-stub.json",
+  "currentIncrement": 34
 }
