@@ -1597,8 +1597,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
-      },
-      "readinessNote": "BLOCKED: dependency HA-004 has passes:false (stale backlog entry \u2014 confirmed done in sprint 32). Story is otherwise ready (all ACs verifiable, testPlan concrete). This block will self-clear once HA-004 stale entry is corrected."
+      }
     },
     {
       "id": "HA-005b",
@@ -2410,7 +2409,10 @@
       ],
       "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/selenium-grid/templates/ platform/charts/k6-operator/templates/ platform/charts/chaos-mesh/templates/ platform/charts/mailhog/templates/ platform/charts/wiremock/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
       "dependencies": [
-        "TEST-006"
+        "TEST-004a",
+        "TEST-005a",
+        "TEST-006a",
+        "TEST-006b"
       ],
       "passes": false,
       "reviewed": false,
@@ -2427,7 +2429,7 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
+      "readinessNote": "BLOCKED: ghost dependency TEST-006 resolved to successors [TEST-004a, TEST-005a, TEST-006a, TEST-006b] \u2014 the four E13 chart HA-hardening stories. All four have passes:false. Resolve those first."
     },
     {
       "id": "HA-009",
@@ -2492,7 +2494,10 @@
       "testPlan": "for chart in platform/charts/selenium-grid platform/charts/k6-operator platform/charts/chaos-mesh platform/charts/mailhog platform/charts/wiremock; do echo \"=== $chart ===\"; helm template $chart | grep -E 'PodDisruptionBudget|podAntiAffinity' | wc -l; done",
       "dependencies": [
         "HA-001",
-        "TEST-006"
+        "TEST-004a",
+        "TEST-005a",
+        "TEST-006a",
+        "TEST-006b"
       ],
       "passes": false,
       "reviewed": false,
@@ -2509,7 +2514,7 @@
       "requiredCapabilities": [
         "helm"
       ],
-      "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
+      "readinessNote": "BLOCKED: ghost dependency TEST-006 resolved to successors [TEST-004a, TEST-005a, TEST-006a, TEST-006b] \u2014 the four E13 chart HA-hardening stories. HA-001 has passes:true. TEST-004a, TEST-005a, TEST-006a, TEST-006b all have passes:false \u2014 resolve those first."
     },
     {
       "id": "KAIZEN-004",
