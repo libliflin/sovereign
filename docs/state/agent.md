@@ -296,6 +296,11 @@ Stories that depend on a bare kind cluster are unblocked. Stories that depend on
 (Cilium CNI, cert-manager, sealed-secrets) are blocked until KIND-001b is accepted. Verify with
 `kind get clusters` before assuming a running cluster exists.
 
+**Review-confirmation stories carry `attempts: 0` by convention**: when a story was implemented in a
+prior sprint and is pulled into the current sprint solely to clear the review pipeline, it correctly
+shows `attempts: 0`. This is not a data error. The retro first-pass formula (`attempts == 1`) correctly
+excludes these stories from first-pass counting. Do not flag `attempts: 0` as missing implementation work.
+
 **Pre-accepted story crowding blocks execution capacity**: when stories with `passes:true, reviewed:true`
 are pulled into a sprint, they consume ceremony pipeline slots without requiring implementation work. If
 they make up a large fraction of the sprint, new implementation stories will never be reached. The plan
@@ -424,9 +429,14 @@ of capacity) that required no implementation, crowding out 5 new stories before 
 empty); QUALITY-005 SonarQube + ReportPortal Helm charts pass HA gate (PDB + podAntiAffinity);
 DEVEX-007b code-server toolchain initContainer confirmed (kubectl, helm, k9s copied via emptyDir);
 CEREMONY-011 plan ceremony warns when >50% sprint capacity is pre-accepted stories — 100% first-review
-pass rate, uniform 2-point sizing)
+pass rate, uniform 2-point sizing),
+31 (kind-bootstrap-chain — 6/6 accepted: KIND-001a kind cluster bootstrap sovereign-test 3-node cluster
++ contract/validate.py validates cluster-values.yaml; CONTRACT-001 contract validator test corpus
+expanded to cover imageRegistry and storageClass invariants; DEVEX-011 docs on-ramp paths updated from
+old bootstrap/ structure to new monorepo structure; RESTRUCTURE-001a, RESTRUCTURE-001b-1, HA-001 review
+confirmations cleared — 100% first-review pass rate for new implementation work)
 
-Increment 30 complete. Increment 31 is pending — plan ceremony will populate it.
+Increment 31 complete. Increment 32 is pending — plan ceremony will populate it.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),

@@ -141,7 +141,9 @@
         "DEVEX-008",
         "DEVEX-009",
         "DEVEX-010",
-        "DEVEX-011"
+        "DEVEX-011",
+        "DEVEX-012",
+        "DEVEX-013"
       ]
     },
     {
@@ -161,7 +163,9 @@
         "QUALITY-004",
         "QUALITY-005",
         "QUALITY-006",
-        "QUALITY-007"
+        "QUALITY-007",
+        "QUALITY-008",
+        "QUALITY-009"
       ]
     },
     {
@@ -186,7 +190,9 @@
         "TEST-005",
         "TEST-006",
         "TEST-007",
-        "TEST-008"
+        "TEST-008",
+        "TEST-009",
+        "TEST-010"
       ]
     },
     {
@@ -222,7 +228,9 @@
         "HA-005",
         "HA-006",
         "HA-007",
-        "HA-008"
+        "HA-008",
+        "HA-009",
+        "HA-010"
       ]
     }
   ]

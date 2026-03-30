@@ -1,0 +1,220 @@
+{
+  "increment": 32,
+  "name": "pending-stub",
+  "description": "KIND-001b installs the platform foundation layer into the kind cluster, unblocking the entire PLATFORM delivery chain. HA-002/003/004 advance resilience validation in the kind cluster. DEVEX-012 enforces autarky compliance on developer portal charts.",
+  "sprintGoal": "KIND-001b passes so the PLATFORM chain is unblocked; HA-002/003/004 advance kind-cluster resilience validation; DEVEX-012 clears the autarky gate for developer portal charts.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "KIND-001b",
+      "title": "kind bootstrap: install Cilium, cert-manager, sealed-secrets, MinIO into kind cluster",
+      "description": "Split of KIND-001 (achievable=3). Platform component install half: after KIND-001a produces a running 3-node kind cluster, install Cilium CNI (kindnet disabled), cert-manager, sealed-secrets, local-path-provisioner (default StorageClass), and MinIO into that cluster. Depends on KIND-001a.",
+      "acceptanceCriteria": [
+        "kubectl get pods -n kube-system shows cilium pods Running (kindnet pods absent)",
+        "kubectl get pods -n cert-manager shows all Running",
+        "kubectl get pods -n sealed-secrets shows all Running",
+        "kubectl get pods -n minio shows all Running",
+        "kubectl get storageclass shows local-path as default (annotated storageclass.kubernetes.io/is-default-class: 'true')"
+      ],
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "feature/kind-bootstrap",
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "priority": 3,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-20-kind-integration.json",
+      "returnedReason": "Split from KIND-001 (achievable=3 \u2014 too many integration points for one story)",
+      "testPlan": "kubectl get pods -n kube-system | grep cilium; kubectl get pods -n cert-manager; kubectl get pods -n sealed-secrets; kubectl get pods -n minio; kubectl get storageclass \u2014 show all output verbatim. All pods must show Running/Completed. local-path must be default.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: installs 5 components (Cilium, cert-manager, sealed-secrets, local-path-provisioner, MinIO) \u2014 near the top of the 2-point budget but a focused split with clear scope."
+      },
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
+    },
+    {
+      "id": "HA-002",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 2,
+      "points": 3,
+      "branchName": "feature/pdb-drain-validation",
+      "title": "PDB drain validation: kubectl drain blocks eviction of last pod when minAvailable=1",
+      "description": "Create kind/fixtures/pdb-test.yaml defining: a Namespace (pdb-test), a Deployment with replicaCount=2, podAntiAffinity (requiredDuringScheduling across nodes), and a PodDisruptionBudget with minAvailable=1. In kind-sovereign-test, apply the fixture, drain a worker node, and verify: (a) kubectl drain exits non-zero or produces 'Cannot evict pod as it would violate the pod disruption budget' output when trying to evict the last pod, and (b) at least 1 pdb-test pod remains Running during the drain. After uncordon, verify both pods return to Running.",
+      "acceptanceCriteria": [
+        "kind/fixtures/pdb-test.yaml exists and contains Namespace, Deployment (replicaCount=2), and PodDisruptionBudget (minAvailable=1) resources: python3 -c \"import yaml; docs=list(yaml.safe_load_all(open('kind/fixtures/pdb-test.yaml'))); kinds={d['kind'] for d in docs if d}; assert 'Deployment' in kinds and 'PodDisruptionBudget' in kinds and 'Namespace' in kinds; print('OK')\" exits 0",
+        "kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test exits 0 and kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test shows 2/2 Running within 60 seconds",
+        "kubectl drain <worker-node> --delete-emptydir-data --ignore-daemonsets --context kind-sovereign-test produces output containing 'Cannot evict pod as it would violate the pod disruption budget' OR exits non-zero",
+        "kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test immediately after drain attempt shows at least 1 pod Running",
+        "kubectl uncordon <worker-node> --context kind-sovereign-test followed by kubectl wait --for=condition=Ready pod -l app=pdb-test -n pdb-test --timeout=60s --context kind-sovereign-test exits 0"
+      ],
+      "testPlan": "kind get clusters (verify kind-sovereign-test) && kubectl get nodes --context kind-sovereign-test && kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && WORKER=$(kubectl get nodes --context kind-sovereign-test --no-headers | grep -v control-plane | head -1 | awk '{print $1}') && kubectl drain $WORKER --delete-emptydir-data --ignore-daemonsets --context kind-sovereign-test 2>&1 | tee /tmp/drain.out && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && kubectl uncordon $WORKER --context kind-sovereign-test; show all output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl"
+      ],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: drain/uncordon flow requires a live kind cluster and involves multi-step orchestration (apply fixture, drain, verify, uncordon) \u2014 tight but within a 3-point budget."
+      },
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
+    },
+    {
+      "id": "HA-003",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/rolling-update-smoke-test",
+      "title": "Rolling update smoke test verifies zero pod unavailability during Helm chart upgrade in kind",
+      "description": "Create kind/smoke-test/rolling-update.sh that: (1) installs a test Helm chart into kind-sovereign-test with replicaCount=2 and maxUnavailable=0 maxSurge=1, (2) upgrades the chart (e.g. bumps an annotation) triggering a rolling update, (3) polls kubectl get pods every 2 seconds during the rollout, (4) verifies at no point were fewer than 1 pod Running, (5) exits 0 with 'PASS: zero unavailability during rollout' if the invariant held throughout. Script must pass shellcheck -S error and support --dry-run.",
+      "acceptanceCriteria": [
+        "kind/smoke-test/rolling-update.sh exists and passes shellcheck -S error: shellcheck -S error kind/smoke-test/rolling-update.sh exits 0",
+        "bash -n kind/smoke-test/rolling-update.sh exits 0",
+        "kind/smoke-test/rolling-update.sh --dry-run prints the test steps and the chart it will use, then exits 0 without executing helm install",
+        "kind/smoke-test/rolling-update.sh runs against kind-sovereign-test and exits 0 with output containing 'PASS: zero unavailability during rollout'",
+        "helm template of the test chart used confirms strategy.rollingUpdate.maxUnavailable is 0: helm template <test-chart> | grep -A5 'rollingUpdate' shows 'maxUnavailable: 0'"
+      ],
+      "testPlan": "shellcheck -S error kind/smoke-test/rolling-update.sh && bash -n kind/smoke-test/rolling-update.sh && kind/smoke-test/rolling-update.sh --dry-run && kind/smoke-test/rolling-update.sh; show all output verbatim including the per-poll pod counts",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'a test Helm chart' is not named or pathed \u2014 implementer must decide what chart to create. Measurable score 4: AC5 references '<test-chart>' placeholder with no concrete name, making the helm template grep command underspecified. TimeBound score 4: unspecified test chart is a scope-expansion risk \u2014 implementer could gold-plate a custom chart instead of a minimal one."
+      },
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
+    },
+    {
+      "id": "HA-004",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/kind-multinode-ha-cluster",
+      "title": "kind 3-node cluster bootstrap script provisions control-plane HA and passes contract validate",
+      "description": "Create cluster/kind/ha-bootstrap.sh that provisions a kind cluster with 3 control-plane nodes and 2 worker nodes using a kind config file. After provisioning, the script must run python3 contract/validate.py against a generated cluster-values.yaml to confirm autarky invariants pass. The script must be idempotent (safe to re-run if cluster exists) and print PASS/FAIL at the end.",
+      "acceptanceCriteria": [
+        "cluster/kind/ha-bootstrap.sh exists and passes shellcheck: shellcheck -S error cluster/kind/ha-bootstrap.sh exits 0",
+        "cluster/kind/kind-ha-config.yaml exists with 3 control-plane nodes: python3 -c \"import yaml; c=yaml.safe_load(open('cluster/kind/kind-ha-config.yaml')); cps=[n for n in c['nodes'] if n.get('role')=='control-plane']; assert len(cps)==3, f'expected 3, got {len(cps)}'; print('OK')\" exits 0 and prints OK",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing CONTRACT VALID (G7 gate passes before cluster changes)"
+      ],
+      "testPlan": "shellcheck -S error cluster/kind/ha-bootstrap.sh; python3 -c \"import yaml; c=yaml.safe_load(open('cluster/kind/kind-ha-config.yaml')); print('control-plane nodes:', len([n for n in c['nodes'] if n.get('role')=='control-plane']))\"; python3 contract/validate.py contract/v1/tests/valid.yaml; show all output verbatim.",
+      "dependencies": [
+        "KIND-001a"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: description says '3 control-plane + 2 worker nodes' but no AC verifies the 2 worker nodes exist. Measurable score 3: description says 'run contract/validate.py against a generated cluster-values.yaml' but AC3 only validates the pre-existing static fixture (contract/v1/tests/valid.yaml) \u2014 the generated cluster-values.yaml is neither created nor validated by any AC, creating a disconnect between stated intent and verifiable criteria."
+      },
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
+    },
+    {
+      "id": "DEVEX-012",
+      "epicId": "E11",
+      "themeId": "T1",
+      "phase": 7,
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/devex-012-autarky-gate",
+      "title": "Backstage and code-server Helm charts comply with autarky gate (G6)",
+      "description": "Audit all templates under platform/charts/backstage/ and platform/charts/code-server/ and replace any hard-coded external registry references (docker.io, ghcr.io, etc.) with {{ .Values.global.imageRegistry }}. Add autarky check to each chart's CI lint step. Both charts must pass the G6 grep check clean.",
+      "acceptanceCriteria": [
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/code-server/templates/ returns no matches",
+        "helm lint platform/charts/backstage/ exits 0",
+        "helm lint platform/charts/code-server/ exits 0",
+        "helm template platform/charts/backstage/ --set global.imageRegistry=harbor.example.com renders all image refs starting with harbor.example.com"
+      ],
+      "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/backstage/templates/ platform/charts/code-server/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
+      "dependencies": [],
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: AC5 ('renders all image refs starting with harbor.example.com') lacks an explicit grep command \u2014 'helm template ... | grep -E ...' is not provided, so the check is descriptive rather than binary. Achievable score 4: auditing and patching templates in two charts may touch many files depending on how many image references exist."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "DEVEX-009",
+      "epicId": "E11",
+      "themeId": "T3",
+      "priority": 13,
+      "points": 1,
+      "branchName": "feature/code-server-workspace-pvc",
+      "title": "code-server chart: PersistentVolumeClaim for /home/coder so workspace survives pod restarts",
+      "description": "Add platform/charts/code-server/templates/pvc.yaml: a PersistentVolumeClaim for the code-server workspace. The storageClass must reference {{ .Values.global.storageClass }} (never hardcoded). Size must be configurable via values.yaml (default 5Gi). Update the Deployment template to add a volumeMount at /home/coder and a corresponding volume referencing the PVC. This ensures that agent workspaces, cloned git repos, and shell history survive pod restarts.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/templates/pvc.yaml exists \u2014 ls platform/charts/code-server/templates/pvc.yaml exits 0",
+        "helm template platform/charts/code-server/ shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}",
+        "helm template platform/charts/code-server/ shows a VolumeMount with mountPath: /home/coder",
+        "platform/charts/code-server/values.yaml has a persistence.size field \u2014 grep 'persistence:' platform/charts/code-server/values.yaml exits 0",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: AC2 asserts 'storageClassName: {{ .Values.global.storageClass }}' but helm template renders the value, not the template syntax \u2014 the AC should specify --set global.storageClass=test-class and grep for 'storageClassName: test-class' to be binary-verifiable."
+      }
+    }
+  ]
+}

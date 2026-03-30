@@ -25,7 +25,7 @@
       "priority": 2,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
@@ -50,7 +50,7 @@
       "priority": 12,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 1,
       "dependencies": [
         "RESTRUCTURE-001c"
@@ -81,7 +81,7 @@
       "priority": 13,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 1,
       "dependencies": [
         "RESTRUCTURE-001c"
@@ -118,7 +118,7 @@
       "points": 1,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 1,
@@ -152,7 +152,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 2,
@@ -183,7 +183,7 @@
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -198,5 +198,7 @@
       "returnedFromSprint": "prd/increment-23-pending-stub.json",
       "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

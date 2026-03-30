@@ -358,27 +358,38 @@
       "name": "kind-bootstrap-chain",
       "description": "Advance the KIND cluster delivery chain. KIND-001a bootstraps the cluster foundation that unblocks the entire PLATFORM delivery sequence. Review confirmations clear the RESTRUCTURE and HA gate backlog.",
       "file": "prd/increment-31-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "T1 Sovereignty \u2014 KIND-001a kind cluster bootstrap unblocks PLATFORM chain; RESTRUCTURE and HA-001 review confirmations cleared.",
       "dependsOn": [
         30
-      ],
-      "startDate": "2026-03-30T00:00:00+00:00",
-      "pointsTotal": 8,
-      "storiesTotal": 6
+      ]
     },
     {
       "id": 32,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 31 completes.",
       "file": "prd/increment-32-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 31 advances.",
       "dependsOn": [
         31
+      ],
+      "startDate": "2026-03-30T05:21:40.399303+00:00",
+      "pointsTotal": 12,
+      "storiesTotal": 6
+    },
+    {
+      "id": 33,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 32 completes.",
+      "file": "prd/increment-33-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 32 advances.",
+      "dependsOn": [
+        32
       ]
     }
   ],
-  "activeSprint": "prd/increment-31-pending-stub.json",
-  "currentIncrement": 31
+  "activeSprint": "prd/increment-32-pending-stub.json",
+  "currentIncrement": 32
 }
