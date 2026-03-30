@@ -136,7 +136,7 @@
       "dependencies": [
         "KIND-001a"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
