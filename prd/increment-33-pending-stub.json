@@ -189,10 +189,10 @@
       ],
       "testPlan": "helm lint platform/charts/wiremock/; helm template platform/charts/wiremock/ | grep PodDisruptionBudget; helm template platform/charts/wiremock/ | grep podAntiAffinity; grep replicaCount platform/charts/wiremock/values.yaml; show all output verbatim.",
       "dependencies": [],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,
