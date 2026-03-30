@@ -22,6 +22,9 @@ spec:
     helm:
       valueFiles:
         - values.yaml
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
   destination:
     server: https://kubernetes.default.svc
     namespace: vault
