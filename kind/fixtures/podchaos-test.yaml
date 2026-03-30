@@ -1,0 +1,43 @@
+---
+# Test target: a simple 2-replica deployment that PodChaos will disrupt
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaos-target
+  namespace: chaos-testing
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chaos-target
+  template:
+    metadata:
+      labels:
+        app: chaos-target
+    spec:
+      containers:
+        - name: pause
+          image: registry.k8s.io/pause:3.9
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
+---
+# PodChaos experiment: kill one chaos-target pod, verify it recovers
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: podchaos-test
+  namespace: chaos-testing
+spec:
+  action: pod-failure
+  mode: one
+  selector:
+    namespaces:
+      - chaos-testing
+    labelSelectors:
+      app: chaos-target
+  duration: "30s"
