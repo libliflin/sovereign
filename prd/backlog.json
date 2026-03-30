@@ -33,7 +33,7 @@
       },
       "returnedFromSprint": "prd/increment-25-pending-stub.json",
       "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file",
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "CEREMONY-007",
@@ -66,7 +66,7 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "CEREMONY-006",
@@ -95,7 +95,7 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull. E15 targetIncrement was updated to 28 in that sprint."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull. E15 targetIncrement was updated to 28 in that sprint."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -225,7 +225,8 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      }
+      },
+      "status": "active"
     },
     {
       "id": "KIND-001",
@@ -854,7 +855,7 @@
         "timeBound": 5,
         "notes": "Relevant score 4: legacy vocabulary cleanup supports platform health but does not advance feature delivery."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "CEREMONY-004",
@@ -885,7 +886,7 @@
         "timeBound": 5,
         "notes": "Relevant score 4: data model cleanup supports delivery hygiene but does not advance feature delivery."
       },
-      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale \u2014 do not re-pull."
     },
     {
       "id": "CEREMONY-005",
@@ -1333,7 +1334,8 @@
         "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
       },
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
-      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'"
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'",
+      "status": "active"
     },
     {
       "id": "TEST-006",
@@ -1625,7 +1627,8 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "UNBLOCKED: dependency DEVEX-007a was completed in sprint 28 (passes:true, reviewed:true in prd/increment-28-pending-stub.json). Pulled into sprint 30."
+      "readinessNote": "UNBLOCKED: dependency DEVEX-007a was completed in sprint 28 (passes:true, reviewed:true in prd/increment-28-pending-stub.json). Pulled into sprint 30.",
+      "status": "active"
     },
     {
       "id": "QUALITY-006",
@@ -1940,7 +1943,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs are static-analysis-only (grep + py_compile), no live cluster needed."
-      }
+      },
+      "status": "active"
     },
     {
       "id": "QUALITY-005r",
