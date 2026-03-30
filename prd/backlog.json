@@ -2368,6 +2368,32 @@
         "helm"
       ],
       "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
+    },
+    {
+      "id": "KAIZEN-004",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 3,
+      "points": 1,
+      "branchName": "feature/kaizen-004-phase-field-cleanup",
+      "title": "Remove legacy `phase` field from 8 backlog stories added after KAIZEN-006",
+      "description": "KAIZEN-006 removed the `phase` field from all backlog stories, but 8 stories added after that run still carry `phase`: DEVEX-012, DEVEX-013, QUALITY-008, QUALITY-009, TEST-009, TEST-010, HA-009, HA-010. Remove the `phase` field from each. The field is redundant with `epicId` (which implies targetIncrement) and its presence is a constitutional violation flagged by the coherence audit.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\" exits 0 and prints PASS"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\"",
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "reviewNotes": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Trivial field removal with binary verification. One-liner AC."
+      }
     }
   ]
 }
