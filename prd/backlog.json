@@ -4,7 +4,7 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
-      "id": "KAIZEN-013",
+      "id": "CEREMONY-009",
       "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
       "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
       "acceptanceCriteria": [
@@ -35,7 +35,7 @@
       "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
     },
     {
-      "id": "KAIZEN-010r",
+      "id": "CEREMONY-007",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
       "acceptanceCriteria": [
@@ -67,8 +67,8 @@
       }
     },
     {
-      "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from 22 (complete) to 28 (active increment)",
+      "id": "CEREMONY-006",
+      "title": "Update E15 targetIncrement from 22 (complete) to 28 (active increment)",
       "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: 22 which is a completed increment. Update E15.targetIncrement in epics.json to 28 (the active increment) so the planning ceremony correctly associates HA validation stories with the active delivery stream.",
       "acceptanceCriteria": [
         "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] == 28, f'wrong targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement is 28')\" exits 0 and prints OK",
@@ -209,7 +209,8 @@
       "points": 2,
       "testPlan": "ls platform/charts/; ls cluster/kind/charts/; [ -z \"$(ls charts/ 2>/dev/null)\" ] && echo 'root charts/ empty'; show all output verbatim.",
       "dependencies": [
-        "RESTRUCTURE-001b"
+        "RESTRUCTURE-001b-1",
+        "RESTRUCTURE-001b-2"
       ],
       "reviewed": false,
       "reviewNotes": [],
@@ -222,8 +223,7 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": ""
-      },
-      "readinessNote": "BLOCKED: dependency listed as \"RESTRUCTURE-001b\" which does not exist as a story ID (it was split into RESTRUCTURE-001b-1 and RESTRUCTURE-001b-2, both now complete). Update the dependencies field to [] (predecessors are done) before pulling into a sprint."
+      }
     },
     {
       "id": "KIND-001",
@@ -450,8 +450,8 @@
       "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-001",
-      "title": "Kaizen: Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
+      "id": "CONTRACT-001",
+      "title": "Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
       "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants \u2014 there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
       "epicId": "E2",
       "themeId": "T1",
@@ -474,8 +474,8 @@
       "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-002",
-      "title": "Kaizen: Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
+      "id": "DEVEX-011",
+      "title": "Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
       "description": "The monorepo restructure (increment 17) moved kind setup from kind/setup.sh to cluster/kind/bootstrap.sh and charts from charts/ to platform/charts/. Any documentation referencing old paths gives developers incorrect instructions. Scan docs/ and README.md for stale references and update them.",
       "epicId": "E11",
       "themeId": "T3",
@@ -498,8 +498,8 @@
       "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-003",
-      "title": "Kaizen: Fix attempts field \u2014 initialize to 0, increment only on review re-open",
+      "id": "CEREMONY-001",
+      "title": "Fix attempts field \u2014 initialize to 0, increment only on review re-open",
       "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
       "epicId": "E1",
       "themeId": "T3",
@@ -521,8 +521,8 @@
       "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Review ceremony in next sprint can accept it immediately."
     },
     {
-      "id": "KAIZEN-004r",
-      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "id": "CEREMONY-002",
+      "title": "Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
       "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
       "epicId": "E1",
       "themeId": "T3",
@@ -823,8 +823,8 @@
       "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-005",
-      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "id": "CEREMONY-003",
+      "title": "Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
       "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
       "themeId": "T3",
@@ -853,8 +853,8 @@
       }
     },
     {
-      "id": "KAIZEN-006",
-      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "id": "CEREMONY-004",
+      "title": "Remove legacy 'phase' field from backlog stories",
       "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
       "themeId": "T3",
@@ -882,7 +882,7 @@
       }
     },
     {
-      "id": "KAIZEN-007r",
+      "id": "CEREMONY-005",
       "title": "Plan ceremony: always queue a pending increment stub when creating an active sprint",
       "description": "GGE G5 fires every sprint because the plan ceremony creates an active increment but never queues a follow-on pending increment. The fix: at the end of the plan ceremony, if no increment has status='pending' in manifest.json, automatically append a minimal pending increment stub (id, name, description, status='pending', dependsOn current). This ensures GGE G5 never fires again and the planning pipeline is always primed.",
       "acceptanceCriteria": [
@@ -1689,8 +1689,8 @@
       "readinessNote": "BLOCKED: dependency QUALITY-002 has passes=false. Resolve that story first."
     },
     {
-      "id": "KAIZEN-012",
-      "title": "Kaizen: Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "id": "CEREMONY-008",
+      "title": "Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
       "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart \u2014 it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",
@@ -1876,7 +1876,7 @@
       }
     },
     {
-      "id": "KAIZEN-013r",
+      "id": "CEREMONY-010",
       "title": "Verify KAIZEN-013 implementation: confirm retro.md first-pass formula is correct",
       "description": "KAIZEN-013 was returned from sprint 25 because AC1 checked ceremonies.py but the implementation lives in scripts/ralph/ceremonies/retro.md. The formula at retro.md:206 already uses attempts == 1 (correct). This story re-verifies the implementation with the corrected AC that checks the right file, and verifies the KAIZEN-009a-e stale backlog cleanup was also done.",
       "acceptanceCriteria": [

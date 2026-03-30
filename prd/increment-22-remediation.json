@@ -35,8 +35,8 @@
       "reviewNotes": []
     },
     {
-      "id": "KAIZEN-004r",
-      "title": "Kaizen: Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
+      "id": "CEREMONY-002",
+      "title": "Pre-retro guard \u2014 auto-run review before retro if passes:true stories exist",
       "description": "ceremonies.sh currently fires the retro ceremony immediately when invoked, even if there are stories with passes:true, reviewed:false. This causes advance.py to error with 'limbo stories' and requires manual retro intervention. Fix: add a pre-retro check in ceremonies.sh that runs the review ceremony first if any sprint story has passes:true and reviewed:false.",
       "epicId": "E1",
       "themeId": "T3",
@@ -71,7 +71,7 @@
       "returnedToBacklog": true
     },
     {
-      "id": "KAIZEN-007r",
+      "id": "CEREMONY-005",
       "title": "Plan ceremony: always queue a pending increment stub when creating an active sprint",
       "description": "GGE G5 fires every sprint because the plan ceremony creates an active increment but never queues a follow-on pending increment. The fix: at the end of the plan ceremony, if no increment has status='pending' in manifest.json, automatically append a minimal pending increment stub (id, name, description, status='pending', dependsOn current). This ensures GGE G5 never fires again and the planning pipeline is always primed.",
       "acceptanceCriteria": [
@@ -132,8 +132,8 @@
       "phase": 22
     },
     {
-      "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
+      "id": "CEREMONY-006",
+      "title": "Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
       "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
       "acceptanceCriteria": [
         "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
@@ -161,8 +161,8 @@
       }
     },
     {
-      "id": "KAIZEN-005",
-      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "id": "CEREMONY-003",
+      "title": "Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
       "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
       "themeId": "T3",
@@ -192,8 +192,8 @@
       }
     },
     {
-      "id": "KAIZEN-006",
-      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "id": "CEREMONY-004",
+      "title": "Remove legacy 'phase' field from backlog stories",
       "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
       "themeId": "T3",

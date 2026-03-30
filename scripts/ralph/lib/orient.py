@@ -787,17 +787,20 @@ def assess(repo_root: Path) -> Assessment:
         return all(v > 0 for v in scores) and min(scores) >= 3
 
     ready_stories = [s for s in all_stories if is_sprint_ready(s)]
+    # Product depth excludes E1 (ceremony infrastructure) stories — those never count
+    # as forward platform work. Depth must reflect real product pipeline health.
+    product_ready = [s for s in ready_stories if s.get("epicId") != "E1"]
     avg_sprint_size = (
         sum(v.get("storiesAccepted", DEFAULT_SPRINT_SIZE) for v in velocity[-3:]) / min(len(velocity), 3)
         if velocity else DEFAULT_SPRINT_SIZE
     )
-    depth = len(ready_stories) / avg_sprint_size if avg_sprint_size > 0 else 0.0
+    depth = len(product_ready) / avg_sprint_size if avg_sprint_size > 0 else 0.0
     depth_status = "OK" if depth >= BACKLOG_DEPTH_MIN else ("WARN" if depth >= 1.0 else "FAIL")
     kpis.append(KPI(
         "Backlog depth",
         f"{depth:.1f} sprints",
         depth_status,
-        f"{len(ready_stories)} ready stories / {avg_sprint_size:.0f} avg sprint size"
+        f"{len(product_ready)} product-ready stories ({len(ready_stories) - len(product_ready)} E1 excluded) / {avg_sprint_size:.0f} avg sprint size"
     ))
 
     # ── KPI 8: SMART readiness ──────────────────────────────────────────────
@@ -839,18 +842,32 @@ def assess(repo_root: Path) -> Assessment:
     all_increments_done = not remaining
 
     if depth < BACKLOG_DEPTH_MIN:
-        # PI Planning trigger: when all planned increments are delivered and the
-        # backlog is thin, grooming alone won't help — we need to rethink what
-        # we're building next. Escalate to constitution-review (top of the funnel).
+        # PI Planning trigger: all increments done → top of funnel.
         if all_increments_done:
             return Assessment(
                 state=PlatformState.THIN_BACKLOG,
                 action=NextAction.THEME_REVIEW,
                 reason=(
-                    f"All planned increments delivered and backlog depth is {depth:.1f} "
-                    f"({len(ready_stories)} ready stories). "
+                    f"All planned increments delivered and product backlog depth is {depth:.1f} "
+                    f"({len(product_ready)} product-ready stories). "
                     "PI planning needed — run constitution-review → epic-breakdown → groom "
                     "to define the next wave of work before planning."
+                ),
+                kpis=kpis,
+                shi=shi,
+                niti=niti,
+                agent_context=agent_context,
+            )
+        # No product stories ready at all → epic-breakdown generates new ones.
+        # Groom can only polish stories that exist; it cannot create them.
+        if not product_ready:
+            return Assessment(
+                state=PlatformState.THIN_BACKLOG,
+                action=NextAction.EPIC_BREAKDOWN,
+                reason=(
+                    f"Product backlog depth is {depth:.1f} — no product-ready stories available "
+                    f"({len(ready_stories) - len(product_ready)} E1 ceremony stories excluded). "
+                    "Run epic-breakdown to generate sprint-sized product stories before planning."
                 ),
                 kpis=kpis,
                 shi=shi,
@@ -861,8 +878,8 @@ def assess(repo_root: Path) -> Assessment:
             state=PlatformState.THIN_BACKLOG,
             action=NextAction.BACKLOG_GROOM,
             reason=(
-                f"Backlog depth {depth:.1f} is below {BACKLOG_DEPTH_MIN} sprint threshold. "
-                f"Only {len(ready_stories)} sprint-ready stories available. "
+                f"Product backlog depth {depth:.1f} is below {BACKLOG_DEPTH_MIN} sprint threshold. "
+                f"Only {len(product_ready)} product-ready stories available. "
                 "Run backlog-groom to score and refine stories before planning."
             ),
             kpis=kpis,
@@ -876,7 +893,7 @@ def assess(repo_root: Path) -> Assessment:
     # there is nothing left to do. Check whether the backlog has forward work
     # before declaring done.
     if all_increments_done:
-        kpis.append(KPI("Platform", "kaizen", "OK", "all planned increments delivered — continuous improvement"))
+        kpis.append(KPI("Platform", "continuous improvement", "OK", "all planned increments delivered — product pipeline drives what comes next"))
 
         # PI Planning trigger: backlog is thin — the machine needs to ask
         # "what are we building next?" before it can call itself done.
@@ -896,15 +913,15 @@ def assess(repo_root: Path) -> Assessment:
                 agent_context=agent_context,
             )
 
-        # Backlog has forward work but no planned increment to put it in —
+        # Backlog has forward product work but no planned increment to put it in —
         # plan a new increment.
-        if ready_stories:
+        if product_ready:
             return Assessment(
                 state=PlatformState.SPRINT_READY,
                 action=NextAction.PLAN,
                 reason=(
                     f"All planned increments delivered. "
-                    f"{len(ready_stories)} sprint-ready stories available "
+                    f"{len(product_ready)} product-ready stories available "
                     f"({depth:.1f} sprints). Plan a new increment to continue."
                 ),
                 kpis=kpis,
@@ -929,11 +946,28 @@ def assess(repo_root: Path) -> Assessment:
             agent_context=agent_context,
         )
 
+    # If no product stories are ready (only E1 ceremony stories), don't plan —
+    # kick to epic-breakdown to generate real product work.
+    if not product_ready:
+        return Assessment(
+            state=PlatformState.THIN_BACKLOG,
+            action=NextAction.EPIC_BREAKDOWN,
+            reason=(
+                f"No product-ready stories available — only {len(ready_stories) - len(product_ready)} "
+                f"E1 ceremony stories are ready. Run epic-breakdown to generate product stories "
+                "before planning. The delivery machine should not fill sprints with ceremony work."
+            ),
+            kpis=kpis,
+            shi=shi,
+            niti=niti,
+            agent_context=agent_context,
+        )
+
     return Assessment(
         state=PlatformState.SPRINT_READY,
         action=NextAction.PLAN,
         reason=(
-            f"All KPIs green. {len(ready_stories)} sprint-ready stories available "
+            f"All KPIs green. {len(product_ready)} product-ready stories available "
             f"({depth:.1f} sprints deep). Ready to plan next sprint."
         ),
         kpis=kpis,

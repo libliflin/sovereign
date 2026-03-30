@@ -107,12 +107,24 @@ Evaluate:
 For each distinct root cause identified in Step 2 and Step 2b, generate one or more new
 backlog stories that **fix the system**, not just the symptom.
 
-These go into `prd/backlog.json`. Each new story needs:
-- A new unique ID (find the current max ID, increment from there — use suffix `r` for
-  remediation, e.g. `028r-smart-achievable-gate`)
+These go into `prd/backlog.json`. Each new story needs a **proper home** — the right epic
+and a name that reflects where the work actually lives:
+
+**Assign `epicId` by what is broken, not by who noticed it:**
+- Platform component broken → the epic that owns that component (E2, E11, etc.)
+- Ceremony logic broken → E1 (Sprint Ceremony Infrastructure)
+- Platform quality/observability gap → the relevant theme epic
+
+**Assign the story ID using that epic's naming convention:**
+- Read `prd/epics.json` to find existing story IDs for the target epic
+- Use the same prefix pattern: DEVEX-NNN for E11, CEREMONY-NNN for E1, etc.
+- Add suffix `r` if this is a remediation of a specific failed story (e.g., `CEREMONY-009r`)
+- **Never use a KAIZEN prefix** — KAIZEN is retired. Every story has a real home.
+
+**Fields required:**
+- `id` — using the epic's naming convention (see above)
+- `epicId`, `themeId` — from the target epic, not the failed story
 - `title`, `description`, `acceptanceCriteria` (specific and verifiable)
-- `epicId` and `themeId` inherited from the incomplete story
-- `phase` same as current phase or one earlier if it's a process fix
 - `priority` 1 (remediation stories are high priority — fix the system first)
 - `points` ≤ 3
 - `passes`: false

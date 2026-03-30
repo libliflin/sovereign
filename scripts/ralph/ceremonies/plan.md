@@ -246,16 +246,25 @@ starting point, but leverage matters more than priority. A story that unblocks 1
 downstream stories is more valuable than a story that only completes itself, even
 if its priority number is higher.
 
+**E1 ceremony story cap:** Stories with `epicId == "E1"` improve the delivery machine,
+not the platform. They have real value but must never crowd out product work. Apply this
+hard rule:
+
+1. Select all product stories (`epicId != "E1"`) first, up to WIP ceiling.
+2. Only after product stories are selected, fill remaining capacity with E1 stories — **maximum 1 E1 story per sprint**, regardless of remaining capacity.
+3. If there are no ready product stories at all (everything blocked), up to 3 E1 stories are allowed — but note this explicitly in the sprint summary as a signal to run groom and unblock the product pipeline.
+
 Selection order:
 1. **Priority-0 stories first** — pulled regardless of phase or WIP ceiling.
-2. **Highest-leverage stories** — from the shi analysis, which story or chain
+2. **Highest-leverage product stories** — from the shi analysis, which story or chain
    unblocks the most downstream work? Pull those next.
-3. **Remaining ready stories by priority** — fill remaining capacity.
+3. **Remaining ready product stories by priority** — fill remaining product capacity.
+4. **E1 ceremony stories (max 1)** — fill any remaining capacity, highest priority first.
 
 Add stories until the next story would exceed `wip_ceiling` total points.
 - If a story would push the total over the ceiling, skip it and continue checking remaining stories
   (a 2-point story may fit even if a 5-point story didn't).
-- Record why each skipped story was not included (over WIP / not ready / oversized / lower leverage).
+- Record why each skipped story was not included (over WIP / not ready / oversized / lower leverage / E1 cap).
 
 ### Step 6 — Write the increment sprint file
 

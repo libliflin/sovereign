@@ -79,8 +79,8 @@
       }
     },
     {
-      "id": "KAIZEN-001",
-      "title": "Kaizen: Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
+      "id": "CONTRACT-001",
+      "title": "Expand contract validator test corpus \u2014 cover imageRegistry and storageClass invariants",
       "description": "contract/validate.py currently has only 2 test fixtures: valid.yaml and invalid-egress-not-blocked.yaml. The validator likely accepts contracts missing imageRegistry or storageClass invariants \u2014 there are no test cases to prove otherwise. Add at least 2 more invalid fixtures and verify the validator catches them.",
       "epicId": "E2",
       "themeId": "T1",
@@ -110,8 +110,8 @@
       }
     },
     {
-      "id": "KAIZEN-002",
-      "title": "Kaizen: Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
+      "id": "DEVEX-011",
+      "title": "Fix docs developer on-ramp \u2014 update paths from bootstrap/ and kind/setup.sh to new monorepo structure",
       "description": "The monorepo restructure (increment 17) moved kind setup from kind/setup.sh to cluster/kind/bootstrap.sh and charts from charts/ to platform/charts/. Any documentation referencing old paths gives developers incorrect instructions. Scan docs/ and README.md for stale references and update them.",
       "epicId": "E11",
       "themeId": "T3",

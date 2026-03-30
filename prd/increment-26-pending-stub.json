@@ -6,7 +6,7 @@
   "capacity": 12,
   "stories": [
     {
-      "id": "KAIZEN-013r",
+      "id": "CEREMONY-010",
       "title": "Verify KAIZEN-013 implementation: confirm retro.md first-pass formula is correct",
       "description": "KAIZEN-013 was returned from sprint 25 because AC1 checked ceremonies.py but the implementation lives in scripts/ralph/ceremonies/retro.md. The formula at retro.md:206 already uses attempts == 1 (correct). This story re-verifies the implementation with the corrected AC that checks the right file, and verifies the KAIZEN-009a-e stale backlog cleanup was also done.",
       "acceptanceCriteria": [
@@ -37,7 +37,7 @@
       }
     },
     {
-      "id": "KAIZEN-010r",
+      "id": "CEREMONY-007",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
       "acceptanceCriteria": [
@@ -69,7 +69,7 @@
       }
     },
     {
-      "id": "KAIZEN-013",
+      "id": "CEREMONY-009",
       "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
       "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
       "acceptanceCriteria": [
@@ -100,8 +100,8 @@
       "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
     },
     {
-      "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
+      "id": "CEREMONY-006",
+      "title": "Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
       "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
       "acceptanceCriteria": [
         "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
@@ -128,8 +128,8 @@
       }
     },
     {
-      "id": "KAIZEN-005",
-      "title": "Kaizen: Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
+      "id": "CEREMONY-003",
+      "title": "Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
       "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
       "themeId": "T3",
@@ -158,8 +158,8 @@
       }
     },
     {
-      "id": "KAIZEN-006",
-      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "id": "CEREMONY-004",
+      "title": "Remove legacy 'phase' field from backlog stories",
       "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
       "themeId": "T3",

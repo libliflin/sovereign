@@ -40,8 +40,8 @@
       "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
     },
     {
-      "id": "KAIZEN-012",
-      "title": "Kaizen: Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "id": "CEREMONY-008",
+      "title": "Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
       "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart \u2014 it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",

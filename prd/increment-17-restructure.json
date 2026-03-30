@@ -97,8 +97,8 @@
       }
     },
     {
-      "id": "KAIZEN-003",
-      "title": "Kaizen: Fix attempts field \u2014 initialize to 0, increment only on review re-open",
+      "id": "CEREMONY-001",
+      "title": "Fix attempts field \u2014 initialize to 0, increment only on review re-open",
       "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
       "acceptanceCriteria": [
         "prd/schema/story.schema.json has attempts with default 0",
@@ -127,7 +127,7 @@
         "notes": "Relevant score 4: this is a process kaizen (attempts-field accuracy), not directly required by the restructure sprint goal (contract/v1/ + cluster/kind/ + platform/ skeleton). Could be deferred to a dedicated kaizen increment without blocking the restructure work."
       },
       "returnedToBacklog": true,
-      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Return to backlog with passes: true preserved — review ceremony in next sprint can accept it immediately."
+      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Return to backlog with passes: true preserved \u2014 review ceremony in next sprint can accept it immediately."
     }
   ]
 }
