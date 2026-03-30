@@ -49,6 +49,16 @@
         "type": "gate_passing",
         "command": "bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 || (echo \"G7 FAIL: valid.yaml rejected by validator\" && exit 1); python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && (echo \"G7 FAIL: invalid contract accepted — autarky invariant not enforced\" && exit 1); echo \"G7 PASS: contract validator enforces sovereignty invariants\"'"
       }
+    },
+    {
+      "id": "G8",
+      "title": "Istio PeerAuthentication enforces STRICT mTLS by default",
+      "themeId": "T2",
+      "rationale": "T2 Zero Trust requires mTLS everywhere — all service-to-service traffic must be authenticated and encrypted. The Istio chart's PeerAuthentication template parameterizes the mode through values.yaml rather than hardcoding STRICT. This makes the invariant silently degradable: a developer debugging connectivity sets mode to PERMISSIVE and forgets to revert. No other gate catches this. T2 has 0 delivered stories in the project's history — this is the first machine-checkable T2 invariant and the floor below which the zero-trust promise cannot be maintained. Current fragility: the values.yaml contains `mode: STRICT` today, but there is no guard preventing drift.",
+      "indicator": {
+        "type": "gate_passing",
+        "command": "bash -c 'grep -q \"mode: STRICT\" platform/charts/istio/values.yaml && echo \"G8 PASS: Istio PeerAuthentication defaults to STRICT mTLS\" || (echo \"G8 FAIL: Istio mTLS mode is not STRICT — zero-trust invariant compromised\" && exit 1)'"
+      }
     }
   ],
   "_retired": [
