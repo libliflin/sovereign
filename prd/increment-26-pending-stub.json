@@ -227,13 +227,13 @@
         "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
         "helm lint platform/charts/code-server/ exits 0"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
       "dependencies": [],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "priority": 4,
       "smart": {
         "specific": 5,
