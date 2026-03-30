@@ -197,7 +197,7 @@
         "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\" exits 0 and prints PASS"
       ],
       "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\"",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "attempts": 0,
       "reviewNotes": [],
