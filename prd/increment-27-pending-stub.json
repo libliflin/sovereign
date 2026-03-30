@@ -25,7 +25,7 @@
       "priority": 2,
       "points": 2,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "returnedFromSprint": "prd/increment-20-kind-integration.json",
@@ -61,10 +61,12 @@
       "dependencies": [
         "029"
       ],
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 1,
+      "reviewNotes": [
+        "[Review 2] AC failed: 'helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1'. Command: helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget. Output: 2. The chart renders 2 PodDisruptionBudget resources (reportportal-api-pdb and reportportal-ui-pdb). The AC as written expects exactly 1; actual count is 2. Either fix the AC to say 'returns at least 1' or verify the implementation only emits one PDB as intended."
+      ],
+      "attempts": 2,
       "smart": {
         "specific": 4,
         "measurable": 3,
@@ -84,7 +86,7 @@
       "priority": 12,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 1,
       "dependencies": [
         "RESTRUCTURE-001c"
@@ -115,7 +117,7 @@
       "priority": 13,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 1,
       "dependencies": [
         "RESTRUCTURE-001c"
@@ -136,5 +138,7 @@
         "notes": "Specific score 4: 'scan docs/ and README.md' is open-ended \u2014 only 2 specific stale patterns are named; other stale paths are not enumerated. Measurable score 4: markdownlint assumed installed; no check if additional docs files beyond quickstart.md reference old paths. Relevant score 4: useful for T3 developer on-ramp but not on the critical path to the sprint goal (kind bootstrap, HA hardening, contract validator). Time-bound score 4: 'scan and update' framing could expand scope if more files contain stale references beyond the two patterns checked."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
