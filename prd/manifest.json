@@ -406,28 +406,5 @@
       "storiesIncomplete": 0,
       "reviewPassRate": 100.0
     }
-  ],
-  "activeSprint": "prd/increment-34-pending-stub.json",
-  "currentIncrement": 34,
-  "sprintHistory": [
-    {
-      "increment": 34,
-      "name": "pending-stub",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsCompleted": 11,
-      "storiesTotal": 6,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 34,
-      "pointsCompleted": 11,
-      "storiesAccepted": 6,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-30T00:00:00+00:00"
-    }
   ]
 }
