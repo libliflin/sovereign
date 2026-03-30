@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "selenium-grid.fullname" . }}-hub
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "selenium-grid.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hub
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "selenium-grid.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: hub
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "selenium-grid.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: hub
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "selenium-grid.selectorLabels" . | nindent 20 }}
+                    app.kubernetes.io/component: hub
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: selenium-hub
+          image: {{ include "selenium-grid.hubImage" . }}
+          imagePullPolicy: {{ .Values.hub.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 4444
+              protocol: TCP
+            - name: publish
+              containerPort: 4442
+              protocol: TCP
+            - name: subscribe
+              containerPort: 4443
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /wd/hub/status
+              port: 4444
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /wd/hub/status
+              port: 4444
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.hub.resources | nindent 12 }}
