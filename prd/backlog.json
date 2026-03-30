@@ -1018,7 +1018,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of TEST-004 (Strategy D). Correct path platform/charts/chaos-mesh/ specified. Verb is 'enhance/update' not 'create'. All 4 ACs are exact shell commands. Scope: 1 chart, \u22643 files modified (values.yaml, templates/pdb.yaml, templates/deployment.yaml)."
-      }
+      },
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 35: passes:true, reviewed:true in prd/increment-35-pending-stub.json. Do not re-pull."
     },
     {
       "id": "TEST-004b",
@@ -1058,7 +1060,7 @@
         "timeBound": 4,
         "notes": "Runtime-verifiable split of TEST-004 (Strategy D). Correct path platform/charts/chaos-mesh/ specified. ACs use exact kubectl/helm commands. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted in sprints 31 and 32). TimeBound score 4: 120s window for phase=Finished is empirical but reasonable."
       },
-      "readinessNote": "BLOCKED: dependencies KIND-001a and KIND-001b have passes:false (stale backlog entries \u2014 confirmed done in sprints 31 and 32 respectively); dependency TEST-004a also has passes:false. Resolve TEST-004a first; KIND-001a/KIND-001b stale entries do not block once TEST-004a passes."
+      "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-004a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm)."
     },
     {
       "id": "TEST-005a",
@@ -1088,7 +1090,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. Verb is 'enhance/update' not 'create'. All 4 ACs are exact shell commands. Scope: 1 chart, \u22643 files modified."
-      }
+      },
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 35: passes:true, reviewed:true in prd/increment-35-pending-stub.json. Do not re-pull."
     },
     {
       "id": "TEST-005b",
@@ -1128,7 +1132,7 @@
         "timeBound": 5,
         "notes": "Runtime-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. AC3 (curl returns 201) and AC4 (curl returns 'ok') verify actual runtime admin API behavior. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted). TimeBound score 5: all ACs have deterministic expected outputs."
       },
-      "readinessNote": "BLOCKED: dependencies KIND-001a and KIND-001b have passes:false (stale backlog entries \u2014 confirmed done in sprints 31 and 32 respectively); dependency TEST-005a also has passes:false. Resolve TEST-005a first; KIND-001a/KIND-001b stale entries do not block once TEST-005a passes."
+      "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-005a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm)."
     },
     {
       "id": "HA-001",
@@ -1436,7 +1440,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Single chart, 1 new file (pdb.yaml), all ACs use binary exit-code commands."
-      }
+      },
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 35: passes:true, reviewed:true in prd/increment-35-pending-stub.json. Do not re-pull."
     },
     {
       "id": "TEST-006b",
@@ -1467,7 +1473,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Two charts explicitly named, 2 new files (pdb.yaml each), all ACs use binary exit-code commands."
-      }
+      },
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 35: passes:true, reviewed:true in prd/increment-35-pending-stub.json. Do not re-pull."
     },
     {
       "id": "TEST-007",
@@ -1597,7 +1605,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
-      }
+      },
+      "readinessNote": "UNBLOCKED: dependency HA-004 has status:complete (delivered in sprint 32 per increment-32-pending-stub.json). No remaining blocks. READY."
     },
     {
       "id": "HA-005b",
@@ -2560,7 +2569,9 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Both ACs are self-contained one-liners operating only on prd/backlog.json. Verified against current state: 14 stale-complete and 6 stale-blocked entries exist as of increment 33."
-      }
+      },
+      "status": "complete",
+      "readinessNote": "COMPLETED IN SPRINT 35: passes:true, reviewed:true in prd/increment-35-pending-stub.json. Do not re-pull."
     },
     {
       "id": "KAIZEN-016",
