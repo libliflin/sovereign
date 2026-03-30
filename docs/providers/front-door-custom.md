@@ -174,8 +174,8 @@ frontdoor_configure_dns() {
   local CF_ZONE_ID;   CF_ZONE_ID="$(yq '.cloudflare.zoneId' "$CONFIG_FILE")"
 
   # Use the shared Cloudflare DNS helper (or replace with your DNS provider's API)
-  # shellcheck source=bootstrap/providers/cloudflare-dns.sh
-  source "bootstrap/providers/cloudflare-dns.sh"
+  # shellcheck source=cluster/kind/bootstrap.sh
+  source "cluster/cloudflare-dns.sh"
   cf_dns_upsert "*.${DOMAIN}" "A" "$gw_ip" false
   cf_dns_upsert "$DOMAIN"     "A" "$gw_ip" false
 

@@ -136,20 +136,20 @@ git clone https://github.com/libliflin/sovereign
 cd sovereign
 
 # 2. Start Docker Desktop, then:
-./kind/setup.sh              # creates sovereign-test cluster (~4 minutes)
-./kind/setup.sh --status     # verify it's healthy
+./cluster/kind/bootstrap.sh              # creates sovereign-test cluster (~4 minutes)
+./cluster/kind/bootstrap.sh --dry-run    # preview intended actions
 
 # 3. Smoke test a chart
-helm install test-release charts/sealed-secrets/ \
+helm install test-release platform/charts/sealed-secrets/ \
   --namespace sealed-secrets --create-namespace \
   --kube-context kind-sovereign-test --wait
 kubectl --context kind-sovereign-test get pods -n sealed-secrets
 
 # 4. Tear down when done
-./kind/setup.sh --destroy
+kind delete cluster --name sovereign-test
 ```
 
-See [kind/README.md](kind/README.md) for full kind documentation.
+See [cluster/kind/](cluster/kind/) for full kind documentation.
 
 ### Option B — Live provisioning on real VPS
 
@@ -212,20 +212,8 @@ To add or update a provider entry:
 
 1. Add or update `docs/providers/<provider>.md` following the existing template
    (see [docs/providers/hetzner.md](docs/providers/hetzner.md) for reference)
-2. Add or update `bootstrap/providers/<provider>.sh` implementing the provisioning interface
-   (see [bootstrap/providers/hetzner.sh](bootstrap/providers/hetzner.sh) for reference)
-3. Update the table above in this README
-4. Submit a PR — CI will validate the shell script with `shellcheck`
-
-**Provider script interface** (what your script must do):
-
-- Read `bootstrap/config.yaml` (domain, node count, node spec, SSH key)
-- Provision `nodes.count` servers at the requested spec
-- Output `~/.kube/config` pointing at the kube-vip VIP
-- Print estimated monthly cost
-- Print Cloudflare wildcard DNS setup instructions (`*.domain → VIP`)
-
-See `bootstrap/providers/hetzner.sh` for a complete reference implementation.
+2. Update the table above in this README
+3. Submit a PR
 
 Providers people have asked about (PRs welcome):
 

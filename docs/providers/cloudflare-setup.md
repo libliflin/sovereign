@@ -181,10 +181,10 @@ Common causes:
 ### DNS record not created
 
 Check that the API token has **DNS: Edit** permission for the correct zone.
-Run `bootstrap/providers/cloudflare-dns.sh` helpers manually to test:
+Run `cluster/cloudflare-dns.sh` helpers manually to test:
 
 ```bash
-source bootstrap/providers/cloudflare-dns.sh
+source cluster/cloudflare-dns.sh
 export CF_API_TOKEN="your-token"
 export CF_ZONE_ID="your-zone-id"
 cf_zone_lookup example.com   # should print your zone ID
