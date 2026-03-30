@@ -93,7 +93,7 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
       },
-      "readinessNote": "Stale target: the story asserts targetIncrement == 28, but increment 28 is now complete (active increment is 29). Update the AC assertion from == 28 to == 29 (or the current active increment) before pulling into a sprint, otherwise the story will pass with a stale/completed-increment value."
+      "readinessNote": "Stale target: the story asserts targetIncrement == 28, but increments 28 and 29 are now complete (active increment is 30). Update the AC assertion from == 28 to == 30 (or the current active increment) before pulling into a sprint, otherwise the story will pass with a stale completed-increment value."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -278,10 +278,10 @@
       "themeId": "T2",
       "branchName": "feature/kind-egress-policy",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-001",
@@ -301,10 +301,10 @@
       "themeId": "T3",
       "branchName": "feature/platform-cert-manager",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-002",
@@ -324,10 +324,10 @@
       "themeId": "T1",
       "branchName": "feature/platform-sealed-secrets",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-003",
@@ -348,11 +348,11 @@
       "themeId": "T1",
       "branchName": "feature/platform-harbor",
       "dependencies": [
-        "KIND-001",
+        "KIND-001b",
         "PLATFORM-001"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "PLATFORM-004",
@@ -444,10 +444,10 @@
       "themeId": "T4",
       "branchName": "feature/platform-prometheus",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "CONTRACT-001",
@@ -545,7 +545,7 @@
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-22-remediation.json",
       "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist",
-      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work). Pull KAIZEN-010r first (sprint 28) to create the unit test infrastructure; then rewrite AC2 to use python3 scripts/ralph/tests/test_retro_guard.py as the verification mechanism."
+      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work). Implement CEREMONY-007 (retro guard unit test) first; then rewrite AC2 to use 'python3 scripts/ralph/tests/test_retro_guard.py' as the verification mechanism."
     },
     {
       "id": "DEVEX-001",
@@ -810,7 +810,7 @@
       "attempts": 0,
       "branchName": "feature/test-mailhog",
       "dependencies": [
-        "KIND-001"
+        "KIND-001b"
       ],
       "smart": {
         "specific": 0,
@@ -820,7 +820,7 @@
         "timebound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001 has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
     },
     {
       "id": "CEREMONY-003",
@@ -1315,9 +1315,7 @@
         "helm lint platform/charts/reportportal/ exits 0"
       ],
       "testPlan": "helm lint platform/charts/sonarqube/; helm lint platform/charts/reportportal/; helm template platform/charts/sonarqube/ | grep PodDisruptionBudget; helm template platform/charts/reportportal/ | grep PodDisruptionBudget; show all output verbatim.",
-      "dependencies": [
-        "029"
-      ],
+      "dependencies": [],
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
@@ -1331,8 +1329,7 @@
         "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
       },
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
-      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'",
-      "readinessNote": "Dependency '029' not found in backlog \u2014 verify it has passes: true in a completed sprint file before pulling this story into a sprint."
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'"
     },
     {
       "id": "TEST-006",
@@ -1367,7 +1364,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "Dependency '031a' not found in backlog \u2014 verify it has passes: true in a completed sprint file before pulling this story into a sprint."
+      "readinessNote": "BLOCKED: dependency '031a' found in increment-8-testing-and-ha.json with passes=false. Resolve story 031a before pulling this story into a sprint."
     },
     {
       "id": "TEST-007",
@@ -1919,7 +1916,7 @@
         "grep -n 'already.accepted\\|pre.accepted\\|passes.*true.*reviewed.*true\\|review.confirmation' scripts/ralph/ceremonies/plan.md returns at least one match showing the check is present",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "testPlan": "grep -n 'already.accepted\\|review.confirmation' scripts/ralph/ceremonies/plan.md — must return at least one line. python3 -m py_compile scripts/ralph/ceremonies.py — must exit 0. Show all output verbatim.",
+      "testPlan": "grep -n 'already.accepted\\|review.confirmation' scripts/ralph/ceremonies/plan.md \u2014 must return at least one line. python3 -m py_compile scripts/ralph/ceremonies.py \u2014 must exit 0. Show all output verbatim.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/plan-ceremony-capacity-audit",
