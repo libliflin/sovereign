@@ -1,0 +1,6 @@
+apiVersion: v2
+name: rolling-test
+description: Minimal test chart for HA-003 rolling update smoke test
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

@@ -1,0 +1,15 @@
+replicaCount: 2
+
+image:
+  repository: registry.k8s.io/pause
+  tag: "3.9"
+
+rollAnnotation: "initial"
+
+resources:
+  requests:
+    cpu: "10m"
+    memory: "16Mi"
+  limits:
+    cpu: "50m"
+    memory: "32Mi"
