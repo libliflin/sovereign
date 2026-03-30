@@ -26,24 +26,29 @@ cat prd/manifest.json
    Set `NEXT_INCREMENT` to the increment entry whose `id == currentIncrement`.
 4. **If the file DOES exist** (or there is no `activeSprint`): Look in `increments[]` for
    the first entry where `status == "pending"`. Set `NEXT_INCREMENT` to that entry.
-5. **If no pending increments exist**: check `prd/backlog.json` for any stories with
-   `priority == 0` and `passes != true`. If any exist, this is a **remediation sprint** —
-   go to **Step 1b** to create a new increment. If none exist, print
-   "All increments complete and no priority-0 stories. Platform delivered." and exit.
+5. **If no pending increments exist**: check `prd/backlog.json` for stories with `passes != true`:
+   - If any stories have `priority == 0` and `passes != true`: this is a **remediation sprint** —
+     go to **Step 1b** to create a new remediation increment.
+   - Otherwise, if ANY stories have `passes != true` (any priority): go to **Step 1b** to create
+     a new planned increment for this work (use `name: "pending-stub"`, `status: "pending"`).
+   - Only if NO stories have `passes != true` at all: print
+     "All increments complete and no backlog stories remaining. Platform delivered." and exit.
 
 > **CRITICAL**: Never plan for increment N+1 when the sprint file for increment N is missing.
 > The file path is defined in `NEXT_INCREMENT.file`. Write that exact file — do not invent a path.
 
-### Step 1b — Create a remediation increment (only if Step 1 finds no pending increment)
+### Step 1b — Create a new increment (only if Step 1 finds no pending increment)
 
-When orient pulls the Andon cord (broken GGE, priority-0 story) but all planned increments are
-complete, the machine needs a new increment to carry the remediation work. Create it now.
+When all planned increments are complete but backlog work remains, create a new increment now.
+Use remediation for priority-0 stories; use pending-stub for regular backlog work.
 
 ```python
 import json
 
 with open('prd/manifest.json') as f:
     manifest = json.load(f)
+with open('prd/backlog.json') as f:
+    backlog = json.load(f)
 
 increments = manifest.get('increments', [])
 
@@ -51,25 +56,43 @@ increments = manifest.get('increments', [])
 numeric_ids = [i['id'] for i in increments if isinstance(i['id'], int)]
 next_id = max(numeric_ids) + 1 if numeric_ids else 10
 
-# Create the new remediation increment entry
-new_inc = {
-    "id": next_id,
-    "name": "remediation",
-    "description": "Remediation sprint — restores broken GGEs and resolves priority-0 blockers.",
-    "file": f"prd/increment-{next_id}-remediation.json",
-    "status": "active",
-    "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
-    "dependsOn": []
-}
+# Determine increment type based on what's in the backlog
+has_p0 = any(
+    s.get('priority') == 0 and not s.get('passes', False)
+    for s in backlog.get('stories', [])
+)
+
+if has_p0:
+    new_inc = {
+        "id": next_id,
+        "name": "remediation",
+        "description": "Remediation sprint — restores broken GGEs and resolves priority-0 blockers.",
+        "file": f"prd/increment-{next_id}-remediation.json",
+        "status": "active",
+        "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
+        "dependsOn": []
+    }
+    manifest['activeSprint'] = new_inc['file']
+    manifest['currentIncrement'] = next_id
+else:
+    prev_id = increments[-1]['id'] if increments else next_id - 1
+    new_inc = {
+        "id": next_id,
+        "name": "pending-stub",
+        "description": f"Planned increment. Will be populated from backlog by the plan ceremony.",
+        "file": f"prd/increment-{next_id}-pending-stub.json",
+        "status": "pending",
+        "themeGoal": "TBD — planned by plan ceremony from backlog.",
+        "dependsOn": [prev_id] if isinstance(prev_id, int) else []
+    }
+
 increments.append(new_inc)
 manifest['increments'] = increments
-manifest['activeSprint'] = new_inc['file']
-manifest['currentIncrement'] = next_id
 
 with open('prd/manifest.json', 'w') as f:
     json.dump(manifest, f, indent=2)
 
-print(f"Created remediation increment {next_id}: {new_inc['file']}")
+print(f"Created {'remediation' if has_p0 else 'pending-stub'} increment {next_id}: {new_inc['file']}")
 ```
 
 Set `NEXT_INCREMENT` to this new entry. Continue to Step 2.
