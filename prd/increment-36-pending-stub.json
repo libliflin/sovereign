@@ -1,0 +1,214 @@
+{
+  "increment": 36,
+  "name": "pending-stub",
+  "description": "Close review confirmations for E2 restructure chain (RESTRUCTURE-001a, 001b-1) and E15 HA gate (HA-001). Advance E13 autarky compliance (TEST-010) and extend the HA gate to all E13 testing charts (HA-010). Remove legacy phase field from 8 backlog stories (KAIZEN-004).",
+  "sprintGoal": "Close the E2 restructure and HA-001 review debt, complete E13 autarky and HA gate coverage, and eliminate the last legacy phase-field drift in the backlog.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "RESTRUCTURE-001a",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/monorepo",
+      "title": "Contract layer: cluster.schema.yaml, validate.py, test fixtures",
+      "description": "Create contract/v1/cluster.schema.yaml defining the sovereign cluster contract invariants. Create contract/validate.py that validates a cluster config YAML against the schema and exits 1 with an 'AUTARKY VIOLATION' message on constraint failures. Create test fixtures: contract/v1/tests/valid.yaml (passes validation) and contract/v1/tests/invalid-egress-not-blocked.yaml (fails with AUTARKY VIOLATION).",
+      "acceptanceCriteria": [
+        "contract/v1/cluster.schema.yaml exists and is valid YAML: python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" exits 0",
+        "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
+        "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
+      ],
+      "passes": true,
+      "points": 2,
+      "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 1,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": ""
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b-1",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/kind-bootstrap-script",
+      "title": "cluster/kind/bootstrap.sh: kind cluster provisioner with --help, --cluster-name, and kind create cluster invocation",
+      "description": "Create cluster/kind/bootstrap.sh. The script must: (1) support --help flag that prints usage including '--cluster-name NAME (default: sovereign-test)'; (2) accept --cluster-name NAME option defaulting to 'sovereign-test'; (3) print 'Bootstrapping kind cluster: $cluster_name' before running; (4) invoke 'kind create cluster --name \"$cluster_name\"'. Script must pass shellcheck -S error with set -euo pipefail at the top. Also verify that bootstrap/providers/ is not present in the working tree (it should have been removed in RESTRUCTURE-001a).",
+      "acceptanceCriteria": [
+        "cluster/kind/bootstrap.sh exists: ls cluster/kind/bootstrap.sh exits 0",
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "bash -n cluster/kind/bootstrap.sh exits 0",
+        "bash cluster/kind/bootstrap.sh --help 2>&1 | grep -q 'cluster-name' exits 0",
+        "grep -q 'kind create cluster' cluster/kind/bootstrap.sh exits 0 (script contains the kind invocation)",
+        "[ ! -d bootstrap/providers ] exits 0 (bootstrap/providers/ not in working tree)"
+      ],
+      "passes": true,
+      "points": 1,
+      "testPlan": "ls cluster/kind/bootstrap.sh && shellcheck -S error cluster/kind/bootstrap.sh && bash -n cluster/kind/bootstrap.sh && bash cluster/kind/bootstrap.sh --help 2>&1 | grep 'cluster-name' && grep 'kind create cluster' cluster/kind/bootstrap.sh && [ ! -d bootstrap/providers ] && echo 'all checks passed'; show all output verbatim",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 2,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
+    },
+    {
+      "id": "HA-001",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 1,
+      "points": 2,
+      "branchName": "feature/ha-gate-script",
+      "title": "HA gate script validates all platform charts have replicaCount>=2, PDB, and podAntiAffinity",
+      "description": "Create scripts/ha-gate.sh that iterates every chart in charts/ and checks: (1) values.yaml has replicaCount >= 2, (2) helm template output contains PodDisruptionBudget, (3) helm template output contains podAntiAffinity. Script exits non-zero and prints FAIL:<chart>:<reason> for each violation. Print PASS:<chart> for each chart that passes all checks. Script must pass shellcheck -S error and support --dry-run flag that lists charts without running helm. IMPORTANT FIX (from sprint-23 review): The grep pipeline for extracting replicaCount must use '|| true' to prevent set -euo pipefail from killing the script when processing charts that have no top-level replicaCount field (e.g. platform/charts/_globals/). Pattern: replica_count=$(grep -E '^replicaCount:' \"$chart/values.yaml\" || true | awk ...)",
+      "acceptanceCriteria": [
+        "scripts/ha-gate.sh exists and passes shellcheck -S error: shellcheck -S error scripts/ha-gate.sh exits 0",
+        "bash -n scripts/ha-gate.sh exits 0 (syntax check)",
+        "scripts/ha-gate.sh --dry-run prints the list of charts it will check with output containing each chart directory name, then exits 0",
+        "For a chart that has replicaCount: 1 in values.yaml, scripts/ha-gate.sh outputs FAIL:<chart>:replicaCount < 2 and exits non-zero",
+        "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart"
+      ],
+      "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "bash set -euo pipefail kills script on grep no-match for charts without replicaCount field; fix: add || true guard to grep pipeline (see sprint reviewNotes)"
+    },
+    {
+      "id": "TEST-010",
+      "epicId": "E13",
+      "themeId": "T1",
+      "phase": 8,
+      "priority": 3,
+      "points": 1,
+      "branchName": "feature/test-010-autarky-gate",
+      "title": "All E13 Helm charts comply with autarky gate (G6) \u2014 no external registry references",
+      "description": "Audit all templates under platform/charts/selenium-grid/, platform/charts/k6-operator/, platform/charts/chaos-mesh/, platform/charts/mailhog/, and platform/charts/wiremock/ and replace any hard-coded external registry references with {{ .Values.global.imageRegistry }}. All five charts must pass the G6 grep check and helm lint clean.",
+      "acceptanceCriteria": [
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/selenium-grid/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/k6-operator/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/chaos-mesh/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/mailhog/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/wiremock/templates/ returns no matches"
+      ],
+      "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/selenium-grid/templates/ platform/charts/k6-operator/templates/ platform/charts/chaos-mesh/templates/ platform/charts/mailhog/templates/ platform/charts/wiremock/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
+      "dependencies": [
+        "TEST-004a",
+        "TEST-005a",
+        "TEST-006a",
+        "TEST-006b"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ],
+      "readinessNote": "READY: dependencies TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All deps resolved."
+    },
+    {
+      "id": "HA-010",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 28,
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/ha-010-e13-ha-coverage",
+      "title": "HA gate extended to cover E13 testing charts \u2014 Selenium, k6, Chaos Mesh, MailHog, Wiremock",
+      "description": "Update scripts/ha-gate.sh to include the five E13 testing infrastructure chart directories. All five charts must pass: replicaCount >= 2, PodDisruptionBudget present, podAntiAffinity defined. This closes the HA coverage gap for the full platform chart set.",
+      "acceptanceCriteria": [
+        "scripts/ha-gate.sh references platform/charts/selenium-grid/, platform/charts/k6-operator/, platform/charts/chaos-mesh/, platform/charts/mailhog/, platform/charts/wiremock/ in its chart list",
+        "helm template platform/charts/selenium-grid/ | grep PodDisruptionBudget returns a match",
+        "helm template platform/charts/chaos-mesh/ | grep podAntiAffinity returns a match",
+        "helm template platform/charts/k6-operator/ | grep PodDisruptionBudget returns a match",
+        "Running ha-gate.sh --dry-run against all E13 charts exits 0"
+      ],
+      "testPlan": "for chart in platform/charts/selenium-grid platform/charts/k6-operator platform/charts/chaos-mesh platform/charts/mailhog platform/charts/wiremock; do echo \"=== $chart ===\"; helm template $chart | grep -E 'PodDisruptionBudget|podAntiAffinity' | wc -l; done",
+      "dependencies": [
+        "HA-001",
+        "TEST-004a",
+        "TEST-005a",
+        "TEST-006a",
+        "TEST-006b"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ],
+      "readinessNote": "READY: HA-001 passes:true; TEST-004a, TEST-005a, TEST-006a, TEST-006b confirmed accepted (passes:true, reviewed:true) in sprint 35. All dependencies resolved."
+    },
+    {
+      "id": "KAIZEN-004",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 3,
+      "points": 1,
+      "branchName": "feature/kaizen-004-phase-field-cleanup",
+      "title": "Remove legacy `phase` field from 8 backlog stories added after KAIZEN-006",
+      "description": "KAIZEN-006 removed the `phase` field from all backlog stories, but 8 stories added after that run still carry `phase`: DEVEX-012, DEVEX-013, QUALITY-008, QUALITY-009, TEST-009, TEST-010, HA-009, HA-010. Remove the `phase` field from each. The field is redundant with `epicId` (which implies targetIncrement) and its presence is a constitutional violation flagged by the coherence audit.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\" exits 0 and prints PASS"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); bad=[s['id'] for s in b['stories'] if 'phase' in s]; assert bad==[], f'stories with phase field: {bad}'; print('PASS')\"",
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "reviewNotes": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Trivial field removal with binary verification. One-liner AC."
+      }
+    }
+  ]
+}
