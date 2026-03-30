@@ -279,29 +279,40 @@
     {
       "id": 24,
       "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 23 completes.",
+      "description": "HA gate script, monorepo restructure bootstrap scripts, chaos PDB artifact, ArgoCD global.domain injection (all 16 app manifests), code-server workspace PVC.",
       "file": "prd/increment-24-pending-stub.json",
-      "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 23 advances.",
+      "status": "complete",
+      "themeGoal": "T1/T3/T5 \u2014 HA gate script, restructure scripts, chaos PDB artifact, ArgoCD global.domain injection, code-server PVC",
       "dependsOn": [
         23
-      ],
-      "startDate": "2026-03-29T00:00:00+00:00",
-      "pointsTotal": 9,
-      "storiesTotal": 6
+      ]
     },
     {
       "id": 25,
-      "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 24 completes.",
+      "name": "kaizen",
+      "description": "Delivery machine kaizen, ceremony metric fixes, toolchain autarky groundwork, and HA CI gate. Retires legacy vocabulary remnants, fixes the retro first-pass formula, advances E15 targeting, and wires ha-gate.sh into GitHub Actions.",
       "file": "prd/increment-25-pending-stub.json",
-      "status": "pending",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 24 advances.",
+      "status": "active",
+      "themeGoal": "T3/T5 \u2014 delivery machine health (retro formula, E15 targeting, vocabulary cleanup) and HA gate CI enforcement.",
       "dependsOn": [
         24
+      ],
+      "startDate": "2026-03-30T00:27:37.031513+00:00",
+      "pointsTotal": 10,
+      "storiesTotal": 8
+    },
+    {
+      "id": 26,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 25 completes.",
+      "file": "prd/increment-26-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 25 advances.",
+      "dependsOn": [
+        25
       ]
     }
   ],
-  "activeSprint": "prd/increment-24-pending-stub.json",
-  "currentIncrement": 24
+  "activeSprint": "prd/increment-25-pending-stub.json",
+  "currentIncrement": 25
 }

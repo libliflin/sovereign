@@ -61,6 +61,9 @@ grep replicaCount platform/charts/<name>/values.yaml                   # must be
 helm template platform/charts/<name>/ | python3 scripts/check-limits.py  # every container must have requests AND limits
 ```
 
+Convenience: `bash scripts/ha-gate.sh` runs the PDB, podAntiAffinity, and replicaCount checks
+across all charts in one pass. `bash scripts/ha-gate.sh --dry-run` lists charts without running helm.
+
 This applies to upstream wrapper charts too. Setting `affinity` in `values.yaml` is not
 sufficient — verify the rendered output actually contains `podAntiAffinity`. If the upstream
 chart does not propagate it, add a dedicated affinity template that merges the required rule.
@@ -109,6 +112,22 @@ wrapper-level `templates/poddisruptionbudget.yaml` and disable the subchart PDB 
 causes review failure. Validate YAML with `yq e '.'` (not `kubectl apply --dry-run` — ArgoCD CRDs
 are not installed locally).
 
+**ArgoCD global.domain injection**: the correct pattern for injecting the cluster domain into
+ArgoCD-managed Helm charts is `spec.source.helm.parameters`:
+
+```yaml
+spec:
+  source:
+    helm:
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
+```
+
+Do not use `valueFiles` for domain injection — `spec.source.helm.parameters` is the authoritative
+pattern. All 16 targeted app manifests across platform, observability, and security tiers use this
+pattern. Domain-agnostic or non-Helm apps (cilium, rook-ceph, prometheus-stack, etc.) are exempt.
+
 **kubectl dry-run does not work for CRD-backed resources**: `kubectl apply --dry-run=client`
 silently fails with "no matches for kind X" for any custom resource (ArgoCD Application,
 Crossplane XR/XRC, etc.) unless the operator CRDs are pre-installed in the target cluster.
@@ -119,6 +138,12 @@ python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"
 ```
 This is the correct gate for any `.yaml` file that is not a core K8s resource. Core resources
 (Deployment, Service, Ingress, PDB, ConfigMap) can still use `kubectl apply --dry-run=client`.
+
+**Helm template ACs reference resolved values, not raw expressions**: when writing ACs that
+check `helm template` output for `.Values.*`, use the resolved default value or the key name —
+not the raw Go template expression. The template is rendered — `{{ .Values.global.storageClass }}`
+will not appear in output. Grep for the key (e.g., `storageClassName:`) or a known default
+value (e.g., `standard`) instead.
 
 **shellcheck**: all `.sh` files must pass `shellcheck -S error` (matches CI's shellcheck 0.10.0).
 Common fixes:
@@ -329,20 +354,26 @@ phase field removed from backlog stories; KAIZEN-004r pre-retro guard returned a
 layer validator + test fixtures (G7), KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch
 naming normalized, KAIZEN-006 phase field removed from backlog, HA-006 cost-gate.sh, DEVEX-007a
 code-server toolchainInit values, DEVEX-007b code-server toolchain initContainer; HA-001 ha-gate.sh
-returned to backlog — grep pipefail fix documented in reviewNotes)
+returned to backlog — grep pipefail fix documented in reviewNotes),
+24 (pending-stub — 11/11 accepted: HA-001 ha-gate.sh (scripts/ha-gate.sh validates PDB,
+podAntiAffinity, replicaCount across all charts), KAIZEN-012 smart.md chart-iteration pipefail
+guidance, RESTRUCTURE-001b-1 cluster/kind/bootstrap.sh scaffold, RESTRUCTURE-001b-2
+platform/deploy.sh scaffold, HA-008 test/chaos/pdb-validation.yaml + README, KAIZEN-009a through
+KAIZEN-009e global.domain injection in all 16 targeted ArgoCD app manifests, DEVEX-009
+code-server workspace PVC at /home/coder)
 
-Increment active: 23 is complete; advance ceremony will move pointer to increment 24 (pending stub).
-Increment 24 is a placeholder — plan ceremony will populate it with stories from the backlog.
+Increment active: 24 is complete; advance ceremony will move pointer to increment 25 (pending stub).
+Increment 25 is a placeholder — plan ceremony will populate it with stories from the backlog.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
 Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; code-server has
-toolchain initContainer; stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending),
-E12 (code quality — SonarQube + ReportPortal Helm charts and ArgoCD apps exist; GitLab CI integration
-story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA integration testing —
-HA-006 cost-gate.sh done; HA-001 ha-gate.sh pending with grep pipefail fix needed; targetIncrement: 22)
+toolchain initContainer + workspace PVC; stories 027a full Keycloak OIDC/plugin config, 027b, 049
+still pending), E12 (code quality — SonarQube + ReportPortal Helm charts and ArgoCD apps exist;
+GitLab CI integration story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA
+integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; targetIncrement: 22)
 
 ---
 
@@ -370,4 +401,5 @@ HA-006 cost-gate.sh done; HA-001 ha-gate.sh pending with grep pipefail fix neede
 ## Known model inconsistencies
 
 - 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
-- HA-001 (ha-gate.sh) returned to backlog twice: exact fix (`|| true` guard on grep pipeline when field absent) is in `reviewNotes[1]` — apply it before next attempt.
+- KAIZEN-009a through KAIZEN-009e were completed in sprint 24 but still have stale entries in `backlog.json` (`passes: false`); the plan ceremony did not update lifecycle status when pulling them. Sprint file is authoritative. → story KAIZEN-013 will fix the retro formula and plan lifecycle hygiene.
+- Retro ceremony first-pass formula uses `attempts == 0` which never matches accepted stories (all have `attempts >= 1`). Reports 0% first-pass rate even when all stories pass first attempt. → story KAIZEN-013 will fix.

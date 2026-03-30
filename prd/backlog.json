@@ -4,6 +4,35 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
+      "id": "KAIZEN-013",
+      "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
+      "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
+      "acceptanceCriteria": [
+        "grep -n 'attempts' scripts/ralph/ceremonies.py | grep -E '== 0|== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
+        "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; print('stale entries:', stale)\" prints an empty list (entries removed or marked complete)",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies.py to locate the first-pass formula; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-first-pass-formula",
+      "priority": 2,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
+      }
+    },
+    {
       "id": "KAIZEN-010r",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
@@ -26,163 +55,6 @@
       "dependencies": [],
       "returnedFromSprint": "prd/increment-22-remediation.json",
       "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
-    },
-    {
-      "id": "KAIZEN-009a",
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-platform-tier-1",
-      "title": "ArgoCD global.domain injection: cert-manager, crossplane, sealed-secrets, vault, keycloak",
-      "description": "Add helm.parameters entry for global.domain to 5 ArgoCD Application manifests: platform/argocd-apps/platform/cert-manager-app.yaml, crossplane-app.yaml, sealed-secrets-app.yaml, vault-app.yaml, keycloak-app.yaml. For each file, add the following block under spec.source.helm (alongside the existing valueFiles entry):\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev\nThis ensures all 5 charts receive the cluster domain at sync time regardless of their values.yaml default.",
-      "acceptanceCriteria": [
-        "grep -q 'global.domain' platform/argocd-apps/platform/cert-manager-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/platform/crossplane-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/platform/sealed-secrets-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/platform/vault-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/platform/keycloak-app.yaml exits 0",
-        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" exits 0 (all YAML valid)"
-      ],
-      "passes": false,
-      "points": 2,
-      "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
-      "dependencies": [],
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "priority": 12,
-      "smart": {
-        "specific": 4,
-        "measurable": 5,
-        "achievable": 4,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: exact files named, exact YAML snippet specified, fix approach is helm.parameters (not valueFiles). Achievable score 4: 5 files x ~4 lines each, near top of budget but within one iteration."
-      }
-    },
-    {
-      "id": "KAIZEN-009b",
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-platform-tier-2",
-      "title": "ArgoCD global.domain injection: gitlab, harbor, argocd-image-updater",
-      "description": "Add helm.parameters entry for global.domain to 3 ArgoCD Application manifests: platform/argocd-apps/platform/gitlab-app.yaml, harbor-app.yaml, argocd-image-updater-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
-      "acceptanceCriteria": [
-        "grep -q 'global.domain' platform/argocd-apps/platform/gitlab-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/platform/harbor-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/platform/argocd-image-updater-app.yaml exits 0",
-        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" exits 0 (all YAML valid)"
-      ],
-      "passes": false,
-      "points": 2,
-      "testPlan": "for f in platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
-      "dependencies": [],
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "priority": 13,
-      "smart": {
-        "specific": 4,
-        "measurable": 5,
-        "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: exact files named, exact YAML snippet specified."
-      }
-    },
-    {
-      "id": "KAIZEN-009c",
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-observability",
-      "title": "ArgoCD global.domain injection: loki, tempo, thanos",
-      "description": "Add helm.parameters entry for global.domain to 3 ArgoCD Application manifests: platform/argocd-apps/observability/loki-app.yaml, tempo-app.yaml, thanos-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
-      "acceptanceCriteria": [
-        "grep -q 'global.domain' platform/argocd-apps/observability/loki-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/observability/tempo-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/observability/thanos-app.yaml exits 0",
-        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" exits 0 (all YAML valid)"
-      ],
-      "passes": false,
-      "points": 1,
-      "testPlan": "for f in platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
-      "dependencies": [],
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "priority": 14,
-      "smart": {
-        "specific": 4,
-        "measurable": 5,
-        "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: exact files named, exact YAML snippet specified."
-      }
-    },
-    {
-      "id": "KAIZEN-009d",
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-security-tier",
-      "title": "ArgoCD global.domain injection: falco, istio, kiali, opa-gatekeeper, trivy-operator",
-      "description": "Add helm.parameters entry for global.domain to 5 ArgoCD Application manifests: platform/argocd-apps/security/falco-app.yaml, istio-app.yaml, kiali-app.yaml, opa-gatekeeper-app.yaml, trivy-operator-app.yaml. For each file, add the following block under spec.source.helm:\n  parameters:\n    - name: global.domain\n      value: sovereign-autarky.dev",
-      "acceptanceCriteria": [
-        "grep -q 'global.domain' platform/argocd-apps/security/falco-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/security/istio-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/security/kiali-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/security/opa-gatekeeper-app.yaml exits 0",
-        "grep -q 'global.domain' platform/argocd-apps/security/trivy-operator-app.yaml exits 0",
-        "python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" exits 0 (all YAML valid)"
-      ],
-      "passes": false,
-      "points": 2,
-      "testPlan": "for f in platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
-      "dependencies": [],
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "priority": 15,
-      "smart": {
-        "specific": 4,
-        "measurable": 5,
-        "achievable": 4,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Specific score 4: exact files named, exact YAML snippet specified. Achievable score 4: 5 files x ~4 lines, near top of budget but within one iteration."
-      }
-    },
-    {
-      "id": "KAIZEN-009e",
-      "epicId": "E2",
-      "themeId": "T1",
-      "branchName": "kaizen/argocd-global-domain-verify-corpus",
-      "title": "Verify: all 16 targeted ArgoCD app manifests have global.domain injection",
-      "description": "Verify that all 16 targeted ArgoCD Application manifests contain global.domain after KAIZEN-009a through KAIZEN-009d complete. The 16 targeted files are: cert-manager, crossplane, sealed-secrets, vault, keycloak, gitlab, harbor, argocd-image-updater, loki, tempo, thanos, falco, istio, kiali, opa-gatekeeper, trivy-operator. Files explicitly exempt (domain-agnostic or non-helm): cilium-app.yaml, rook-ceph-app.yaml, prometheus-stack-app.yaml, code-server-app.yaml, sonarqube-app.yaml, reportportal-app.yaml, sovereign-pm-app.yaml, backstage-app.yaml.",
-      "acceptanceCriteria": [
-        "Run the corpus check command: 'for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS' \u2014 must print ALL_16_PASS",
-        "python3 -c \"import yaml; files=['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml','platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml','platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml','platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']; [yaml.safe_load(open(f)) for f in files]; print('ALL_YAML_VALID')\" exits 0 and prints ALL_YAML_VALID"
-      ],
-      "passes": false,
-      "points": 1,
-      "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q global.domain \"$f\" || { echo \"MISSING: $f\"; exit 1; }; done && echo ALL_16_PASS; show all output verbatim.",
-      "dependencies": [
-        "KAIZEN-009a",
-        "KAIZEN-009b",
-        "KAIZEN-009c",
-        "KAIZEN-009d"
-      ],
-      "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 0,
-      "priority": 16,
-      "smart": {
-        "specific": 5,
-        "measurable": 5,
-        "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "Pure verification story: enumerates all 16 targeted files explicitly, lists all 8 exempt files with reason. No escape hatches."
-      }
     },
     {
       "id": "KAIZEN-008",
@@ -216,7 +88,7 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0 with output containing 'CONTRACT VALID'",
         "python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml exits 1 with output containing 'AUTARKY VIOLATION'"
       ],
-      "passes": false,
+      "passes": true,
       "points": 2,
       "testPlan": "python3 -c \"import yaml; yaml.safe_load(open('contract/v1/cluster.schema.yaml'))\" && echo 'schema OK'; python3 contract/validate.py contract/v1/tests/valid.yaml; python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml; show all output verbatim.",
       "dependencies": [],
@@ -248,7 +120,7 @@
         "grep -q 'kind create cluster' cluster/kind/bootstrap.sh exits 0 (script contains the kind invocation)",
         "[ ! -d bootstrap/providers ] exits 0 (bootstrap/providers/ not in working tree)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "ls cluster/kind/bootstrap.sh && shellcheck -S error cluster/kind/bootstrap.sh && bash -n cluster/kind/bootstrap.sh && bash cluster/kind/bootstrap.sh --help 2>&1 | grep 'cluster-name' && grep 'kind create cluster' cluster/kind/bootstrap.sh && [ ! -d bootstrap/providers ] && echo 'all checks passed'; show all output verbatim",
       "dependencies": [
@@ -265,7 +137,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
     },
     {
       "id": "RESTRUCTURE-001b-2",
@@ -281,7 +154,7 @@
         "bash platform/deploy.sh --help 2>&1 | grep -q 'chart-dir' exits 0",
         "grep -q 'helm upgrade --install' platform/deploy.sh exits 0 (script contains the helm invocation)"
       ],
-      "passes": false,
+      "passes": true,
       "points": 1,
       "testPlan": "ls platform/deploy.sh && shellcheck -S error platform/deploy.sh && bash -n platform/deploy.sh && bash platform/deploy.sh --help 2>&1 | grep 'chart-dir' && grep 'helm upgrade --install' platform/deploy.sh && echo 'all checks passed'; show all output verbatim",
       "dependencies": [
@@ -298,7 +171,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
     },
     {
       "id": "RESTRUCTURE-001c",
@@ -330,7 +204,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001b has passes=false. Resolve that story first."
+      "readinessNote": "BLOCKED: dependency listed as \"RESTRUCTURE-001b\" which does not exist as a story ID (it was split into RESTRUCTURE-001b-1 and RESTRUCTURE-001b-2, both now complete). Update the dependencies field to [] (predecessors are done) before pulling into a sprint."
     },
     {
       "id": "KIND-001",
@@ -652,7 +526,7 @@
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-22-remediation.json",
       "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist",
-      "readinessNote": "NOT READY: AC2 and testPlan require 'ceremonies.sh --start-at <fixture-file>' capability that does not exist in ceremonies.py (no --sprint or --prd flag). After 2 failed attempts this AC has been confirmed permanently unverifiable as written. Must revise AC2 to use a direct Python unit test of the guard logic (see KAIZEN-010r) before this story can be attempted again."
+      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work \u2014 see KAIZEN-010r for root cause analysis). Pull KAIZEN-010r first to create the unit test infrastructure; then rewrite AC2 to use python3 scripts/ralph/tests/test_retro_guard.py as the verification mechanism."
     },
     {
       "id": "DEVEX-001",
@@ -992,7 +866,7 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
       "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
-      "readinessNote": "NOT READY: missing testPlan \u2014 add concrete commands and expected outputs before pulling into a sprint."
+      "readinessNote": "NOT READY: testPlan field is empty. Must describe specific commands to verify that the plan ceremony appends a pending stub when none exists. Add a testPlan before pulling into a sprint."
     },
     {
       "id": "KIND-001a",
@@ -1163,7 +1037,7 @@
         "For a chart with replicaCount>=2, PDB, and podAntiAffinity in templates, scripts/ha-gate.sh outputs PASS:<chart> for that chart"
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -1792,7 +1666,7 @@
       "branchName": "kaizen/chart-iteration-script-gate",
       "priority": 1,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -1853,7 +1727,7 @@
         "helm lint platform/charts/code-server/ exits 0"
       ],
       "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -1956,7 +1830,7 @@
         "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
       ],
       "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
