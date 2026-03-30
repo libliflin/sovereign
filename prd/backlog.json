@@ -981,7 +981,7 @@
         "timeBound": 5,
         "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
     },
     {
       "id": "TEST-004",
@@ -1132,7 +1132,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
     },
     {
       "id": "HA-003",
@@ -1171,7 +1171,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
     },
     {
       "id": "DEVEX-004",
@@ -1467,7 +1467,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
     },
     {
       "id": "HA-005",

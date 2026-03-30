@@ -37,7 +37,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
+        "notes": "Achievable score 4: installs 5 components (Cilium, cert-manager, sealed-secrets, local-path-provisioner, MinIO) \u2014 near the top of the 2-point budget but a focused split with clear scope."
       },
       "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
     },
@@ -70,12 +70,12 @@
         "kubectl"
       ],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: drain/uncordon flow requires a live kind cluster and involves multi-step orchestration (apply fixture, drain, verify, uncordon) \u2014 tight but within a 3-point budget."
       },
       "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
     },
@@ -109,12 +109,12 @@
         "helm"
       ],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: 'a test Helm chart' is not named or pathed \u2014 implementer must decide what chart to create. Measurable score 4: AC5 references '<test-chart>' placeholder with no concrete name, making the helm template grep command underspecified. TimeBound score 4: unspecified test chart is a scope-expansion risk \u2014 implementer could gold-plate a custom chart instead of a minimal one."
       },
       "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
     },
@@ -141,12 +141,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: description says '3 control-plane + 2 worker nodes' but no AC verifies the 2 worker nodes exist. Measurable score 3: description says 'run contract/validate.py against a generated cluster-values.yaml' but AC3 only validates the pre-existing static fixture (contract/v1/tests/valid.yaml) \u2014 the generated cluster-values.yaml is neither created nor validated by any AC, creating a disconnect between stated intent and verifiable criteria."
       },
       "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json)."
     },
@@ -174,12 +174,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: AC5 ('renders all image refs starting with harbor.example.com') lacks an explicit grep command \u2014 'helm template ... | grep -E ...' is not provided, so the check is descriptive rather than binary. Achievable score 4: auditing and patching templates in two charts may touch many files depending on how many image references exist."
       },
       "requiredCapabilities": [
         "helm"
@@ -208,12 +208,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: AC2 asserts 'storageClassName: {{ .Values.global.storageClass }}' but helm template renders the value, not the template syntax \u2014 the AC should specify --set global.storageClass=test-class and grep for 'storageClassName: test-class' to be binary-verifiable."
       }
     }
   ]
