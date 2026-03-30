@@ -141,7 +141,7 @@ Every story must pass before `reviewed: true`:
 11. `helm template platform/charts/<name>/ | grep -i datasource` — required for all observability charts
 12. Branch pushed to remote + PR merged to main — proof of work
 
-Convenience: `scripts/ha-gate.sh` runs gates 3–5 across all charts automatically. `bash scripts/ha-gate.sh --dry-run` lists charts without running helm.
+Convenience: `scripts/ha-gate.sh` runs gates 3–5 across all charts automatically. `bash scripts/ha-gate.sh --dry-run` lists charts without running helm. `.github/workflows/ha-gate.yml` runs shellcheck + `ha-gate.sh --dry-run` on every PR touching `platform/charts/`.
 
 ---
 
