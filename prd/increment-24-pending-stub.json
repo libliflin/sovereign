@@ -24,7 +24,7 @@
       ],
       "testPlan": "shellcheck -S error scripts/ha-gate.sh && bash -n scripts/ha-gate.sh && scripts/ha-gate.sh --dry-run; show all output verbatim. Then create a minimal test chart with replicaCount: 1 and run scripts/ha-gate.sh against it to confirm FAIL output. ALSO run scripts/ha-gate.sh against all existing platform/charts/ to confirm no crash on charts missing replicaCount.",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -55,7 +55,7 @@
       "priority": 1,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -91,7 +91,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 2,
@@ -124,7 +124,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 3,
@@ -156,7 +156,7 @@
       ],
       "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -188,7 +188,7 @@
       "points": 2,
       "testPlan": "for f in platform/argocd-apps/platform/cert-manager-app.yaml platform/argocd-apps/platform/crossplane-app.yaml platform/argocd-apps/platform/sealed-secrets-app.yaml platform/argocd-apps/platform/vault-app.yaml platform/argocd-apps/platform/keycloak-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/cert-manager-app.yaml','platform/argocd-apps/platform/crossplane-app.yaml','platform/argocd-apps/platform/sealed-secrets-app.yaml','platform/argocd-apps/platform/vault-app.yaml','platform/argocd-apps/platform/keycloak-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 12,
@@ -218,7 +218,7 @@
       "points": 2,
       "testPlan": "for f in platform/argocd-apps/platform/gitlab-app.yaml platform/argocd-apps/platform/harbor-app.yaml platform/argocd-apps/platform/argocd-image-updater-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/platform/gitlab-app.yaml','platform/argocd-apps/platform/harbor-app.yaml','platform/argocd-apps/platform/argocd-image-updater-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 13,
@@ -248,7 +248,7 @@
       "points": 1,
       "testPlan": "for f in platform/argocd-apps/observability/loki-app.yaml platform/argocd-apps/observability/tempo-app.yaml platform/argocd-apps/observability/thanos-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/observability/loki-app.yaml','platform/argocd-apps/observability/tempo-app.yaml','platform/argocd-apps/observability/thanos-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 14,
@@ -280,7 +280,7 @@
       "points": 2,
       "testPlan": "for f in platform/argocd-apps/security/falco-app.yaml platform/argocd-apps/security/istio-app.yaml platform/argocd-apps/security/kiali-app.yaml platform/argocd-apps/security/opa-gatekeeper-app.yaml platform/argocd-apps/security/trivy-operator-app.yaml; do grep -q 'global.domain' \"$f\" && echo \"PASS: $f\" || echo \"FAIL: $f\"; done; python3 -c \"import yaml; [yaml.safe_load(open(f)) for f in ['platform/argocd-apps/security/falco-app.yaml','platform/argocd-apps/security/istio-app.yaml','platform/argocd-apps/security/kiali-app.yaml','platform/argocd-apps/security/opa-gatekeeper-app.yaml','platform/argocd-apps/security/trivy-operator-app.yaml']]\" && echo 'YAML valid'; show all output verbatim",
       "dependencies": [],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 15,
@@ -313,7 +313,7 @@
         "KAIZEN-009c",
         "KAIZEN-009d"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "priority": 16,
@@ -345,7 +345,7 @@
       ],
       "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -359,5 +359,7 @@
       }
     }
   ],
-  "storiesTotal": 6
+  "storiesTotal": 6,
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
