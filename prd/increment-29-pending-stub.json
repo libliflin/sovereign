@@ -128,6 +128,8 @@
     },
     {
       "id": "CEREMONY-003",
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint execute cycle never reached priority-3+ stories — 4 pre-accepted review stories consumed pipeline capacity before new work could begin.",
       "title": "Rename retro-patch-phase*.md \u2192 retro-patch-increment*.md",
       "description": "The retro ceremony generates patch files named retro-patch-phase<N>.md. The word 'phase' is retired from the data model \u2014 all concepts use 'increment'. Rename the generation pattern in retro.md and sync.md ceremonies, and rename any existing retro-patch-phase*.md files to retro-patch-increment*.md.",
       "epicId": "E1",
@@ -158,6 +160,8 @@
     },
     {
       "id": "DEVEX-007a",
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint execute cycle never reached priority-4+ stories — 4 pre-accepted review stories consumed pipeline capacity before new work could begin.",
       "epicId": "E11",
       "themeId": "T3",
       "branchName": "feature/code-server-toolchain-values",
@@ -187,6 +191,8 @@
     },
     {
       "id": "HA-006",
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint execute cycle never reached priority-4+ stories — 4 pre-accepted review stories consumed pipeline capacity before new work could begin.",
       "epicId": "E15",
       "themeId": "T5",
       "priority": 4,
@@ -216,6 +222,8 @@
     },
     {
       "id": "CEREMONY-004",
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint execute cycle never reached priority-4+ stories — 4 pre-accepted review stories consumed pipeline capacity before new work could begin.",
       "title": "Remove legacy 'phase' field from backlog stories",
       "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
       "epicId": "E1",
@@ -245,6 +253,8 @@
     },
     {
       "id": "HA-007",
+      "returnedToBacklog": true,
+      "returnedReason": "Sprint execute cycle never reached priority-5+ stories — 4 pre-accepted review stories consumed pipeline capacity before new work could begin.",
       "epicId": "E15",
       "themeId": "T5",
       "priority": 5,

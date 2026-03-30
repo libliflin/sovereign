@@ -836,6 +836,7 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
         "scripts/ralph/ceremonies/sync.md no longer contains the string 'retro-patch-phase'",
@@ -866,6 +867,7 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "acceptanceCriteria": [
         "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
@@ -1504,6 +1506,7 @@
       "priority": 4,
       "points": 1,
       "branchName": "feature/bootstrap-cost-gate",
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "title": "Bootstrap cost-gate script validates chart resource requests fit within per-node budget",
       "description": "Create scripts/gates/cost-gate.sh that iterates over all platform/charts/*/values.yaml files, extracts resources.requests.cpu and resources.requests.memory for each chart, sums them, and fails if the total exceeds a configurable per-node budget (default: 4 CPU, 8Gi RAM). Print a per-chart table and a PASS/FAIL verdict. The script does not require a running cluster \u2014 it reads Helm values only.",
       "acceptanceCriteria": [
@@ -1564,6 +1567,7 @@
       "epicId": "E11",
       "themeId": "T3",
       "branchName": "feature/code-server-toolchain-values",
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
       "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
       "acceptanceCriteria": [
@@ -1817,6 +1821,7 @@
       "priority": 5,
       "points": 2,
       "branchName": "feature/ha-gate-ci-workflow",
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
       "title": "GitHub Actions workflow: ha-gate.sh --dry-run runs on every PR touching platform/charts/",
       "description": "Create .github/workflows/ha-gate.yml: a GitHub Actions workflow that triggers on pull_request for paths: [platform/charts/**]. The job must (1) run shellcheck -S error scripts/ha-gate.sh and (2) run scripts/ha-gate.sh --dry-run. The --dry-run mode lists all charts without invoking helm, so this gate requires no live cluster and is safe for CI. This enforces the HA invariants (replicaCount, PDB, podAntiAffinity) as a merge gate before any chart change lands on main.",
       "acceptanceCriteria": [
@@ -1904,6 +1909,36 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+      }
+    },
+    {
+      "id": "CEREMONY-011",
+      "title": "Plan ceremony: warn when >50% of sprint capacity is already-accepted stories",
+      "description": "Sprint 29 retro identified that 4 of 9 stories were already accepted (passes:true, reviewed:true) when pulled into the sprint. These review-confirmation stories consumed ceremony pipeline execution time without requiring implementation work, leaving 5 unimplemented stories with zero execution capacity. The plan ceremony must check, after assembling a sprint, whether implementation-pending stories (passes:false) are outnumbered or crowded out by review-confirmation stories (passes:true, reviewed:false) or already-accepted stories (passes:true, reviewed:true). If pre-accepted stories make up >50% of the sprint point total, emit a WARNING and suggest removing them from the sprint (they don't need to be re-executed). This prevents sprints from being filled with low-effort confirmations at the expense of new delivery.",
+      "acceptanceCriteria": [
+        "grep -n 'already.accepted\\|pre.accepted\\|passes.*true.*reviewed.*true\\|review.confirmation' scripts/ralph/ceremonies/plan.md returns at least one match showing the check is present",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'already.accepted\\|review.confirmation' scripts/ralph/ceremonies/plan.md — must return at least one line. python3 -m py_compile scripts/ralph/ceremonies.py — must exit 0. Show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/plan-ceremony-capacity-audit",
+      "priority": 1,
+      "points": 2,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-29-pending-stub.json",
+      "returnedReason": "Sprint 29: 4 pre-accepted stories consumed execute pipeline, 5 new stories never started; plan ceremony has no guard against this pattern.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs are static-analysis-only (grep + py_compile), no live cluster needed."
       }
     },
     {
