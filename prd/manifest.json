@@ -289,13 +289,27 @@
     },
     {
       "id": 25,
-      "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 24 completes.",
+      "name": "kaizen",
+      "description": "Delivery machine kaizen, ceremony metric fixes, toolchain autarky groundwork, and HA CI gate. Retires legacy vocabulary remnants, fixes the retro first-pass formula, advances E15 targeting, and wires ha-gate.sh into GitHub Actions.",
       "file": "prd/increment-25-pending-stub.json",
       "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 24 advances.",
+      "themeGoal": "T3/T5 \u2014 delivery machine health (retro formula, E15 targeting, vocabulary cleanup) and HA gate CI enforcement.",
       "dependsOn": [
         24
+      ],
+      "startDate": "2026-03-30T00:27:37.031513+00:00",
+      "pointsTotal": 10,
+      "storiesTotal": 8
+    },
+    {
+      "id": 26,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 25 completes.",
+      "file": "prd/increment-26-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 25 advances.",
+      "dependsOn": [
+        25
       ]
     }
   ],
