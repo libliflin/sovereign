@@ -64,7 +64,7 @@ helm template platform/charts/<name>/ | python3 scripts/check-limits.py  # every
 ```
 
 Convenience: `bash scripts/ha-gate.sh` runs the PDB, podAntiAffinity, and replicaCount checks
-across all charts in one pass. `bash scripts/ha-gate.sh --dry-run` lists charts without running helm.
+across all charts in one pass (including all E13 testing infrastructure charts). `bash scripts/ha-gate.sh --dry-run` lists charts without running helm.
 
 This applies to upstream wrapper charts too. Setting `affinity` in `values.yaml` is not
 sufficient — verify the rendered output actually contains `podAntiAffinity`. If the upstream
@@ -346,7 +346,6 @@ at proof and returned to backlog. Run your AC commands. Show the output. Do not 
 4. Implement the acceptance criteria — nothing more, nothing less
 5. Write the **test contract** before touching any file — list each test command and expected output.
    Only begin implementation after the contract is written. Run every test. Show the output.
-
 6. Run quality gates before marking `passes: true`:
    - `helm lint platform/charts/<name>/` if you touched a platform chart
    - `helm lint cluster/kind/charts/<name>/` if you touched a kind chart
@@ -486,7 +485,12 @@ pass rate, 11/12 pts delivered),
 HA standard confirmed; TEST-006a selenium-grid HA standard (PDB, podAntiAffinity, replicaCount>=2);
 TEST-006b k6-operator + mailhog HA standard (PDB, podAntiAffinity on k6-operator; PDB on mailhog);
 KAIZEN-015 backlog hygiene (14 confirmed-complete stories marked status:complete, 6 stale KIND-001b
-blocks cleared) — 100% first-review pass rate, 11/8 pts delivered)
+blocks cleared) — 100% first-review pass rate, 11/8 pts delivered),
+36 (pending-stub — 6/6 accepted: RESTRUCTURE-001a contract layer validator + test fixtures review
+confirmed; RESTRUCTURE-001b-1 cluster/kind/bootstrap.sh review confirmed; HA-001 ha-gate.sh
+review confirmed; TEST-010 all 5 E13 charts pass autarky G6 gate (no external registry refs);
+HA-010 ha-gate.sh extended to cover all 5 E13 testing infrastructure charts; KAIZEN-004 legacy
+`phase` field removed from all backlog stories — 100% first-review pass rate, 9 pts)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -497,11 +501,13 @@ toolchain initContainer + workspace PVC + toolchainInit values interface (DEVEX-
 Backstage and code-server charts pass autarky G6 gate (DEVEX-012 done);
 stories 027a full Keycloak OIDC/plugin config, 027b, 049 still pending), E12 (code quality —
 SonarQube + ReportPortal Helm charts, ArgoCD apps, and HA gate compliance done; GitLab CI integration
-story 052 pending), E13 (testing infrastructure — all five charts now at HA standard: selenium-grid (TEST-006a),
-chaos-mesh (TEST-004a), wiremock (TEST-005a), k6-operator (TEST-006b), mailhog (TEST-006b);
-deployment stories TEST-004b (chaos-mesh deploy), TEST-005b (wiremock deploy) still pending), E15 (HA integration testing — HA-001 ha-gate.sh done;
-HA-002 PDB drain validation done; HA-003 rolling update smoke test done; HA-004 HA bootstrap
-script done; HA-005a kind-smoke.sh scaffold done; HA-008 chaos PDB artifact done; targetIncrement: 28)
+story 052 pending), E13 (testing infrastructure — all five charts at HA standard and autarky G6
+compliant: selenium-grid (TEST-006a), chaos-mesh (TEST-004a), wiremock (TEST-005a), k6-operator
+(TEST-006b), mailhog (TEST-006b); ha-gate.sh extended to cover all 5 testing charts (HA-010);
+deployment stories TEST-004b (chaos-mesh deploy), TEST-005b (wiremock deploy) still pending),
+E15 (HA integration testing — HA-001 ha-gate.sh done; HA-002 PDB drain validation done; HA-003
+rolling update smoke test done; HA-004 HA bootstrap script done; HA-005a kind-smoke.sh scaffold done;
+HA-008 chaos PDB artifact done; HA-010 ha-gate.sh extended to all 5 E13 testing charts; targetIncrement: 28)
 
 ---
 
@@ -528,5 +534,5 @@ script done; HA-005a kind-smoke.sh scaffold done; HA-008 chaos PDB artifact done
 
 ## Known model inconsistencies
 
-- 8 open backlog stories have `themeId` that differs from their parent epic's `themeId` (KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006, QUALITY-009, TEST-009, TEST-010). KAIZEN-017 will correct all themeId fields to match their epic's themeId.
-- 8 backlog stories still carry a legacy `phase` field (DEVEX-012, DEVEX-013, QUALITY-008, QUALITY-009, TEST-009, TEST-010, HA-009, HA-010) despite KAIZEN-006 removing `phase` from all backlog stories. These entries were added after KAIZEN-006 ran. → KAIZEN-004 will remove them.
+- 9 open backlog stories have `themeId` that differs from their parent epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006, QUALITY-009, TEST-009). KAIZEN-017 will correct all themeId fields to match their epic's themeId.
+- Retro first-pass formula uses `attempts == 1` but pre-accepted (review-confirmation) stories carry `attempts: 0`, causing sprints composed entirely of review confirmations to report 0% pass rate. KAIZEN-019 will update the formula to `attempts <= 1`. This does not affect implementation work — it is a metric reporting issue only.

@@ -2621,6 +2621,32 @@
       "attempts": 0,
       "returnedFromSprint": null,
       "readinessNote": "READY: no dependencies, static analysis only, no cluster required."
+    },
+    {
+      "id": "KAIZEN-019",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 7,
+      "points": 1,
+      "branchName": "kaizen/retro-first-pass-formula",
+      "title": "Fix retro first-pass formula: use attempts <= 1 to include pre-accepted stories",
+      "description": "The retro ceremony computes first-pass rate using attempts == 1. Pre-accepted stories (review confirmations) carry attempts: 0, causing sprints composed entirely of review confirmations to report 0% pass rate. Fix: change the formula to attempts <= 1 in scripts/ralph/ceremonies/retro.md.",
+      "acceptanceCriteria": [
+        "grep showing the formula in retro.md uses <= 1 rather than == 1",
+        "python3 -c \"content=open('scripts/ralph/ceremonies/retro.md').read(); assert '<= 1' in content, 'formula not updated'; print('PASS')\" exits 0 and prints PASS"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md; verify the updated line uses '<= 1' and show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Single-line formula change with exact grep ACs. All SMART dimensions green."
+      }
     }
   ]
 }
