@@ -2394,6 +2394,34 @@
         "timeBound": 5,
         "notes": "Trivial field removal with binary verification. One-liner AC."
       }
+    },
+    {
+      "id": "KAIZEN-015",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 10,
+      "points": 2,
+      "branchName": "kaizen/backlog-hygiene-stale-complete",
+      "title": "Backlog hygiene: mark 14 confirmed-complete stories as status:complete and refresh stale dependency blocks",
+      "description": "The backlog contains 14 stories with readinessNote indicating 'COMPLETED IN SPRINT XX: passes:true, reviewed:true', but their status field is still 'open'. The grooming ceremony flags them but does not update lifecycle status. This means the planning ceremony sees them as open work and can accidentally re-pull already-delivered stories. The 14 stories are: CEREMONY-009, CEREMONY-007, CEREMONY-006, RESTRUCTURE-001c, CEREMONY-003, CEREMONY-004, QUALITY-005, HA-006, DEVEX-007a, DEVEX-007b, HA-007, CEREMONY-010, CEREMONY-011, QUALITY-005r. Additionally, 6 stories carry stale BLOCKED readinessNotes referencing 'KIND-001b has passes=false' \u2014 KIND-001b was accepted in increment 32. Update those readinessNotes to reflect the current state.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); stale=[s['id'] for s in b['stories'] if 'COMPLETED IN SPRINT' in s.get('readinessNote','') and s.get('status','open')!='complete']; assert stale==[], f'still open: {stale}'; print('PASS: all confirmed-complete stories marked complete')\" exits 0 and prints PASS",
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); stale=[s['id'] for s in b['stories'] if 'KIND-001b has passes=false' in s.get('readinessNote','')]; print(f'stale KIND-001b blocks: {stale}')\" prints an empty list",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "Run AC1 one-liner verbatim and show output. Run AC2 one-liner verbatim and show output. Run AC3 py_compile and show output.",
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "reviewNotes": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Both ACs are self-contained one-liners operating only on prd/backlog.json. Verified against current state: 14 stale-complete and 6 stale-blocked entries exist as of increment 33."
+      }
     }
   ]
 }
