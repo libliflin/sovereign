@@ -29,12 +29,12 @@
       "attempts": 0,
       "priority": 3,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Measurable score 4: AC1 and AC2 describe listing checks ('ls ... contains all 25 platform charts') rather than binary exit-code assertions; a stricter AC would use a for-loop or diff to assert each named chart is present."
       }
     },
     {
@@ -66,7 +66,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
+        "notes": "Specific score 4: named charts and HA fields are clear but the files to modify are not specified. Achievable score 4: two complex charts in one iteration is near the top of the budget. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
       },
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
       "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'"
@@ -77,17 +77,17 @@
       "themeId": "T3",
       "branchName": "feature/code-server-toolchain-init",
       "title": "code-server chart: add initContainer to Deployment template copying toolchain binaries (kubectl, helm, k9s)",
-      "description": "Add an initContainers section to platform/charts/code-server/templates/deployment.yaml. The init container image must be constructed in the template source as '{{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}'. The init container copies kubectl, helm, and k9s binaries into /home/coder/workspace/bin via a shared emptyDir volume. No external registry literals may appear in templates — all image refs must use global.imageRegistry. Depends on DEVEX-007a for the values interface.",
+      "description": "Add an initContainers section to platform/charts/code-server/templates/deployment.yaml. The init container image must be constructed in the template source as '{{ .Values.global.imageRegistry }}/{{ .Values.toolchainInit.image }}'. The init container copies kubectl, helm, and k9s binaries into /home/coder/workspace/bin via a shared emptyDir volume. No external registry literals may appear in templates \u2014 all image refs must use global.imageRegistry. Depends on DEVEX-007a for the values interface.",
       "acceptanceCriteria": [
         "helm template platform/charts/code-server/ | grep -A5 'initContainers' returns at least one init container spec",
         "grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml returns at least one match confirming the init container image is sourced from the platform registry (source file grep, not rendered output)",
         "helm template platform/charts/code-server/ | grep -E 'kubectl|helm|k9s' returns matches showing toolchain binary installation",
         "helm lint platform/charts/code-server/ exits 0",
-        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches — G6 passes"
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ returns no matches \u2014 G6 passes"
       ],
       "passes": false,
       "points": 2,
-      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers; grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml; grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ — show all output verbatim.",
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A10 initContainers; grep 'global.imageRegistry' platform/charts/code-server/templates/deployment.yaml; grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io' platform/charts/code-server/templates/ \u2014 show all output verbatim.",
       "dependencies": [
         "DEVEX-007a"
       ],
@@ -96,12 +96,12 @@
       "attempts": 0,
       "priority": 5,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Achievable score 4: depends on DEVEX-007a for the values interface; if DEVEX-007a is not yet merged, this story is blocked at the start of implementation."
       }
     },
     {
@@ -112,7 +112,7 @@
         "grep -n 'already.accepted\\|pre.accepted\\|passes.*true.*reviewed.*true\\|review.confirmation' scripts/ralph/ceremonies/plan.md returns at least one match showing the check is present",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "testPlan": "grep -n 'already.accepted\\|review.confirmation' scripts/ralph/ceremonies/plan.md — must return at least one line. python3 -m py_compile scripts/ralph/ceremonies.py — must exit 0. Show all output verbatim.",
+      "testPlan": "grep -n 'already.accepted\\|review.confirmation' scripts/ralph/ceremonies/plan.md \u2014 must return at least one line. python3 -m py_compile scripts/ralph/ceremonies.py \u2014 must exit 0. Show all output verbatim.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/plan-ceremony-capacity-audit",

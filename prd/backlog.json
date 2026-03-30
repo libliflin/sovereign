@@ -32,7 +32,8 @@
         "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
       },
       "returnedFromSprint": "prd/increment-25-pending-stub.json",
-      "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
+      "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file",
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
       "id": "CEREMONY-007",
@@ -64,7 +65,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
       "id": "CEREMONY-006",
@@ -93,7 +95,7 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
       },
-      "readinessNote": "Stale target: the story asserts targetIncrement == 28, but increments 28 and 29 are now complete (active increment is 30). Update the AC assertion from == 28 to == 30 (or the current active increment) before pulling into a sprint, otherwise the story will pass with a stale completed-increment value."
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull. E15 targetIncrement was updated to 28 in that sprint."
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -851,7 +853,8 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "Relevant score 4: legacy vocabulary cleanup supports platform health but does not advance feature delivery."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
       "id": "CEREMONY-004",
@@ -881,7 +884,8 @@
         "relevant": 4,
         "timeBound": 5,
         "notes": "Relevant score 4: data model cleanup supports delivery hygiene but does not advance feature delivery."
-      }
+      },
+      "readinessNote": "COMPLETED IN SPRINT 28: passes:true, reviewed:true in prd/increment-28-pending-stub.json. Backlog entry is stale — do not re-pull."
     },
     {
       "id": "CEREMONY-005",
@@ -1621,7 +1625,7 @@
         "timeBound": 0,
         "notes": ""
       },
-      "readinessNote": "BLOCKED: dependency DEVEX-007a has passes=false. Resolve that story first."
+      "readinessNote": "UNBLOCKED: dependency DEVEX-007a was completed in sprint 28 (passes:true, reviewed:true in prd/increment-28-pending-stub.json). Pulled into sprint 30."
     },
     {
       "id": "QUALITY-006",
