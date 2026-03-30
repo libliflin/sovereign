@@ -1,0 +1,21 @@
+name: HA Gate
+
+on:
+  pull_request:
+    paths:
+      - platform/charts/**
+
+jobs:
+  ha-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Shellcheck ha-gate.sh
+        run: shellcheck -S error scripts/ha-gate.sh
+
+      - name: Run ha-gate.sh --dry-run
+        run: bash scripts/ha-gate.sh --dry-run
