@@ -314,27 +314,38 @@
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 26 completes.",
       "file": "prd/increment-27-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 26 advances.",
       "dependsOn": [
         26
-      ],
-      "startDate": "2026-03-30T01:44:38.079298+00:00",
-      "pointsTotal": 6,
-      "storiesTotal": 4
+      ]
     },
     {
       "id": 28,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 27 completes.",
       "file": "prd/increment-28-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 27 advances.",
       "dependsOn": [
         27
+      ],
+      "startDate": "2026-03-30T02:36:47.856980+00:00",
+      "pointsTotal": 12,
+      "storiesTotal": 10
+    },
+    {
+      "id": 29,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 28 completes.",
+      "file": "prd/increment-29-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 28 advances.",
+      "dependsOn": [
+        28
       ]
     }
   ],
-  "activeSprint": "prd/increment-27-pending-stub.json",
-  "currentIncrement": 27
+  "activeSprint": "prd/increment-28-pending-stub.json",
+  "currentIncrement": 28
 }

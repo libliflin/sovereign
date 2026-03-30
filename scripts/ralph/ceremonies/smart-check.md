@@ -42,6 +42,11 @@ could start without asking any clarifying questions.
 *Specific (1)*: Could be interpreted multiple ways.
 
 *Measurable (5)*: Every AC is a binary shell command or file check with a clear pass/fail.
+Count-based ACs use "at least N" (not exact counts) for resources that scale with component count
+(PDBs, Services, Deployments in multi-component charts). Exact counts are only valid when a fixed
+count is architecturally guaranteed and documented in the story. Score measurable ≤ 4 if any
+count-based AC uses an exact assertion for a resource that could scale (e.g., `grep -c
+PodDisruptionBudget` asserts `== 1` on a chart with multiple deployable components).
 *Measurable (3)*: Most ACs are verifiable but 1-2 are vague ("works", "is correct").
 *Measurable (1)*: ACs are descriptive but not verifiable.
 

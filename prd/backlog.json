@@ -56,14 +56,22 @@
       "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-22-remediation.json",
-      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
+      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
+      }
     },
     {
       "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
-      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
+      "title": "Kaizen: Update E15 targetIncrement from 22 (complete) to 28 (active increment)",
+      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: 22 which is a completed increment. Update E15.targetIncrement in epics.json to 28 (the active increment) so the planning ceremony correctly associates HA validation stories with the active delivery stream.",
       "acceptanceCriteria": [
-        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
+        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] == 28, f'wrong targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement is 28')\" exits 0 and prints OK",
         "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
       ],
       "epicId": "E1",
@@ -76,7 +84,15 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must print 28. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs corrected: assertion now requires targetIncrement == 28 (active increment), not just 'not in completed list'. Current value is 22 \u2014 change is required to pass."
+      }
     },
     {
       "id": "RESTRUCTURE-001a",
@@ -453,7 +469,8 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
       "id": "KAIZEN-002",
@@ -476,7 +493,8 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim."
+      "testPlan": "Run grep checks above. Show output verbatim.",
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
       "id": "KAIZEN-003",
@@ -526,7 +544,7 @@
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-22-remediation.json",
       "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist",
-      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work \u2014 see KAIZEN-010r for root cause analysis). Pull KAIZEN-010r first to create the unit test infrastructure; then rewrite AC2 to use python3 scripts/ralph/tests/test_retro_guard.py as the verification mechanism."
+      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work). Pull KAIZEN-010r first (sprint 28) to create the unit test infrastructure; then rewrite AC2 to use python3 scripts/ralph/tests/test_retro_guard.py as the verification mechanism."
     },
     {
       "id": "DEVEX-001",
@@ -823,7 +841,15 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: legacy vocabulary cleanup supports platform health but does not advance feature delivery."
+      }
     },
     {
       "id": "KAIZEN-006",
@@ -844,7 +870,15 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: data model cleanup supports delivery hygiene but does not advance feature delivery."
+      }
     },
     {
       "id": "KAIZEN-007r",
@@ -901,7 +935,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false. Resolve that story first."
     },
     {
       "id": "KIND-001b",
@@ -1269,9 +1304,9 @@
       "title": "SonarQube and ReportPortal Helm charts pass HA gate: replicaCount>=2, PDB, podAntiAffinity",
       "description": "Harden the SonarQube and ReportPortal Helm charts to meet the platform HA standard. Both charts must have: replicaCount defaulting to 2, a PodDisruptionBudget with minAvailable=1, and podAntiAffinity preferredDuringSchedulingIgnoredDuringExecution on hostname. Run the HA gate script against both charts to confirm.",
       "acceptanceCriteria": [
-        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/sonarqube/ | grep -c PodDisruptionBudget returns at least 1",
         "helm template platform/charts/sonarqube/ | grep -c podAntiAffinity returns at least 1",
-        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns 1",
+        "helm template platform/charts/reportportal/ | grep -c PodDisruptionBudget returns at least 1",
         "helm template platform/charts/reportportal/ | grep -c podAntiAffinity returns at least 1",
         "helm lint platform/charts/sonarqube/ exits 0",
         "helm lint platform/charts/reportportal/ exits 0"
@@ -1285,13 +1320,16 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
-      }
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: named charts and HA fields are clear but template file(s) to modify are not specified. Measurable score 3: no AC verifies replicaCount defaults to 2 in values.yaml; description says 'run the HA gate script' but no AC includes scripts/ha-gate.sh execution against either chart."
+      },
+      "returnedFromSprint": "prd/increment-27-pending-stub.json",
+      "returnedReason": "AC used exact count assertion ('returns 1') for a multi-component chart that correctly emits multiple PDBs (one per component); AC corrected to 'returns at least 1'",
+      "readinessNote": "Dependency '029' not found in backlog \u2014 verify it has passes: true in a completed sprint file before pulling this story into a sprint."
     },
     {
       "id": "TEST-006",
@@ -1479,12 +1517,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Script already exists at scripts/gates/cost-gate.sh using Python yaml parsing (not shell grep), so the pipefail+grep risk does not apply."
       }
     },
     {
@@ -1541,12 +1579,12 @@
       "attempts": 0,
       "priority": 4,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -1797,12 +1835,12 @@
         "HA-001"
       ],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support, so the dependency on HA-001 is satisfied."
       }
     },
     {
@@ -1865,6 +1903,33 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+      }
+    },
+    {
+      "id": "QUALITY-005r",
+      "title": "SMART gate: flag exact count assertions for multi-component charts",
+      "description": "The SMART measurable check does not distinguish between exact-count ACs ('returns 1') and minimum-count ACs ('returns at least 1'). For charts that may have multiple components (each with their own PDB), exact counts are brittle \u2014 the implementation can be correct while the AC fails. Update the SMART measurable scoring prompt to explicitly ask: 'do count-based ACs use at-least rather than exact assertions for resources that scale with component count?'",
+      "acceptanceCriteria": [
+        "grep -n 'at least\\|at-least\\|minimum' scripts/ralph/ceremonies/smart-check.md shows the updated measurable prompt includes guidance on count assertion types",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'at least' scripts/ralph/ceremonies/smart-check.md to show the prompt change. python3 -m py_compile scripts/ralph/ceremonies.py. Show output verbatim.",
+      "epicId": "E12",
+      "themeId": "T3",
+      "priority": 1,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": "prd/increment-27-pending-stub.json",
+      "returnedReason": "Root cause of QUALITY-005 failure: SMART measurable prompt did not catch brittle exact-count assertion on a multi-component chart",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs corrected: smart.md \u2192 smart-check.md (the actual file). Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
       }
     }
   ]

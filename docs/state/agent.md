@@ -281,11 +281,20 @@ python3 script.py /tmp/test-manifest.json
 Stories with ACs that reference named completed sprint files have measurability score ≤ 4
 and will be flagged by SMART review. Fix at grooming.
 
-**Kind cluster bootstrap is not yet end-to-end**: `cluster/kind/bootstrap.sh` exists as the
-declared entry point but the full kind cluster bootstrap (KIND-001a, KIND-001b) has not been
-implemented. Stories that depend on a running kind cluster (`kind get clusters` showing
-`sovereign-test`) are blocked until KIND-001a is accepted. Do not assume a working kind cluster
-exists — verify with `kind get clusters` first.
+**Count assertions in ACs must use "at least N" not "== N" for resources that scale with component count**:
+`grep -c PodDisruptionBudget` (and similar count checks) must assert `>= N`, not an exact count, unless
+the architecture guarantees a fixed number. Multi-component charts (separate API/UI/worker deployments)
+emit one PDB per deployable component — an exact-count AC fails when the implementation is correct.
+This applies to PDBs, Services, and Deployments that scale with chart component topology. Exact counts
+(`== 1`, `== 2`) are only valid when a fixed count is architecturally guaranteed and documented in the
+story. If uncertain, use "at least N" and note why in the AC.
+
+**Kind cluster provides a bare cluster — platform components not yet deployed**: `cluster/kind/bootstrap.sh`
+creates a 3-node kind cluster named `sovereign-test` and emits `cluster-values.yaml` (contract-validated).
+KIND-001b (Cilium, cert-manager, sealed-secrets, OpenBao deployed into kind) is still in the backlog.
+Stories that depend on a bare kind cluster are unblocked. Stories that depend on platform components
+(Cilium CNI, cert-manager, sealed-secrets) are blocked until KIND-001b is accepted. Verify with
+`kind get clusters` before assuming a running cluster exists.
 
 ---
 
@@ -382,10 +391,16 @@ KAIZEN-010r pre-retro guard unit test (scripts/ralph/tests/test_retro_guard.py),
 KAIZEN-013 retro first-pass formula verified (attempts == 1 in retro.md:206),
 KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch naming normalized,
 KAIZEN-006 legacy phase field removed from backlog, HA-006 cost-gate.sh,
-DEVEX-007a code-server toolchainInit values, HA-007 ha-gate.yml — 100% first-review pass rate)
+DEVEX-007a code-server toolchainInit values, HA-007 ha-gate.yml — 100% first-review pass rate),
+27 (pending-stub — 3/4 accepted: KIND-001a cluster/kind/bootstrap.sh creates sovereign-test 3-node
+kind cluster + contract/validate.py validates cluster-values.yaml; KAIZEN-001 contract validator
+test corpus expanded to cover imageRegistry and storageClass invariants; KAIZEN-002 docs on-ramp
+paths updated from old bootstrap/ structure to new monorepo structure; QUALITY-005 SonarQube +
+ReportPortal HA hardening returned to backlog — AC used exact-count assertion for multi-component
+chart, implementation was correct)
 
-Increment active: 26 is complete; advance ceremony will move pointer to increment 27 (pending stub).
-Increment 27 is a placeholder — plan ceremony will populate it with stories from the backlog.
+Increment active: 27 is complete; advance ceremony will move pointer to increment 28 (pending stub).
+Increment 28 is a placeholder — plan ceremony will populate it with stories from the backlog.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
