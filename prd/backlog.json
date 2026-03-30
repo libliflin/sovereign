@@ -2024,6 +2024,342 @@
       "smart": "",
       "readinessNote": "NOT READY: AC3 ('No T2 story is assigned to an epic that has a different theme') has no verifiable command. Add a Python one-liner that checks all T2 stories have epicId pointing to an epic with themeId='T2', e.g.: python3 -c \"import json; b=json.load(open('prd/backlog.json')); e=json.load(open('prd/epics.json')); epic_themes={x['id']:x['themeId'] for x in e['epics']}; bad=[s['id'] for s in b['stories'] if s.get('themeId')=='T2' and epic_themes.get(s.get('epicId'))!='T2']; assert not bad; print('OK')\" exits 0.",
       "epicId": "E8"
+    },
+    {
+      "id": "KAIZEN-003",
+      "title": "Kaizen: Migrate Istio chart templates from v1beta1 to v1 APIs before dependency version bump",
+      "description": "Drift audit (constitution-review, increment 32) found that platform/charts/istio/templates/gateway.yaml uses networking.istio.io/v1beta1 and platform/charts/istio/templates/peer-authentication.yaml uses security.istio.io/v1beta1. These APIs were promoted to v1 (non-beta, GA) in Istio 1.22. The chart is currently pinned at 1.21.2 where v1beta1 is still the recommended API, so there is no breakage today. However, KAIZEN-001 plans to audit and bump pinned chart dependencies \u2014 when Istio bumps to 1.22+, the v1beta1 API group remains available for several releases before removal, but templates should be migrated in advance so the version bump does not carry a hidden API migration debt. This story pairs with KAIZEN-001: migrate templates before or alongside the Istio chart dependency bump.",
+      "acceptanceCriteria": [
+        "grep 'apiVersion' platform/charts/istio/templates/gateway.yaml shows networking.istio.io/v1 (not v1beta1)",
+        "grep 'apiVersion' platform/charts/istio/templates/peer-authentication.yaml shows security.istio.io/v1 (not v1beta1)",
+        "helm lint platform/charts/istio/ exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" platform/charts/istio/templates/gateway.yaml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" platform/charts/istio/templates/peer-authentication.yaml exits 0"
+      ],
+      "testPlan": "Show grep output for apiVersion in both template files before and after change. Run helm lint and YAML validation. Confirm no v1beta1 remains in Istio templates.",
+      "epicId": "E7",
+      "themeId": "T2",
+      "branchName": "kaizen/istio-v1beta1-migration",
+      "priority": 15,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [
+        "KAIZEN-001"
+      ],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timely": 3
+      }
+    },
+    {
+      "id": "DEVEX-012",
+      "epicId": "E11",
+      "themeId": "T1",
+      "phase": 7,
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/devex-012-autarky-gate",
+      "title": "Backstage and code-server Helm charts comply with autarky gate (G6)",
+      "description": "Audit all templates under platform/charts/backstage/ and platform/charts/code-server/ and replace any hard-coded external registry references (docker.io, ghcr.io, etc.) with {{ .Values.global.imageRegistry }}. Add autarky check to each chart's CI lint step. Both charts must pass the G6 grep check clean.",
+      "acceptanceCriteria": [
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/backstage/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/code-server/templates/ returns no matches",
+        "helm lint platform/charts/backstage/ exits 0",
+        "helm lint platform/charts/code-server/ exits 0",
+        "helm template platform/charts/backstage/ --set global.imageRegistry=harbor.example.com renders all image refs starting with harbor.example.com"
+      ],
+      "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/backstage/templates/ platform/charts/code-server/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "DEVEX-013",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/devex-013-argocd-apps",
+      "title": "ArgoCD Application manifests for Backstage and code-server wired into App-of-Apps",
+      "description": "Create ArgoCD Application YAML manifests for platform/charts/backstage and platform/charts/code-server under cluster/argocd/apps/. Register both in the App-of-Apps root Application so ArgoCD manages their lifecycle via GitOps. Both apps must appear in 'argocd app list' and sync successfully against the kind cluster.",
+      "acceptanceCriteria": [
+        "cluster/argocd/apps/backstage.yaml exists and contains a valid ArgoCD Application manifest",
+        "cluster/argocd/apps/code-server.yaml exists and contains a valid ArgoCD Application manifest",
+        "Both files reference {{ .Values.global.domain }} (or equivalent values injection) rather than a hard-coded domain",
+        "helm template cluster/argocd/ renders both Application manifests without error",
+        "Neither manifest contains a hard-coded external registry reference"
+      ],
+      "testPlan": "helm template cluster/argocd/ | grep -E 'kind: Application' | wc -l  # must include backstage and code-server entries; grep -rn 'docker\\.io\\|ghcr\\.io' cluster/argocd/apps/backstage.yaml cluster/argocd/apps/code-server.yaml && echo FAIL || echo PASS",
+      "dependencies": [
+        "DEVEX-001",
+        "DEVEX-002"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm",
+        "kubectl"
+      ]
+    },
+    {
+      "id": "QUALITY-008",
+      "epicId": "E12",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/quality-008-sonarqube-quality-gate",
+      "title": "SonarQube quality gate blocks GitLab MR merge when analysis fails",
+      "description": "Configure a SonarQube Quality Gate on the sovereign project that fails when overall gate status is ERROR. Wire the GitLab CI pipeline (from QUALITY-004) to poll the SonarQube task API and fail the pipeline \u2014 thus blocking the MR merge \u2014 when the gate is not GREEN. The GitLab External Status Check or pipeline failure is sufficient to block the merge.",
+      "acceptanceCriteria": [
+        "SonarQube API GET /api/qualitygates/show returns a gate with at least one condition (e.g. coverage < threshold)",
+        "GitLab CI job sonarqube-check exits non-zero when SonarQube analysis result is ERROR or WARN",
+        "A GitLab MR pipeline that includes a deliberate coverage drop shows the sonarqube-check job as failed in CI output",
+        "The sovereign project in SonarQube has a Quality Gate assigned (not just the default Sonar way)"
+      ],
+      "testPlan": "curl -s -u admin:$SONAR_TOKEN http://sonarqube.sovereign.svc/api/qualitygates/show?name=sovereign | python3 -c \"import json,sys; d=json.load(sys.stdin); assert len(d.get('conditions',[])) > 0, 'no conditions'; print('PASS')\"",
+      "dependencies": [
+        "QUALITY-001",
+        "QUALITY-004"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "kubectl",
+        "helm"
+      ]
+    },
+    {
+      "id": "QUALITY-009",
+      "epicId": "E12",
+      "themeId": "T1",
+      "phase": 7,
+      "priority": 3,
+      "points": 1,
+      "branchName": "feature/quality-009-autarky-gate",
+      "title": "SonarQube and ReportPortal Helm charts comply with autarky gate (G6)",
+      "description": "Audit all templates under platform/charts/sonarqube/ and platform/charts/reportportal/ and replace any hard-coded external registry references with {{ .Values.global.imageRegistry }}. Both charts must pass the G6 grep check and helm lint clean.",
+      "acceptanceCriteria": [
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/sonarqube/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/reportportal/templates/ returns no matches",
+        "helm lint platform/charts/sonarqube/ exits 0",
+        "helm lint platform/charts/reportportal/ exits 0"
+      ],
+      "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/sonarqube/templates/ platform/charts/reportportal/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
+      "dependencies": [
+        "QUALITY-001",
+        "QUALITY-002"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "TEST-009",
+      "epicId": "E13",
+      "themeId": "T4",
+      "phase": 8,
+      "priority": 2,
+      "points": 2,
+      "branchName": "feature/test-009-chaos-grafana-dashboard",
+      "title": "Chaos Mesh experiment results visible in Grafana via Prometheus ServiceMonitor",
+      "description": "Add a Prometheus ServiceMonitor to the chaos-mesh Helm chart that scrapes Chaos Mesh controller metrics. Create a Grafana dashboard ConfigMap (in platform/charts/chaos-mesh/templates/) that shows experiment count, failure events, and pod disruption timeline. The dashboard must load in Grafana automatically via the grafana.sidecar.dashboards.enabled label.",
+      "acceptanceCriteria": [
+        "platform/charts/chaos-mesh/templates/servicemonitor.yaml exists and contains a valid Prometheus ServiceMonitor",
+        "platform/charts/chaos-mesh/templates/grafana-dashboard.yaml exists and contains a ConfigMap with label grafana_dashboard: '1'",
+        "helm lint platform/charts/chaos-mesh/ exits 0",
+        "helm template platform/charts/chaos-mesh/ | grep 'kind: ServiceMonitor' returns a match",
+        "helm template platform/charts/chaos-mesh/ | grep 'grafana_dashboard' returns a match"
+      ],
+      "testPlan": "helm lint platform/charts/chaos-mesh/ && helm template platform/charts/chaos-mesh/ | grep -E 'kind: ServiceMonitor|grafana_dashboard' | wc -l  # must be >= 2",
+      "dependencies": [
+        "TEST-004"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm",
+        "kubectl"
+      ]
+    },
+    {
+      "id": "TEST-010",
+      "epicId": "E13",
+      "themeId": "T1",
+      "phase": 8,
+      "priority": 3,
+      "points": 1,
+      "branchName": "feature/test-010-autarky-gate",
+      "title": "All E13 Helm charts comply with autarky gate (G6) \u2014 no external registry references",
+      "description": "Audit all templates under platform/charts/selenium-grid/, platform/charts/k6-operator/, platform/charts/chaos-mesh/, platform/charts/mailhog/, and platform/charts/wiremock/ and replace any hard-coded external registry references with {{ .Values.global.imageRegistry }}. All five charts must pass the G6 grep check and helm lint clean.",
+      "acceptanceCriteria": [
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/selenium-grid/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/k6-operator/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/chaos-mesh/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/mailhog/templates/ returns no matches",
+        "grep -rn 'docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io' platform/charts/wiremock/templates/ returns no matches"
+      ],
+      "testPlan": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/selenium-grid/templates/ platform/charts/k6-operator/templates/ platform/charts/chaos-mesh/templates/ platform/charts/mailhog/templates/ platform/charts/wiremock/templates/ 2>/dev/null); [ -z \"$result\" ] && echo PASS || (echo FAIL && echo \"$result\" && exit 1)'",
+      "dependencies": [
+        "TEST-006"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "HA-009",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 28,
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/ha-009-e11-e12-ha-coverage",
+      "title": "HA gate extended to cover E11 and E12 charts \u2014 Backstage, code-server, SonarQube, ReportPortal",
+      "description": "Update scripts/ha-gate.sh (or equivalent) to include the Helm chart directories for Backstage, code-server, SonarQube, and ReportPortal in its scan. All four charts must pass the HA gate checks: replicaCount >= 2, PodDisruptionBudget present, podAntiAffinity defined. Add a GitHub Actions matrix entry for each new chart directory.",
+      "acceptanceCriteria": [
+        "scripts/ha-gate.sh (or .github/workflows/ha-gate.yml) references platform/charts/backstage/ in its chart list",
+        "scripts/ha-gate.sh references platform/charts/code-server/ in its chart list",
+        "scripts/ha-gate.sh references platform/charts/sonarqube/ in its chart list",
+        "scripts/ha-gate.sh references platform/charts/reportportal/ in its chart list",
+        "helm template platform/charts/backstage/ | grep PodDisruptionBudget returns a match",
+        "helm template platform/charts/sonarqube/ | grep podAntiAffinity returns a match"
+      ],
+      "testPlan": "for chart in platform/charts/backstage platform/charts/code-server platform/charts/sonarqube platform/charts/reportportal; do echo \"=== $chart ===\"; helm template $chart | grep -E 'PodDisruptionBudget|podAntiAffinity' | wc -l; done",
+      "dependencies": [
+        "HA-001",
+        "DEVEX-001",
+        "DEVEX-002",
+        "QUALITY-001",
+        "QUALITY-002"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "HA-010",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 28,
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/ha-010-e13-ha-coverage",
+      "title": "HA gate extended to cover E13 testing charts \u2014 Selenium, k6, Chaos Mesh, MailHog, Wiremock",
+      "description": "Update scripts/ha-gate.sh to include the five E13 testing infrastructure chart directories. All five charts must pass: replicaCount >= 2, PodDisruptionBudget present, podAntiAffinity defined. This closes the HA coverage gap for the full platform chart set.",
+      "acceptanceCriteria": [
+        "scripts/ha-gate.sh references platform/charts/selenium-grid/, platform/charts/k6-operator/, platform/charts/chaos-mesh/, platform/charts/mailhog/, platform/charts/wiremock/ in its chart list",
+        "helm template platform/charts/selenium-grid/ | grep PodDisruptionBudget returns a match",
+        "helm template platform/charts/chaos-mesh/ | grep podAntiAffinity returns a match",
+        "helm template platform/charts/k6-operator/ | grep PodDisruptionBudget returns a match",
+        "Running ha-gate.sh --dry-run against all E13 charts exits 0"
+      ],
+      "testPlan": "for chart in platform/charts/selenium-grid platform/charts/k6-operator platform/charts/chaos-mesh platform/charts/mailhog platform/charts/wiremock; do echo \"=== $chart ===\"; helm template $chart | grep -E 'PodDisruptionBudget|podAntiAffinity' | wc -l; done",
+      "dependencies": [
+        "HA-001",
+        "TEST-006"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
     }
   ]
 }
