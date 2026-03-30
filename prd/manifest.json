@@ -362,49 +362,20 @@
       "themeGoal": "T1 Sovereignty \u2014 KIND-001a kind cluster bootstrap unblocks PLATFORM chain; RESTRUCTURE and HA-001 review confirmations cleared.",
       "dependsOn": [
         30
-      ],
-      "startDate": "2026-03-30T00:00:00+00:00",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsTotal": 8,
-      "storiesTotal": 6,
-      "pointsCompleted": 8,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 50.0
+      ]
     },
     {
       "id": 32,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 31 completes.",
       "file": "prd/increment-32-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 31 advances.",
       "dependsOn": [
         31
       ]
     }
   ],
-  "activeSprint": "prd/increment-31-pending-stub.json",
-  "currentIncrement": 31,
-  "sprintHistory": [
-    {
-      "increment": 31,
-      "name": "kind-bootstrap-chain",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsCompleted": 8,
-      "storiesTotal": 6,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 50.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 31,
-      "pointsCompleted": 8,
-      "storiesAccepted": 6,
-      "reviewPassRate": 50.0,
-      "date": "2026-03-30T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-32-pending-stub.json",
+  "currentIncrement": 32
 }
