@@ -1972,6 +1972,49 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs corrected: smart.md \u2192 smart-check.md (the actual file). Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
       }
+    },
+    {
+      "id": "KAIZEN-001",
+      "title": "Kaizen: Audit and update pinned upstream Helm chart dependency versions",
+      "description": "All upstream Helm chart dependencies are pinned at versions from 2024. No gate or process watches for staleness. Specific risks: Istio 1.21.2 (EOL, CVEs likely; v1 CRD APIs promoted in 1.22+), ArgoCD 6.7.3, GitLab 8.5.0, prometheus-stack 58.2.2, Loki 6.6.2, Keycloak 21.4.4. Pinning is correct for reproducibility, but unreviewed pins accumulate CVEs silently. This story audits each pinned version, documents current stable, and updates to current stable where no breaking changes exist. Breaking upgrades (requiring chart template changes) are tracked as follow-on stories.",
+      "acceptanceCriteria": [
+        "A version audit table exists at docs/state/chart-versions.md listing: chart name, current pinned version, current upstream stable, CVE risk rating (low/medium/high), action taken",
+        "All charts with no breaking changes updated to current stable in platform/charts/*/Chart.yaml",
+        "helm lint platform/charts/<name>/ passes for each updated chart",
+        "grep -rn 'networking.istio.io/v1beta1\\|security.istio.io/v1beta1' platform/charts/istio/templates/ prints nothing (upgraded to v1 if Istio >= 1.22 adopted)"
+      ],
+      "testPlan": "Run helm lint on each updated chart. Show version diff in Chart.yaml files. Show docs/state/chart-versions.md contents.",
+      "themeId": "T1",
+      "branchName": "kaizen/chart-version-audit",
+      "priority": 15,
+      "points": 3,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": "",
+      "attempts": 0,
+      "dependencies": [],
+      "smart": ""
+    },
+    {
+      "id": "KAIZEN-002",
+      "title": "Kaizen: Zero Trust theme has no delivered epics \u2014 assign T2 themeId to qualifying backlog stories",
+      "description": "T2 (Zero Trust) has 0 accepted story points across 33 complete increments. The platform constitution declares mTLS everywhere (Istio STRICT), deny-all NetworkPolicy, OPA/Gatekeeper enforcement, Falco runtime detection, Trivy scanning \u2014 but none of this is tracked under T2 themeId. Existing stories KIND-002 (egress blocked), PLATFORM-001 (cert-manager), PLATFORM-004 (Keycloak OIDC) are T2 work without the T2 label. This story audits the backlog and assigns correct themeId: 'T2' to all Zero Trust stories so the plan ceremony can prioritize them and the retro can measure T2 velocity. Also creates at least one T2 epic in epics.json if none exists.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); t2=[s for s in b['stories'] if s.get('themeId')=='T2']; print(len(t2), 't2 stories')\" prints >= 3",
+        "python3 -c \"import json; e=json.load(open('prd/epics.json')); t2=[x for x in e['epics'] if x.get('themeId')=='T2']; print(t2)\" shows at least one T2 epic",
+        "No T2 story is assigned to an epic that has a different theme"
+      ],
+      "testPlan": "Run the acceptance criteria commands. Show the list of T2-labeled stories. Show the T2 epic entry.",
+      "themeId": "T2",
+      "branchName": "kaizen/t2-theme-labeling",
+      "priority": 12,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": "",
+      "attempts": 0,
+      "dependencies": [],
+      "smart": ""
     }
   ]
 }
