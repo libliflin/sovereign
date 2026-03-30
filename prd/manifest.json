@@ -347,14 +347,19 @@
       "name": "chart-migration-and-toolchain",
       "description": "Complete RESTRUCTURE-001c chart migration to unlock the KIND cluster delivery chain; advance HA hardening for quality charts, code-server toolchain init container, and plan ceremony pre-accepted story guard.",
       "file": "prd/increment-30-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "T1/T3 \u2014 chart migration (unlock KIND chain), HA hardening for quality charts, code-server toolchain init container, plan ceremony capacity guard.",
       "startDate": "2026-03-30T00:00:00+00:00",
       "pointsTotal": 8,
       "storiesTotal": 4,
       "dependsOn": [
         29
-      ]
+      ],
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 8,
+      "storiesAccepted": 4,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 31,
@@ -369,5 +374,26 @@
     }
   ],
   "activeSprint": "prd/increment-30-pending-stub.json",
-  "currentIncrement": 30
+  "currentIncrement": 30,
+  "sprintHistory": [
+    {
+      "increment": 30,
+      "name": "chart-migration-and-toolchain",
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 8,
+      "storiesTotal": 4,
+      "storiesAccepted": 4,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 30,
+      "pointsCompleted": 8,
+      "storiesAccepted": 4,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-30T00:00:00+00:00"
+    }
+  ]
 }
