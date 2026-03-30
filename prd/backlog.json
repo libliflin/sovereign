@@ -1999,7 +1999,8 @@
       "attempts": 0,
       "dependencies": [],
       "smart": "",
-      "readinessNote": "NOT READY: AC2 ('All charts with no breaking changes updated to current stable') is not independently verifiable \u2014 'no breaking changes' requires human judgment, not a command. testPlan is vague ('Run helm lint on each updated chart') without explicit chart names or expected output for each. Rewrite AC2 as a specific command check and expand testPlan with named charts."
+      "readinessNote": "NOT READY: AC2 ('All charts with no breaking changes updated to current stable') is not independently verifiable \u2014 'no breaking changes' requires human judgment, not a command. testPlan is vague ('Run helm lint on each updated chart') without explicit chart names or expected output for each. Rewrite AC2 as a specific command check and expand testPlan with named charts.",
+      "epicId": "E6"
     },
     {
       "id": "KAIZEN-002",
@@ -2021,7 +2022,8 @@
       "attempts": 0,
       "dependencies": [],
       "smart": "",
-      "readinessNote": "NOT READY: AC3 ('No T2 story is assigned to an epic that has a different theme') has no verifiable command. Add a Python one-liner that checks all T2 stories have epicId pointing to an epic with themeId='T2', e.g.: python3 -c \"import json; b=json.load(open('prd/backlog.json')); e=json.load(open('prd/epics.json')); epic_themes={x['id']:x['themeId'] for x in e['epics']}; bad=[s['id'] for s in b['stories'] if s.get('themeId')=='T2' and epic_themes.get(s.get('epicId'))!='T2']; assert not bad; print('OK')\" exits 0."
+      "readinessNote": "NOT READY: AC3 ('No T2 story is assigned to an epic that has a different theme') has no verifiable command. Add a Python one-liner that checks all T2 stories have epicId pointing to an epic with themeId='T2', e.g.: python3 -c \"import json; b=json.load(open('prd/backlog.json')); e=json.load(open('prd/epics.json')); epic_themes={x['id']:x['themeId'] for x in e['epics']}; bad=[s['id'] for s in b['stories'] if s.get('themeId')=='T2' and epic_themes.get(s.get('epicId'))!='T2']; assert not bad; print('OK')\" exits 0.",
+      "epicId": "E8"
     }
   ]
 }
