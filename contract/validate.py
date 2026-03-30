@@ -65,7 +65,7 @@ def parse_yaml_flat(text: str) -> dict:
         path_stack.append((indent, key))
         dotpath = ".".join(k for _, k in path_stack)
 
-        if value:
+        if value is not None:
             result[dotpath] = value
 
     return result
@@ -86,11 +86,12 @@ def validate(values_path: str) -> list:
             f"apiVersion must be '{EXPECTED_API_VERSION}', got '{api_version!r}'"
         )
 
-    # Check required fields are present and non-empty
+    # Check required fields are present
+    # runtime.imageRegistry.internal may be empty string during bootstrap — that is OK
+    # but the key must still be present in the cluster-values.yaml
     for field in REQUIRED_FIELDS:
         value = flat.get(field)
-        # imageRegistry.internal may be empty string during bootstrap — that's OK
-        if value is None and field != "runtime.imageRegistry.internal":
+        if value is None:
             errors.append(f"MISSING required field: {field}")
 
     # Check const: true fields
