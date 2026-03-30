@@ -27,7 +27,15 @@
       "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-22-remediation.json",
-      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead"
+      "returnedReason": "Root cause: KAIZEN-004r AC2 requires fixture-based ceremony invocation infrastructure that does not exist; fix is to write a unit test of the guard logic instead",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Guard logic is at ceremonies.py:538-558; test file, import path, mock data structure, and expected output are all explicitly specified."
+      }
     },
     {
       "id": "KAIZEN-013r",
@@ -57,7 +65,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Implementation already done; this is verification-only with corrected file path."
+        "notes": "All SMART dimensions green. Verification-only story; all ACs are runnable grep/python one-liners against named files with exact expected output."
       }
     },
     {
@@ -65,10 +73,10 @@
       "title": "SMART gate: flag exact count assertions for multi-component charts",
       "description": "The SMART measurable check does not distinguish between exact-count ACs ('returns 1') and minimum-count ACs ('returns at least 1'). For charts that may have multiple components (each with their own PDB), exact counts are brittle \u2014 the implementation can be correct while the AC fails. Update the SMART measurable scoring prompt to explicitly ask: 'do count-based ACs use at-least rather than exact assertions for resources that scale with component count?'",
       "acceptanceCriteria": [
-        "grep -n 'at least\\|at-least\\|minimum' scripts/ralph/ceremonies/smart.md shows the updated measurable prompt includes guidance on count assertion types",
+        "grep -n 'at least\\|at-least\\|minimum' scripts/ralph/ceremonies/smart-check.md shows the updated measurable prompt includes guidance on count assertion types",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "testPlan": "grep -n 'at least' scripts/ralph/ceremonies/smart.md to show the prompt change. python3 -m py_compile scripts/ralph/ceremonies.py. Show output verbatim.",
+      "testPlan": "grep -n 'at least' scripts/ralph/ceremonies/smart-check.md to show the prompt change. python3 -m py_compile scripts/ralph/ceremonies.py. Show output verbatim.",
       "epicId": "E12",
       "themeId": "T3",
       "priority": 1,
@@ -84,7 +92,7 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Small, targeted change to the SMART ceremony prompt."
+        "notes": "Relevant score 4: quality-gate prompt improvement does not advance feature delivery but prevents future false-negative SMART failures. All other dimensions green."
       }
     },
     {
@@ -113,17 +121,17 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
+        "notes": "Relevant score 4: ceremony metric fix corrects misleading velocity reporting but does not advance feature delivery. Both KAIZEN-013 and KAIZEN-013r check the same retro.md formula; duplication is intentional to close the original story with corrected ACs."
       },
       "returnedFromSprint": "prd/increment-25-pending-stub.json",
       "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
     },
     {
       "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from '2i' (complete) to current kind-cluster increment",
-      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: '2i' which is a completed increment. E15 stories (KIND integration testing, HA validation) are directly tied to the active kind-cluster work. Update E15.targetIncrement in epics.json to the current kind-integration increment (20 or 21) so the planning ceremony correctly associates these stories with the active delivery stream.",
+      "title": "Kaizen: Update E15 targetIncrement from 22 (complete) to 28 (active increment)",
+      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: 22 which is a completed increment. Update E15.targetIncrement in epics.json to 28 (the active increment) so the planning ceremony correctly associates HA validation stories with the active delivery stream.",
       "acceptanceCriteria": [
-        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] not in ['2i', 0, 1, 2, '2h', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], f'stale targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement updated')\" exits 0 and prints OK",
+        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] == 28, f'wrong targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement is 28')\" exits 0 and prints OK",
         "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
       ],
       "epicId": "E1",
@@ -136,7 +144,15 @@
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must show a non-complete increment ID. Show output verbatim."
+      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must print 28. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Single-field JSON edit with a Python assertion that enforces the exact expected value (28). Directly unblocks HA validation story routing for the active increment."
+      }
     },
     {
       "id": "KAIZEN-005",
@@ -158,7 +174,15 @@
         "grep -r 'retro-patch-phase' scripts/ returns no matches",
         "shellcheck -S error scripts/ralph/ceremonies.sh exits 0 after any shell changes"
       ],
-      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim."
+      "testPlan": "grep -r 'retro-patch-phase' scripts/ \u2014 must return no matches. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: legacy vocabulary cleanup supports delivery hygiene but does not advance feature delivery. All other dimensions green; grep -r pattern provides unambiguous pass/fail verification."
+      }
     },
     {
       "id": "KAIZEN-006",
@@ -179,7 +203,15 @@
         "grep -n '\"phase\"' prd/backlog.json returns no matches",
         "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim."
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: data model cleanup prevents field drift but does not advance feature delivery. Python assertion + grep + json.load give three independent binary checks."
+      }
     },
     {
       "id": "HA-006",
@@ -202,12 +234,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Prior scoring notes indicate cost-gate.sh already exists using Python yaml parsing (avoiding the pipefail+grep risk on nested YAML fields). ACs cover shellcheck, runtime output shape, and final PASS/FAIL verdict independently."
       }
     },
     {
@@ -231,12 +263,12 @@
       "attempts": 0,
       "priority": 4,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": ""
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Named file, named YAML section, exact keys described; grep + python yaml parse + helm lint give three independent binary checks."
       }
     },
     {
@@ -265,12 +297,12 @@
         "HA-001"
       ],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support (HA-001 dependency satisfied). Six independent grep/ls checks fully cover the workflow requirements."
       }
     }
   ]
