@@ -2603,6 +2603,27 @@
       "passes": false,
       "reviewed": false,
       "readinessNote": "READY: self-contained JSON edit. Verify by running the AC one-liner."
+    },
+    {
+      "id": "KAIZEN-018",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 15,
+      "points": 2,
+      "branchName": "kaizen/smart-score-open-backlog",
+      "title": "Kaizen: SMART-score all 16 unscored open backlog stories to clear planning WARN",
+      "description": "The orient KPI 'SMART readiness' reports 34% scored (25/74 stories), well below the 80% threshold. 16 open product stories have no SMART field. Each planning cycle raises a WARN signal that the team must mentally filter. The fix: evaluate each unscored open story against the 5 SMART dimensions (specific, measurable, achievable, relevant, timeBound), add a 'smart' object with scores 1-5 and a 'notes' string, and rewrite any acceptanceCriteria that score below 4 on measurable. Stories that are genuinely unachievable without a running cluster should note that in the achievable score. Stories that cannot be made measurable without command-output ACs should be rewritten or retired to backlog comments.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); unscored=[s['id'] for s in b['stories'] if s.get('status','open')=='open' and not s.get('smart')]; assert unscored==[], f'unscored: {unscored}'; print('PASS: all open stories SMART-scored')\" exits 0 and prints PASS",
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); low=[s['id'] for s in b['stories'] if s.get('status','open')=='open' and s.get('smart',{}).get('measurable',5)<3]; print(f'low measurable: {low}')\" prints an empty list"
+      ],
+      "testPlan": "Run AC1 one-liner verbatim and show output. Run AC2 one-liner verbatim and show output.",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "returnedFromSprint": null,
+      "readinessNote": "READY: no dependencies, static analysis only, no cluster required."
     }
   ]
 }
