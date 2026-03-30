@@ -376,10 +376,16 @@ KAIZEN-005 retro-patch naming normalized to retro-patch-increment*.md, KAIZEN-00
 interface in values.yaml, HA-006 scripts/gates/cost-gate.sh, HA-007
 .github/workflows/ha-gate.yml CI enforcement on every PR touching platform/charts/;
 KAIZEN-013 retro first-pass formula returned to backlog — implementation in retro.md:206 is
-correct but AC pointed to wrong file)
+correct but AC pointed to wrong file),
+26 (pending-stub — 9/9 accepted: KAIZEN-013r retro AC corrected (r-suffix pattern confirmed),
+KAIZEN-010r pre-retro guard unit test (scripts/ralph/tests/test_retro_guard.py),
+KAIZEN-013 retro first-pass formula verified (attempts == 1 in retro.md:206),
+KAIZEN-008 E15 targetIncrement updated, KAIZEN-005 retro-patch naming normalized,
+KAIZEN-006 legacy phase field removed from backlog, HA-006 cost-gate.sh,
+DEVEX-007a code-server toolchainInit values, HA-007 ha-gate.yml — 100% first-review pass rate)
 
-Increment active: 25 is complete; advance ceremony will move pointer to increment 26 (pending stub).
-Increment 26 is a placeholder — plan ceremony will populate it with stories from the backlog.
+Increment active: 26 is complete; advance ceremony will move pointer to increment 27 (pending stub).
+Increment 27 is a placeholder — plan ceremony will populate it with stories from the backlog.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -417,4 +423,3 @@ integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; 
 ## Known model inconsistencies
 
 - 7 backlog stories have `themeId` that differs from their epic's `themeId` (KIND-001, KIND-002, PLATFORM-001, PLATFORM-002, PLATFORM-004, PLATFORM-005, PLATFORM-006). May be intentional cross-theme attribution or drift — no migration story exists yet. Flag if causing planning confusion.
-- Retro ceremony first-pass formula: implementation in `scripts/ralph/ceremonies/retro.md:206` is correct (`attempts == 1`). Story KAIZEN-013 was returned to backlog because AC1 targeted `ceremonies.py` instead of `retro.md`. No functional bug — only the story's AC needs correction before it can be closed.
