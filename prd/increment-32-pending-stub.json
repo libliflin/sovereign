@@ -24,7 +24,7 @@
       ],
       "priority": 3,
       "points": 2,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
