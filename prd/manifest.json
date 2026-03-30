@@ -349,51 +349,22 @@
       "file": "prd/increment-30-pending-stub.json",
       "status": "complete",
       "themeGoal": "T1/T3 \u2014 chart migration (unlock KIND chain), HA hardening for quality charts, code-server toolchain init container, plan ceremony capacity guard.",
-      "startDate": "2026-03-30T00:00:00+00:00",
-      "pointsTotal": 8,
-      "storiesTotal": 4,
       "dependsOn": [
         29
-      ],
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsCompleted": 8,
-      "storiesAccepted": 4,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      ]
     },
     {
       "id": 31,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 30 completes.",
       "file": "prd/increment-31-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 30 advances.",
       "dependsOn": [
         30
       ]
     }
   ],
-  "activeSprint": "prd/increment-30-pending-stub.json",
-  "currentIncrement": 30,
-  "sprintHistory": [
-    {
-      "increment": 30,
-      "name": "chart-migration-and-toolchain",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsCompleted": 8,
-      "storiesTotal": 4,
-      "storiesAccepted": 4,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 30,
-      "pointsCompleted": 8,
-      "storiesAccepted": 4,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-30T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-31-pending-stub.json",
+  "currentIncrement": 31
 }
