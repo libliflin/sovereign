@@ -130,8 +130,8 @@
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
-      "blocker": "AC1-AC3 require kind-sovereign-test running with Chaos Mesh CRDs installed. No kind cluster is available in this execution environment. AC4 is complete: kind/fixtures/podchaos-test.yaml created and validated as YAML.",
+      "attempts": 2,
+      "blocker": "kind-sovereign-test cluster is available. Two fundamental blockers prevent AC1-AC3: (1) platform/charts/chaos-mesh/ is a minimal controller-manager wrapper — it does not install Chaos Mesh CRDs (PodChaos, NetworkChaos, etc.) required for AC3. The full Chaos Mesh operator (CRDs + chaos-daemon DaemonSet + webhook) is not in the chart. (2) Vendor image chaos-mesh/chaos-mesh:v2.6.3-abc1234-p0 requires the vendor pipeline or Harbor. AC4 remains complete: kind/fixtures/podchaos-test.yaml exists and is valid YAML.",
       "smart": {
         "specific": 4,
         "measurable": 4,
@@ -235,8 +235,8 @@
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
-      "blocker": "All ACs require kind-sovereign-test running with Wiremock deployed. No kind cluster is available in this execution environment. No static artifacts to create — story is entirely runtime verification.",
+      "attempts": 2,
+      "blocker": "kind-sovereign-test cluster is available. platform/charts/wiremock/templates/service.yaml added (chart was missing a Service — required for port-forward AC). Vendor image wiremock/wiremock:3.5.2-abc1234-p0 not loaded in kind: upstream pull of wiremock/wiremock:3.5.2 from Docker Hub timed out after >1hr (large JVM image). Runtime ACs require the vendor pipeline to tag and load the image, or Harbor running with the vendored image.",
       "smart": {
         "specific": 4,
         "measurable": 4,
