@@ -20,6 +20,15 @@ spec:
       labels:
         {{- include "mailhog.selectorLabels" . | nindent 8 }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "mailhog.selectorLabels" . | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: mailhog
           image: {{ include "mailhog.image" . }}
