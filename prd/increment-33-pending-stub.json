@@ -232,7 +232,8 @@
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "blocker": "All ACs require kind-sovereign-test running with Wiremock deployed. No kind cluster is available in this execution environment. No static artifacts to create — story is entirely runtime verification.",
       "smart": {
         "specific": 4,
         "measurable": 4,
