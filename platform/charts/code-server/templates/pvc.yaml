@@ -6,9 +6,9 @@ metadata:
   labels:
     {{- include "code-server.labels" . | nindent 4 }}
 spec:
-  storageClassName: {{ .Values.workspace.storageClass }}
+  storageClassName: {{ .Values.global.storageClass }}
   accessModes:
     {{- toYaml .Values.workspace.accessModes | nindent 4 }}
   resources:
     requests:
-      storage: {{ .Values.workspace.storageSize }}
+      storage: {{ .Values.persistence.size }}
