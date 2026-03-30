@@ -166,10 +166,10 @@
       "branchName": "kaizen/remove-phase-field",
       "priority": 4,
       "points": 1,
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "acceptanceCriteria": [
         "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
