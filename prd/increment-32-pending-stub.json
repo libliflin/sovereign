@@ -58,7 +58,7 @@
         "kubectl uncordon <worker-node> --context kind-sovereign-test followed by kubectl wait --for=condition=Ready pod -l app=pdb-test -n pdb-test --timeout=60s --context kind-sovereign-test exits 0"
       ],
       "testPlan": "kind get clusters (verify kind-sovereign-test) && kubectl get nodes --context kind-sovereign-test && kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && WORKER=$(kubectl get nodes --context kind-sovereign-test --no-headers | grep -v control-plane | head -1 | awk '{print $1}') && kubectl drain $WORKER --delete-emptydir-data --ignore-daemonsets --context kind-sovereign-test 2>&1 | tee /tmp/drain.out && kubectl get pods -l app=pdb-test -n pdb-test --context kind-sovereign-test && kubectl uncordon $WORKER --context kind-sovereign-test; show all output verbatim",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
