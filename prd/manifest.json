@@ -358,14 +358,19 @@
       "name": "kind-bootstrap-chain",
       "description": "Advance the KIND cluster delivery chain. KIND-001a bootstraps the cluster foundation that unblocks the entire PLATFORM delivery sequence. Review confirmations clear the RESTRUCTURE and HA gate backlog.",
       "file": "prd/increment-31-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "T1 Sovereignty \u2014 KIND-001a kind cluster bootstrap unblocks PLATFORM chain; RESTRUCTURE and HA-001 review confirmations cleared.",
       "dependsOn": [
         30
       ],
       "startDate": "2026-03-30T00:00:00+00:00",
+      "endDate": "2026-03-30T00:00:00+00:00",
       "pointsTotal": 8,
-      "storiesTotal": 6
+      "storiesTotal": 6,
+      "pointsCompleted": 8,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 50.0
     },
     {
       "id": 32,
@@ -380,5 +385,26 @@
     }
   ],
   "activeSprint": "prd/increment-31-pending-stub.json",
-  "currentIncrement": 31
+  "currentIncrement": 31,
+  "sprintHistory": [
+    {
+      "increment": 31,
+      "name": "kind-bootstrap-chain",
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 8,
+      "storiesTotal": 6,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 50.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 31,
+      "pointsCompleted": 8,
+      "storiesAccepted": 6,
+      "reviewPassRate": 50.0,
+      "date": "2026-03-30T00:00:00+00:00"
+    }
+  ]
 }
