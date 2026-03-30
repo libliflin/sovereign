@@ -12,7 +12,7 @@
         "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; print('stale entries:', stale)\" prints an empty list (entries removed or marked complete)",
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
-      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies.py to locate the first-pass formula; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" — must return []. Show all output verbatim.",
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies.py to locate the first-pass formula; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" \u2014 must return []. Show all output verbatim.",
       "epicId": "E1",
       "themeId": "T3",
       "branchName": "kaizen/retro-first-pass-formula",
@@ -211,7 +211,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Pure verification story: enumerates all 16 targeted files explicitly, lists all 8 exempt files with reason. No escape hatches."
-      }
+      },
+      "readinessNote": "BLOCKED: depends on KAIZEN-009a, KAIZEN-009b, KAIZEN-009c, KAIZEN-009d which all have passes=false. Resolve all four injection stories first."
     },
     {
       "id": "KAIZEN-008",
@@ -294,7 +295,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
     },
     {
       "id": "RESTRUCTURE-001b-2",
@@ -327,7 +329,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
     },
     {
       "id": "RESTRUCTURE-001c",
