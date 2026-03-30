@@ -1,9 +1,9 @@
 {
-  "increment": 28,
+  "increment": 29,
   "name": "pending-stub",
-  "description": "Delivery machine kaizen: fix ceremony metric bugs, clean legacy vocabulary, extend HA gate coverage, and verify pre-existing implementations.",
-  "sprintGoal": "Advance delivery machine health by resolving retro formula bugs, removing legacy vocabulary, and wiring HA validation into CI.",
-  "capacity": 12,
+  "description": "Placeholder pending increment. Will be properly planned when increment 28 completes.",
+  "sprintGoal": "Advance delivery machine health: verify ceremony reporting accuracy, clean legacy vocabulary from scripts and data model, improve SMART gate guidance, and establish HA cost-gate and CI workflow infrastructure.",
+  "capacity": 15,
   "stories": [
     {
       "id": "KAIZEN-010r",
@@ -22,7 +22,7 @@
       "priority": 1,
       "points": 2,
       "passes": true,
-      "reviewed": true,
+      "reviewed": false,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -34,7 +34,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Guard logic is at ceremonies.py:538-558; test file, import path, mock data structure, and expected output are all explicitly specified."
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -52,10 +52,10 @@
       "branchName": "kaizen/retro-first-pass-verify",
       "priority": 1,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-25-pending-stub.json",
       "returnedReason": "KAIZEN-013 AC pointed to wrong file; implementation already correct in retro.md \u2014 this story just re-verifies with corrected AC",
@@ -65,7 +65,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Verification-only story; all ACs are runnable grep/python one-liners against named files with exact expected output."
+        "notes": "All SMART dimensions green. Implementation already correct in retro.md; this story is verification-only with corrected file path."
       }
     },
     {
@@ -81,9 +81,9 @@
       "themeId": "T3",
       "priority": 1,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
-      "attempts": 1,
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
       "returnedFromSprint": "prd/increment-27-pending-stub.json",
       "returnedReason": "Root cause of QUALITY-005 failure: SMART measurable prompt did not catch brittle exact-count assertion on a multi-component chart",
       "smart": {
@@ -92,7 +92,7 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Relevant score 4: quality-gate prompt improvement does not advance feature delivery but prevents future false-negative SMART failures. All other dimensions green."
+        "notes": "Relevant score 4: quality-gate improvement does not advance feature delivery, but prevents false-negative SMART failures."
       }
     },
     {
@@ -110,10 +110,10 @@
       "branchName": "kaizen/retro-first-pass-formula",
       "priority": 2,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "smart": {
         "specific": 5,
@@ -121,38 +121,10 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Relevant score 4: ceremony metric fix corrects misleading velocity reporting but does not advance feature delivery. Both KAIZEN-013 and KAIZEN-013r check the same retro.md formula; duplication is intentional to close the original story with corrected ACs."
+        "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
       },
       "returnedFromSprint": "prd/increment-25-pending-stub.json",
       "returnedReason": "AC1 checked ceremonies.py but the formula lives in ceremonies/retro.md; corrected AC now points to the right file"
-    },
-    {
-      "id": "KAIZEN-008",
-      "title": "Kaizen: Update E15 targetIncrement from 22 (complete) to 28 (active increment)",
-      "description": "E15 epic ('HA validation and integration testing \u2014 kind-based') has targetIncrement: 22 which is a completed increment. Update E15.targetIncrement in epics.json to 28 (the active increment) so the planning ceremony correctly associates HA validation stories with the active delivery stream.",
-      "acceptanceCriteria": [
-        "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); assert e15['targetIncrement'] == 28, f'wrong targetIncrement: {e15[\\\"targetIncrement\\\"]}'; print('OK: E15 targetIncrement is 28')\" exits 0 and prints OK",
-        "python3 -c \"import json; json.load(open('prd/epics.json'))\" exits 0 (valid JSON)"
-      ],
-      "epicId": "E1",
-      "themeId": "T3",
-      "branchName": "kaizen/e15-target-increment",
-      "priority": 2,
-      "points": 1,
-      "passes": true,
-      "reviewed": true,
-      "reviewNotes": [],
-      "attempts": 1,
-      "dependencies": [],
-      "testPlan": "python3 -c \"import json; e=json.load(open('prd/epics.json')); e15=next(x for x in e['epics'] if x['id']=='E15'); print('E15 targetIncrement:', e15['targetIncrement'])\" \u2014 must print 28. Show output verbatim.",
-      "smart": {
-        "specific": 5,
-        "measurable": 5,
-        "achievable": 5,
-        "relevant": 5,
-        "timeBound": 5,
-        "notes": "All SMART dimensions green. Single-field JSON edit with a Python assertion that enforces the exact expected value (28). Directly unblocks HA validation story routing for the active increment."
-      }
     },
     {
       "id": "KAIZEN-005",
@@ -163,10 +135,10 @@
       "branchName": "kaizen/retro-patch-naming",
       "priority": 3,
       "points": 1,
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [],
       "acceptanceCriteria": [
         "scripts/ralph/ceremonies/retro.md no longer contains the string 'retro-patch-phase'",
@@ -181,36 +153,36 @@
         "achievable": 5,
         "relevant": 4,
         "timeBound": 5,
-        "notes": "Relevant score 4: legacy vocabulary cleanup supports delivery hygiene but does not advance feature delivery. All other dimensions green; grep -r pattern provides unambiguous pass/fail verification."
+        "notes": "Relevant score 4: legacy vocabulary cleanup supports platform health but does not advance feature delivery."
       }
     },
     {
-      "id": "KAIZEN-006",
-      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
-      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
-      "epicId": "E1",
+      "id": "DEVEX-007a",
+      "epicId": "E11",
       "themeId": "T3",
-      "branchName": "kaizen/remove-phase-field",
-      "priority": 4,
-      "points": 1,
-      "passes": true,
-      "reviewed": true,
-      "reviewNotes": [],
-      "attempts": 1,
-      "dependencies": [],
+      "branchName": "feature/code-server-toolchain-values",
+      "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
+      "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
       "acceptanceCriteria": [
-        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
-        "grep -n '\"phase\"' prd/backlog.json returns no matches",
-        "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
+        "grep 'toolchainInit' platform/charts/code-server/values.yaml returns a match",
+        "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
+        "helm lint platform/charts/code-server/ exits 0"
       ],
-      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
+      "passes": false,
+      "points": 1,
+      "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
+      "dependencies": [],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 4,
       "smart": {
         "specific": 5,
         "measurable": 5,
         "achievable": 5,
-        "relevant": 4,
+        "relevant": 5,
         "timeBound": 5,
-        "notes": "Relevant score 4: data model cleanup prevents field drift but does not advance feature delivery. Python assertion + grep + json.load give three independent binary checks."
+        "notes": "All SMART dimensions green."
       }
     },
     {
@@ -229,46 +201,46 @@
       ],
       "testPlan": "shellcheck -S error scripts/gates/cost-gate.sh && echo 'shellcheck OK'; bash scripts/gates/cost-gate.sh; show full output verbatim including final PASS/FAIL line.",
       "dependencies": [],
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "smart": {
         "specific": 5,
         "measurable": 5,
-        "achievable": 5,
+        "achievable": 3,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Prior scoring notes indicate cost-gate.sh already exists using Python yaml parsing (avoiding the pipefail+grep risk on nested YAML fields). ACs cover shellcheck, runtime output shape, and final PASS/FAIL verdict independently."
+        "notes": "Achievable score 3: description mentions iterating platform/charts/ but no AC explicitly states 'run against all existing charts in platform/charts/' \u2014 AC2 implicitly runs the script against real charts but does not call this out explicitly, per shell-script quality gate rule."
       }
     },
     {
-      "id": "DEVEX-007a",
-      "epicId": "E11",
+      "id": "KAIZEN-006",
+      "title": "Kaizen: Remove legacy 'phase' field from backlog stories",
+      "description": "Eight backlog stories have a redundant 'phase' integer field that duplicates information already encoded in 'epicId \u2192 targetIncrement'. This field drifts from reality as stories move between increments. Remove the 'phase' field from all backlog stories and update the story schema to mark it as deprecated.",
+      "epicId": "E1",
       "themeId": "T3",
-      "branchName": "feature/code-server-toolchain-values",
-      "title": "code-server chart: define toolchainInit values (image ref, workspace bin path)",
-      "description": "Add a toolchainInit section to platform/charts/code-server/values.yaml defining the init container image name (e.g. sovereign/toolchain:latest) and the workspace bin mount path (/home/coder/workspace/bin). The image is combined at template render time with {{ .Values.global.imageRegistry }} \u2014 only the non-registry image name lives in toolchainInit.image. This establishes the values interface consumed by DEVEX-007b.",
-      "acceptanceCriteria": [
-        "grep 'toolchainInit' platform/charts/code-server/values.yaml returns a match",
-        "python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v, 'missing toolchainInit'; print('OK')\" exits 0 and prints OK",
-        "helm lint platform/charts/code-server/ exits 0"
-      ],
-      "passes": true,
-      "points": 1,
-      "testPlan": "grep 'toolchainInit' platform/charts/code-server/values.yaml; python3 -c \"import yaml; v=yaml.safe_load(open('platform/charts/code-server/values.yaml')); assert 'toolchainInit' in v; print('OK')\"; helm lint platform/charts/code-server/ \u2014 show all output verbatim.",
-      "dependencies": [],
-      "reviewed": true,
-      "reviewNotes": [],
-      "attempts": 1,
+      "branchName": "kaizen/remove-phase-field",
       "priority": 4,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0, f'stories still have phase field: {has_phase}'; print('OK')\" exits 0 and prints OK",
+        "grep -n '\"phase\"' prd/backlog.json returns no matches",
+        "python3 -c \"import json; json.load(open('prd/backlog.json'))\" exits 0 (valid JSON)"
+      ],
+      "testPlan": "python3 -c \"import json; b=json.load(open('prd/backlog.json')); has_phase=[s['id'] for s in b['stories'] if 'phase' in s]; assert len(has_phase)==0; print('OK')\" \u2014 must exit 0 and print OK. Show output verbatim.",
       "smart": {
         "specific": 5,
         "measurable": 5,
         "achievable": 5,
-        "relevant": 5,
+        "relevant": 4,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. Named file, named YAML section, exact keys described; grep + python yaml parse + helm lint give three independent binary checks."
+        "notes": "Relevant score 4: data model cleanup supports delivery hygiene but does not advance feature delivery."
       }
     },
     {
@@ -289,10 +261,10 @@
         "shellcheck -S error scripts/ha-gate.sh exits 0 (ha-gate.sh itself is shellcheck-clean before adding CI)"
       ],
       "testPlan": "ls .github/workflows/ha-gate.yml && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" .github/workflows/ha-gate.yml && grep 'platform/charts' .github/workflows/ha-gate.yml && grep 'shellcheck' .github/workflows/ha-gate.yml && grep 'ha-gate.sh --dry-run' .github/workflows/ha-gate.yml && shellcheck -S error scripts/ha-gate.sh; show all output verbatim",
-      "passes": true,
-      "reviewed": true,
+      "passes": false,
+      "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 0,
       "dependencies": [
         "HA-001"
       ],
@@ -302,7 +274,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support (HA-001 dependency satisfied). Six independent grep/ls checks fully cover the workflow requirements."
+        "notes": "All SMART dimensions green. ha-gate.sh already exists with --dry-run support; story creates only the CI workflow YAML."
       }
     }
   ]

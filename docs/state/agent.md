@@ -397,20 +397,28 @@ kind cluster + contract/validate.py validates cluster-values.yaml; KAIZEN-001 co
 test corpus expanded to cover imageRegistry and storageClass invariants; KAIZEN-002 docs on-ramp
 paths updated from old bootstrap/ structure to new monorepo structure; QUALITY-005 SonarQube +
 ReportPortal HA hardening returned to backlog — AC used exact-count assertion for multi-component
-chart, implementation was correct)
+chart, implementation was correct),
+28 (pending-stub — 10/10 accepted: KAIZEN-010r pre-retro guard unit test confirmed
+(scripts/ralph/tests/test_retro_guard.py); KAIZEN-013 + KAIZEN-013r retro first-pass formula
+verified correct (attempts == 1 in retro.md:206, both original and r-suffix story closed);
+QUALITY-005r smart-check.md updated with count-assertion guidance (at-least vs exact);
+KAIZEN-008 E15 targetIncrement updated to 28; KAIZEN-005 retro-patch-phase* → retro-patch-increment*
+naming confirmed; KAIZEN-006 legacy phase field absent from all backlog stories confirmed;
+HA-006 cost-gate.sh confirmed; DEVEX-007a code-server toolchainInit values confirmed;
+HA-007 .github/workflows/ha-gate.yml CI workflow confirmed — 100% first-review pass rate)
 
-Increment active: 27 is complete; advance ceremony will move pointer to increment 28 (pending stub).
-Increment 28 is a placeholder — plan ceremony will populate it with stories from the backlog.
+Increment 28 complete. Increment 29 is a pending stub — plan ceremony will populate it.
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
 E10 (logs + traces), E14 (Sovereign PM web app — delivered in increments 9 and 10)
 
 Epics active/backlog: E11 (developer portal — Backstage chart + ArgoCD app exist; code-server has
-toolchain initContainer + workspace PVC; stories 027a full Keycloak OIDC/plugin config, 027b, 049
-still pending), E12 (code quality — SonarQube + ReportPortal Helm charts and ArgoCD apps exist;
-GitLab CI integration story 052 pending), E13 (testing infrastructure + HA validation), E15 (HA
-integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact done; targetIncrement: 22)
+toolchain initContainer + workspace PVC + toolchainInit values interface; stories 027a full Keycloak
+OIDC/plugin config, 027b, 049 still pending), E12 (code quality — SonarQube + ReportPortal Helm
+charts and ArgoCD apps exist; GitLab CI integration story 052 pending), E13 (testing infrastructure
++ HA validation), E15 (HA integration testing — HA-001 ha-gate.sh done; HA-008 chaos PDB artifact
+done; targetIncrement: 28)
 
 ---
 
