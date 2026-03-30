@@ -158,8 +158,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
+      }
     },
     {
       "id": "RESTRUCTURE-001b-2",
@@ -192,8 +191,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
-      },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001a has passes=false. Resolve that story first."
+      }
     },
     {
       "id": "RESTRUCTURE-001c",
@@ -285,7 +283,7 @@
         "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
+      "readinessNote": "NOT READY: KIND-001b confirmed accepted in sprint 32 (dep block resolved). AC1 'A CiliumClusterwideNetworkPolicy denying external egress is applied' is not a verifiable command \u2014 add: kubectl get CiliumClusterwideNetworkPolicy. AC3 'Internal pod-to-pod communication still works' needs a specific verification command (e.g. kubectl exec <pod> -- curl <service>). testPlan field is missing \u2014 add step-by-step commands for policy apply, egress test, and pod-to-pod test."
     },
     {
       "id": "PLATFORM-001",
@@ -308,7 +306,7 @@
         "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
+      "readinessNote": "NOT READY: KIND-001b confirmed accepted in sprint 32 (dep block resolved). testPlan field is missing. AC3 'A test Certificate resource is created and reaches Ready=True' needs an explicit kubectl apply command to create the Certificate manifest. Add testPlan with port-forward, kubectl apply Certificate, and kubectl wait steps."
     },
     {
       "id": "PLATFORM-002",
@@ -331,7 +329,7 @@
         "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
+      "readinessNote": "NOT READY: KIND-001b confirmed accepted in sprint 32 (dep block resolved). testPlan field is missing. Add testPlan with explicit kubeseal, kubectl apply SealedSecret, and plaintext-recovery verification commands."
     },
     {
       "id": "PLATFORM-003",
@@ -356,7 +354,7 @@
         "PLATFORM-001"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
+      "readinessNote": "BLOCKED: dependency KIND-001b confirmed accepted in sprint 32; however dependency PLATFORM-001 still has passes:false. Resolve PLATFORM-001 first."
     },
     {
       "id": "PLATFORM-004",
@@ -451,7 +449,7 @@
         "KIND-001b"
       ],
       "attempts": 0,
-      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
+      "readinessNote": "NOT READY: KIND-001b confirmed accepted in sprint 32 (dep block resolved). testPlan field is missing. Add testPlan with kubectl port-forward for Prometheus API query and Grafana datasource health check."
     },
     {
       "id": "CONTRACT-001",
@@ -475,7 +473,7 @@
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
       "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false in backlog.json. NOTE: RESTRUCTURE-001c readinessNote indicates completed in sprint 30 (stale backlog entry). Once RESTRUCTURE-001c status is confirmed, ACs are all verifiable with specific commands \u2014 story is READY."
+      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull."
     },
     {
       "id": "DEVEX-011",
@@ -499,7 +497,7 @@
         "markdownlint docs/quickstart.md exits 0"
       ],
       "testPlan": "Run grep checks above. Show output verbatim.",
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false in backlog.json. NOTE: RESTRUCTURE-001c readinessNote indicates completed in sprint 30 (stale backlog entry). Once RESTRUCTURE-001c status is confirmed, ACs are verifiable and story is READY."
+      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull."
     },
     {
       "id": "CEREMONY-001",
@@ -823,8 +821,7 @@
         "relevant": 0,
         "timebound": 0,
         "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "BLOCKED: dependency KIND-001b has passes=false. (KIND-001 was superseded by KIND-001a+KIND-001b; dep updated to KIND-001b.)"
+      }
     },
     {
       "id": "CEREMONY-003",
@@ -945,7 +942,7 @@
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
       },
-      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false in backlog.json. NOTE: RESTRUCTURE-001c's own readinessNote states it was completed in sprint 30 (passes:true, reviewed:true in prd/increment-30-pending-stub.json \u2014 stale backlog entry). If that sprint-30 completion is confirmed, this story is READY: all 5 ACs are verifiable commands, testPlan is concrete, 2 points."
+      "readinessNote": "COMPLETED IN SPRINT 31 (stale backlog entry): passes:true, reviewed:true in prd/increment-31-pending-stub.json. Do not re-pull."
     },
     {
       "id": "KIND-001b",
@@ -981,7 +978,7 @@
         "timeBound": 5,
         "notes": "Focused split: platform component install only. Depends on KIND-001a cluster existing."
       },
-      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
     },
     {
       "id": "TEST-004",
@@ -1021,7 +1018,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependencies KIND-001a (sprint 31, passes:true) and KIND-001b (sprint 32, passes:true) are both confirmed accepted. All ACs are specific verifiable commands with testPlan present."
     },
     {
       "id": "TEST-005",
@@ -1061,7 +1058,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency KIND-001a has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependencies KIND-001a (sprint 31, passes:true) and KIND-001b (sprint 32, passes:true) are both confirmed accepted. All ACs are specific verifiable commands with testPlan present."
     },
     {
       "id": "HA-001",
@@ -1132,7 +1129,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
     },
     {
       "id": "HA-003",
@@ -1171,7 +1168,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
     },
     {
       "id": "DEVEX-004",
@@ -1467,7 +1464,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "READY: dependency KIND-001a completed in sprint 31 (passes:true, reviewed:true in prd/increment-31-pending-stub.json). Pulled into sprint 32."
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
     },
     {
       "id": "HA-005",
@@ -1499,7 +1496,7 @@
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
       },
-      "readinessNote": "BLOCKED: dependency HA-004 has passes=false. Resolve that story first."
+      "readinessNote": "READY: dependency HA-004 confirmed accepted in sprint 32 (passes:true, reviewed:true in prd/increment-32-pending-stub.json). All ACs are specific verifiable commands with testPlan present."
     },
     {
       "id": "HA-006",
@@ -2091,7 +2088,8 @@
       },
       "requiredCapabilities": [
         "helm"
-      ]
+      ],
+      "readinessNote": "COMPLETED IN SPRINT 32 (stale backlog entry): passes:true, reviewed:true in prd/increment-32-pending-stub.json. Do not re-pull."
     },
     {
       "id": "DEVEX-013",
