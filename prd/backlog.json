@@ -4,6 +4,35 @@
   "philosophy": "Every increment leaves the repo in a state where something real can be verified. No story is complete without a passing behavioral test. Build little by little, always on green.",
   "stories": [
     {
+      "id": "KAIZEN-013",
+      "title": "Fix retro ceremony first-pass formula: attempts == 0 never matches accepted stories",
+      "description": "The retrospective ceremony computes first-pass rate using `attempts == 0`, but accepted stories always have `attempts >= 1` (the execute cycle increments attempts before the review cycle runs). This causes the ceremony to report 0% first-pass success even when every story in the sprint passed on the first review attempt. The formula should use `attempts == 1` (or `attempts <= 1`) to correctly identify genuine first-pass stories. Found in sprint 24 retro patch: all 11 stories had `attempts: 1` and were accepted, but ceremony reported 0% first-pass rate. Also: clean up stale backlog entries for KAIZEN-009a through KAIZEN-009e which were completed in sprint 24 but still show passes: false in backlog.json (plan ceremony did not update lifecycle status when pulling stories).",
+      "acceptanceCriteria": [
+        "grep -n 'attempts' scripts/ralph/ceremonies.py | grep -E '== 0|== 1' shows the first-pass condition uses attempts == 1 (not attempts == 0)",
+        "python3 -c \"import json; b = json.load(open('prd/backlog.json')); stale = [s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']]; print('stale entries:', stale)\" prints an empty list (entries removed or marked complete)",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies.py to locate the first-pass formula; show the changed line. Then python3 -c \"import json; b = json.load(open('prd/backlog.json')); print([s['id'] for s in b['stories'] if s['id'] in ['KAIZEN-009a','KAIZEN-009b','KAIZEN-009c','KAIZEN-009d','KAIZEN-009e']])\" — must return []. Show all output verbatim.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/retro-first-pass-formula",
+      "priority": 2,
+      "points": 1,
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 4,
+        "timeBound": 5,
+        "notes": "Relevant score 4: ceremony metric fix does not advance feature delivery, but corrects misleading velocity reporting."
+      }
+    },
+    {
       "id": "KAIZEN-010r",
       "title": "KAIZEN-004r remediation: rewrite AC2 as unit test of pre-retro guard logic",
       "description": "KAIZEN-004r has been attempted twice. ACs 1, 3, 4 pass (guard code confirmed at ceremonies.py:538-558; shellcheck passes; py_compile passes). AC2 is permanently unverifiable as written: it requires running ceremonies.sh --start-at retro with a fixture sprint file, but ceremonies.py resolves the sprint exclusively from manifest.json and has no --sprint flag. This story fixes the testing gap by rewriting AC2 as a Python unit test that imports and calls the guard function directly (with mock sprint data containing a passes:true reviewed:false story), without invoking the live AI ceremony. Once this story passes, KAIZEN-004r can be re-verified with the updated AC.",
