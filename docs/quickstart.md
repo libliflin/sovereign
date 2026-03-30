@@ -40,6 +40,20 @@ Before you begin, you need:
   - `helm` v3+ — [install](https://helm.sh/docs/intro/install/)
   - Provider CLI (see your provider guide)
 
+## Local development (kind)
+
+For local development without a cloud account, use the kind bootstrap:
+
+```bash
+git clone https://github.com/libliflin/sovereign
+cd sovereign
+./cluster/kind/bootstrap.sh   # creates sovereign-test kind cluster
+```
+
+See [cluster/kind/](../cluster/kind/) for full kind documentation.
+
+---
+
 ## Step 1: Clone the repo
 
 ```bash

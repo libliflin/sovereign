@@ -13,7 +13,7 @@ the next begins.
 
 ### Phase 0 — Cluster Provisioning (scripts)
 
-Your VPS or bare-metal nodes are provisioned via `bootstrap/providers/<provider>.sh`.
+Your VPS or bare-metal nodes are provisioned via the bootstrap scripts in `cluster/`.
 
 - Minimum 3 nodes (odd number). `bootstrap.sh` refuses to proceed otherwise.
 - All nodes running Ubuntu 22.04+
