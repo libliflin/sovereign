@@ -474,7 +474,8 @@
         "python3 contract/validate.py contract/v1/tests/valid.yaml exits 0",
         "G7 gate passes: bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && exit 1 || exit 0' (invalid rejected)"
       ],
-      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim."
+      "testPlan": "Run validate.py against each new fixture and verify exit code and error message. Show output verbatim.",
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false in backlog.json. NOTE: RESTRUCTURE-001c readinessNote indicates completed in sprint 30 (stale backlog entry). Once RESTRUCTURE-001c status is confirmed, ACs are all verifiable with specific commands \u2014 story is READY."
     },
     {
       "id": "DEVEX-011",
@@ -497,7 +498,8 @@
         "docs/quickstart.md references cluster/kind/bootstrap.sh as the local setup command",
         "markdownlint docs/quickstart.md exits 0"
       ],
-      "testPlan": "Run grep checks above. Show output verbatim."
+      "testPlan": "Run grep checks above. Show output verbatim.",
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false in backlog.json. NOTE: RESTRUCTURE-001c readinessNote indicates completed in sprint 30 (stale backlog entry). Once RESTRUCTURE-001c status is confirmed, ACs are verifiable and story is READY."
     },
     {
       "id": "CEREMONY-001",
@@ -547,7 +549,7 @@
       "testPlan": "Create tmp_test_sprint.json with one story set passes:true reviewed:false. Run ceremonies.sh --start-at retro with that file. Verify review ceremony ran first (story is now reviewed:true). Show output verbatim. Also: shellcheck -S error scripts/ralph/ceremonies.sh must exit 0.",
       "returnedFromSprint": "prd/increment-22-remediation.json",
       "returnedReason": "AC2 unverifiable after 2 attempts: ceremonies.py lacks --sprint flag; guard code implemented at ceremonies.py:538-558 but fixture-based test requires infrastructure that does not exist",
-      "readinessNote": "NOT READY: AC2 is permanently unverifiable as written (requires fixture-based ceremony invocation that does not work). Implement CEREMONY-007 (retro guard unit test) first; then rewrite AC2 to use 'python3 scripts/ralph/tests/test_retro_guard.py' as the verification mechanism."
+      "readinessNote": "NOT READY: AC2 requires fixture-based ceremony invocation (ceremonies.py has no --sprint flag). CEREMONY-007 (retro guard unit test) is now completed (sprint 28). Rewrite AC2 to use 'python3 scripts/ralph/tests/test_retro_guard.py exits 0' as the verification command before pulling. ACs 1, 3, 4 are verifiable; only AC2 blocks."
     },
     {
       "id": "DEVEX-001",
@@ -907,7 +909,7 @@
       "attempts": 0,
       "returnedFromSprint": "prd/increment-19-remediation.json",
       "returnedReason": "Root cause of recurring GGE-G5 ANDON: plan ceremony does not queue a pending increment after creating an active sprint, so G5 fires every sprint cycle.",
-      "readinessNote": "NOT READY: testPlan field is empty. Must describe specific commands to verify that the plan ceremony appends a pending stub when none exists. Add a testPlan before pulling into a sprint."
+      "readinessNote": "NOT READY: (1) testPlan field is missing \u2014 add specific commands to verify plan ceremony appends a pending stub when none exists. (2) AC1 is not independently verifiable ('contains logic' is not a command) \u2014 rewrite as: \"grep -n 'pending\\|stub' scripts/ralph/ceremonies/plan.md returns a match\". Fix both before pulling into a sprint."
     },
     {
       "id": "KIND-001a",
@@ -942,7 +944,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Focused split: cluster scaffolding only. No platform components in scope."
-      }
+      },
+      "readinessNote": "BLOCKED: dependency RESTRUCTURE-001c has passes:false in backlog.json. NOTE: RESTRUCTURE-001c's own readinessNote states it was completed in sprint 30 (passes:true, reviewed:true in prd/increment-30-pending-stub.json \u2014 stale backlog entry). If that sprint-30 completion is confirmed, this story is READY: all 5 ACs are verifiable commands, testPlan is concrete, 2 points."
     },
     {
       "id": "KIND-001b",
@@ -1354,9 +1357,7 @@
         "helm lint platform/charts/wiremock/ exits 0"
       ],
       "testPlan": "for chart in selenium-grid chaos-mesh mailhog wiremock k6-operator; do echo \"=== $chart ===\"; helm lint platform/charts/$chart/; helm template platform/charts/$chart/ | grep -c PodDisruptionBudget; done \u2014 show all output verbatim.",
-      "dependencies": [
-        "031a"
-      ],
+      "dependencies": [],
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
@@ -1368,8 +1369,7 @@
         "relevant": 0,
         "timeBound": 0,
         "notes": "Not yet SMART-scored."
-      },
-      "readinessNote": "Ghost dep: '031a' is not in backlog.json. It was returned from increment-8 with passes:false (Cilium initContainer resource limits failed; rook-ceph volumeClaimTemplates AC was architecturally incorrect). TEST-006 ACs only run helm lint and grep on platform/charts/ \u2014 they do not require the _globals HA helpers from 031a. Remove '031a' from dependencies[] if platform/charts/_globals/templates/ already contains HA helpers (or if individual charts have inline PDB templates). Otherwise add a replacement story for the unfinished 031a work before pulling TEST-006 into a sprint."
+      }
     },
     {
       "id": "TEST-007",
@@ -2055,7 +2055,8 @@
         "achievable": 5,
         "relevant": 4,
         "timely": 3
-      }
+      },
+      "readinessNote": "BLOCKED: dependency KAIZEN-001 has passes:false. Resolve KAIZEN-001 first."
     },
     {
       "id": "DEVEX-012",
@@ -2129,7 +2130,8 @@
       "requiredCapabilities": [
         "helm",
         "kubectl"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependencies DEVEX-001 and DEVEX-002 have passes:false. Resolve those first."
     },
     {
       "id": "QUALITY-008",
@@ -2167,7 +2169,8 @@
       "requiredCapabilities": [
         "kubectl",
         "helm"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependencies QUALITY-001 and QUALITY-004 have passes:false. Resolve those first."
     },
     {
       "id": "QUALITY-009",
@@ -2204,7 +2207,8 @@
       },
       "requiredCapabilities": [
         "helm"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependencies QUALITY-001 and QUALITY-002 have passes:false. Resolve those first."
     },
     {
       "id": "TEST-009",
@@ -2242,7 +2246,8 @@
       "requiredCapabilities": [
         "helm",
         "kubectl"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependency TEST-004 has passes:false. Resolve that story first."
     },
     {
       "id": "TEST-010",
@@ -2279,7 +2284,8 @@
       },
       "requiredCapabilities": [
         "helm"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
     },
     {
       "id": "HA-009",
@@ -2321,7 +2327,8 @@
       },
       "requiredCapabilities": [
         "helm"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependencies DEVEX-001, DEVEX-002, QUALITY-001, and QUALITY-002 have passes:false. HA-001 has passes:true. Resolve platform dependencies first."
     },
     {
       "id": "HA-010",
@@ -2359,7 +2366,8 @@
       },
       "requiredCapabilities": [
         "helm"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependency TEST-006 has passes:false. Resolve that story first."
     }
   ]
 }
