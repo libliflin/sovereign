@@ -422,12 +422,26 @@
     {
       "id": 37,
       "name": "pending-stub",
-      "description": "Placeholder pending increment. Will be properly planned when increment 36 completes.",
+      "description": "Advance E15 HA validation chain (kind-smoke.sh scaffold and kind runtime tests for chaos-mesh and wiremock). Clear accumulated review debt: RESTRUCTURE-001b-2, HA-008, DEVEX-009, and CEREMONY-008 SMART guidance improvement.",
       "file": "prd/increment-37-pending-stub.json",
       "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 36 advances.",
+      "themeGoal": "T5 Resilience \u2014 kind smoke test scaffold (HA-005a) and runtime validation (TEST-004b, TEST-005b); clear E2/E15/E11 review debt.",
       "dependsOn": [
         36
+      ],
+      "startDate": "2026-03-30T00:00:00+00:00",
+      "pointsTotal": 12,
+      "storiesTotal": 7
+    },
+    {
+      "id": 38,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 37 completes.",
+      "file": "prd/increment-38-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 37 advances.",
+      "dependsOn": [
+        37
       ]
     }
   ],
