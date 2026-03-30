@@ -27,7 +27,13 @@
       "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "proofOutput": {
+        "helm_lint": "1 chart(s) linted, 0 chart(s) failed",
+        "pdb_grep": "kind: PodDisruptionBudget",
+        "antiaffinity_grep": "        podAntiAffinity:",
+        "replicacount_grep": "replicaCount: 2"
+      },
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -43,7 +49,7 @@
       "themeId": "T5",
       "priority": 4,
       "points": 2,
-      "branchName": "feature/wiremock-ha-standard",
+      "branchName": "feature/wiremock-ha-standard-new",
       "returnedFromSprint": "prd/increment-33-pending-stub.json",
       "returnedReason": "Execute created wiremock chart templates but proof found AC grep commands failed; chart needs correct PDB/podAntiAffinity template structure verified against exact AC commands",
       "title": "Enhance platform/charts/wiremock/: add PDB, podAntiAffinity, probes, and resource limits",
@@ -59,7 +65,13 @@
       "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "proofOutput": {
+        "helm_lint": "1 chart(s) linted, 0 chart(s) failed",
+        "pdb_grep": "kind: PodDisruptionBudget",
+        "antiaffinity_grep": "        podAntiAffinity:",
+        "replicacount_grep": "replicaCount: 2"
+      },
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -92,7 +104,12 @@
       "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "proofOutput": {
+        "shellcheck": "exit 0",
+        "helm_kubectl_count": "15",
+        "pass_fail_grep": "exit 0 — PASS and FAIL literals present in summary logic"
+      },
       "smart": {
         "specific": 5,
         "measurable": 5,
@@ -122,7 +139,14 @@
       "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "proofOutput": {
+        "ls": "test/chaos/pdb-validation.yaml test/chaos/README.md — exit 0",
+        "yaml_parse": "exit 0",
+        "kind_grep": "kind: PodChaos",
+        "mode_grep": "  mode: all",
+        "readme_pdb_grep": "PodDisruptionBudget and PDB appear in README.md"
+      },
       "dependencies": [],
       "smart": {
         "specific": 5,
@@ -155,7 +179,14 @@
       ],
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "proofOutput": {
+        "ls": "platform/deploy.sh — exit 0",
+        "shellcheck": "exit 0",
+        "bash_n": "exit 0",
+        "help_grep": "chart-dir found in --help output",
+        "helm_grep": "helm upgrade --install present in script"
+      },
       "priority": 3,
       "smart": {
         "specific": 4,
@@ -185,7 +216,12 @@
       "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
+      "proofOutput": {
+        "grep_wc": "15",
+        "py_compile": "exit 0",
+        "shellcheck": "exit 0"
+      },
       "returnedFromSprint": "prd/increment-33-pending-stub.json",
       "returnedReason": "Remediation story: execute-without-self-verification caused 5 stories to reach proof-fail; root cause is execute ceremony does not mandate running AC commands before marking passes:true",
       "smart": {
