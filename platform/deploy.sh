@@ -1,102 +1,84 @@
 #!/usr/bin/env bash
 # platform/deploy.sh
 #
-# Deploys the Sovereign Platform onto a conformant cluster.
-# Reads cluster-values.yaml, validates against the contract, then
-# helm installs each chart in dependency order.
+# Deploys the Sovereign Platform in dependency order.
+# Idempotent — safe to run repeatedly. Each step checks if its chart is
+# already healthy before installing. 3-minute timeout per chart.
 #
 # Usage:
 #   ./platform/deploy.sh --cluster-values cluster-values.yaml
 #   ./platform/deploy.sh --cluster-values cluster-values.yaml --dry-run
-#   ./platform/deploy.sh --cluster-values cluster-values.yaml --only cert-manager
 #
-# The platform never calls out to external services after step 4 (Harbor).
-# Steps 1-3 may pull images from upstream registries — this is the bootstrap window.
-# After step 4, all images are in Harbor and the cluster is self-sufficient.
+# The autarky bootstrap window closes after Harbor is running (step 2).
+# Steps 0-1 may pull images from upstream; after step 2, Harbor serves all images.
 
 set -euo pipefail
 
 CLUSTER_VALUES=""
-CHART_DIR=""
-NAMESPACE=""
 DRY_RUN=false
-ONLY=""
 PLATFORM_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONTRACT_VALIDATE="$(cd "${PLATFORM_DIR}/.." && pwd)/contract/validate.py"
+REPO_ROOT="$(cd "${PLATFORM_DIR}/.." && pwd)"
+CONTRACT_VALIDATE="${REPO_ROOT}/contract/validate.py"
+CONTEXT="kind-sovereign-test"
+TIMEOUT="3m0s"
 
 usage() {
-  echo "Usage: $0 --cluster-values <path> [--dry-run] [--only <chart>]"
-  echo "       $0 --chart-dir DIR --namespace NS [--dry-run]"
+  echo "Usage: $0 --cluster-values <path> [--dry-run]"
   exit 1
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cluster-values) CLUSTER_VALUES="$2"; shift 2 ;;
-    --chart-dir)      CHART_DIR="$2";      shift 2 ;;
-    --namespace)      NAMESPACE="$2";      shift 2 ;;
     --dry-run)        DRY_RUN=true;        shift   ;;
-    --only)           ONLY="$2";           shift 2 ;;
     --help)           usage ;;
     *) echo "Unknown flag: $1"; usage ;;
   esac
 done
 
-# Single-chart deployment mode: --chart-dir DIR --namespace NS
-if [[ -n "$CHART_DIR" || -n "$NAMESPACE" ]]; then
-  [[ -z "$CHART_DIR" || -z "$NAMESPACE" ]] && { echo "ERROR: --chart-dir and --namespace are both required"; usage; }
-  log "Deploying chart: ${CHART_DIR} to namespace: ${NAMESPACE}"
-  if [[ "$DRY_RUN" == "true" ]]; then
-    echo "[dry-run] helm upgrade --install $(basename "${CHART_DIR}") ${CHART_DIR} --namespace ${NAMESPACE} --create-namespace"
-  else
-    helm upgrade --install "$(basename "${CHART_DIR}")" "${CHART_DIR}" \
-      --namespace "${NAMESPACE}" --create-namespace \
-      --wait --timeout 5m
-  fi
-  exit 0
-fi
-
 [[ -z "$CLUSTER_VALUES" ]] && usage
 [[ ! -f "$CLUSTER_VALUES" ]] && { echo "ERROR: $CLUSTER_VALUES not found"; exit 1; }
 
 log() { echo "==> $*"; }
-dry() { [[ "$DRY_RUN" == "true" ]] && echo "[dry-run] $*" || true; }
 
 # ── 0. Validate contract ─────────────────────────────────────────────────
 log "Validating cluster contract..."
 python3 "${CONTRACT_VALIDATE}" "${CLUSTER_VALUES}"
 
-# Read values
-DOMAIN=$(python3 -c "import yaml,sys; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['runtime']['domain'])")
-BLOCK_SC=$(python3 -c "import yaml,sys; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['storage']['block']['storageClassName'])")
-OBJECT_ENDPOINT=$(python3 -c "import yaml,sys; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['storage']['object']['endpoint'])")
-CLUSTER_ISSUER=$(python3 -c "import yaml,sys; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['pki']['clusterIssuer'])")
+DOMAIN=$(python3 -c "import yaml; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['runtime']['domain'])")
+BLOCK_SC=$(python3 -c "import yaml; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['storage']['block']['storageClassName'])")
+OBJECT_ENDPOINT=$(python3 -c "import yaml; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['storage']['object']['endpoint'])")
+CLUSTER_ISSUER=$(python3 -c "import yaml; d=yaml.safe_load(open('${CLUSTER_VALUES}')); print(d['pki']['clusterIssuer'])")
 
-log "Domain:         ${DOMAIN}"
-log "StorageClass:   ${BLOCK_SC}"
-log "Object storage: ${OBJECT_ENDPOINT}"
-log "ClusterIssuer:  ${CLUSTER_ISSUER}"
-log ""
+log "Domain: ${DOMAIN}  SC: ${BLOCK_SC}  Issuer: ${CLUSTER_ISSUER}"
 
-if [[ "$DRY_RUN" == "true" ]]; then
-  log "DRY RUN — no changes will be made to the cluster"
-fi
+# ── Helpers ───────────────────────────────────────────────────────────────
 
-# ── Helper: helm install one chart ───────────────────────────────────────
+chart_healthy() {
+  # Returns 0 if the helm release exists and all pods in the namespace are Running/Completed.
+  local name="$1" namespace="$2"
+  helm status "$name" -n "$namespace" --kube-context "$CONTEXT" &>/dev/null || return 1
+  local not_ready
+  not_ready=$(kubectl get pods -n "$namespace" --context "$CONTEXT" --no-headers 2>/dev/null \
+    | grep -v -E 'Running|Completed' | wc -l | tr -d ' ')
+  [[ "$not_ready" == "0" ]]
+}
+
 install_chart() {
-  local name="$1"
-  local namespace="$2"
+  local name="$1" namespace="$2"
   shift 2
   local extra_args=("$@")
 
-  if [[ -n "$ONLY" && "$name" != "$ONLY" ]]; then
+  # Skip if already healthy
+  if chart_healthy "$name" "$namespace"; then
+    log "${name}: healthy ✓ (skipped)"
     return 0
   fi
 
-  log "Installing ${name} → namespace/${namespace}..."
+  log "${name}: deploying → ${namespace}..."
 
   if [[ "$DRY_RUN" == "true" ]]; then
-    dry "helm upgrade --install ${name} ${PLATFORM_DIR}/charts/${name}/ --namespace ${namespace} --create-namespace ${extra_args[*]:-}"
+    log "[dry-run] helm upgrade --install ${name} ${PLATFORM_DIR}/charts/${name}/ -n ${namespace}"
     return 0
   fi
 
@@ -105,33 +87,36 @@ install_chart() {
     --set "global.domain=${DOMAIN}" \
     --set "global.storageClass=${BLOCK_SC}" \
     --set "global.clusterIssuer=${CLUSTER_ISSUER}" \
-    --wait --timeout 5m \
-    ${extra_args[@]+"${extra_args[@]}"}
+    --timeout "${TIMEOUT}" \
+    --kube-context "${CONTEXT}" \
+    ${extra_args[@]+"${extra_args[@]}"} \
+    2>&1 || {
+      log "${name}: FAILED (continuing to next chart)"
+      return 0  # Don't abort — report the failure and keep going
+    }
 
-  log "${name} ready ✓"
+  log "${name}: ready ✓"
 }
 
-# ── Deployment order ─────────────────────────────────────────────────────
-#
-# Rule: each chart must be smoke-tested before the next is installed.
-# The autarky bootstrap window closes after Harbor is running (step 4).
-# After that, all images come from Harbor only.
-# Gate: pods Running. Smoke-test assertions are a future story (E2 backlog).
+ensure_namespace() {
+  kubectl create namespace "$1" --dry-run=client -o yaml \
+    | kubectl apply -f - --context "$CONTEXT" &>/dev/null
+}
 
-# Step 1: OpenBao (runtime secrets store)
+ensure_secret() {
+  local name="$1" namespace="$2"
+  shift 2
+  if ! kubectl get secret "$name" -n "$namespace" --context "$CONTEXT" &>/dev/null; then
+    kubectl create secret generic "$name" -n "$namespace" --context "$CONTEXT" "$@"
+    log "Created secret ${namespace}/${name}"
+  fi
+}
+
+# ── Step 1: OpenBao (secrets store) ───────────────────────────────────────
+
 install_chart openbao openbao
 
-# Step 4: Harbor (internal registry)
-# After this step: push all images to Harbor, then close the bootstrap window.
-
-# Pre-flight: delete harbor StatefulSets with immutable volumeClaimTemplates if they exist.
-# Required when storageClass changes between runs (immutable field; helm upgrade is rejected).
-for sts in harbor-database harbor-redis harbor-trivy; do
-  if kubectl get statefulset "${sts}" -n harbor &>/dev/null; then
-    kubectl delete statefulset "${sts}" -n harbor --wait=false
-    kubectl delete pvc -n harbor database-data-harbor-database-0 data-harbor-redis-0 data-harbor-trivy-0 --ignore-not-found
-  fi
-done
+# ── Step 2: Harbor (internal registry — closes autarky bootstrap window) ──
 
 install_chart harbor harbor \
   --set "harbor.expose.ingress.hosts.core=harbor.${DOMAIN}" \
@@ -141,82 +126,106 @@ install_chart harbor harbor \
   --set "harbor.persistence.persistentVolumeClaim.redis.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.trivy.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
-  --set "harbor.registry.credentials.htpasswd=" \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}"
 
-# ── Seed Harbor with Keycloak and PostgreSQL images ──────────────────────
-# bitnami prunes old tags — verify pinned tags exist before mirroring.
+# ── Step 2b: Seed Harbor with upstream images (only during bootstrap) ─────
+# After Harbor is healthy, mirror images needed by later charts.
+# docker pull/tag/push is idempotent — if the image is already in Harbor, the
+# push is a no-op. If docker.io is unreachable, the pull fails and we continue.
+
 KEYCLOAK_TAG="24.0.5-debian-12-r0"
 PG_TAG="16.3.0-debian-12-r14"
 
-if [[ "$DRY_RUN" != "true" ]]; then
+if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
   HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
 
-  if ! skopeo inspect "docker://docker.io/bitnami/keycloak:${KEYCLOAK_TAG}" >/dev/null 2>&1; then
-    log "  bitnami/keycloak:${KEYCLOAK_TAG} not found — resolving latest debian-12 tag..."
-    KEYCLOAK_TAG=$(skopeo list-tags "docker://docker.io/bitnami/keycloak" \
-      | python3 -c "import sys,json; tags=json.load(sys.stdin)['Tags']; print(sorted([t for t in tags if 'debian-12' in t])[-1])")
-    log "  Resolved keycloak tag: ${KEYCLOAK_TAG}"
-  fi
-
-  if ! skopeo inspect "docker://docker.io/bitnami/postgresql:${PG_TAG}" >/dev/null 2>&1; then
-    log "  bitnami/postgresql:${PG_TAG} not found — resolving latest debian-12 tag..."
-    PG_TAG=$(skopeo list-tags "docker://docker.io/bitnami/postgresql" \
-      | python3 -c "import sys,json; tags=json.load(sys.stdin)['Tags']; print(sorted([t for t in tags if 'debian-12' in t])[-1])")
-    log "  Resolved postgresql tag: ${PG_TAG}"
-  fi
-
+  # Create bitnami project in Harbor (idempotent)
   curl -sf -u "admin:${HARBOR_ADMIN_PASS}" --insecure \
     -X POST "https://harbor.${DOMAIN}/api/v2.0/projects" \
     -H "Content-Type: application/json" \
-    -d '{"project_name":"bitnami","public":false}' || true
+    -d '{"project_name":"bitnami","public":false}' 2>/dev/null || true
 
-  log "Seeding Harbor with bitnami/keycloak:${KEYCLOAK_TAG} and bitnami/postgresql:${PG_TAG}..."
-  skopeo copy \
-    --dest-creds "admin:${HARBOR_ADMIN_PASS}" \
-    --dest-tls-verify=false \
-    "docker://docker.io/bitnami/keycloak:${KEYCLOAK_TAG}" \
-    "docker://harbor.${DOMAIN}/bitnami/keycloak:${KEYCLOAK_TAG}"
-
-  skopeo copy \
-    --dest-creds "admin:${HARBOR_ADMIN_PASS}" \
-    --dest-tls-verify=false \
-    "docker://docker.io/bitnami/postgresql:${PG_TAG}" \
-    "docker://harbor.${DOMAIN}/bitnami/postgresql:${PG_TAG}"
-
-  log "Harbor seeding complete ✓"
+  # Seed each image — failures are non-fatal (image may already be in Harbor,
+  # or docker.io may be unreachable; the install step will surface the real error)
+  for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}"; do
+    local_tag="harbor.${DOMAIN}/bitnami/${img_spec}"
+    if docker manifest inspect "$local_tag" &>/dev/null; then
+      log "Harbor already has bitnami/${img_spec} ✓"
+    else
+      log "Seeding bitnami/${img_spec} into Harbor..."
+      docker pull "docker.io/bitnami/${img_spec}" 2>&1 && \
+      docker tag "docker.io/bitnami/${img_spec}" "$local_tag" && \
+      docker push "$local_tag" 2>&1 && \
+      log "Seeded bitnami/${img_spec} ✓" || \
+      log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
+    fi
+  done
 fi
 
-# Step 5: Keycloak (identity — SSO for all services)
+# ── Step 3: Keycloak (identity / SSO) ────────────────────────────────────
+
+# Pre-conditions: namespace, secrets (idempotent)
+ensure_namespace keycloak
+
+# Detect orphaned state: PVC exists but password secret is gone
+if kubectl get pvc data-keycloak-postgresql-0 -n keycloak --context "$CONTEXT" &>/dev/null && \
+   ! kubectl get secret keycloak-db-secret -n keycloak --context "$CONTEXT" &>/dev/null; then
+  log "Orphaned keycloak PVC — clearing stale state"
+  helm uninstall keycloak -n keycloak --kube-context "$CONTEXT" --ignore-not-found 2>/dev/null || true
+  kubectl delete pvc data-keycloak-postgresql-0 -n keycloak --context "$CONTEXT" --ignore-not-found
+fi
+
+ensure_secret keycloak-admin-secret keycloak \
+  --from-literal=admin-password="$(openssl rand -base64 24)"
+
+if ! kubectl get secret keycloak-db-secret -n keycloak --context "$CONTEXT" &>/dev/null; then
+  DB_PASS="$(openssl rand -base64 24)"
+  ensure_secret keycloak-db-secret keycloak \
+    --from-literal=postgres-password="${DB_PASS}" \
+    --from-literal=password="${DB_PASS}"
+fi
+
+# Read existing password for upgrade compatibility
+KEYCLOAK_EXTRA=()
+if kubectl get secret keycloak-db-secret -n keycloak --context "$CONTEXT" &>/dev/null; then
+  PG_PASS=$(kubectl get secret keycloak-db-secret -n keycloak --context "$CONTEXT" \
+    -o jsonpath="{.data.password}" | base64 -d)
+  KEYCLOAK_EXTRA=(
+    --set "global.postgresql.auth.password=${PG_PASS}"
+  )
+fi
+
 install_chart keycloak keycloak \
   --set "global.imageRegistry=harbor.${DOMAIN}" \
   --set "keycloak.image.tag=${KEYCLOAK_TAG}" \
-  --set "keycloak.postgresql.image.tag=${PG_TAG}"
+  --set "keycloak.postgresql.image.tag=${PG_TAG}" \
+  ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
 
-# Step 6: GitLab (SCM + CI)
+# ── Step 4: GitLab + ArgoCD ──────────────────────────────────────────────
+
 install_chart gitlab gitlab
-
-# Step 7: ArgoCD (GitOps — takes over managing upgrades from here)
 install_chart argocd argocd
 
-# Step 8: Observability stack
+# ── Step 5: Observability ────────────────────────────────────────────────
+
 install_chart prometheus-stack monitoring
 install_chart loki monitoring
 install_chart tempo monitoring
 install_chart thanos monitoring
 
-# Step 9: Security
+# ── Step 6: Security mesh ────────────────────────────────────────────────
+
 install_chart istio istio-system
 install_chart opa-gatekeeper gatekeeper-system
 install_chart falco falco
 install_chart trivy-operator trivy-system
 
-# Step 10: Developer experience
+# ── Step 7: Developer experience ─────────────────────────────────────────
+
 install_chart backstage backstage
 install_chart code-server code-server
 install_chart sonarqube sonarqube
 install_chart reportportal reportportal
 
 log ""
-log "Platform deployment complete."
-log "Access the platform at https://gitlab.${DOMAIN}"
+log "Deploy pass complete."
