@@ -86,6 +86,14 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         chart_fail=true
     fi
 
+    # Check 4: all containers have resource requests and limits
+    if ! echo "${rendered}" | python3 "${REPO_ROOT}/scripts/check-limits.py" > /dev/null 2>&1; then
+        limits_output="$(echo "${rendered}" | python3 "${REPO_ROOT}/scripts/check-limits.py" 2>&1 || true)"
+        echo "FAIL:${chart_name}:resource limits check failed"
+        echo "${limits_output}"
+        chart_fail=true
+    fi
+
     if "${chart_fail}"; then
         FAIL_COUNT=$((FAIL_COUNT + 1))
     else

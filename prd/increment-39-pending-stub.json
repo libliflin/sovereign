@@ -21,7 +21,7 @@
       ],
       "testPlan": "grep -n 'CRD\\|vendor.*field' scripts/ralph/ceremonies/smart.md; grep -n 'chart version\\|empirically' scripts/ralph/ceremonies/smart.md; python3 -m py_compile scripts/ralph/ceremonies.py; show all output verbatim. All three must return matches or exit 0.",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "dependencies": [],
@@ -51,7 +51,7 @@
       ],
       "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md; verify the updated line uses '<= 1' and show output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 1,
       "smart": {
         "specific": 5,
@@ -76,7 +76,7 @@
       ],
       "testPlan": "Run the AC one-liner verbatim and show output.",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "attempts": 1,
       "smart": {
         "specific": 4,
@@ -87,5 +87,7 @@
         "notes": "Specific score 4: title says '8 stories' but description lists 9 story IDs \u2014 count mismatch. Achievable score 4: AC checks ALL open stories for drift, not just the 9 listed; if additional drifted stories exist beyond those named, scope silently expands. TimeBound score 4: same reason \u2014 the AC's scope is broader than the story's enumerated list, meaning actual work may exceed what is described."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }

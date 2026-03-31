@@ -141,6 +141,7 @@ Every story must pass before `reviewed: true`:
 10. `yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml` — must equal 3
 11. `helm template platform/charts/<name>/ | grep -i datasource` — required for all observability charts
 12. Branch pushed to remote + PR merged to main — proof of work
+13. **SMART vendor field AC**: any AC asserting a vendor-specific status field value (phase name, condition string, status key from a CRD) must cite the upstream CRD documentation for the pinned chart version, or note that the value was empirically confirmed against a running instance. An unverified vendor constant has `smart.measurable ≤ 3` and will fail review even when implementation is correct.
 
 Convenience: `scripts/ha-gate.sh` runs gates 3–5 across all charts automatically, including all
 E13 testing infrastructure charts (selenium-grid, k6-operator, chaos-mesh, mailhog, wiremock).

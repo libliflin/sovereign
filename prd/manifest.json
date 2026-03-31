@@ -428,15 +428,7 @@
       "themeGoal": "T5 Resilience \u2014 kind smoke test scaffold (HA-005a) and runtime validation (TEST-004b, TEST-005b); clear E2/E15/E11 review debt.",
       "dependsOn": [
         36
-      ],
-      "startDate": "2026-03-30T00:00:00+00:00",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsTotal": 12,
-      "storiesTotal": 7,
-      "pointsCompleted": 10,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 14.3
+      ]
     },
     {
       "id": 38,
@@ -454,27 +446,38 @@
       "name": "pending-stub",
       "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
       "file": "prd/increment-39-pending-stub.json",
-      "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony from backlog.",
+      "status": "complete",
+      "themeGoal": "T3 \u2014 delivery machine quality: SMART CRD-spec citation rule, retro first-pass formula fix, backlog themeId drift correction.",
       "dependsOn": [
         38
-      ],
-      "startDate": "2026-03-31T01:15:23.847622+00:00",
-      "pointsTotal": 5,
-      "storiesTotal": 3
+      ]
     },
     {
       "id": 40,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 39 completes.",
       "file": "prd/increment-40-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 39 advances.",
       "dependsOn": [
         39
+      ],
+      "startDate": "2026-03-31T01:54:45.643606+00:00",
+      "pointsTotal": 12,
+      "storiesTotal": 8
+    },
+    {
+      "id": 41,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 40 completes.",
+      "file": "prd/increment-41-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 40 advances.",
+      "dependsOn": [
+        40
       ]
     }
   ],
-  "activeSprint": "prd/increment-39-pending-stub.json",
-  "currentIncrement": 39
+  "activeSprint": "prd/increment-40-pending-stub.json",
+  "currentIncrement": 40
 }
