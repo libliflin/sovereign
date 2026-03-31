@@ -428,15 +428,7 @@
       "themeGoal": "T5 Resilience \u2014 kind smoke test scaffold (HA-005a) and runtime validation (TEST-004b, TEST-005b); clear E2/E15/E11 review debt.",
       "dependsOn": [
         36
-      ],
-      "startDate": "2026-03-30T00:00:00+00:00",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsTotal": 12,
-      "storiesTotal": 7,
-      "pointsCompleted": 10,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 14.3
+      ]
     },
     {
       "id": 38,
@@ -458,49 +450,20 @@
       "themeGoal": "T3 \u2014 delivery machine quality: SMART CRD-spec citation rule, retro first-pass formula fix, backlog themeId drift correction.",
       "dependsOn": [
         38
-      ],
-      "startDate": "2026-03-31T01:15:23.847622+00:00",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsTotal": 5,
-      "storiesTotal": 3,
-      "pointsCompleted": 5,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
+      ]
     },
     {
       "id": 40,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 39 completes.",
       "file": "prd/increment-40-pending-stub.json",
-      "status": "pending",
+      "status": "active",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 39 advances.",
       "dependsOn": [
         39
       ]
     }
   ],
-  "activeSprint": "prd/increment-39-pending-stub.json",
-  "currentIncrement": 39,
-  "sprintHistory": [
-    {
-      "increment": 39,
-      "name": "pending-stub",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsCompleted": 5,
-      "storiesTotal": 3,
-      "storiesAccepted": 3,
-      "storiesIncomplete": 0,
-      "reviewPassRate": 100.0
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 39,
-      "pointsCompleted": 5,
-      "storiesAccepted": 3,
-      "reviewPassRate": 100.0,
-      "date": "2026-03-30T00:00:00+00:00"
-    }
-  ]
+  "activeSprint": "prd/increment-40-pending-stub.json",
+  "currentIncrement": 40
 }
