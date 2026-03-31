@@ -522,7 +522,14 @@ TEST-004b returned to backlog — AC3 asserts wrong terminal phase name for chao
 39 (pending-stub — 3/3 accepted: CEREMONY-012 CRD-spec citation rule added to SMART guidance
 (scripts/ralph/ceremonies/smart.md); KAIZEN-019 retro first-pass formula fixed to `attempts <= 1`
 in scripts/ralph/ceremonies/retro.md; KAIZEN-017 themeId drift corrected on 9 open backlog stories
-to align with parent epic's themeId — 100% first-review pass rate, 5 pts)
+to align with parent epic's themeId — 100% first-review pass rate, 5 pts),
+40 (pending-stub — 8/8 accepted: HA-011 scripts/check-limits.py created and wired into
+ha-gate.sh + validate.yml CI (every container/initContainer must have requests AND limits);
+CEREMONY-012 SMART CRD-spec citation rule review confirmation; RESTRUCTURE-001a contract layer
+validator review confirmation; RESTRUCTURE-001b-1 cluster/kind/bootstrap.sh review confirmation;
+RESTRUCTURE-001b-2 platform/deploy.sh review confirmation; HA-008 chaos PDB artifact review
+confirmation; DEVEX-009 code-server workspace PVC review confirmation; CEREMONY-008 chart-iteration
+pipefail guidance review confirmation — 100% first-review pass rate, 12 pts)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -563,3 +570,9 @@ HA-008 chaos PDB artifact done; HA-010 ha-gate.sh extended to all 5 E13 testing 
 - A story implementation touches files outside the stated story scope (more than ~3 charts for a 1-service story, new dependencies not in VENDORS.yaml, etc.) → stop and split before implementing
 - A chart is created in the root `charts/` directory → wrong location; use `platform/charts/` or `cluster/kind/charts/` depending on purpose
 - A story has `smart.achievable < 4` and has not been split → split first, do not implement
+
+---
+
+## Known model inconsistencies
+
+- `phase` field on backlog stories DEVEX-014, DEVEX-015, HA-012 is redundant with `epicId` (values agree; field should be removed) → create a cleanup story targeting E1 to remove these

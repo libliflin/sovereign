@@ -146,7 +146,9 @@ Every story must pass before `reviewed: true`:
 Convenience: `scripts/ha-gate.sh` runs gates 3–5 across all charts automatically, including all
 E13 testing infrastructure charts (selenium-grid, k6-operator, chaos-mesh, mailhog, wiremock).
 `bash scripts/ha-gate.sh --dry-run` lists charts without running helm. `.github/workflows/ha-gate.yml`
-runs shellcheck + `ha-gate.sh --dry-run` on every PR touching `platform/charts/`.
+runs shellcheck + `ha-gate.sh --dry-run` on every PR touching `platform/charts/`. Gate 6
+(`check-limits.py`) also runs in CI via `.github/workflows/validate.yml` on every PR touching
+`platform/charts/`.
 
 ---
 
