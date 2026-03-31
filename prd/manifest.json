@@ -454,14 +454,19 @@
       "name": "pending-stub",
       "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
       "file": "prd/increment-39-pending-stub.json",
-      "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony from backlog.",
+      "status": "complete",
+      "themeGoal": "T3 \u2014 delivery machine quality: SMART CRD-spec citation rule, retro first-pass formula fix, backlog themeId drift correction.",
       "dependsOn": [
         38
       ],
       "startDate": "2026-03-31T01:15:23.847622+00:00",
+      "endDate": "2026-03-30T00:00:00+00:00",
       "pointsTotal": 5,
-      "storiesTotal": 3
+      "storiesTotal": 3,
+      "pointsCompleted": 5,
+      "storiesAccepted": 3,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
     },
     {
       "id": 40,
@@ -476,5 +481,26 @@
     }
   ],
   "activeSprint": "prd/increment-39-pending-stub.json",
-  "currentIncrement": 39
+  "currentIncrement": 39,
+  "sprintHistory": [
+    {
+      "increment": 39,
+      "name": "pending-stub",
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 5,
+      "storiesTotal": 3,
+      "storiesAccepted": 3,
+      "storiesIncomplete": 0,
+      "reviewPassRate": 100.0
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 39,
+      "pointsCompleted": 5,
+      "storiesAccepted": 3,
+      "reviewPassRate": 100.0,
+      "date": "2026-03-30T00:00:00+00:00"
+    }
+  ]
 }
