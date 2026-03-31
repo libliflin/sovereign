@@ -1,0 +1,12 @@
+apiVersion: v2
+name: openbao
+description: OpenBao secrets engine wrapper chart for the Sovereign Platform — HA Raft mode with cert-manager TLS.
+type: application
+version: 0.1.0
+appVersion: "v2.5.2"
+
+dependencies:
+  - name: openbao
+    version: "0.26.2"
+    repository: "https://openbao.github.io/openbao-helm"
+    alias: openbao

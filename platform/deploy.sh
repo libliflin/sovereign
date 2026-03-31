@@ -106,7 +106,7 @@ install_chart() {
     --set "global.storageClass=${BLOCK_SC}" \
     --set "global.clusterIssuer=${CLUSTER_ISSUER}" \
     --wait --timeout 5m \
-    "${extra_args[@]:-}"
+    ${extra_args[@]+"${extra_args[@]}"}
 
   log "${name} ready ✓"
 }
@@ -118,26 +118,80 @@ install_chart() {
 # After that, all images come from Harbor only.
 # Gate: pods Running. Smoke-test assertions are a future story (E2 backlog).
 
-# Step 1: cert-manager (PKI — everything else needs TLS)
-install_chart cert-manager cert-manager
-
-# Step 2: Sealed Secrets (secret management — needed before any SealedSecret is applied)
-install_chart sealed-secrets sealed-secrets
-
-# Step 3: OpenBao (runtime secrets store)
+# Step 1: OpenBao (runtime secrets store)
 install_chart openbao openbao
 
 # Step 4: Harbor (internal registry)
 # After this step: push all images to Harbor, then close the bootstrap window.
+
+# Pre-flight: delete harbor StatefulSets with immutable volumeClaimTemplates if they exist.
+# Required when storageClass changes between runs (immutable field; helm upgrade is rejected).
+for sts in harbor-database harbor-redis harbor-trivy; do
+  if kubectl get statefulset "${sts}" -n harbor &>/dev/null; then
+    kubectl delete statefulset "${sts}" -n harbor --wait=false
+    kubectl delete pvc -n harbor database-data-harbor-database-0 data-harbor-redis-0 data-harbor-trivy-0 --ignore-not-found
+  fi
+done
+
 install_chart harbor harbor \
   --set "harbor.expose.ingress.hosts.core=harbor.${DOMAIN}" \
   --set "harbor.externalURL=https://harbor.${DOMAIN}" \
   --set "harbor.persistence.persistentVolumeClaim.registry.storageClass=${BLOCK_SC}" \
+  --set "harbor.persistence.persistentVolumeClaim.database.storageClass=${BLOCK_SC}" \
+  --set "harbor.persistence.persistentVolumeClaim.redis.storageClass=${BLOCK_SC}" \
+  --set "harbor.persistence.persistentVolumeClaim.trivy.storageClass=${BLOCK_SC}" \
+  --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
   --set "harbor.registry.credentials.htpasswd=" \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}"
 
+# ── Seed Harbor with Keycloak and PostgreSQL images ──────────────────────
+# bitnami prunes old tags — verify pinned tags exist before mirroring.
+KEYCLOAK_TAG="24.0.5-debian-12-r0"
+PG_TAG="16.3.0-debian-12-r14"
+
+if [[ "$DRY_RUN" != "true" ]]; then
+  HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
+
+  if ! skopeo inspect "docker://docker.io/bitnami/keycloak:${KEYCLOAK_TAG}" >/dev/null 2>&1; then
+    log "  bitnami/keycloak:${KEYCLOAK_TAG} not found — resolving latest debian-12 tag..."
+    KEYCLOAK_TAG=$(skopeo list-tags "docker://docker.io/bitnami/keycloak" \
+      | python3 -c "import sys,json; tags=json.load(sys.stdin)['Tags']; print(sorted([t for t in tags if 'debian-12' in t])[-1])")
+    log "  Resolved keycloak tag: ${KEYCLOAK_TAG}"
+  fi
+
+  if ! skopeo inspect "docker://docker.io/bitnami/postgresql:${PG_TAG}" >/dev/null 2>&1; then
+    log "  bitnami/postgresql:${PG_TAG} not found — resolving latest debian-12 tag..."
+    PG_TAG=$(skopeo list-tags "docker://docker.io/bitnami/postgresql" \
+      | python3 -c "import sys,json; tags=json.load(sys.stdin)['Tags']; print(sorted([t for t in tags if 'debian-12' in t])[-1])")
+    log "  Resolved postgresql tag: ${PG_TAG}"
+  fi
+
+  curl -sf -u "admin:${HARBOR_ADMIN_PASS}" --insecure \
+    -X POST "https://harbor.${DOMAIN}/api/v2.0/projects" \
+    -H "Content-Type: application/json" \
+    -d '{"project_name":"bitnami","public":false}' || true
+
+  log "Seeding Harbor with bitnami/keycloak:${KEYCLOAK_TAG} and bitnami/postgresql:${PG_TAG}..."
+  skopeo copy \
+    --dest-creds "admin:${HARBOR_ADMIN_PASS}" \
+    --dest-tls-verify=false \
+    "docker://docker.io/bitnami/keycloak:${KEYCLOAK_TAG}" \
+    "docker://harbor.${DOMAIN}/bitnami/keycloak:${KEYCLOAK_TAG}"
+
+  skopeo copy \
+    --dest-creds "admin:${HARBOR_ADMIN_PASS}" \
+    --dest-tls-verify=false \
+    "docker://docker.io/bitnami/postgresql:${PG_TAG}" \
+    "docker://harbor.${DOMAIN}/bitnami/postgresql:${PG_TAG}"
+
+  log "Harbor seeding complete ✓"
+fi
+
 # Step 5: Keycloak (identity — SSO for all services)
-install_chart keycloak keycloak
+install_chart keycloak keycloak \
+  --set "global.imageRegistry=harbor.${DOMAIN}" \
+  --set "keycloak.image.tag=${KEYCLOAK_TAG}" \
+  --set "keycloak.postgresql.image.tag=${PG_TAG}"
 
 # Step 6: GitLab (SCM + CI)
 install_chart gitlab gitlab

@@ -34,23 +34,23 @@ harbor:
     resourcePolicy: "keep"
     persistentVolumeClaim:
       registry:
-        storageClass: "ceph-block"
+        storageClass: ""
         size: "50Gi"
         accessMode: ReadWriteOnce
       jobservice:
-        storageClass: "ceph-block"
+        storageClass: ""
         size: "1Gi"
         accessMode: ReadWriteOnce
       database:
-        storageClass: "ceph-block"
+        storageClass: ""
         size: "5Gi"
         accessMode: ReadWriteOnce
       redis:
-        storageClass: "ceph-block"
+        storageClass: ""
         size: "1Gi"
         accessMode: ReadWriteOnce
       trivy:
-        storageClass: "ceph-block"
+        storageClass: ""
         size: "5Gi"
         accessMode: ReadWriteOnce
     ## Object storage for artifacts via Ceph S3 (ceph-bucket StorageClass)

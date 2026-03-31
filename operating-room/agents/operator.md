@@ -33,7 +33,7 @@ Check each layer in order. For each, run the kubectl commands and record what yo
 | Layer | Namespaces to check | What to look for |
 |-------|---------------------|------------------|
 | 0 — Network | kube-system | Cilium pods Running |
-| 1 — PKI & Secrets | cert-manager, sealed-secrets | Controller pods Running, ClusterIssuer Ready |
+| 1 — PKI & Secrets | cert-manager, sealed-secrets | Controller pods Running, ClusterIssuers exist and Ready=True (`kubectl get clusterissuers --context kind-sovereign-test`) |
 | 2 — Registry | harbor | All Harbor pods Running (core, registry, trivy, portal, jobservice) |
 | 3 — Identity | keycloak | Keycloak pod Running |
 | 4 — SCM & GitOps | gitlab, argocd | GitLab and ArgoCD pods Running |
@@ -102,3 +102,4 @@ Write `operating-room/state/report.md` in this exact format:
 - **Capture errors.** If a command fails, include the error message.
 - **Do not run helm install or kubectl apply.** deploy.sh handles that. You only observe.
 - **Do not modify any files.** You are read-only except for state/report.md.
+- **Report freshness required.** Begin the report with `date` output. Before writing layer status, verify that at least one pod's AGE in Layer 0 is consistent with the current time relative to `kubectl get nodes` cluster AGE. If pod AGEs are identical to the previous cycle's report, re-run the kubectl commands — do not copy output from a prior cycle.

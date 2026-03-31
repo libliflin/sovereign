@@ -1,0 +1,66 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  clusterIssuer: "sovereign-ca-issuer"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+
+# ---------------------------------------------------------------------------
+# Upstream openbao subchart values (alias: openbao)
+# ---------------------------------------------------------------------------
+openbao:
+  server:
+    image:
+      registry: "quay.io"  # bootstrap default; override with global.imageRegistry after Harbor
+      repository: "openbao/openbao"
+      tag: ""  # defaults to chart appVersion (v2.5.2)
+      pullPolicy: IfNotPresent
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    # Mount the cert-manager-issued TLS secret (created by templates/certificate.yaml)
+    volumes:
+      - name: tls
+        secret:
+          secretName: openbao-server-tls
+
+    volumeMounts:
+      - name: tls
+        mountPath: /openbao/tls
+        readOnly: true
+
+    ha:
+      enabled: true
+      replicas: 3
+
+      raft:
+        enabled: true
+        setNodeId: true
+
+        config: |
+          ui = true
+
+          listener "tcp" {
+            address         = "[::]:8200"
+            cluster_address = "[::]:8201"
+            tls_cert_file   = "/openbao/tls/tls.crt"
+            tls_key_file    = "/openbao/tls/tls.key"
+          }
+
+          storage "raft" {
+            path = "/openbao/data"
+          }
+
+          service_registration "kubernetes" {}
+
+  ui:
+    enabled: true
+    serviceType: ClusterIP
+
+  injector:
+    enabled: false

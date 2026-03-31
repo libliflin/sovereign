@@ -112,3 +112,4 @@ Write `operating-room/state/directive.md` in this exact format:
 - **No code.** You do not write the fix. Surgeon does.
 - **Be specific.** "Fix the Harbor chart" is useless. "Set harbor.core.image.repository to point at the local registry in platform/charts/harbor/values.yaml" is a directive.
 - **Name the anti-patterns.** If there's an obvious wrong approach (e.g., disabling TLS to make something work), call it out explicitly so surgeon doesn't go there.
+- **Verify `--set` effectiveness before proposing another override mechanism.** If a `--set` fix failed in the previous cycle, confirm the key path actually renders into the chart (`helm template ... | grep <key>`) before issuing a new delivery-mechanism fix. If the path is wrong, the chart's `values.yaml` default is the correct fix target — not a new workaround.
