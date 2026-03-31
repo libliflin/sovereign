@@ -24,7 +24,7 @@
       ],
       "testPlan": "ls scripts/check-limits.py && python3 scripts/check-limits.py --help && grep 'check-limits' scripts/ha-gate.sh && shellcheck -S error scripts/ha-gate.sh && bash scripts/ha-gate.sh --dry-run",
       "dependencies": [],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -56,7 +56,7 @@
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
       "testPlan": "grep -n 'CRD\\|vendor.*field' scripts/ralph/ceremonies/smart.md; grep -n 'chart version\\|empirically' scripts/ralph/ceremonies/smart.md; python3 -m py_compile scripts/ralph/ceremonies.py; show all output verbatim. All three must return matches or exit 0.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
