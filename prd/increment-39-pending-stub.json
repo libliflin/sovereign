@@ -1,0 +1,82 @@
+{
+  "increment": 39,
+  "name": "pending-stub",
+  "description": "Delivery machine quality: fix the SMART vendor-field AC guidance gap (returned from sprint 37), correct the retro first-pass formula for pre-accepted stories, and normalize themeId drift across 8 open backlog stories.",
+  "sprintGoal": "Harden the delivery machine: add CRD-spec citation rule to SMART guidance, fix retro first-pass formula, and resolve backlog themeId drift.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "CEREMONY-012",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 1,
+      "points": 2,
+      "branchName": "kaizen/smart-crd-field-ac-validation",
+      "title": "SMART guidance: ACs asserting vendor API field values must cite chart version CRD spec",
+      "description": "TEST-004b failed review three times in sprint 37 because AC3 asserted 'phase=Finished' \u2014 the documented chaos-mesh phase \u2014 but v2.6.3 uses 'Not Injected' as the terminal recovery state. The implementation was correct; the AC was wrong. Root cause: no SMART gate requires that ACs asserting specific API field values (phase names, condition strings, status keys) be cross-referenced against the pinned chart version's CRD spec or empirically verified before the story is written. Add an explicit rule to scripts/ralph/ceremonies/smart.md: when an AC asserts a vendor-specific status field value (e.g. 'phase=X', 'condition=Y'), the story must either cite the upstream CRD documentation for the pinned chart version or note that the value was empirically confirmed against a running instance.",
+      "acceptanceCriteria": [
+        "grep -n 'CRD\\|vendor.*field\\|phase.*value\\|status.*field' scripts/ralph/ceremonies/smart.md returns at least one match confirming the guidance is present",
+        "grep -n 'chart version\\|pinned version\\|empirically' scripts/ralph/ceremonies/smart.md returns at least one match",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'CRD\\|vendor.*field' scripts/ralph/ceremonies/smart.md; grep -n 'chart version\\|empirically' scripts/ralph/ceremonies/smart.md; python3 -m py_compile scripts/ralph/ceremonies.py; show all output verbatim. All three must return matches or exit 0.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-37-pending-stub.json",
+      "returnedReason": "TEST-004b failed review 3x because AC3 asserted a phase name not present in the actual chart version; SMART guidance does not require CRD-spec citation for vendor API field assertions",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs are exact grep commands against a specific file. No cluster required."
+      }
+    },
+    {
+      "id": "KAIZEN-019",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 7,
+      "points": 1,
+      "branchName": "kaizen/retro-first-pass-formula",
+      "title": "Fix retro first-pass formula: use attempts <= 1 to include pre-accepted stories",
+      "description": "The retro ceremony computes first-pass rate using attempts == 1. Pre-accepted stories (review confirmations) carry attempts: 0, causing sprints composed entirely of review confirmations to report 0% pass rate. Fix: change the formula to attempts <= 1 in scripts/ralph/ceremonies/retro.md.",
+      "acceptanceCriteria": [
+        "grep showing the formula in retro.md uses <= 1 rather than == 1",
+        "python3 -c \"content=open('scripts/ralph/ceremonies/retro.md').read(); assert '<= 1' in content, 'formula not updated'; print('PASS')\" exits 0 and prints PASS"
+      ],
+      "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md; verify the updated line uses '<= 1' and show output verbatim",
+      "passes": false,
+      "reviewed": false,
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Single-line formula change with exact grep ACs. All SMART dimensions green."
+      }
+    },
+    {
+      "id": "KAIZEN-017",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 8,
+      "points": 2,
+      "branchName": "kaizen/backlog-themeid-drift",
+      "title": "Backlog kaizen: correct themeId drift on 8 open stories",
+      "description": "The following open backlog stories carry a themeId that does not match their parent epic's themeId: KIND-002 (story T2, epic E1 T1), PLATFORM-001 (story T3, epic E7 T2), PLATFORM-002 (story T1, epic E7 T2), PLATFORM-004 (story T2, epic E1 T1), PLATFORM-005 (story T3, epic E1 T1), PLATFORM-006 (story T3, epic E1 T1), QUALITY-009 (story T1, epic E12 T3), TEST-009 (story T4, epic E13 T5), TEST-010 (story T1, epic E13 T5). Update each story's themeId to match its parent epic's themeId. The correct themeId is the epic's themeId \u2014 the story's themeId should agree.",
+      "acceptanceCriteria": [
+        "python3 -c \"import json; b=json.load(open('prd/backlog.json')); e=json.load(open('prd/epics.json')); epic_theme={x['id']:x.get('themeId') for x in e['epics']}; drift=[s['id'] for s in b['stories'] if s.get('epicId') and s.get('status','open') not in ('complete','superseded') and s.get('themeId') and s['themeId'] != epic_theme.get(s['epicId'])]; assert drift==[], f'themeId drift: {drift}'; print('PASS: no themeId drift on open stories')\" exits 0 and prints PASS"
+      ],
+      "testPlan": "Run the AC one-liner verbatim and show output.",
+      "passes": false,
+      "reviewed": false
+    }
+  ]
+}
