@@ -1,0 +1,8 @@
+# Runtime state — not source code
+state/cycle.json
+state/report.md
+state/directive.md
+state/changelog.md
+state/retro.md
+state/history/
+*.log
