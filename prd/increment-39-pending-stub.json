@@ -20,10 +20,10 @@
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
       "testPlan": "grep -n 'CRD\\|vendor.*field' scripts/ralph/ceremonies/smart.md; grep -n 'chart version\\|empirically' scripts/ralph/ceremonies/smart.md; python3 -m py_compile scripts/ralph/ceremonies.py; show all output verbatim. All three must return matches or exit 0.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-37-pending-stub.json",
       "returnedReason": "TEST-004b failed review 3x because AC3 asserted a phase name not present in the actual chart version; SMART guidance does not require CRD-spec citation for vendor API field assertions",
