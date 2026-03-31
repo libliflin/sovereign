@@ -127,10 +127,10 @@
         "kubectl",
         "helm"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 1,
+      "attempts": 2,
       "smart": {
         "specific": 4,
         "measurable": 4,
@@ -139,8 +139,8 @@
         "timeBound": 4,
         "notes": "Specific score 4: service name assumed from chart convention, not cross-referenced to chart service template. Measurable score 4: AC3 'shows phase=Finished within 120 seconds' requires polling \u2014 no kubectl wait command specified, making the check timing-dependent rather than a single binary command. Achievable score 4: requires running kind-sovereign-test cluster (KIND-001a, KIND-001b). TimeBound score 4: 120s empirical window for phase=Finished introduces non-determinism in the pass/fail boundary."
       },
-      "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-004a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm).",
-      "blocker": "platform/charts/chaos-mesh is a bare Deployment wrapper without RBAC (ServiceAccount, ClusterRole, ClusterRoleBinding), startup args, or CRDs. The controller-manager crashes immediately at runtime (CrashLoopBackOff). The chart passes helm lint and HA gate but cannot run. Fix: add RBAC templates, controller startup args, and CRD installation to the chaos-mesh chart before this story can pass."
+      "readinessNote": "DELIVERED: chart rebuilt as upstream wrapper (same pattern as cert-manager). helm install exits 0, all pods Running, PodChaos Apply+Recover both Succeeded, AllRecovered:True within 120s. chaos-mesh v2.6.3 uses 'Not Injected' as terminal state after recovery — not 'Finished'; experiment is complete. Also fixed ha-gate.sh grep -q SIGPIPE bug (set -o pipefail + large rendered output).",
+      "blocker": null
     },
     {
       "id": "TEST-005b",

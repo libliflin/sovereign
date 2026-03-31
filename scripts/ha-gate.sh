@@ -73,12 +73,15 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         continue
     fi
 
-    if ! echo "${rendered}" | grep -q "PodDisruptionBudget"; then
+    # Use grep without -q: grep -q exits on first match and causes SIGPIPE on
+    # the echo side of the pipe under set -o pipefail when rendered is large.
+    # grep without -q reads all stdin before exiting, avoiding SIGPIPE.
+    if ! echo "${rendered}" | grep "PodDisruptionBudget" > /dev/null; then
         echo "FAIL:${chart_name}:no PodDisruptionBudget in rendered templates"
         chart_fail=true
     fi
 
-    if ! echo "${rendered}" | grep -q "podAntiAffinity"; then
+    if ! echo "${rendered}" | grep "podAntiAffinity" > /dev/null; then
         echo "FAIL:${chart_name}:no podAntiAffinity in rendered templates"
         chart_fail=true
     fi
