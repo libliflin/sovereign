@@ -2659,7 +2659,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Single-line formula change with exact grep ACs. All SMART dimensions green."
-      }
+      },
+      "readinessNote": "NOT READY: AC1 ('grep showing the formula in retro.md uses <= 1 rather than == 1') is prose, not an independently verifiable command. Rewrite as: 'grep -n \"attempts\" scripts/ralph/ceremonies/retro.md | grep \"<= 1\" exits 0 (shows the updated formula)'. AC2 is already a proper verifiable one-liner and can remain as-is. Fix AC1 before pulling."
     },
     {
       "id": "CEREMONY-012",
@@ -2709,7 +2710,8 @@
       "priority": 15,
       "points": 2,
       "passes": false,
-      "reviewed": false
+      "reviewed": false,
+      "readinessNote": "NOT READY: AC2 requires each entry in docs/state/dependency-versions.md to include 'latest stable version (from upstream Helm repo)'. Accuracy of that value cannot be verified by command \u2014 it requires human lookup. Rewrite AC2 as a format check: 'python3 -c \"import pathlib; lines=[l for l in pathlib.Path(\\\"docs/state/dependency-versions.md\\\").read_text().splitlines() if l.strip() and l.startswith(\\\"|\\\")]; assert all(len(l.split(\\\"|\\\"))>=4 for l in lines), f\\\"bad row: {lines}\\\"; print(\\\"OK\\\")\" exits 0 (table has >=4 columns per row)'. The content accuracy remains a human responsibility and does not need a separate AC."
     },
     {
       "id": "DEVEX-014",
