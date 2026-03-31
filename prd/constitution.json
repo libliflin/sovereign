@@ -11,7 +11,7 @@
       "id": "G1",
       "title": "Delivery machine is self-orienting and self-healing",
       "themeId": "T3",
-      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else. Current fragility: py_compile catches syntax errors but not broken imports — a missing dependency or bad import statement causes a ModuleNotFoundError at runtime, stalling the loop with no gate signal. Indicator now includes an import smoke test so broken imports surface before the loop attempts to run.",
+      "rationale": "The ceremonies loop must decide what to do next without human input, heal SMART failures by splitting, and close sprints cleanly regardless of completion. This is the meta-capability that accelerates everything else. Current fragility: py_compile catches syntax errors but not broken imports — a missing dependency or bad import statement causes a ModuleNotFoundError at runtime, stalling the loop with no gate signal. Indicator includes an import smoke test so broken imports surface before the loop attempts to run. Zero andons across all completed sprints — the loop is healthy.",
       "indicator": {
         "type": "gate_passing",
         "command": "bash -c 'python3 -m py_compile scripts/ralph/ceremonies.py || (echo \"G1 FAIL: ceremonies.py has syntax error\" && exit 1); python3 -m py_compile scripts/ralph/lib/orient.py || (echo \"G1 FAIL: orient.py has syntax error\" && exit 1); python3 -m py_compile scripts/ralph/lib/gates.py || (echo \"G1 FAIL: gates.py has syntax error\" && exit 1); PYTHONPATH=. python3 -c \"from scripts.ralph.lib import orient, gates\" || (echo \"G1 FAIL: broken import in orient or gates\" && exit 1); echo \"G1 PASS: ceremony scripts compile clean and imports resolve\"'"
@@ -21,7 +21,7 @@
       "id": "G2",
       "title": "Living state docs answer 'where are we' without reading history",
       "themeId": "T3",
-      "rationale": "Every agent that touches this repo must be able to orient in under 2 minutes by reading two files. Without this, every session starts with archaeology. Rewritten each sprint by the sync ceremony. Current fragility: if the sync ceremony is skipped or fails silently, agent.md drifts out of date and the next session starts with a stale map — without detection.",
+      "rationale": "Every agent that touches this repo must be able to orient in under 2 minutes by reading two files. Without this, every session starts with archaeology. Rewritten each sprint by the sync ceremony. Current fragility: if the sync ceremony is skipped or fails silently, agent.md drifts out of date and the next session starts with a stale map — without detection. The files_exist indicator is weak (existence does not guarantee freshness), but G1 catches the ceremony machinery that writes these files — if the loop is healthy (G1), sync runs, and G2 stays current. Zero andons. Keep as-is.",
       "indicator": {
         "type": "files_exist",
         "paths": [
@@ -34,7 +34,7 @@
       "id": "G6",
       "title": "Zero external registry references in Helm chart templates",
       "themeId": "T1",
-      "rationale": "Sovereignty requires that no chart template ever hard-codes an external registry. Every image reference must use {{ .Values.global.imageRegistry }}. IMPORTANT: indicator updated from charts/*/templates/ to platform/charts/*/templates/ after monorepo restructure — the old path pointed at an empty directory and produced a vacuous PASS, providing no protection.",
+      "rationale": "Sovereignty requires that no chart template ever hard-codes an external registry. Every image reference must use {{ .Values.global.imageRegistry }}. Indicator targets platform/charts/*/templates/ after the monorepo restructure — the old path pointed at an empty directory and produced a vacuous PASS. Zero andons since restructure. Graduated pattern: each new chart epic (E11 Backstage/code-server, E12 SonarQube/ReportPortal, E13 testing charts) has required a dedicated G6 compliance story (DEVEX-011, QUALITY-007, TEST-010) — this is the gate working correctly, not band-aid churn. Keep.",
       "indicator": {
         "type": "gate_passing",
         "command": "bash -c 'result=$(grep -rn \"docker\\.io\\|quay\\.io\\|ghcr\\.io\\|gcr\\.io\\|registry\\.k8s\\.io\" platform/charts/*/templates/ 2>/dev/null); [ -z \"$result\" ] && echo \"G6 PASS: no external registries in templates\" || (echo \"G6 FAIL:\" && echo \"$result\" && exit 1)'"
@@ -44,7 +44,7 @@
       "id": "G7",
       "title": "Contract validator enforces sovereignty invariants — test suite passes",
       "themeId": "T1",
-      "rationale": "contract/validate.py is the machine-enforced sovereignty gate. It is the only mechanism that guarantees autarky.externalEgressBlocked=true before any cluster is provisioned. If the test suite breaks (valid.yaml rejected or invalid-egress-not-blocked.yaml accepted), the sovereignty invariant is silently unenforced. Test corpus expanded in increment 31 (CONTRACT-001) to cover imageRegistry and storageClass invariants. Fragile because the corpus covers core invariants but not edge cases — a schema extension or validator refactor that inadvertently relaxes enforcement will still pass G7 if the existing fixtures still pass. The test suite is the only line of defence.",
+      "rationale": "contract/validate.py is the machine-enforced sovereignty gate. It is the only mechanism that guarantees autarky.externalEgressBlocked=true before any cluster is provisioned. If the test suite breaks (valid.yaml rejected or invalid-egress-not-blocked.yaml accepted), the sovereignty invariant is silently unenforced. Test corpus expanded in increment 31 (CONTRACT-001) to cover imageRegistry and storageClass invariants. Fragile because the corpus covers core invariants but not edge cases — a schema extension or validator refactor that inadvertently relaxes enforcement will still pass G7 if the existing fixtures still pass. The test suite is the only line of defence. Zero andons.",
       "indicator": {
         "type": "gate_passing",
         "command": "bash -c 'python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 || (echo \"G7 FAIL: valid.yaml rejected by validator\" && exit 1); python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && (echo \"G7 FAIL: invalid contract accepted — autarky invariant not enforced\" && exit 1); echo \"G7 PASS: contract validator enforces sovereignty invariants\"'"
@@ -52,12 +52,12 @@
     },
     {
       "id": "G8",
-      "title": "Istio PeerAuthentication enforces STRICT mTLS by default",
+      "title": "Istio PeerAuthentication renders STRICT mTLS in chart output",
       "themeId": "T2",
-      "rationale": "T2 Zero Trust requires mTLS everywhere — all service-to-service traffic must be authenticated and encrypted. The Istio chart's PeerAuthentication template parameterizes the mode through values.yaml rather than hardcoding STRICT. This makes the invariant silently degradable: a developer debugging connectivity sets mode to PERMISSIVE and forgets to revert. No other gate catches this. T2 has 0 delivered stories in the project's history — this is the first machine-checkable T2 invariant and the floor below which the zero-trust promise cannot be maintained. Current fragility: the values.yaml contains `mode: STRICT` today, but there is no guard preventing drift.",
+      "rationale": "T2 Zero Trust requires mTLS everywhere — all service-to-service traffic must be authenticated and encrypted. The Istio chart's PeerAuthentication template parameterizes the mode through values.yaml ({{ .Values.peerAuthentication.mode }}), making the invariant silently degradable: a developer debugging connectivity sets mode to PERMISSIVE or disables peerAuthentication.enabled and forgets to revert. No other gate catches this. T2 has 0 velocity-attributed points across 38 sprints — this is the only machine-checkable T2 invariant and the floor below which the zero-trust promise cannot be maintained. Indicator upgraded from increment 37: now checks the rendered helm template output (not just values.yaml) to catch both mode drift AND enabled:false bypass. Current fragility: gate only protects the default namespace policy in istio-system; per-namespace overrides in individual service charts are not checked. Zero andons since addition.",
       "indicator": {
         "type": "gate_passing",
-        "command": "bash -c 'grep -q \"mode: STRICT\" platform/charts/istio/values.yaml && echo \"G8 PASS: Istio PeerAuthentication defaults to STRICT mTLS\" || (echo \"G8 FAIL: Istio mTLS mode is not STRICT — zero-trust invariant compromised\" && exit 1)'"
+        "command": "bash -c 'rendered=$(helm template platform/charts/istio/ 2>/dev/null); if echo \"$rendered\" | grep -q \"kind: PeerAuthentication\" && echo \"$rendered\" | grep -q \"mode: STRICT\"; then echo \"G8 PASS: Istio chart renders a PeerAuthentication with mode: STRICT\"; else echo \"G8 FAIL: Istio chart does not render a PeerAuthentication with mode: STRICT — zero-trust invariant compromised\" && exit 1; fi'"
       }
     }
   ],
@@ -65,19 +65,19 @@
     {
       "id": "G5",
       "title": "Planning pipeline always has a pending increment to execute",
-      "retiredReason": "Triggered 7 remediation andons across increments 11, 13, 15, 18, 19, 20, 21 — all with the same band-aid fix (manually add a pending stub). This is not an egg protecting a value; it is a metric exposing a ceremony bug. The structural fix (plan ceremony auto-primes a pending stub after creating an active sprint) is in sprint 22 as KAIZEN-007r. Once that lands, G5 is structurally moot. An egg that has triggered 7 identical band-aids has failed its purpose — the fix must be in the ceremony system, not in a gate.",
+      "retiredReason": "Triggered 7 remediation andons across increments 11, 13, 15, 18, 19, 20, 21 — all with the same band-aid fix (manually add a pending stub). This is not an egg protecting a value; it is a metric exposing a ceremony bug. The structural fix (plan ceremony auto-primes a pending stub after creating an active sprint) was delivered in sprint 22 as CEREMONY-005. G5 is structurally moot. An egg that triggers 7 identical band-aids has failed its purpose — the fix must be in the ceremony system, not in a gate.",
       "retiredAt": "increment-22-remediation"
     },
     {
       "id": "G3",
       "title": "Cluster contract is current, enforced, and machine-checked",
-      "retiredReason": "Graduated to table stakes. The file_exists check on docs/governance/cluster-contract.md has been healthy for 10+ consecutive sprints. The monorepo restructure introduced contract/validate.py which provides actual machine enforcement — that is now tracked by G7. A governance document is not the right indicator when a real validator exists.",
+      "retiredReason": "Graduated to table stakes. The file_exists check on docs/governance/cluster-contract.md was healthy for 10+ consecutive sprints. The monorepo restructure introduced contract/validate.py which provides actual machine enforcement — tracked by G7. A governance document is not the right indicator when a real validator exists.",
       "retiredAt": "increment-17-restructure"
     },
     {
       "id": "G4",
       "title": "Mental model is coherent — one vocabulary, one hierarchy",
-      "retiredReason": "Graduated to table stakes. Vocabulary migration (increments/phases) completed many sprints ago. The gate_passing check always passes and has never triggered a remediation sprint. The word 'phases' does not appear in new code and the hard-stop rule in agent.md enforces this at the implementation level. Retiring frees a slot for fragility that is real and current.",
+      "retiredReason": "Graduated to table stakes. Vocabulary migration (increments/phases) completed many sprints ago. The gate_passing check always passed and never triggered a remediation sprint. The word 'phases' does not appear in new code and the hard-stop rule in agent.md enforces this at the implementation level.",
       "retiredAt": "increment-17-restructure"
     }
   ],
