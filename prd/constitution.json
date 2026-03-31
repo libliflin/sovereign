@@ -18,19 +18,6 @@
       }
     },
     {
-      "id": "G2",
-      "title": "Living state docs answer 'where are we' without reading history",
-      "themeId": "T3",
-      "rationale": "Every agent that touches this repo must be able to orient in under 2 minutes by reading two files. Without this, every session starts with archaeology. Rewritten each sprint by the sync ceremony. Current fragility: if the sync ceremony is skipped or fails silently, agent.md drifts out of date and the next session starts with a stale map — without detection. The files_exist indicator is weak (existence does not guarantee freshness), but G1 catches the ceremony machinery that writes these files — if the loop is healthy (G1), sync runs, and G2 stays current. Zero andons. Keep as-is.",
-      "indicator": {
-        "type": "files_exist",
-        "paths": [
-          "docs/state/architecture.md",
-          "docs/state/agent.md"
-        ]
-      }
-    },
-    {
       "id": "G6",
       "title": "Zero external registry references in Helm chart templates",
       "themeId": "T1",
@@ -59,9 +46,25 @@
         "type": "gate_passing",
         "command": "bash -c 'rendered=$(helm template platform/charts/istio/ 2>/dev/null); if echo \"$rendered\" | grep -q \"kind: PeerAuthentication\" && echo \"$rendered\" | grep -q \"mode: STRICT\"; then echo \"G8 PASS: Istio chart renders a PeerAuthentication with mode: STRICT\"; else echo \"G8 FAIL: Istio chart does not render a PeerAuthentication with mode: STRICT — zero-trust invariant compromised\" && exit 1; fi'"
       }
+    },
+    {
+      "id": "G9",
+      "title": "All platform charts satisfy HA requirements — replicaCount, PDB, podAntiAffinity, resource limits",
+      "themeId": "T5",
+      "rationale": "CLAUDE.md mandates HA on every chart: replicaCount >= 2, PodDisruptionBudget, podAntiAffinity, and resource requests/limits. scripts/ha-gate.sh (delivered HA-011) machine-checks all of these across platform/charts/ and cluster/kind/charts/. Current fragility: ha-gate.sh currently fails 20 charts — cert-manager, cilium, trivy, and others are missing replicaCount in values.yaml and/or resource limits on containers. Without a constitutional gate, these violations accumulate silently across chart epics. T5 Resilience has 69% flow with 10pts returned — the highest friction of any theme — and no gate was catching the root cause. This gate enforces the HA invariant that the architecture demands.",
+      "indicator": {
+        "type": "gate_passing",
+        "command": "bash -c 'bash scripts/ha-gate.sh 2>&1 | tee /tmp/ha-gate-out.txt; exit_code=${PIPESTATUS[0]}; if [ $exit_code -eq 0 ]; then echo \"G9 PASS: all platform charts satisfy HA requirements\"; else echo \"G9 FAIL: ha-gate.sh reports non-compliant charts — see /tmp/ha-gate-out.txt\"; exit 1; fi'"
+      }
     }
   ],
   "_retired": [
+    {
+      "id": "G2",
+      "title": "Living state docs answer 'where are we' without reading history",
+      "retiredReason": "Graduated to table stakes. The files_exist check on docs/state/architecture.md and docs/state/agent.md has never failed across 43 complete sprints — it provides zero protective signal. The rationale acknowledged from the start that the indicator is weak (existence does not guarantee freshness) and that G1 covers the ceremony machinery that writes these files. A gate that never fires and measures presence rather than value is not protecting an invariant — it is occupying a slot. The actual invariant (agents can orient without archaeology) is enforced by the sync ceremony, which is gated by G1.",
+      "retiredAt": "increment-41"
+    },
     {
       "id": "G5",
       "title": "Planning pipeline always has a pending increment to execute",
