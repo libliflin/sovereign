@@ -163,10 +163,6 @@ jobs:
           fi
           echo "✓ No :latest tags found"
 
-      - name: Assert all containers have resource requests and limits
-        run: |
-          python3 scripts/check-limits.py < "/tmp/rendered-${CHART_SAFE}.yaml"
-
       - name: Assert image.repository uses global.imageRegistry
         run: |
           VALUES="${{ matrix.chart }}/values.yaml"

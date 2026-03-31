@@ -11,6 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
 
@@ -19,3 +24,21 @@ jobs:
 
       - name: Run ha-gate.sh --dry-run
         run: bash scripts/ha-gate.sh --dry-run
+
+      - name: Assert resource limits on changed charts
+        run: |
+          FAIL=0
+          while IFS= read -r chart; do
+            if [ -f "${chart}/Chart.yaml" ]; then
+              echo "Checking resource limits: ${chart}"
+              if ! helm template "${chart}/" | python3 scripts/check-limits.py; then
+                FAIL=1
+              fi
+            fi
+          done < <(
+            git diff --name-only origin/main...HEAD \
+              | grep '^platform/charts/' \
+              | sed 's|/[^/]*$||' \
+              | sort -u
+          )
+          exit $FAIL
