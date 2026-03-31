@@ -591,7 +591,7 @@ def main() -> int:
         rc = advance_lib.run(REPO_ROOT, dry_run=args.dry_run)
         if rc != 0:
             return rc
-        _git_commit("advance", ["prd/manifest.json", str(active_sprint) if active_sprint else "prd/"])
+        _git_commit("advance", ["prd/manifest.json", "prd/backlog.json", "prd/"])
 
     print("\n" + "═" * 66)
     print(f"  CEREMONIES COMPLETE  —  {datetime.now().strftime('%Y-%m-%d %H:%M')}")

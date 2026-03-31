@@ -11,7 +11,9 @@ Rules (honest-close model):
 from __future__ import annotations
 
 import json
+import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -101,13 +103,12 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         print(f"\n  All increments complete — no increment after '{current_phase}' found.")
         if not dry_run:
             _mark_complete(manifest, manifest_path, current_phase, points_done, pass_rate, n_accepted, n_incomplete)
-            # Clear activeSprint so orient does not loop back to retro on the next run.
-            # The sprint file is preserved for history; the pointer is cleared.
             manifest.pop("activeSprint", None)
             manifest.pop("currentIncrement", None)
             with open(manifest_path, "w") as f:
                 json.dump(manifest, f, indent=2)
             print("  ✓ activeSprint cleared — orient will report platform complete.")
+        _cleanup(repo_root, manifest, dry_run)
         return 0
 
     print(f"  Next increment : {next_phase} → {next_file}")
@@ -118,6 +119,7 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         print(f"    - Increment {next_phase} → active")
         print(f"    - activeSprint → {next_file}")
         print(f"    - currentIncrement → {next_phase}")
+        _cleanup(repo_root, manifest, dry_run=True)
         return 0
 
     # -- Update manifest — current state only, no historical log ---------------
@@ -145,6 +147,9 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
     print(f"\n  ✓ Increment {current_phase} → complete")
     print(f"  ✓ Increment {next_phase} → active")
     print(f"  ✓ activeSprint → {next_file}")
+
+    _cleanup(repo_root, manifest, dry_run=False)
+
     print(f"\n  Next: run planning ceremony to populate {next_file}")
     print(f"    ./scripts/ralph/ceremonies.sh --tool claude --start-at plan")
     return 0
@@ -159,6 +164,103 @@ def _mark_complete(manifest, path, phase, points, pass_rate, accepted, incomplet
     manifest.pop("sprintHistory", None)
     with open(path, "w") as f:
         json.dump(manifest, f, indent=2)
+
+
+def _prune_backlog(repo_root: Path) -> int:
+    """Remove completed/superseded stories from backlog.json. Git history is the archive."""
+    backlog_path = repo_root / "prd" / "backlog.json"
+    with open(backlog_path) as f:
+        backlog = json.load(f)
+
+    before = len(backlog["stories"])
+    backlog["stories"] = [
+        s for s in backlog["stories"]
+        if s.get("status") not in ("complete", "superseded")
+    ]
+    pruned = before - len(backlog["stories"])
+
+    if pruned:
+        with open(backlog_path, "w") as f:
+            json.dump(backlog, f, indent=2)
+            f.write("\n")
+
+    return pruned
+
+
+def _delete_old_increments(repo_root: Path, manifest: dict) -> list[str]:
+    """Delete increment files for completed phases. Manifest metadata is preserved."""
+    deleted = []
+    for phase in manifest.get("increments", []):
+        if phase.get("status") != "complete":
+            continue
+        fpath = phase.get("file")
+        if not fpath:
+            continue
+        full = repo_root / fpath
+        if full.exists():
+            full.unlink()
+            deleted.append(fpath)
+        phase.pop("file", None)
+    return deleted
+
+
+def _rotate_logs(repo_root: Path, max_age_days: int = 7) -> int:
+    """Delete ceremony logs older than max_age_days. Logs are gitignored."""
+    log_dir = repo_root / "prd" / "logs"
+    if not log_dir.is_dir():
+        return 0
+    cutoff = time.time() - (max_age_days * 86400)
+    deleted = 0
+    for entry in log_dir.iterdir():
+        if entry.is_file() and entry.stat().st_mtime < cutoff:
+            entry.unlink()
+            deleted += 1
+    return deleted
+
+
+def _cleanup(repo_root: Path, manifest: dict, dry_run: bool) -> None:
+    """Run all post-advance cleanup. Called after manifest is written."""
+    backlog_path = repo_root / "prd" / "backlog.json"
+    backlog = json.load(open(backlog_path))
+    n_prunable = sum(1 for s in backlog["stories"] if s.get("status") in ("complete", "superseded"))
+
+    inc_files = []
+    for p in manifest.get("increments", []):
+        if p.get("status") == "complete" and p.get("file"):
+            fp = repo_root / p["file"]
+            if fp.exists():
+                inc_files.append(p["file"])
+
+    log_dir = repo_root / "prd" / "logs"
+    cutoff = time.time() - (7 * 86400)
+    n_old_logs = 0
+    if log_dir.is_dir():
+        n_old_logs = sum(1 for e in log_dir.iterdir() if e.is_file() and e.stat().st_mtime < cutoff)
+
+    if dry_run:
+        print(f"\n  [DRY RUN] Cleanup would:")
+        print(f"    - Prune {n_prunable} completed stories from backlog.json")
+        print(f"    - Delete {len(inc_files)} old increment files")
+        print(f"    - Rotate {n_old_logs} log files older than 7 days")
+        return
+
+    pruned = _prune_backlog(repo_root)
+    deleted_incs = _delete_old_increments(repo_root, manifest)
+    rotated = _rotate_logs(repo_root)
+
+    # Re-write manifest since _delete_old_increments removed file keys
+    manifest_path = repo_root / "prd" / "manifest.json"
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+    if pruned or deleted_incs or rotated:
+        print(f"\n  Cleanup:")
+        if pruned:
+            print(f"    ✓ Pruned {pruned} completed stories from backlog.json")
+        if deleted_incs:
+            print(f"    ✓ Deleted {len(deleted_incs)} old increment files")
+        if rotated:
+            print(f"    ✓ Rotated {rotated} log files older than 7 days")
 
 
 if __name__ == "__main__":

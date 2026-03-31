@@ -7,7 +7,6 @@
       "id": 0,
       "name": "ceremonies",
       "description": "Build the sprint ceremony infrastructure that manages all subsequent phases. Dogfooding: the PM tooling is the first thing built.",
-      "file": "prd/increment-0-ceremonies.json",
       "status": "complete",
       "themeGoal": "Bootstrap the delivery machine itself \u2014 ceremonies, ceremonies, ralph loop, quality gates"
     },
@@ -15,7 +14,6 @@
       "id": 1,
       "name": "bootstrap",
       "description": "VPS provisioning, HA cluster setup, front door security, ingress, MetalLB, secrets bootstrapping, GitHub CI.",
-      "file": "prd/increment-1-bootstrap.json",
       "status": "complete",
       "dependsOn": [
         0
@@ -26,7 +24,6 @@
       "id": 2,
       "name": "foundations",
       "description": "Crossplane compositions (PostgreSQL, namespaces, RBAC), OpenBao, network policies, cert-manager CA transition.",
-      "file": "prd/increment-2-foundations.json",
       "status": "complete",
       "dependsOn": [
         1
@@ -36,7 +33,6 @@
     {
       "id": "2h",
       "name": "ci-hardening",
-      "file": "prd/increment-2h-hardening.json",
       "status": "complete",
       "description": "Tech debt sprint. No new work until CI is fully green.",
       "themeGoal": "CI hardening \u2014 all quality gates green before any feature work proceeds"
@@ -44,7 +40,6 @@
     {
       "id": "2i",
       "name": "integration",
-      "file": "prd/increment-2i-integration.json",
       "status": "complete",
       "description": "Integration tests. Kind-based deployment verification. Cost gate on bootstrap scripts.",
       "themeGoal": "Integration tests, kind-based deployment verification, cost gate on bootstrap scripts"
@@ -53,7 +48,6 @@
       "id": 3,
       "name": "gitops-engine",
       "description": "GitLab (split into sub-stories), Harbor, ArgoCD Image Updater, GitLab Runners.",
-      "file": "prd/increment-3-gitops-engine.json",
       "status": "complete",
       "dependsOn": [
         2
@@ -64,7 +58,6 @@
       "id": 4,
       "name": "autarky",
       "description": "Vendor system: VENDORS.yaml, fetch, build recipes (ko/docker), deploy/rollback/backup, pipeline wiring.",
-      "file": "prd/increment-4-autarky.json",
       "status": "complete",
       "dependsOn": [
         3
@@ -75,7 +68,6 @@
       "id": 5,
       "name": "security",
       "description": "Istio mTLS, OPA/Gatekeeper, Trivy Operator, Falco, OWASP ZAP.",
-      "file": "prd/increment-5-security.json",
       "status": "complete",
       "dependsOn": [
         2
@@ -86,7 +78,6 @@
       "id": 6,
       "name": "observability",
       "description": "kube-prometheus-stack, Grafana, Loki, Thanos, Tempo, dashboards, AlertManager.",
-      "file": "prd/increment-6-observability.json",
       "status": "complete",
       "dependsOn": [
         2
@@ -97,7 +88,6 @@
       "id": 7,
       "name": "devex",
       "description": "Backstage, code-server, SonarQube, ReportPortal.",
-      "file": "prd/increment-7-devex.json",
       "status": "complete",
       "dependsOn": [
         3,
@@ -109,7 +99,6 @@
       "id": 8,
       "name": "testing-and-ha",
       "description": "Selenium Grid, k6, MailHog, Chaos Mesh, HA pass across all charts, GitLab CI vendor builds.",
-      "file": "prd/increment-8-testing-and-ha.json",
       "status": "complete",
       "dependsOn": [
         5,
@@ -121,7 +110,6 @@
       "id": 9,
       "name": "sovereign-pm",
       "description": "Sovereign PM web app (Node.js/React) \u2014 replaces this file-based PM system. Self-hosting the sprint tooling.",
-      "file": "prd/increment-9-sovereign-pm.json",
       "status": "complete",
       "dependsOn": [
         3,
@@ -136,7 +124,6 @@
       "name": "sovereign-pm-webapp",
       "description": "Build the Sovereign PM web application (Node.js/Express backend, React frontend, Helm chart). Replaces the file-based PM system with a self-hosted product. The documentation layer (story 035) is done; this increment delivers the running app.",
       "themeGoal": "T3 Developer Autonomy \u2014 sovereign-pm web app (E14): backend API, React UI, Dockerfile, and Helm chart deployed into kind",
-      "file": "prd/increment-10-sovereign-pm-webapp.json",
       "status": "complete",
       "dependsOn": [
         3,
@@ -149,7 +136,6 @@
       "id": 11,
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
-      "file": "prd/increment-11-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": []
@@ -158,7 +144,6 @@
       "id": 12,
       "name": "developer-portal",
       "description": "Backstage developer portal and code-server (VS Code in browser). Provides service catalog, developer self-service, and the primary interface for Claude Code agents.",
-      "file": "prd/increment-12-developer-portal.json",
       "status": "complete",
       "dependsOn": [
         3,
@@ -171,7 +156,6 @@
       "id": 13,
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
-      "file": "prd/increment-13-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": []
@@ -180,7 +164,6 @@
       "id": 14,
       "name": "developer-portal-argocd",
       "description": "Deliver story 027a (ArgoCD Application for Backstage developer portal) and remaining E11/E12 backlog items. Continues the developer portal increment interrupted by increment 12.",
-      "file": "prd/increment-14-developer-portal-argocd.json",
       "status": "complete",
       "dependsOn": [
         13
@@ -191,7 +174,6 @@
       "id": 15,
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
-      "file": "prd/increment-15-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": []
@@ -200,7 +182,6 @@
       "id": 16,
       "name": "code-quality",
       "description": "Code quality integration: GitLab CI pipeline wiring for SonarQube and ReportPortal. Completes E12 epic.",
-      "file": "prd/increment-16-code-quality.json",
       "status": "complete",
       "dependsOn": [
         14
@@ -211,7 +192,6 @@
       "id": 17,
       "name": "restructure",
       "description": "Monorepo restructure: contract/, cluster/kind/, platform/. Establishes clean separation between cluster provider and platform. Archives all non-kind providers. First increment of the new architecture.",
-      "file": "prd/increment-17-restructure.json",
       "status": "complete",
       "dependsOn": [],
       "themeGoal": "T1 Sovereignty \u2014 establish contract-driven architecture: cluster/kind/, platform/, contract/v1/"
@@ -220,7 +200,6 @@
       "id": 18,
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
-      "file": "prd/increment-18-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": []
@@ -229,7 +208,6 @@
       "id": 19,
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGEs and resolves priority-0 blockers.",
-      "file": "prd/increment-19-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: fix broken GGEs and unblock delivery.",
       "dependsOn": []
@@ -238,7 +216,6 @@
       "id": 20,
       "name": "kind-integration",
       "description": "Kind cluster integration: kind bootstrap script delivers a running sovereign-test cluster with Cilium CNI, cert-manager, sealed-secrets, and autarky egress policy verified.",
-      "file": "prd/increment-20-kind-integration.json",
       "status": "complete",
       "dependsOn": [
         17
@@ -249,7 +226,6 @@
       "id": 21,
       "name": "platform-foundations",
       "description": "Platform foundations: deploy core sovereign Helm charts (Cilium, cert-manager, sealed-secrets, OpenBao) into kind cluster. Follows KIND-001 kind bootstrap.",
-      "file": "prd/increment-21-platform-foundations.json",
       "status": "complete",
       "dependsOn": [
         20
@@ -260,7 +236,6 @@
       "id": 22,
       "name": "remediation",
       "description": "Remediation sprint \u2014 restores broken GGE-G5 and resolves priority-0 blockers.",
-      "file": "prd/increment-22-remediation.json",
       "status": "complete",
       "themeGoal": "Restore platform health: GGE-G5 green, plan ceremony self-primes, contract layer foundation.",
       "dependsOn": []
@@ -269,7 +244,6 @@
       "id": 23,
       "name": "pending-stub",
       "description": "Ceremony tooling kaizen, HA gate infrastructure, and contract-layer foundation. Advances delivery machinery health and begins kind-cluster HA validation groundwork.",
-      "file": "prd/increment-23-pending-stub.json",
       "status": "complete",
       "themeGoal": "T3/T5 \u2014 strengthen ceremony tooling (kaizen), HA gate script, contract-layer primitives, code-server toolchain autarky.",
       "dependsOn": [
@@ -280,7 +254,6 @@
       "id": 24,
       "name": "pending-stub",
       "description": "HA gate script, monorepo restructure bootstrap scripts, chaos PDB artifact, ArgoCD global.domain injection (all 16 app manifests), code-server workspace PVC.",
-      "file": "prd/increment-24-pending-stub.json",
       "status": "complete",
       "themeGoal": "T1/T3/T5 \u2014 HA gate script, restructure scripts, chaos PDB artifact, ArgoCD global.domain injection, code-server PVC",
       "dependsOn": [
@@ -291,7 +264,6 @@
       "id": 25,
       "name": "kaizen",
       "description": "Delivery machine kaizen, ceremony metric fixes, toolchain autarky groundwork, and HA CI gate. Retires legacy vocabulary remnants, fixes the retro first-pass formula, advances E15 targeting, and wires ha-gate.sh into GitHub Actions.",
-      "file": "prd/increment-25-pending-stub.json",
       "status": "complete",
       "themeGoal": "T3/T5 \u2014 delivery machine health (retro formula, E15 targeting, vocabulary cleanup) and HA gate CI enforcement.",
       "dependsOn": [
@@ -302,7 +274,6 @@
       "id": 26,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 25 completes.",
-      "file": "prd/increment-26-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 25 advances.",
       "dependsOn": [
@@ -313,7 +284,6 @@
       "id": 27,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 26 completes.",
-      "file": "prd/increment-27-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 26 advances.",
       "dependsOn": [
@@ -324,7 +294,6 @@
       "id": 28,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 27 completes.",
-      "file": "prd/increment-28-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 27 advances.",
       "dependsOn": [
@@ -335,7 +304,6 @@
       "id": 29,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 28 completes.",
-      "file": "prd/increment-29-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 28 advances.",
       "dependsOn": [
@@ -346,7 +314,6 @@
       "id": 30,
       "name": "chart-migration-and-toolchain",
       "description": "Complete RESTRUCTURE-001c chart migration to unlock the KIND cluster delivery chain; advance HA hardening for quality charts, code-server toolchain init container, and plan ceremony pre-accepted story guard.",
-      "file": "prd/increment-30-pending-stub.json",
       "status": "complete",
       "themeGoal": "T1/T3 \u2014 chart migration (unlock KIND chain), HA hardening for quality charts, code-server toolchain init container, plan ceremony capacity guard.",
       "dependsOn": [
@@ -357,7 +324,6 @@
       "id": 31,
       "name": "kind-bootstrap-chain",
       "description": "Advance the KIND cluster delivery chain. KIND-001a bootstraps the cluster foundation that unblocks the entire PLATFORM delivery sequence. Review confirmations clear the RESTRUCTURE and HA gate backlog.",
-      "file": "prd/increment-31-pending-stub.json",
       "status": "complete",
       "themeGoal": "T1 Sovereignty \u2014 KIND-001a kind cluster bootstrap unblocks PLATFORM chain; RESTRUCTURE and HA-001 review confirmations cleared.",
       "dependsOn": [
@@ -368,7 +334,6 @@
       "id": 32,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 31 completes.",
-      "file": "prd/increment-32-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 31 advances.",
       "dependsOn": [
@@ -379,7 +344,6 @@
       "id": 33,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 32 completes.",
-      "file": "prd/increment-33-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 32 advances.",
       "dependsOn": [
@@ -390,7 +354,6 @@
       "id": 34,
       "name": "pending-stub",
       "description": "Fix execute ceremony AC self-check gap (CEREMONY-012); harden chaos-mesh and wiremock charts to HA standard (TEST-004a, TEST-005a); create kind smoke test scaffold (HA-005a); clear HA-008 and RESTRUCTURE-001b-2 review confirmations.",
-      "file": "prd/increment-34-pending-stub.json",
       "status": "complete",
       "themeGoal": "Harden E13 testing charts to HA standard and fix the execute ceremony self-check gap \u2014 unblocking TEST-006 and the Chaos Mesh CRD chain while building the kind smoke test scaffold.",
       "dependsOn": [
@@ -401,7 +364,6 @@
       "id": 35,
       "name": "pending-stub",
       "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
-      "file": "prd/increment-35-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony from backlog.",
       "dependsOn": [
@@ -412,7 +374,6 @@
       "id": 36,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 35 completes.",
-      "file": "prd/increment-36-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 35 advances.",
       "dependsOn": [
@@ -423,7 +384,6 @@
       "id": 37,
       "name": "pending-stub",
       "description": "Advance E15 HA validation chain (kind-smoke.sh scaffold and kind runtime tests for chaos-mesh and wiremock). Clear accumulated review debt: RESTRUCTURE-001b-2, HA-008, DEVEX-009, and CEREMONY-008 SMART guidance improvement.",
-      "file": "prd/increment-37-pending-stub.json",
       "status": "complete",
       "themeGoal": "T5 Resilience \u2014 kind smoke test scaffold (HA-005a) and runtime validation (TEST-004b, TEST-005b); clear E2/E15/E11 review debt.",
       "dependsOn": [
@@ -434,7 +394,6 @@
       "id": 38,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 37 completes.",
-      "file": "prd/increment-38-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 37 advances.",
       "dependsOn": [
@@ -445,7 +404,6 @@
       "id": 39,
       "name": "pending-stub",
       "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
-      "file": "prd/increment-39-pending-stub.json",
       "status": "complete",
       "themeGoal": "T3 \u2014 delivery machine quality: SMART CRD-spec citation rule, retro first-pass formula fix, backlog themeId drift correction.",
       "dependsOn": [
@@ -456,7 +414,6 @@
       "id": 40,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 39 completes.",
-      "file": "prd/increment-40-pending-stub.json",
       "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 39 advances.",
       "dependsOn": [
