@@ -368,7 +368,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 2,
@@ -379,7 +379,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: script behavior described in detail but shell interpreter not explicitly named (bash implied by shellcheck). Measurable score 4: shellcheck, bash -n, and grep cover defined behavior; AC6 verifies negative precondition from RESTRUCTURE-001a. Already passes:true."
-      }
+      },
+      "status": "complete"
     },
     {
       "id": "RESTRUCTURE-001b-2",
@@ -401,7 +402,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 3,
@@ -412,7 +413,8 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Specific score 4: script behavior described but --chart-dir and --namespace marked 'required options' without documenting error behavior on missing args. Measurable score 4: shellcheck, bash -n, and grep cover defined behavior. Already passes:true."
-      }
+      },
+      "status": "complete"
     }
   ]
 }
