@@ -424,27 +424,57 @@
       "name": "pending-stub",
       "description": "Advance E15 HA validation chain (kind-smoke.sh scaffold and kind runtime tests for chaos-mesh and wiremock). Clear accumulated review debt: RESTRUCTURE-001b-2, HA-008, DEVEX-009, and CEREMONY-008 SMART guidance improvement.",
       "file": "prd/increment-37-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "T5 Resilience \u2014 kind smoke test scaffold (HA-005a) and runtime validation (TEST-004b, TEST-005b); clear E2/E15/E11 review debt.",
       "dependsOn": [
         36
       ],
       "startDate": "2026-03-30T00:00:00+00:00",
+      "endDate": "2026-03-30T00:00:00+00:00",
       "pointsTotal": 12,
-      "storiesTotal": 7
+      "storiesTotal": 7,
+      "pointsCompleted": 10,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 14.3
     },
     {
       "id": 38,
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 37 completes.",
       "file": "prd/increment-38-pending-stub.json",
-      "status": "pending",
+      "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 37 advances.",
       "dependsOn": [
         37
       ]
+    },
+    {
+      "id": 39,
+      "name": "pending-stub",
+      "description": "Planned increment. Will be populated from backlog by the plan ceremony.",
+      "file": "prd/increment-39-pending-stub.json",
+      "status": "active",
+      "themeGoal": "TBD \u2014 planned by plan ceremony from backlog.",
+      "dependsOn": [
+        38
+      ],
+      "startDate": "2026-03-31T01:15:23.847622+00:00",
+      "pointsTotal": 5,
+      "storiesTotal": 3
+    },
+    {
+      "id": 40,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 39 completes.",
+      "file": "prd/increment-40-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 39 advances.",
+      "dependsOn": [
+        39
+      ]
     }
   ],
-  "activeSprint": "prd/increment-37-pending-stub.json",
-  "currentIncrement": 37
+  "activeSprint": "prd/increment-39-pending-stub.json",
+  "currentIncrement": 39
 }

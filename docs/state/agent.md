@@ -323,6 +323,19 @@ prior sprint and is pulled into the current sprint solely to clear the review pi
 shows `attempts: 0`. This is not a data error. The retro first-pass formula (`attempts == 1`) correctly
 excludes these stories from first-pass counting. Do not flag `attempts: 0` as missing implementation work.
 
+**Vendor API field values in ACs must be version-pinned**: an AC that asserts a specific phase name,
+condition string, or status key from a Kubernetes CRD (e.g. `phase=Finished`, `status: Running`) is only
+correct for the chart version it was validated against. Before writing an AC of the form "shows X=Y",
+confirm the value in the chart's CRD spec at the pinned version, or verify it empirically against a
+running instance. An AC with an unverified vendor constant has `smart.measurable ≤ 3` and will fail
+review even when the implementation is functionally complete. The canonical failure: chaos-mesh v2.6.3
+uses `Not Injected` as the terminal recovery state, not `Finished`.
+
+**Implementation-complete ≠ AC-correct**: a story can have working code and passing runtime behavior
+and still fail review because the AC text contains a wrong constant or wrong file path. Review ceremonies
+validate ACs as written, not as intended. AC authoring quality is a first-class concern — the "test
+contract first" norm applies at authoring time, not just post-implementation.
+
 **Pre-accepted story crowding blocks execution capacity**: when stories with `passes:true, reviewed:true`
 are pulled into a sprint, they consume ceremony pipeline slots without requiring implementation work. If
 they make up a large fraction of the sprint, new implementation stories will never be reached. The plan
@@ -490,7 +503,15 @@ blocks cleared) — 100% first-review pass rate, 11/8 pts delivered),
 confirmed; RESTRUCTURE-001b-1 cluster/kind/bootstrap.sh review confirmed; HA-001 ha-gate.sh
 review confirmed; TEST-010 all 5 E13 charts pass autarky G6 gate (no external registry refs);
 HA-010 ha-gate.sh extended to cover all 5 E13 testing infrastructure charts; KAIZEN-004 legacy
-`phase` field removed from all backlog stories — 100% first-review pass rate, 9 pts)
+`phase` field removed from all backlog stories — 100% first-review pass rate, 9 pts),
+37 (pending-stub — 6/7 accepted: RESTRUCTURE-001b-2 platform/deploy.sh review confirmed;
+HA-005a scripts/test/kind-smoke.sh scaffold (PLATFORM-001–004 test functions, shellcheck clean)
+review confirmed; HA-008 test/chaos/pdb-validation.yaml + README review confirmed;
+TEST-005b wiremock deployed to kind-sovereign-test, admin API stub mapping verified (HTTP 201 + body);
+DEVEX-009 code-server workspace PVC at /home/coder review confirmed;
+CEREMONY-008 chart-iteration pipefail guidance in smart.md review confirmed;
+TEST-004b returned to backlog — AC3 asserts wrong terminal phase name for chaos-mesh v2.6.3
+("phase=Finished" should be "AllRecovered=True"); implementation is complete, AC needs correction)
 
 Epics complete: E1 (ceremonies), E2 (bootstrap), E3 (foundations), E4 (identity), E5 (GitOps engine),
 E6 (autarky vendor system), E7 (service mesh), E8 (policy + runtime security), E9 (metrics/dashboards),
@@ -504,7 +525,9 @@ SonarQube + ReportPortal Helm charts, ArgoCD apps, and HA gate compliance done; 
 story 052 pending), E13 (testing infrastructure — all five charts at HA standard and autarky G6
 compliant: selenium-grid (TEST-006a), chaos-mesh (TEST-004a), wiremock (TEST-005a), k6-operator
 (TEST-006b), mailhog (TEST-006b); ha-gate.sh extended to cover all 5 testing charts (HA-010);
-deployment stories TEST-004b (chaos-mesh deploy), TEST-005b (wiremock deploy) still pending),
+TEST-005b wiremock deployed to kind-sovereign-test (done); TEST-004b chaos-mesh kind deploy
+returned to backlog — implementation complete but AC3 asserts wrong terminal phase name,
+needs correction before re-review),
 E15 (HA integration testing — HA-001 ha-gate.sh done; HA-002 PDB drain validation done; HA-003
 rolling update smoke test done; HA-004 HA bootstrap script done; HA-005a kind-smoke.sh scaffold done;
 HA-008 chaos PDB artifact done; HA-010 ha-gate.sh extended to all 5 E13 testing charts; targetIncrement: 28)

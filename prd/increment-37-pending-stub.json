@@ -25,7 +25,7 @@
       "dependencies": [
         "RESTRUCTURE-001a"
       ],
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "priority": 3,
@@ -57,7 +57,7 @@
         "HA-004"
       ],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
@@ -88,7 +88,7 @@
       ],
       "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -127,10 +127,14 @@
         "kubectl",
         "helm"
       ],
-      "passes": true,
+      "passes": false,
       "reviewed": false,
-      "reviewNotes": [],
-      "attempts": 2,
+      "returnedToBacklog": true,
+      "returnedReason": "AC3 asserts 'phase=Finished' but chaos-mesh v2.6.3 terminal recovery state is 'Not Injected' (AllRecovered=True); implementation is complete, AC must be corrected before re-review",
+      "reviewNotes": [
+        "[Review 3] AC failed: 'kubectl get podchaos -n chaos-testing --context kind-sovereign-test shows phase=Finished within 120 seconds'. Command run: kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test && sleep 30 && kubectl describe podchaos podchaos-test -n chaos-testing --context kind-sovereign-test | grep Phase. Actual output: 'Phase: Not Injected' (Desired Phase: Stop, Condition: AllRecovered=True). chaos-mesh v2.6.3 uses 'Not Injected' as the terminal recovery state, not 'Finished'. AC3 must be updated to match actual behavior: either change 'phase=Finished' to 'Not Injected' or update the criterion to grep for AllRecovered=True."
+      ],
+      "attempts": 3,
       "smart": {
         "specific": 4,
         "measurable": 4,
@@ -139,7 +143,7 @@
         "timeBound": 4,
         "notes": "Specific score 4: service name assumed from chart convention, not cross-referenced to chart service template. Measurable score 4: AC3 'shows phase=Finished within 120 seconds' requires polling \u2014 no kubectl wait command specified, making the check timing-dependent rather than a single binary command. Achievable score 4: requires running kind-sovereign-test cluster (KIND-001a, KIND-001b). TimeBound score 4: 120s empirical window for phase=Finished introduces non-determinism in the pass/fail boundary."
       },
-      "readinessNote": "DELIVERED: chart rebuilt as upstream wrapper (same pattern as cert-manager). helm install exits 0, all pods Running, PodChaos Apply+Recover both Succeeded, AllRecovered:True within 120s. chaos-mesh v2.6.3 uses 'Not Injected' as terminal state after recovery — not 'Finished'; experiment is complete. Also fixed ha-gate.sh grep -q SIGPIPE bug (set -o pipefail + large rendered output).",
+      "readinessNote": "DELIVERED: chart rebuilt as upstream wrapper (same pattern as cert-manager). helm install exits 0, all pods Running, PodChaos Apply+Recover both Succeeded, AllRecovered:True within 120s. chaos-mesh v2.6.3 uses 'Not Injected' as terminal state after recovery \u2014 not 'Finished'; experiment is complete. Also fixed ha-gate.sh grep -q SIGPIPE bug (set -o pipefail + large rendered output).",
       "blocker": null
     },
     {
@@ -169,7 +173,7 @@
         "helm"
       ],
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 1,
       "smart": {
@@ -200,7 +204,7 @@
       ],
       "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -229,7 +233,7 @@
       "priority": 1,
       "points": 1,
       "passes": true,
-      "reviewed": false,
+      "reviewed": true,
       "reviewNotes": [],
       "attempts": 0,
       "dependencies": [],
@@ -244,5 +248,7 @@
         "notes": "Specific score 4: target file specified as 'scripts/ralph/ceremonies/smart.md (or equivalent)' \u2014 'or equivalent' leaves the actual file path ambiguous; the test plan assumes the specific path. Measurable score 4: the same 'or equivalent' ambiguity means the AC grep commands may not match the actual file if a different equivalent is chosen."
       }
     }
-  ]
+  ],
+  "_lastSmokeTestFailures": [],
+  "_lastProofOfWorkFailures": []
 }
