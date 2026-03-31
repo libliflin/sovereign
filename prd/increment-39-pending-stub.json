@@ -50,9 +50,9 @@
         "python3 -c \"content=open('scripts/ralph/ceremonies/retro.md').read(); assert '<= 1' in content, 'formula not updated'; print('PASS')\" exits 0 and prints PASS"
       ],
       "testPlan": "grep -n 'attempts' scripts/ralph/ceremonies/retro.md; verify the updated line uses '<= 1' and show output verbatim",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 5,
         "measurable": 5,
