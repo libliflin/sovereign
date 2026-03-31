@@ -1,0 +1,400 @@
+{
+  "increment": 41,
+  "name": "pending-stub",
+  "description": "Placeholder pending increment. Will be properly planned when increment 40 completes.",
+  "sprintGoal": "Advance kind-cluster HA validation chain: create kind-smoke.sh scaffold (HA-005a), verify chaos-mesh runtime (TEST-004b) and wiremock runtime (TEST-005b), wire check-limits.py into ha-gate.sh (HA-011), close code-server extension autarky gap (DEVEX-015), add SMART CRD-spec citation guidance (CEREMONY-012), and clear 6 accumulated review-confirmation stories.",
+  "capacity": 12,
+  "stories": [
+    {
+      "id": "HA-005a",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 3,
+      "points": 2,
+      "branchName": "feature/kind-smoke-test-script",
+      "title": "Create scripts/test/kind-smoke.sh: static-verifiable scaffold covering PLATFORM-001 through PLATFORM-004",
+      "description": "Create scripts/test/kind-smoke.sh that encodes all PLATFORM-001 through PLATFORM-004 acceptance criteria as executable test functions (cert-manager, sealed-secrets, Harbor, Keycloak). The script must define one test function per PLATFORM story, print a PASS/FAIL summary table, and pass shellcheck -S error with no warnings. The exact commands for each test come from the acceptance criteria in prd/increment-21-platform-foundations.json.",
+      "acceptanceCriteria": [
+        "shellcheck -S error scripts/test/kind-smoke.sh exits 0",
+        "grep -c 'helm\\|kubectl' scripts/test/kind-smoke.sh returns a value >= 4 (at least one invocation per PLATFORM-00x test)",
+        "grep -E 'PASS|FAIL' scripts/test/kind-smoke.sh exits 0 (PASS and FAIL literals appear in summary output logic)"
+      ],
+      "testPlan": "shellcheck -S error scripts/test/kind-smoke.sh; grep -c 'helm\\|kubectl' scripts/test/kind-smoke.sh; grep -E 'PASS|FAIL' scripts/test/kind-smoke.sh; show all output verbatim.",
+      "dependencies": [
+        "HA-004"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
+      }
+    },
+    {
+      "id": "TEST-004b",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 4,
+      "points": 2,
+      "branchName": "feature/chaos-mesh-kind-deploy",
+      "title": "Deploy platform/charts/chaos-mesh/ to kind-sovereign-test and run a pod failure experiment",
+      "description": "Install platform/charts/chaos-mesh/ into kind-sovereign-test in namespace chaos-testing. Create kind/fixtures/podchaos-test.yaml PodChaos experiment fixture targeting a test pod. Apply the fixture and verify the experiment recovers (AllRecovered=True) within 120 seconds. This validates runtime behavior beyond static lint.",
+      "acceptanceCriteria": [
+        "helm install chaos-mesh platform/charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m exits 0",
+        "kubectl get pods -n chaos-testing --context kind-sovereign-test shows all pods Running",
+        "kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test exits 0 and within 120 seconds kubectl describe podchaos podchaos-test -n chaos-testing --context kind-sovereign-test shows AllRecovered=True (chaos-mesh v2.6.3 terminal recovery state is 'Not Injected', not 'Finished')",
+        "kind/fixtures/podchaos-test.yaml exists and is valid YAML"
+      ],
+      "testPlan": "helm install chaos-mesh platform/charts/chaos-mesh/ --kube-context kind-sovereign-test --namespace chaos-testing --create-namespace --wait --timeout 3m && kubectl get pods -n chaos-testing --context kind-sovereign-test && kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test && sleep 30 && kubectl describe podchaos podchaos-test -n chaos-testing --context kind-sovereign-test | grep -E 'AllRecovered|Phase'; show all output verbatim.",
+      "dependencies": [
+        "TEST-004a",
+        "KIND-001a",
+        "KIND-001b"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Runtime-verifiable split of TEST-004 (Strategy D). AC3 corrected: 'phase=Finished' replaced with 'AllRecovered=True' per empirical verification in sprint 37 (chaos-mesh v2.6.3 uses Not Injected as terminal state). Measurable score raised to 5. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted in sprints 31 and 32). TimeBound score 4: 120s window is empirical but reasonable."
+      },
+      "returnedFromSprint": "prd/increment-37-pending-stub.json",
+      "returnedReason": "AC3 asserted 'phase=Finished' but chaos-mesh v2.6.3 terminal recovery state is 'Not Injected' (AllRecovered=True); implementation complete, AC corrected for next sprint"
+    },
+    {
+      "id": "TEST-005b",
+      "epicId": "E13",
+      "themeId": "T5",
+      "priority": 5,
+      "points": 2,
+      "branchName": "feature/wiremock-kind-deploy",
+      "title": "Deploy platform/charts/wiremock/ to kind-sovereign-test and verify admin REST API accepts stub mappings",
+      "description": "Install platform/charts/wiremock/ into kind-sovereign-test in namespace wiremock-test. Port-forward the Wiremock service and verify the admin API accepts a stub mapping POST to /__admin/mappings (expect HTTP 201) and that a matching GET to the mapped URL returns the configured response body. This validates runtime behavior beyond static lint.",
+      "acceptanceCriteria": [
+        "helm install wiremock platform/charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m exits 0",
+        "kubectl get pods -n wiremock-test --context kind-sovereign-test shows all pods Running",
+        "kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 --context kind-sovereign-test & sleep 2 && curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/__admin/mappings -H 'Content-Type: application/json' -d '{\"request\":{\"method\":\"GET\",\"url\":\"/api/test\"},\"response\":{\"status\":200,\"body\":\"ok\"}}' returns 201",
+        "curl -s http://localhost:8080/api/test returns 'ok'"
+      ],
+      "testPlan": "helm install wiremock platform/charts/wiremock/ --kube-context kind-sovereign-test --namespace wiremock-test --create-namespace --wait --timeout 3m && kubectl get pods -n wiremock-test --context kind-sovereign-test && kubectl port-forward -n wiremock-test svc/wiremock 8080:8080 --context kind-sovereign-test & sleep 2 && curl -X POST http://localhost:8080/__admin/mappings -H 'Content-Type: application/json' -d '...' && curl http://localhost:8080/api/test; show all output verbatim.",
+      "dependencies": [
+        "TEST-005a",
+        "KIND-001a",
+        "KIND-001b"
+      ],
+      "requiredCapabilities": [
+        "kind",
+        "kubectl",
+        "helm"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Runtime-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. AC3 (curl returns 201) and AC4 (curl returns 'ok') verify actual runtime admin API behavior. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted). TimeBound score 5: all ACs have deterministic expected outputs."
+      }
+    },
+    {
+      "id": "HA-011",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 28,
+      "priority": 11,
+      "points": 2,
+      "branchName": "feature/ha-011-check-limits-script",
+      "title": "Create scripts/check-limits.py \u2014 validates every container has resource requests and limits; wire into ha-gate.sh and validate.yml",
+      "description": "The agent.md quality gate pattern 'helm template platform/charts/<name>/ | python3 scripts/check-limits.py' is documented as mandatory but scripts/check-limits.py does not exist. Create scripts/check-limits.py following the validate.yml pattern: reads YAML from stdin (helm template output), walks every containers and initContainers spec, and exits 1 with a list of failing containers if any are missing resources.requests or resources.limits. Integrate into scripts/ha-gate.sh by adding a check-limits.py invocation for each chart. Add a CI step to .github/workflows/validate.yml (or ha-gate.yml) that pipes each chart's rendered template through check-limits.py on every PR touching platform/charts/.",
+      "acceptanceCriteria": [
+        "scripts/check-limits.py exists \u2014 ls scripts/check-limits.py exits 0",
+        "python3 scripts/check-limits.py exits 0 when piped a Deployment with complete resource requests and limits on all containers",
+        "python3 scripts/check-limits.py exits 1 when piped a Deployment with a container missing resources.limits \u2014 python3 -c \"import subprocess,sys; r=subprocess.run(['python3','scripts/check-limits.py'],input=b'apiVersion: apps/v1\\nkind: Deployment\\nspec:\\n  template:\\n    spec:\\n      containers:\\n      - name: test\\n        image: test:1.0',capture_output=True); sys.exit(0 if r.returncode == 1 else 1)\" exits 0",
+        "grep 'check-limits' scripts/ha-gate.sh exits 0 \u2014 the script is invoked in ha-gate.sh for each chart",
+        "shellcheck -S error scripts/ha-gate.sh exits 0"
+      ],
+      "testPlan": "ls scripts/check-limits.py && python3 scripts/check-limits.py --help && grep 'check-limits' scripts/ha-gate.sh && shellcheck -S error scripts/ha-gate.sh && bash scripts/ha-gate.sh --dry-run",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm",
+        "python3"
+      ]
+    },
+    {
+      "id": "DEVEX-015",
+      "epicId": "E11",
+      "themeId": "T1",
+      "phase": 7,
+      "priority": 15,
+      "points": 2,
+      "branchName": "feature/devex-015-code-server-extension-autarky",
+      "title": "code-server pre-installs VS Code extensions at startup from Harbor \u2014 no external marketplace calls",
+      "description": "code-server downloads VS Code extensions from marketplace.visualstudio.com by default, violating T1 Sovereignty. Add an extensionRegistry field to platform/charts/code-server/values.yaml that defaults to '{{ .Values.global.imageRegistry }}'. Add an extensions: [] array to values.yaml with a default set of 3 extensions: redhat.vscode-yaml, ms-kubernetes-tools.vscode-kubernetes-tools, timonwong.shellcheck-snappy. Add a lifecycle.postStart or initContainer script to the code-server Deployment that runs code-server --install-extension for each entry in .Values.extensions, using vsix files served from the extensionRegistry. The script must be idempotent (skip already-installed extensions). No template in platform/charts/code-server/templates/ may reference marketplace.visualstudio.com or open-vsx.org.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/values.yaml contains an extensions: field with at least 3 default entries \u2014 grep -A5 'extensions:' platform/charts/code-server/values.yaml shows 3+ lines",
+        "platform/charts/code-server/values.yaml contains an extensionRegistry field \u2014 grep 'extensionRegistry' platform/charts/code-server/values.yaml exits 0",
+        "helm template platform/charts/code-server/ | grep 'install-extension' exits 0 \u2014 the extension install command is rendered in the Deployment template",
+        "grep -r 'marketplace.visualstudio.com\\|open-vsx.org' platform/charts/code-server/templates/ returns no matches \u2014 no hardcoded external extension sources",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep 'install-extension' && grep -A5 'extensions:' platform/charts/code-server/values.yaml && grep 'extensionRegistry' platform/charts/code-server/values.yaml && grep -r 'marketplace.visualstudio.com' platform/charts/code-server/templates/ && echo 'PASS: no external extension sources'",
+      "dependencies": [
+        "DEVEX-007b"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "CEREMONY-012",
+      "epicId": "E1",
+      "themeId": "T3",
+      "priority": 1,
+      "points": 2,
+      "branchName": "kaizen/smart-crd-field-ac-validation",
+      "title": "SMART guidance: ACs asserting vendor API field values must cite chart version CRD spec",
+      "description": "TEST-004b failed review three times in sprint 37 because AC3 asserted 'phase=Finished' \u2014 the documented chaos-mesh phase \u2014 but v2.6.3 uses 'Not Injected' as the terminal recovery state. The implementation was correct; the AC was wrong. Root cause: no SMART gate requires that ACs asserting specific API field values (phase names, condition strings, status keys) be cross-referenced against the pinned chart version's CRD spec or empirically verified before the story is written. Add an explicit rule to scripts/ralph/ceremonies/smart.md: when an AC asserts a vendor-specific status field value (e.g. 'phase=X', 'condition=Y'), the story must either cite the upstream CRD documentation for the pinned chart version or note that the value was empirically confirmed against a running instance.",
+      "acceptanceCriteria": [
+        "grep -n 'CRD\\|vendor.*field\\|phase.*value\\|status.*field' scripts/ralph/ceremonies/smart.md returns at least one match confirming the guidance is present",
+        "grep -n 'chart version\\|pinned version\\|empirically' scripts/ralph/ceremonies/smart.md returns at least one match",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "grep -n 'CRD\\|vendor.*field' scripts/ralph/ceremonies/smart.md; grep -n 'chart version\\|empirically' scripts/ralph/ceremonies/smart.md; python3 -m py_compile scripts/ralph/ceremonies.py; show all output verbatim. All three must return matches or exit 0.",
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-37-pending-stub.json",
+      "returnedReason": "TEST-004b failed review 3x because AC3 asserted a phase name not present in the actual chart version; SMART guidance does not require CRD-spec citation for vendor API field assertions",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. ACs are exact grep commands against a specific file. No cluster required."
+      }
+    },
+    {
+      "id": "CEREMONY-001",
+      "title": "Fix attempts field \u2014 initialize to 0, increment only on review re-open",
+      "description": "The attempts field is currently initialized to 1 after first implementation, causing advance.py to report 0% first-pass rate for all stories. Fix: initialize to 0 in story schema, increment only when review ceremony re-opens a story (adds a reviewNotes entry). Update the formula in advance.py to use len(reviewNotes) == 0 as the first-pass check.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/attempts-field-fix",
+      "priority": 14,
+      "points": 1,
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "prd/schema/story.schema.json has attempts with default 0",
+        "scripts/ralph/lib/advance.py uses len(story.get('reviewNotes', [])) == 0 for first-pass rate calculation",
+        "python3 -c \"import json; s=json.load(open('prd/schema/story.schema.json')); assert s['properties']['attempts']['default'] == 0\" exits 0",
+        "shellcheck or python3 -m py_compile scripts/ralph/lib/advance.py exits 0"
+      ],
+      "testPlan": "Show schema default and advance.py formula change. Run py_compile. Show output verbatim.",
+      "returnedFromSprint": "prd/increment-17-restructure.json",
+      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Review ceremony in next sprint can accept it immediately."
+    },
+    {
+      "id": "CEREMONY-008",
+      "title": "Chart-iterating shell scripts must be validated against all existing platform/charts before passes:true",
+      "description": "HA-001 failed review twice because scripts/ha-gate.sh used set -euo pipefail with a bare grep pipeline. When processing platform/charts/_globals/ (which has no top-level replicaCount field), grep exited 1, and pipefail killed the script silently. The test plan only covered a synthetic fixture chart \u2014 it never ran against the actual chart corpus. This story adds an explicit requirement to the SMART/AC guidelines: any shell script story that iterates platform/charts/ must include 'run against all existing charts in platform/charts/' as an acceptance criterion (not just synthetic fixtures). Update the relevant ceremony docs or story schema notes to enforce this.",
+      "acceptanceCriteria": [
+        "scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc) contains text requiring that chart-iterating scripts be tested against all existing platform/charts/ before marking passes:true",
+        "The requirement text includes an explicit note about bash set -euo pipefail with grep pipelines: use '|| true' when grep results may be empty",
+        "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md (or equivalent) returns at least one match confirming the guidance is present"
+      ],
+      "testPlan": "grep -n 'platform/charts' scripts/ralph/ceremonies/smart.md and grep -n 'pipefail\\||| true' scripts/ralph/ceremonies/smart.md \u2014 show output verbatim. Both must return matches.",
+      "epicId": "E1",
+      "themeId": "T3",
+      "branchName": "kaizen/chart-iteration-script-gate",
+      "priority": 1,
+      "points": 1,
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "returnedFromSprint": "prd/increment-23-pending-stub.json",
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+    },
+    {
+      "id": "DEVEX-009",
+      "epicId": "E11",
+      "themeId": "T3",
+      "priority": 13,
+      "points": 1,
+      "branchName": "feature/code-server-workspace-pvc",
+      "title": "code-server chart: PersistentVolumeClaim for /home/coder so workspace survives pod restarts",
+      "description": "Add platform/charts/code-server/templates/pvc.yaml: a PersistentVolumeClaim for the code-server workspace. The storageClass must reference {{ .Values.global.storageClass }} (never hardcoded). Size must be configurable via values.yaml (default 5Gi). Update the Deployment template to add a volumeMount at /home/coder and a corresponding volume referencing the PVC. This ensures that agent workspaces, cloned git repos, and shell history survive pod restarts.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/templates/pvc.yaml exists \u2014 ls platform/charts/code-server/templates/pvc.yaml exits 0",
+        "helm template platform/charts/code-server/ shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}",
+        "helm template platform/charts/code-server/ shows a VolumeMount with mountPath: /home/coder",
+        "platform/charts/code-server/values.yaml has a persistence.size field \u2014 grep 'persistence:' platform/charts/code-server/values.yaml exits 0",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep -A3 'PersistentVolumeClaim' && helm template platform/charts/code-server/ | grep '/home/coder' && grep 'persistence:' platform/charts/code-server/values.yaml; show all output verbatim",
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "HA-008",
+      "epicId": "E15",
+      "themeId": "T5",
+      "priority": 6,
+      "points": 2,
+      "branchName": "feature/chaos-pdb-validation",
+      "title": "Chaos Mesh PodChaos experiment YAML + README validates PDB prevents simultaneous pod eviction",
+      "description": "Create test/chaos/pdb-validation.yaml: a Chaos Mesh PodChaos experiment targeting a platform service (e.g. grafana namespace, mode: all) to simultaneously terminate all pods. The PDB minAvailable:1 should prevent the last pod from being evicted. Create test/chaos/README.md explaining how to apply the experiment against a kind cluster running Chaos Mesh (TEST-004), what PDB-enforcement behavior to observe, and how to clean up. The YAML is a static test artifact \u2014 it does not run in CI. This covers the 'PDB chaos validation' goal from E15.",
+      "acceptanceCriteria": [
+        "test/chaos/pdb-validation.yaml exists \u2014 ls test/chaos/pdb-validation.yaml exits 0",
+        "python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml exits 0 (valid YAML)",
+        "grep 'kind: PodChaos' test/chaos/pdb-validation.yaml exits 0",
+        "grep 'mode: all' test/chaos/pdb-validation.yaml exits 0 (targets all replicas to exercise PDB)",
+        "test/chaos/README.md exists and grep -i 'PodDisruptionBudget\\|PDB' test/chaos/README.md exits 0"
+      ],
+      "testPlan": "ls test/chaos/pdb-validation.yaml test/chaos/README.md && python3 -c \"import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())\" test/chaos/pdb-validation.yaml && grep 'kind: PodChaos' test/chaos/pdb-validation.yaml && grep 'mode: all' test/chaos/pdb-validation.yaml && grep -i 'PDB' test/chaos/README.md; show all output verbatim",
+      "passes": true,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "dependencies": [],
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b-1",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/kind-bootstrap-script",
+      "title": "cluster/kind/bootstrap.sh: kind cluster provisioner with --help, --cluster-name, and kind create cluster invocation",
+      "description": "Create cluster/kind/bootstrap.sh. The script must: (1) support --help flag that prints usage including '--cluster-name NAME (default: sovereign-test)'; (2) accept --cluster-name NAME option defaulting to 'sovereign-test'; (3) print 'Bootstrapping kind cluster: $cluster_name' before running; (4) invoke 'kind create cluster --name \"$cluster_name\"'. Script must pass shellcheck -S error with set -euo pipefail at the top. Also verify that bootstrap/providers/ is not present in the working tree (it should have been removed in RESTRUCTURE-001a).",
+      "acceptanceCriteria": [
+        "cluster/kind/bootstrap.sh exists: ls cluster/kind/bootstrap.sh exits 0",
+        "shellcheck -S error cluster/kind/bootstrap.sh exits 0",
+        "bash -n cluster/kind/bootstrap.sh exits 0",
+        "bash cluster/kind/bootstrap.sh --help 2>&1 | grep -q 'cluster-name' exits 0",
+        "grep -q 'kind create cluster' cluster/kind/bootstrap.sh exits 0 (script contains the kind invocation)",
+        "[ ! -d bootstrap/providers ] exits 0 (bootstrap/providers/ not in working tree)"
+      ],
+      "passes": true,
+      "points": 1,
+      "testPlan": "ls cluster/kind/bootstrap.sh && shellcheck -S error cluster/kind/bootstrap.sh && bash -n cluster/kind/bootstrap.sh && bash cluster/kind/bootstrap.sh --help 2>&1 | grep 'cluster-name' && grep 'kind create cluster' cluster/kind/bootstrap.sh && [ ! -d bootstrap/providers ] && echo 'all checks passed'; show all output verbatim",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 2,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
+    },
+    {
+      "id": "RESTRUCTURE-001b-2",
+      "epicId": "E2",
+      "themeId": "T1",
+      "branchName": "restructure/platform-deploy-script",
+      "title": "platform/deploy.sh: Helm deployment orchestrator with --help, --chart-dir, --namespace, and helm upgrade --install invocation",
+      "description": "Create platform/deploy.sh. The script must: (1) support --help flag that prints usage including '--chart-dir DIR' and '--namespace NS'; (2) accept --chart-dir DIR and --namespace NS required options; (3) print 'Deploying chart: $chart_dir to namespace: $namespace' before running; (4) invoke 'helm upgrade --install' for the given chart and namespace. Script must pass shellcheck -S error with set -euo pipefail at the top.",
+      "acceptanceCriteria": [
+        "platform/deploy.sh exists: ls platform/deploy.sh exits 0",
+        "shellcheck -S error platform/deploy.sh exits 0",
+        "bash -n platform/deploy.sh exits 0",
+        "bash platform/deploy.sh --help 2>&1 | grep -q 'chart-dir' exits 0",
+        "grep -q 'helm upgrade --install' platform/deploy.sh exits 0 (script contains the helm invocation)"
+      ],
+      "passes": true,
+      "points": 1,
+      "testPlan": "ls platform/deploy.sh && shellcheck -S error platform/deploy.sh && bash -n platform/deploy.sh && bash platform/deploy.sh --help 2>&1 | grep 'chart-dir' && grep 'helm upgrade --install' platform/deploy.sh && echo 'all checks passed'; show all output verbatim",
+      "dependencies": [
+        "RESTRUCTURE-001a"
+      ],
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "priority": 3,
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+      }
+    }
+  ]
+}

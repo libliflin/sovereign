@@ -469,9 +469,23 @@
       "description": "Placeholder pending increment. Will be properly planned when increment 40 completes.",
       "file": "prd/increment-41-pending-stub.json",
       "status": "active",
-      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 40 advances.",
+      "themeGoal": "T5 Resilience \u2014 HA-005a kind-smoke scaffold, TEST-004b chaos-mesh runtime, TEST-005b wiremock runtime, HA-011 check-limits.py; T1 DEVEX-015 code-server extension autarky; T3 CEREMONY-012 SMART CRD-spec guidance.",
       "dependsOn": [
         40
+      ],
+      "startDate": "2026-03-30T00:00:00+00:00",
+      "pointsTotal": 19,
+      "storiesTotal": 12
+    },
+    {
+      "id": 42,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 41 completes.",
+      "file": "prd/increment-42-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 41 advances.",
+      "dependsOn": [
+        41
       ]
     }
   ],
