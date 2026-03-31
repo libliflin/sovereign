@@ -280,7 +280,7 @@
       "passes": false,
       "reviewed": false,
       "epicId": "E2",
-      "themeId": "T2",
+      "themeId": "T1",
       "branchName": "feature/kind-egress-policy",
       "dependencies": [
         "KIND-001b"
@@ -303,7 +303,7 @@
       "passes": false,
       "reviewed": false,
       "epicId": "E3",
-      "themeId": "T3",
+      "themeId": "T2",
       "branchName": "feature/platform-cert-manager",
       "dependencies": [
         "KIND-001b"
@@ -326,7 +326,7 @@
       "passes": false,
       "reviewed": false,
       "epicId": "E3",
-      "themeId": "T1",
+      "themeId": "T2",
       "branchName": "feature/platform-sealed-secrets",
       "dependencies": [
         "KIND-001b"
@@ -374,7 +374,7 @@
       "passes": false,
       "reviewed": false,
       "epicId": "E4",
-      "themeId": "T2",
+      "themeId": "T1",
       "branchName": "feature/platform-keycloak",
       "dependencies": [
         "PLATFORM-001",
@@ -398,7 +398,7 @@
       "passes": false,
       "reviewed": false,
       "epicId": "E5",
-      "themeId": "T3",
+      "themeId": "T1",
       "branchName": "feature/platform-gitlab",
       "dependencies": [
         "PLATFORM-003",
@@ -423,7 +423,7 @@
       "passes": false,
       "reviewed": false,
       "epicId": "E5",
-      "themeId": "T3",
+      "themeId": "T1",
       "branchName": "feature/platform-argocd",
       "dependencies": [
         "PLATFORM-005"
@@ -2322,7 +2322,7 @@
     {
       "id": "QUALITY-009",
       "epicId": "E12",
-      "themeId": "T1",
+      "themeId": "T3",
       "priority": 3,
       "points": 1,
       "branchName": "feature/quality-009-autarky-gate",
@@ -2359,7 +2359,7 @@
     {
       "id": "TEST-009",
       "epicId": "E13",
-      "themeId": "T4",
+      "themeId": "T5",
       "priority": 2,
       "points": 2,
       "branchName": "feature/test-009-chaos-grafana-dashboard",
