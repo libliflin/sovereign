@@ -23,7 +23,7 @@
       "dependencies": [
         "HA-004"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -62,7 +62,7 @@
         "kubectl",
         "helm"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -83,6 +83,7 @@
       "themeId": "T5",
       "priority": 5,
       "points": 2,
+      "passes": true,
       "branchName": "feature/wiremock-kind-deploy",
       "title": "Deploy platform/charts/wiremock/ to kind-sovereign-test and verify admin REST API accepts stub mappings",
       "description": "Install platform/charts/wiremock/ into kind-sovereign-test in namespace wiremock-test. Port-forward the Wiremock service and verify the admin API accepts a stub mapping POST to /__admin/mappings (expect HTTP 201) and that a matching GET to the mapped URL returns the configured response body. This validates runtime behavior beyond static lint.",
@@ -103,7 +104,6 @@
         "kubectl",
         "helm"
       ],
-      "passes": false,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -123,6 +123,7 @@
       "phase": 28,
       "priority": 11,
       "points": 2,
+      "passes": true,
       "branchName": "feature/ha-011-check-limits-script",
       "title": "Create scripts/check-limits.py \u2014 validates every container has resource requests and limits; wire into ha-gate.sh and validate.yml",
       "description": "The agent.md quality gate pattern 'helm template platform/charts/<name>/ | python3 scripts/check-limits.py' is documented as mandatory but scripts/check-limits.py does not exist. Create scripts/check-limits.py following the validate.yml pattern: reads YAML from stdin (helm template output), walks every containers and initContainers spec, and exits 1 with a list of failing containers if any are missing resources.requests or resources.limits. Integrate into scripts/ha-gate.sh by adding a check-limits.py invocation for each chart. Add a CI step to .github/workflows/validate.yml (or ha-gate.yml) that pipes each chart's rendered template through check-limits.py on every PR touching platform/charts/.",
@@ -135,7 +136,6 @@
       ],
       "testPlan": "ls scripts/check-limits.py && python3 scripts/check-limits.py --help && grep 'check-limits' scripts/ha-gate.sh && shellcheck -S error scripts/ha-gate.sh && bash scripts/ha-gate.sh --dry-run",
       "dependencies": [],
-      "passes": false,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -173,7 +173,7 @@
       "dependencies": [
         "DEVEX-007b"
       ],
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
@@ -204,7 +204,7 @@
         "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
       ],
       "testPlan": "grep -n 'CRD\\|vendor.*field' scripts/ralph/ceremonies/smart.md; grep -n 'chart version\\|empirically' scripts/ralph/ceremonies/smart.md; python3 -m py_compile scripts/ralph/ceremonies.py; show all output verbatim. All three must return matches or exit 0.",
-      "passes": false,
+      "passes": true,
       "reviewed": false,
       "reviewNotes": [],
       "attempts": 0,
