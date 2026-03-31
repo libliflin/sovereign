@@ -215,7 +215,7 @@ current_increment = manifest['currentIncrement']
 total = len(stories)
 n_accepted = len(accepted)
 n_incomplete = len(incomplete)
-first_pass = len([s for s in accepted if s.get('attempts', 1) == 1])
+first_pass = len([s for s in accepted if s.get('attempts', 1) <= 1])
 pass_rate = round(first_pass / total * 100, 1) if total > 0 else 0
 points_done = sum(s.get('points', 0) for s in accepted)
 
