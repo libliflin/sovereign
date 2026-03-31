@@ -10,9 +10,9 @@ global:
 
 controllerManager:
   image:
-    repository: "chaos-mesh/chaos-mesh"
+    repository: "ghcr.io/chaos-mesh/chaos-mesh"
     name: "chaos-mesh/chaos-mesh"
-    tag: "v2.6.3-abc1234-p0"
+    tag: "v2.6.3"
     pullPolicy: IfNotPresent
   resources:
     requests:

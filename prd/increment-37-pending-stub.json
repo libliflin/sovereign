@@ -130,7 +130,7 @@
       "passes": false,
       "reviewed": false,
       "reviewNotes": [],
-      "attempts": 0,
+      "attempts": 1,
       "smart": {
         "specific": 4,
         "measurable": 4,
@@ -139,7 +139,8 @@
         "timeBound": 4,
         "notes": "Specific score 4: service name assumed from chart convention, not cross-referenced to chart service template. Measurable score 4: AC3 'shows phase=Finished within 120 seconds' requires polling \u2014 no kubectl wait command specified, making the check timing-dependent rather than a single binary command. Achievable score 4: requires running kind-sovereign-test cluster (KIND-001a, KIND-001b). TimeBound score 4: 120s empirical window for phase=Finished introduces non-determinism in the pass/fail boundary."
       },
-      "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-004a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm)."
+      "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-004a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm).",
+      "blocker": "platform/charts/chaos-mesh is a bare Deployment wrapper without RBAC (ServiceAccount, ClusterRole, ClusterRoleBinding), startup args, or CRDs. The controller-manager crashes immediately at runtime (CrashLoopBackOff). The chart passes helm lint and HA gate but cannot run. Fix: add RBAC templates, controller startup args, and CRD installation to the chaos-mesh chart before this story can pass."
     },
     {
       "id": "TEST-005b",
