@@ -222,21 +222,21 @@ cmd_start() {
     (
         trap 'exit 0' SIGTERM
 
-        # Commit and push any uncommitted changes before starting
-        log "Syncing repo ..."
-        cd "$REPO_ROOT"
-        if ! git diff --quiet HEAD 2>/dev/null || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
-            git add -A
-            git commit -m "operating-room: sync uncommitted changes before cycle start" || true
-        fi
-        git push origin main 2>/dev/null || log "WARN: push failed (non-fatal)"
-
         # Ensure cluster is up
         log "Ensuring cluster ..."
         "$SCRIPT_DIR/cluster.sh" start
 
         local cycle
         cycle=$(get_cycle)
+
+        # Commit and push any uncommitted changes before starting
+        log "Syncing repo ..."
+        cd "$REPO_ROOT"
+        if ! git diff --quiet HEAD 2>/dev/null || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+            git add -A
+            git commit -m "operating-room: sync before cycle ${cycle}" || true
+        fi
+        git push origin main 2>/dev/null || log "WARN: push failed (non-fatal)"
         local cycles_run=0
 
         while true; do
