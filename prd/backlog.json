@@ -1060,7 +1060,6 @@
         "timeBound": 4,
         "notes": "Runtime-verifiable split of TEST-004 (Strategy D). AC3 corrected: 'phase=Finished' replaced with 'AllRecovered=True' per empirical verification in sprint 37 (chaos-mesh v2.6.3 uses Not Injected as terminal state). Measurable score raised to 5. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted in sprints 31 and 32). TimeBound score 4: 120s window is empirical but reasonable."
       },
-      "readinessNote": "RETURNED FROM SPRINT 37: implementation is complete and verified working. AC3 corrected to match chaos-mesh v2.6.3 actual terminal state (AllRecovered=True / 'Not Injected'). READY to re-pull once kind-sovereign-test cluster is available.",
       "returnedFromSprint": "prd/increment-37-pending-stub.json",
       "returnedReason": "AC3 asserted 'phase=Finished' but chaos-mesh v2.6.3 terminal recovery state is 'Not Injected' (AllRecovered=True); implementation complete, AC corrected for next sprint"
     },
@@ -1133,8 +1132,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Runtime-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. AC3 (curl returns 201) and AC4 (curl returns 'ok') verify actual runtime admin API behavior. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted). TimeBound score 5: all ACs have deterministic expected outputs."
-      },
-      "readinessNote": "UNBLOCKED: all dependencies have status:complete \u2014 TEST-005a (sprint 35), KIND-001a (sprint 31), KIND-001b (sprint 32). READY: requires kind-sovereign-test running cluster (kind, kubectl, helm)."
+      }
     },
     {
       "id": "HA-001",
@@ -1608,8 +1606,7 @@
         "relevant": 5,
         "timeBound": 5,
         "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
-      },
-      "readinessNote": "UNBLOCKED: dependency HA-004 has status:complete (delivered in sprint 32 per increment-32-pending-stub.json). No remaining blocks. READY."
+      }
     },
     {
       "id": "HA-005b",
@@ -2616,8 +2613,7 @@
       ],
       "testPlan": "Run the AC one-liner verbatim and show output.",
       "passes": false,
-      "reviewed": false,
-      "readinessNote": "READY: self-contained JSON edit. Verify by running the AC one-liner."
+      "reviewed": false
     },
     {
       "id": "KAIZEN-018",
@@ -2637,8 +2633,7 @@
       "passes": false,
       "reviewed": false,
       "attempts": 0,
-      "returnedFromSprint": null,
-      "readinessNote": "READY: no dependencies, static analysis only, no cluster required."
+      "returnedFromSprint": null
     },
     {
       "id": "KAIZEN-019",
@@ -2674,7 +2669,7 @@
       "points": 2,
       "branchName": "kaizen/smart-crd-field-ac-validation",
       "title": "SMART guidance: ACs asserting vendor API field values must cite chart version CRD spec",
-      "description": "TEST-004b failed review three times in sprint 37 because AC3 asserted 'phase=Finished' — the documented chaos-mesh phase — but v2.6.3 uses 'Not Injected' as the terminal recovery state. The implementation was correct; the AC was wrong. Root cause: no SMART gate requires that ACs asserting specific API field values (phase names, condition strings, status keys) be cross-referenced against the pinned chart version's CRD spec or empirically verified before the story is written. Add an explicit rule to scripts/ralph/ceremonies/smart.md: when an AC asserts a vendor-specific status field value (e.g. 'phase=X', 'condition=Y'), the story must either cite the upstream CRD documentation for the pinned chart version or note that the value was empirically confirmed against a running instance.",
+      "description": "TEST-004b failed review three times in sprint 37 because AC3 asserted 'phase=Finished' \u2014 the documented chaos-mesh phase \u2014 but v2.6.3 uses 'Not Injected' as the terminal recovery state. The implementation was correct; the AC was wrong. Root cause: no SMART gate requires that ACs asserting specific API field values (phase names, condition strings, status keys) be cross-referenced against the pinned chart version's CRD spec or empirically verified before the story is written. Add an explicit rule to scripts/ralph/ceremonies/smart.md: when an AC asserts a vendor-specific status field value (e.g. 'phase=X', 'condition=Y'), the story must either cite the upstream CRD documentation for the pinned chart version or note that the value was empirically confirmed against a running instance.",
       "acceptanceCriteria": [
         "grep -n 'CRD\\|vendor.*field\\|phase.*value\\|status.*field' scripts/ralph/ceremonies/smart.md returns at least one match confirming the guidance is present",
         "grep -n 'chart version\\|pinned version\\|empirically' scripts/ralph/ceremonies/smart.md returns at least one match",
