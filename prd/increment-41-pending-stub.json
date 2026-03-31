@@ -33,7 +33,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Static-verifiable split of HA-005 (Strategy D). Exact deliverable (scripts/test/kind-smoke.sh) named. All 3 ACs are shell commands with binary pass/fail. No running cluster required. Scope: 1 file created."
+        "notes": "All SMART dimensions green. Exact deliverable named, all 3 ACs are shell commands with binary pass/fail, no cluster required, single file scope."
       }
     },
     {
@@ -72,7 +72,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 4,
-        "notes": "Runtime-verifiable split of TEST-004 (Strategy D). AC3 corrected: 'phase=Finished' replaced with 'AllRecovered=True' per empirical verification in sprint 37 (chaos-mesh v2.6.3 uses Not Injected as terminal state). Measurable score raised to 5. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted in sprints 31 and 32). TimeBound score 4: 120s window is empirical but reasonable."
+        "notes": "Specific score 4: fixture content only partially specified ('targeting a test pod'). Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b). TimeBound score 4: 120s recovery window is empirical; notes acknowledge it. AC3 corrected from 'phase=Finished' to 'AllRecovered=True' per sprint-37 empirical finding."
       },
       "returnedFromSprint": "prd/increment-37-pending-stub.json",
       "returnedReason": "AC3 asserted 'phase=Finished' but chaos-mesh v2.6.3 terminal recovery state is 'Not Injected' (AllRecovered=True); implementation complete, AC corrected for next sprint"
@@ -113,7 +113,7 @@
         "achievable": 4,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Runtime-verifiable split of TEST-005 (Strategy D). Correct path platform/charts/wiremock/ specified. AC3 (curl returns 201) and AC4 (curl returns 'ok') verify actual runtime admin API behavior. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b both accepted). TimeBound score 5: all ACs have deterministic expected outputs."
+        "notes": "Specific score 4: port-forward background + sleep 2 race condition not mitigated in story text. Measurable score 4: AC3 depends on sleep 2 timing\u2014non-deterministic in slow environments. Achievable score 4: requires kind-sovereign-test (KIND-001a, KIND-001b). All expected outputs are deterministic once port-forward is up."
       }
     },
     {
@@ -140,12 +140,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 4,
+        "measurable": 3,
+        "achievable": 3,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: CI target file not pinned (description says 'validate.yml or ha-gate.yml'). Measurable score 3: the CI step is a described deliverable (add a CI step to .github/workflows/) but has no corresponding AC to verify it was added; 5 of 5 ACs cover only the Python script and ha-gate.sh text presence. Achievable score 3: description requires iterating platform/charts/ in ha-gate.sh but no AC requires 'run against all existing charts in platform/charts/' \u2014 per SMART chart-iteration rule, achievable must be \u22643 when this criterion is absent. The full chart corpus includes platform/charts/_globals/ (no replicaCount) which will expose silent failures under set -euo pipefail. TimeBound score 4: 'validate.yml or ha-gate.yml' leaves CI file choice open, small scope-creep risk."
       },
       "requiredCapabilities": [
         "helm",
@@ -178,12 +178,12 @@
       "reviewNotes": [],
       "attempts": 0,
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 3,
+        "measurable": 4,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 3: two implementation choices left open \u2014 'lifecycle.postStart or initContainer' is an OR with different template complexity; vsix serving endpoint format from extensionRegistry is unspecified (no URL pattern or Harbor path documented). Measurable score 4: AC1 uses grep -A5 as a proxy for 3 entries (could match false positives); all other ACs are binary. Achievable score 4: all ACs are static helm commands (no running cluster), 2-3 file edits; mechanism ambiguity adds implementation risk without blocking. TimeBound score 4: idempotency requirement ('skip already-installed extensions') is stated in description but has no corresponding AC\u2014open-ended implementation obligation."
       },
       "requiredCapabilities": [
         "helm"
@@ -217,7 +217,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "All SMART dimensions green. ACs are exact grep commands against a specific file. No cluster required."
+        "notes": "All SMART dimensions green. ACs are exact grep commands against a specific file. No cluster required. File and guidance text requirements precisely specified."
       }
     },
     {
@@ -242,7 +242,15 @@
       ],
       "testPlan": "Show schema default and advance.py formula change. Run py_compile. Show output verbatim.",
       "returnedFromSprint": "prd/increment-17-restructure.json",
-      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Review ceremony in next sprint can accept it immediately."
+      "returnedReason": "Implemented (passes: true) but review ceremony did not run before retro fired. Review ceremony in next sprint can accept it immediately.",
+      "smart": {
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Exact files named (prd/schema/story.schema.json, scripts/ralph/lib/advance.py), exact formula change described, all ACs are binary commands including inline Python assertion. Already passes:true."
+      }
     },
     {
       "id": "CEREMONY-008",
@@ -265,7 +273,15 @@
       "attempts": 0,
       "dependencies": [],
       "returnedFromSprint": "prd/increment-23-pending-stub.json",
-      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field"
+      "returnedReason": "Root cause: shell script stories iterating the chart corpus only required synthetic fixture tests, missing existing charts with no replicaCount field",
+      "smart": {
+        "specific": 4,
+        "measurable": 4,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: AC1 says 'scripts/ralph/ceremonies/smart.md (or equivalent SMART guidance doc)' \u2014 target file not pinned in AC text (test plan pins smart.md, but AC leaves an OR). Measurable score 4: grep commands are binary but 'or equivalent' in AC1 weakens the verification target. TimeBound score 4: 'or equivalent' creates a minor scope boundary ambiguity \u2014 which file satisfies the requirement is not definitively stated in the AC. Already passes:true."
+      }
     },
     {
       "id": "DEVEX-009",
@@ -290,12 +306,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 3,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "Specific score 5: exact file named, storageClass reference specified, volumeMount path /home/coder named, values field documented. Measurable score 3: AC2 is written in descriptive prose ('shows a PersistentVolumeClaim with storageClassName: {{ .Values.global.storageClass }}') not as a shell command \u2014 '{{ .Values.global.storageClass }}' is a template expression that does not appear literally in rendered output; the testPlan grep checks presence of 'PersistentVolumeClaim' but does not verify the storageClassName binding. One of five ACs is non-verifiable as written. Already passes:true."
       }
     },
     {
@@ -321,12 +337,12 @@
       "attempts": 0,
       "dependencies": [],
       "smart": {
-        "specific": 0,
-        "measurable": 0,
-        "achievable": 0,
-        "relevant": 0,
-        "timeBound": 0,
-        "notes": "Not yet SMART-scored."
+        "specific": 5,
+        "measurable": 5,
+        "achievable": 5,
+        "relevant": 5,
+        "timeBound": 5,
+        "notes": "All SMART dimensions green. Both files named, all 5 ACs are binary shell commands (ls, python3 yaml parse, grep). Static artifact\u2014no cluster required. Already passes:true."
       }
     },
     {
@@ -360,7 +376,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: exact file named, --help behavior and kind invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+        "notes": "Specific score 4: script behavior described in detail but shell interpreter not explicitly named (bash implied by shellcheck). Measurable score 4: shellcheck, bash -n, and grep cover defined behavior; AC6 verifies negative precondition from RESTRUCTURE-001a. Already passes:true."
       }
     },
     {
@@ -393,7 +409,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Specific score 4: exact file named, --help behavior and helm invocation explicitly required. Measurable score 4: shellcheck, bash -n, and grep verify defined behavior."
+        "notes": "Specific score 4: script behavior described but --chart-dir and --namespace marked 'required options' without documenting error behavior on missing args. Measurable score 4: shellcheck, bash -n, and grep cover defined behavior. Already passes:true."
       }
     }
   ]
