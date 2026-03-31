@@ -443,34 +443,11 @@
       "name": "pending-stub",
       "description": "Placeholder pending increment. Will be properly planned when increment 37 completes.",
       "file": "prd/increment-38-pending-stub.json",
-      "status": "pending",
+      "status": "complete",
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 37 advances.",
       "dependsOn": [
         37
       ]
-    }
-  ],
-  "activeSprint": "prd/increment-38-pending-stub.json",
-  "currentIncrement": 38,
-  "sprintHistory": [
-    {
-      "increment": 37,
-      "name": "pending-stub",
-      "endDate": "2026-03-30T00:00:00+00:00",
-      "pointsCompleted": 10,
-      "storiesTotal": 7,
-      "storiesAccepted": 6,
-      "storiesIncomplete": 1,
-      "reviewPassRate": 14.3
-    }
-  ],
-  "velocity": [
-    {
-      "increment": 37,
-      "pointsCompleted": 10,
-      "storiesAccepted": 6,
-      "reviewPassRate": 14.3,
-      "date": "2026-03-30T00:00:00+00:00"
     }
   ]
 }
