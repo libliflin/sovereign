@@ -461,6 +461,20 @@
       "themeGoal": "TBD \u2014 planned by plan ceremony after increment 39 advances.",
       "dependsOn": [
         39
+      ],
+      "startDate": "2026-03-31T01:54:45.643606+00:00",
+      "pointsTotal": 12,
+      "storiesTotal": 8
+    },
+    {
+      "id": 41,
+      "name": "pending-stub",
+      "description": "Placeholder pending increment. Will be properly planned when increment 40 completes.",
+      "file": "prd/increment-41-pending-stub.json",
+      "status": "pending",
+      "themeGoal": "TBD \u2014 planned by plan ceremony after increment 40 advances.",
+      "dependsOn": [
+        40
       ]
     }
   ],
