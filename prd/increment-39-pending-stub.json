@@ -59,7 +59,7 @@
         "achievable": 5,
         "relevant": 5,
         "timeBound": 5,
-        "notes": "Single-line formula change with exact grep ACs. All SMART dimensions green."
+        "notes": "All SMART dimensions green. Single-line formula change with exact grep ACs."
       }
     },
     {
@@ -76,7 +76,15 @@
       ],
       "testPlan": "Run the AC one-liner verbatim and show output.",
       "passes": false,
-      "reviewed": false
+      "reviewed": false,
+      "smart": {
+        "specific": 4,
+        "measurable": 5,
+        "achievable": 4,
+        "relevant": 5,
+        "timeBound": 4,
+        "notes": "Specific score 4: title says '8 stories' but description lists 9 story IDs \u2014 count mismatch. Achievable score 4: AC checks ALL open stories for drift, not just the 9 listed; if additional drifted stories exist beyond those named, scope silently expands. TimeBound score 4: same reason \u2014 the AC's scope is broader than the story's enumerated list, meaning actual work may exceed what is described."
+      }
     }
   ]
 }

@@ -2633,7 +2633,8 @@
       "passes": false,
       "reviewed": false,
       "attempts": 0,
-      "returnedFromSprint": null
+      "returnedFromSprint": null,
+      "readinessNote": "NOT SELECTED: E1 cap reached (3 E1 stories selected; this is the 4th E1 story). Return to backlog \u2014 will be considered in next sprint when product stories are available."
     },
     {
       "id": "KAIZEN-019",
