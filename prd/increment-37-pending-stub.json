@@ -129,6 +129,8 @@
       ],
       "passes": false,
       "reviewed": false,
+      "returnedToBacklog": true,
+      "returnedReason": "AC3 asserts 'phase=Finished' but chaos-mesh v2.6.3 terminal recovery state is 'Not Injected' (AllRecovered=True); implementation is complete, AC must be corrected before re-review",
       "reviewNotes": [
         "[Review 3] AC failed: 'kubectl get podchaos -n chaos-testing --context kind-sovereign-test shows phase=Finished within 120 seconds'. Command run: kubectl apply -f kind/fixtures/podchaos-test.yaml --context kind-sovereign-test && sleep 30 && kubectl describe podchaos podchaos-test -n chaos-testing --context kind-sovereign-test | grep Phase. Actual output: 'Phase: Not Injected' (Desired Phase: Stop, Condition: AllRecovered=True). chaos-mesh v2.6.3 uses 'Not Injected' as the terminal recovery state, not 'Finished'. AC3 must be updated to match actual behavior: either change 'phase=Finished' to 'Not Injected' or update the criterion to grep for AllRecovered=True."
       ],

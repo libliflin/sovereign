@@ -424,14 +424,19 @@
       "name": "pending-stub",
       "description": "Advance E15 HA validation chain (kind-smoke.sh scaffold and kind runtime tests for chaos-mesh and wiremock). Clear accumulated review debt: RESTRUCTURE-001b-2, HA-008, DEVEX-009, and CEREMONY-008 SMART guidance improvement.",
       "file": "prd/increment-37-pending-stub.json",
-      "status": "active",
+      "status": "complete",
       "themeGoal": "T5 Resilience \u2014 kind smoke test scaffold (HA-005a) and runtime validation (TEST-004b, TEST-005b); clear E2/E15/E11 review debt.",
       "dependsOn": [
         36
       ],
       "startDate": "2026-03-30T00:00:00+00:00",
+      "endDate": "2026-03-30T00:00:00+00:00",
       "pointsTotal": 12,
-      "storiesTotal": 7
+      "storiesTotal": 7,
+      "pointsCompleted": 10,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 14.3
     },
     {
       "id": 38,
@@ -445,6 +450,27 @@
       ]
     }
   ],
-  "activeSprint": "prd/increment-37-pending-stub.json",
-  "currentIncrement": 37
+  "activeSprint": "prd/increment-38-pending-stub.json",
+  "currentIncrement": 38,
+  "sprintHistory": [
+    {
+      "increment": 37,
+      "name": "pending-stub",
+      "endDate": "2026-03-30T00:00:00+00:00",
+      "pointsCompleted": 10,
+      "storiesTotal": 7,
+      "storiesAccepted": 6,
+      "storiesIncomplete": 1,
+      "reviewPassRate": 14.3
+    }
+  ],
+  "velocity": [
+    {
+      "increment": 37,
+      "pointsCompleted": 10,
+      "storiesAccepted": 6,
+      "reviewPassRate": 14.3,
+      "date": "2026-03-30T00:00:00+00:00"
+    }
+  ]
 }
