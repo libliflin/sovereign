@@ -185,7 +185,7 @@ harbor:
   ## auth_mode default is "db_auth" (local DB) — switch to "oidc_auth" after Keycloak is up
 
   ## ── Secrets ─────────────────────────────────────────────────────────────
-  secretKey: "not-a-secure-key-replace-this"  # 16-char AES key — use Sealed Secret in prod
+  secretKey: "not-a-secure-key"  # 16-char AES key — use Sealed Secret in prod
   harborAdminPassword: "Harbor12345"           # placeholder — use Sealed Secret in prod
 
   ## ── Database (built-in PostgreSQL) ──────────────────────────────────────

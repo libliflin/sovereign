@@ -81,6 +81,7 @@ Generated: {date output}
 
 ## Rules
 
+- **Timestamp must match `date` output.** The `Generated:` field in the report must be the live output of the `date` command you ran in Step 1. Before writing the report, compare the timestamp you are about to write against the previous cycle's `Generated:` field. If they match, you have copied a stale report — discard all data and re-run every command from Step 1.
 - **Run deploy.sh once per cycle.** It handles ordering and idempotency.
 - **5 minute total time limit.** Write what you have and stop.
 - **Facts only.** Do not diagnose root causes or suggest fixes.

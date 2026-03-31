@@ -76,6 +76,15 @@ same directive for the 3rd time:
 - If no alternative approach exists, write `ESCALATE: HUMAN_REVIEW_NEEDED` with
   a description of what is stuck and why.
 
+Also check whether a successful `helm upgrade --install` has completed for the target
+service in any recent cycle. If deploy.sh or helm has failed to execute for 3+
+consecutive cycles targeting the same service, treat this as a **deploy-path stagnation**:
+list all known blockers from the recent reports (credential errors, missing files,
+timeout side effects, image pull failures) and direct the surgeon to address the most
+fundamental pre-condition — not just the latest error in isolation.
+
+When keycloak is the target layer and Layer 2 (Harbor) is UP, check whether the operator report shows pods pulling from `docker.io` (not `harbor.${DOMAIN}`). If docker.io ImagePullBackOff is present AND Harbor is UP, the keycloak images have never been seeded into Harbor. This is an **IMAGE_ISSUE** — classify it as such and direct the surgeon to verify that a full `deploy.sh` run (without `--only`) or an explicit Harbor-seeding step is added before the next keycloak deploy attempt. Do not issue another deploy.sh pre-condition fix while Harbor is unseeded.
+
 ### 4. Write the directive
 
 Write `operating-room/state/directive.md` in this exact format:
