@@ -2633,8 +2633,7 @@
       "passes": false,
       "reviewed": false,
       "attempts": 0,
-      "returnedFromSprint": null,
-      "readinessNote": "NOT SELECTED: E1 cap reached (3 E1 stories selected; this is the 4th E1 story). Return to backlog \u2014 will be considered in next sprint when product stories are available."
+      "returnedFromSprint": null
     },
     {
       "id": "KAIZEN-019",
@@ -2747,7 +2746,8 @@
       },
       "requiredCapabilities": [
         "helm"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependency DEVEX-002 has passes:false. Resolve that story first."
     },
     {
       "id": "DEVEX-015",
@@ -2858,7 +2858,8 @@
       "requiredCapabilities": [
         "helm",
         "python3"
-      ]
+      ],
+      "readinessNote": "BLOCKED: dependency HA-011 has passes:false. Resolve that story first."
     }
   ]
 }
