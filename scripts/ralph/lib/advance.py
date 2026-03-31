@@ -62,7 +62,7 @@ def run(repo_root: Path, dry_run: bool = False) -> int:
         n_accepted = len(accepted)
         n_incomplete = len([s for s in stories if s.get("returnedToBacklog", False)])
         n_killed = len([s for s in stories if s.get("status") == "killed"])
-        first_pass = len([s for s in accepted if len(s.get("reviewNotes", [])) == 0])
+        first_pass = len([story for story in accepted if len(story.get("reviewNotes", [])) == 0])
         pass_rate = round(first_pass / total * 100, 1) if total > 0 else 0.0
         points_done = sum(s.get("points", 0) for s in accepted)
 

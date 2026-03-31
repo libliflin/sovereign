@@ -56,9 +56,32 @@ When scoring a story in the SMART check ceremony:
 
 ---
 
+## Chart-iteration script gate
+
+Any shell script story whose description mentions iterating `platform/charts/` **must include**
+"run against all existing charts in `platform/charts/`" as an explicit acceptance criterion —
+not just synthetic fixture charts.
+
+### `set -euo pipefail` + grep on optional fields
+
+When a shell script uses `set -euo pipefail` and runs `grep` for an optional YAML field
+(e.g. `replicaCount`), the grep will exit 1 when the field is absent. With `pipefail`, this
+silently kills the script.
+
+**Required fix**: always use `|| true` on grep pipelines where the field may be absent:
+
+```bash
+replica_count="$(grep -E '^replicaCount:' "$values" | awk '{print $2}' || true)"
+```
+
+Mark `achievable ≤ 3` for any story whose shell script iterates `platform/charts/` and whose
+test plan does not include running against the full chart corpus.
+
+---
+
 ## Related guidance
 
-- For shell script quality gates (chart corpus, `set -euo pipefail`, grep on optional fields)
-  see `smart-check.md` under "Shell script quality gates".
+- For the full shell script quality gates rubric, see `smart-check.md` under
+  "Shell script quality gates".
 - The pinned chart version is always the version recorded in `vendor/VENDORS.yaml` or the
   chart's `Chart.yaml` `dependencies[].version` field.
