@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 2  # required by ha-gate.sh — mirrors chaos-mesh.controllerManager.replicaCount
 
 global:
   domain: "sovereign-autarky.dev"
@@ -8,19 +8,50 @@ global:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
 
-controllerManager:
-  image:
-    repository: "ghcr.io/chaos-mesh/chaos-mesh"
-    name: "chaos-mesh/chaos-mesh"
-    tag: "v2.6.3"
-    pullPolicy: IfNotPresent
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+# Upstream chaos-mesh chart configuration.
+# Values nested under the alias key "chaos-mesh" are passed to the sub-chart.
+chaos-mesh:
+  controllerManager:
+    replicaCount: 2
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: chaos-mesh
+                  app.kubernetes.io/component: controller-manager
+              topologyKey: kubernetes.io/hostname
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    # Override pause image away from deprecated gcr.io path
+    podChaos:
+      podFailure:
+        pauseImage: registry.k8s.io/pause:3.9
 
-podDisruptionBudget:
-  minAvailable: 1
+  chaosDaemon:
+    # kind clusters use containerd, not docker
+    runtime: containerd
+    socketPath: /run/containerd/containerd.sock
+    privileged: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  # Disable optional components not needed for kind testing
+  dashboard:
+    create: false
+  dnsServer:
+    create: false
+  prometheus:
+    create: false

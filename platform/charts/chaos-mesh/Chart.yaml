@@ -1,6 +1,12 @@
 apiVersion: v2
 name: chaos-mesh
-description: Chaos Mesh resilience testing platform
+description: Chaos Mesh resilience testing platform — upstream wrapper with kind containerd runtime
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "2.6.3"
+
+dependencies:
+  - name: chaos-mesh
+    version: "2.6.3"
+    repository: "https://charts.chaos-mesh.org"
+    alias: chaos-mesh
