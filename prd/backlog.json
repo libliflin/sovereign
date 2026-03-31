@@ -2692,6 +2692,173 @@
         "timeBound": 5,
         "notes": "All SMART dimensions green. ACs are exact grep commands against a specific file. No cluster required."
       }
+    },
+    {
+      "id": "KAIZEN-020",
+      "title": "Kaizen: Audit pinned Helm dependency versions \u2014 identify charts with dependencies >12 months behind upstream",
+      "description": "The platform has 15+ charts with pinned upstream Helm dependency versions (ArgoCD 6.7.3, Istio 1.21.2, Crossplane 1.17.0, Harbor 1.15.0, prometheus-stack 58.2.2, etc.). No gate or process checks whether these drift stale. Stale chart versions accumulate: (1) unpatched CVEs in vendor images, (2) deprecated API versions that must be migrated before the chart can be upgraded, (3) incompatibilities between components that compound the longer upgrade is deferred. KAIZEN-003 already handles the Istio v1beta1\u2192v1 API migration before the version bump. This story performs the full audit: for each chart with a pinned dependency, record the current pinned version and the latest stable release, flag any chart more than one major version or 12 months behind, and produce a prioritized upgrade list in docs/state/dependency-versions.md. No upgrades are performed \u2014 audit only.",
+      "acceptanceCriteria": [
+        "docs/state/dependency-versions.md exists and lists every chart in platform/charts/ that has a dependencies entry in Chart.yaml",
+        "Each entry in docs/state/dependency-versions.md includes: chart name, current pinned version, latest stable version (from upstream Helm repo), and a staleness flag (current/stale/critical)",
+        "grep -c 'stale\\|critical' docs/state/dependency-versions.md prints a number (0 is acceptable if all dependencies are current; the file must exist regardless)",
+        "python3 -m py_compile scripts/ralph/ceremonies.py exits 0"
+      ],
+      "testPlan": "cat docs/state/dependency-versions.md \u2014 must show all charts with pinned deps. grep the file for each chart name from platform/charts/*/Chart.yaml that has a dependencies: section. Show verbatim output.",
+      "epicId": "E1",
+      "themeId": "T1",
+      "branchName": "kaizen/helm-dependency-version-audit",
+      "priority": 15,
+      "points": 2,
+      "passes": false,
+      "reviewed": false
+    },
+    {
+      "id": "DEVEX-014",
+      "epicId": "E11",
+      "themeId": "T3",
+      "phase": 7,
+      "priority": 14,
+      "points": 2,
+      "branchName": "feature/devex-014-backstage-k8s-plugin",
+      "title": "Backstage Kubernetes plugin shows live pod and resource status for all sovereign namespaces",
+      "description": "Configure the @backstage/plugin-kubernetes and @backstage/plugin-kubernetes-backend packages in the Backstage Helm chart. Add a ServiceAccount, ClusterRole, and ClusterRoleBinding to the chart that grant pods/list, pods/get, and events/list to the Backstage pod for all namespaces. Add a kubernetes section to the Backstage ConfigMap (app-config.yaml) that configures the in-cluster auth provider pointing to the local kubeconfig. The plugin must show at minimum: pod count, pod phase, and container restarts per service entity in the Backstage catalog UI. All image and registry references must use {{ .Values.global.imageRegistry }}.",
+      "acceptanceCriteria": [
+        "helm template platform/charts/backstage/ | grep -c 'kind: ClusterRole' returns >= 1 \u2014 Backstage has RBAC for cluster read access",
+        "helm template platform/charts/backstage/ | grep -c 'kind: ClusterRoleBinding' returns >= 1 \u2014 ClusterRole is bound to Backstage service account",
+        "platform/charts/backstage/values.yaml contains a kubernetes: section with an authProvider field \u2014 grep 'authProvider' platform/charts/backstage/values.yaml exits 0",
+        "helm template platform/charts/backstage/ shows a ConfigMap containing 'kubernetes' plugin configuration \u2014 helm template platform/charts/backstage/ | grep 'kubernetes' shows at least one match in a ConfigMap",
+        "helm lint platform/charts/backstage/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/backstage/ && helm template platform/charts/backstage/ | grep -c 'kind: ClusterRole' && helm template platform/charts/backstage/ | grep -c 'kind: ClusterRoleBinding' && grep 'authProvider' platform/charts/backstage/values.yaml",
+      "dependencies": [
+        "DEVEX-002"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "DEVEX-015",
+      "epicId": "E11",
+      "themeId": "T1",
+      "phase": 7,
+      "priority": 15,
+      "points": 2,
+      "branchName": "feature/devex-015-code-server-extension-autarky",
+      "title": "code-server pre-installs VS Code extensions at startup from Harbor \u2014 no external marketplace calls",
+      "description": "code-server downloads VS Code extensions from marketplace.visualstudio.com by default, violating T1 Sovereignty. Add an extensionRegistry field to platform/charts/code-server/values.yaml that defaults to '{{ .Values.global.imageRegistry }}'. Add an extensions: [] array to values.yaml with a default set of 3 extensions: redhat.vscode-yaml, ms-kubernetes-tools.vscode-kubernetes-tools, timonwong.shellcheck-snappy. Add a lifecycle.postStart or initContainer script to the code-server Deployment that runs code-server --install-extension for each entry in .Values.extensions, using vsix files served from the extensionRegistry. The script must be idempotent (skip already-installed extensions). No template in platform/charts/code-server/templates/ may reference marketplace.visualstudio.com or open-vsx.org.",
+      "acceptanceCriteria": [
+        "platform/charts/code-server/values.yaml contains an extensions: field with at least 3 default entries \u2014 grep -A5 'extensions:' platform/charts/code-server/values.yaml shows 3+ lines",
+        "platform/charts/code-server/values.yaml contains an extensionRegistry field \u2014 grep 'extensionRegistry' platform/charts/code-server/values.yaml exits 0",
+        "helm template platform/charts/code-server/ | grep 'install-extension' exits 0 \u2014 the extension install command is rendered in the Deployment template",
+        "grep -r 'marketplace.visualstudio.com\\|open-vsx.org' platform/charts/code-server/templates/ returns no matches \u2014 no hardcoded external extension sources",
+        "helm lint platform/charts/code-server/ exits 0"
+      ],
+      "testPlan": "helm lint platform/charts/code-server/ && helm template platform/charts/code-server/ | grep 'install-extension' && grep -A5 'extensions:' platform/charts/code-server/values.yaml && grep 'extensionRegistry' platform/charts/code-server/values.yaml && grep -r 'marketplace.visualstudio.com' platform/charts/code-server/templates/ && echo 'PASS: no external extension sources'",
+      "dependencies": [
+        "DEVEX-007b"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm"
+      ]
+    },
+    {
+      "id": "HA-011",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 28,
+      "priority": 11,
+      "points": 2,
+      "branchName": "feature/ha-011-check-limits-script",
+      "title": "Create scripts/check-limits.py \u2014 validates every container has resource requests and limits; wire into ha-gate.sh and validate.yml",
+      "description": "The agent.md quality gate pattern 'helm template platform/charts/<name>/ | python3 scripts/check-limits.py' is documented as mandatory but scripts/check-limits.py does not exist. Create scripts/check-limits.py following the validate.yml pattern: reads YAML from stdin (helm template output), walks every containers and initContainers spec, and exits 1 with a list of failing containers if any are missing resources.requests or resources.limits. Integrate into scripts/ha-gate.sh by adding a check-limits.py invocation for each chart. Add a CI step to .github/workflows/validate.yml (or ha-gate.yml) that pipes each chart's rendered template through check-limits.py on every PR touching platform/charts/.",
+      "acceptanceCriteria": [
+        "scripts/check-limits.py exists \u2014 ls scripts/check-limits.py exits 0",
+        "python3 scripts/check-limits.py exits 0 when piped a Deployment with complete resource requests and limits on all containers",
+        "python3 scripts/check-limits.py exits 1 when piped a Deployment with a container missing resources.limits \u2014 python3 -c \"import subprocess,sys; r=subprocess.run(['python3','scripts/check-limits.py'],input=b'apiVersion: apps/v1\\nkind: Deployment\\nspec:\\n  template:\\n    spec:\\n      containers:\\n      - name: test\\n        image: test:1.0',capture_output=True); sys.exit(0 if r.returncode == 1 else 1)\" exits 0",
+        "grep 'check-limits' scripts/ha-gate.sh exits 0 \u2014 the script is invoked in ha-gate.sh for each chart",
+        "shellcheck -S error scripts/ha-gate.sh exits 0"
+      ],
+      "testPlan": "ls scripts/check-limits.py && python3 scripts/check-limits.py --help && grep 'check-limits' scripts/ha-gate.sh && shellcheck -S error scripts/ha-gate.sh && bash scripts/ha-gate.sh --dry-run",
+      "dependencies": [],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm",
+        "python3"
+      ]
+    },
+    {
+      "id": "HA-012",
+      "epicId": "E15",
+      "themeId": "T5",
+      "phase": 28,
+      "priority": 12,
+      "points": 2,
+      "branchName": "feature/ha-012-check-probes-script",
+      "title": "Create scripts/check-probes.py \u2014 validates every main container has liveness and readiness probes; wire into validate.yml CI",
+      "description": "Create scripts/check-probes.py following the pattern of scripts/check-limits.py (HA-011). The script reads helm template output from stdin, walks every containers spec (excluding initContainers \u2014 they do not require probes), and exits 1 with a list of containers missing livenessProbe or readinessProbe. Add a CI step to .github/workflows/validate.yml helm-validate job that pipes each rendered chart template through check-probes.py, so every PR touching platform/charts/ is blocked if a container is missing probes. The script must handle multi-document YAML (---separator) and skip non-Deployment/StatefulSet/DaemonSet resource types.",
+      "acceptanceCriteria": [
+        "scripts/check-probes.py exists \u2014 ls scripts/check-probes.py exits 0",
+        "python3 scripts/check-probes.py exits 0 when piped a Deployment where all main containers have both livenessProbe and readinessProbe",
+        "python3 scripts/check-probes.py exits 1 when piped a Deployment with a container missing livenessProbe",
+        ".github/workflows/validate.yml helm-validate job contains a step piping rendered template output through check-probes.py \u2014 grep 'check-probes' .github/workflows/validate.yml exits 0",
+        "shellcheck -S error scripts/ha-gate.sh exits 0 (no regressions introduced in ha-gate.sh)"
+      ],
+      "testPlan": "ls scripts/check-probes.py && python3 scripts/check-probes.py --help && grep 'check-probes' .github/workflows/validate.yml && shellcheck -S error scripts/ha-gate.sh",
+      "dependencies": [
+        "HA-011"
+      ],
+      "passes": false,
+      "reviewed": false,
+      "reviewNotes": [],
+      "attempts": 0,
+      "smart": {
+        "specific": 0,
+        "measurable": 0,
+        "achievable": 0,
+        "relevant": 0,
+        "timeBound": 0,
+        "notes": "Not yet SMART-scored."
+      },
+      "requiredCapabilities": [
+        "helm",
+        "python3"
+      ]
     }
   ]
 }
