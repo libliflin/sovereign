@@ -120,14 +120,28 @@ install_chart openbao openbao
 
 install_chart harbor harbor \
   --set "harbor.expose.ingress.hosts.core=harbor.${DOMAIN}" \
-  --set "harbor.externalURL=https://harbor.${DOMAIN}" \
+  --set "harbor.externalURL=http://harbor.${DOMAIN}:8080" \
   --set "harbor.persistence.persistentVolumeClaim.registry.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.database.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.redis.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.trivy.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
-  --set "harbor.expose.tls.enabled=true"
+  --set "harbor.expose.tls.enabled=false"
+
+# Force-apply externalURL and TLS config regardless of chart_healthy skip.
+# Harbor's WWW-Authenticate realm must embed an HTTP URL so containerd can
+# reach the token service without TLS termination (nothing listens on :443 in kind).
+if [[ "$DRY_RUN" != "true" ]]; then
+  helm upgrade harbor "${PLATFORM_DIR}/charts/harbor/" \
+    --namespace harbor \
+    --reuse-values \
+    --set "harbor.externalURL=http://harbor.${DOMAIN}:8080" \
+    --set "harbor.expose.tls.enabled=false" \
+    --kube-context "${CONTEXT}" \
+    --timeout "${TIMEOUT}" \
+    2>&1 || log "WARN: harbor forced-upgrade failed (continuing)"
+fi
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
 # containerd on kind nodes uses the Docker bridge DNS (192.168.65.254) which
