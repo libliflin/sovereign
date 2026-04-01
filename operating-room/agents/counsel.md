@@ -69,16 +69,37 @@ For the first failing service in the first failing layer:
 - Which root cause category fits?
 - What specific files would need to change?
 
-### 3. Be pragmatic about infra-incompatible components
+### 3. Verify that the previous cycle's fix actually took effect
+
+Before diagnosing a new root cause, check whether the targeted pod restarted.
+**A Helm upgrade does NOT restart a Running pod unless the pod template changes.**
+If the pod UID or name suffix matches across cycle reports, the config change was
+not applied at runtime — the pod is still running stale config.
+
+- If last cycle directed a config change and the same pod is still Running with the same name, the fix didn't land. Direct a `kubectl rollout restart` this cycle.
+- Only move on to diagnosing a new root cause once you've confirmed the previous fix's pod restarted.
+
+### 4. Be pragmatic about infra-incompatible components
 
 Some components cannot run in kind. This is not a failure — it's a constraint:
 - **Falco** needs kernel headers and debugfs that kind nodes don't have → disable
 - **Rook-Ceph** needs raw block devices → use local-path StorageClass instead
 - **Components needing ceph-block StorageClass** → change to `standard` or `local-path`
+- **Tempo with rook-ceph backend** → reconfigure storage backend to local MinIO or disable
 
 Direct surgeon to disable or reconfigure these rather than wasting cycles.
 
-### 4. Be pragmatic about image sources
+**3+ cycles of identical INFRA_INCOMPATIBLE failures → pre-empt.** Do not wait for
+these to become the first failing layer. Once the current lower-layer blocker clears,
+they instantly become the new first failure. When you fix a lower-layer blocker,
+note which INFRA_INCOMPATIBLE components will surface next so they can be queued.
+
+Known kind incompatibilities (must be disabled or reconfigured):
+- `falco` falco-driver-loader: eBPF build requires kernel headers absent in linuxkit
+- `tempo` store backend: requires rook-ceph-rgw DNS that doesn't exist in kind → point at MinIO
+- `opa-gatekeeper`: constraint resources deploy before CRDs are ready → split into two releases or use post-install hooks
+
+### 5. Be pragmatic about image sources
 
 If an image registry is unreachable or deprecated:
 - Do NOT cycle through registry alternatives hoping one works
@@ -89,7 +110,7 @@ If an image registry is unreachable or deprecated:
 **Never issue the same image-source directive twice.** If it failed once, the source
 is wrong. Pick a different approach entirely.
 
-### 5. Write the directive
+### 6. Write the directive
 
 Write `operating-room/state/directive.md` in this exact format:
 
