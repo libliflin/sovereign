@@ -221,8 +221,8 @@ if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
       log "Harbor already has bitnami/${img_spec} ✓"
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
-      docker pull "registry.bitnami.com/bitnami/${img_spec}" 2>&1 && \
-      docker tag "registry.bitnami.com/bitnami/${img_spec}" "${local_tag}" && \
+      docker pull "bitnamilegacy/${img_spec}" 2>&1 && \
+      docker tag "bitnamilegacy/${img_spec}" "${local_tag}" && \
       docker push "${local_tag}" 2>&1 && \
       log "Seeded bitnami/${img_spec} ✓" || \
       log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
