@@ -127,7 +127,8 @@ install_chart harbor harbor \
   --set "harbor.persistence.persistentVolumeClaim.trivy.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
-  --set "harbor.expose.tls.enabled=false"
+  --set "harbor.expose.tls.enabled=false" \
+  --force-conflicts
 
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
