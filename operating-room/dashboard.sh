@@ -170,7 +170,7 @@ tmux split-window -h -t "$SESSION" -c "$REPO_ROOT" \
 
 # Pane 2 (bottom-left): Live log stream
 tmux split-window -v -t "${SESSION}.0" -c "$REPO_ROOT" \
-    "echo '  Waiting for logs...'; sleep 3; fswatch -o operating-room/state/logs/ | while read -r _; do echo ''; echo \"══ \$(date '+%H:%M:%S') ══\"; for f in operating-room/state/logs/*.log; do [ -f \"\$f\" ] && echo \"── \$(basename \"\$f\") ──\" && tail -3 \"\$f\"; done; done"
+    "echo '  Waiting for first log file...'; while [ ! -d operating-room/state/logs ] || [ -z \"\$(ls operating-room/state/logs/*.log 2>/dev/null)\" ]; do sleep 2; done; echo '  Tailing all logs...'; tail -f operating-room/state/logs/*.log"
 
 # Pane 3 (bottom-right): Monitor dashboard
 tmux split-window -v -t "${SESSION}.1" -c "$REPO_ROOT" \
