@@ -133,19 +133,19 @@ install_chart harbor harbor \
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
 # containerd on kind nodes uses the Docker bridge DNS (192.168.65.254) which
-# has no record for harbor.${DOMAIN}. Inject the pod IP directly so that
+# has no record for harbor.${DOMAIN}. Inject the service ClusterIP so that
 # image pulls from containerd resolve without touching CoreDNS or hostAliases.
-# Use the harbor-nginx pod IP (not the ClusterIP) because Cilium kube-proxy-free
-# mode does not intercept ClusterIP traffic from the host network namespace.
+# Use the harbor service ClusterIP (not the pod IP) so that kube-proxy handles
+# the 80→8080 port translation; crane and containerd both connect on port 80.
 if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
-  HARBOR_IP=$(kubectl get pod -n harbor -l component=nginx --context "$CONTEXT" \
-    -o jsonpath='{.items[0].status.podIP}' 2>/dev/null) || true
+  HARBOR_IP=$(kubectl get svc harbor -n harbor --context "${CONTEXT}" \
+    -o jsonpath='{.spec.clusterIP}' 2>/dev/null) || true
   if [[ -n "$HARBOR_IP" ]]; then
     while IFS= read -r node; do
       docker exec "$node" sh -c "
         sed -i '/harbor\.${DOMAIN}/d' /etc/hosts && echo '${HARBOR_IP} harbor.${DOMAIN}' >> /etc/hosts
         mkdir -p /etc/containerd/certs.d/harbor.${DOMAIN}
-        printf 'server = \"http://harbor.${DOMAIN}\"\n\n[host.\"http://%s:8080\"]\n  capabilities = [\"pull\", \"resolve\", \"push\"]\n' '${HARBOR_IP}' > /etc/containerd/certs.d/harbor.${DOMAIN}/hosts.toml
+        printf 'server = \"http://harbor.${DOMAIN}\"\n\n[host.\"http://%s:80\"]\n  capabilities = [\"pull\", \"resolve\", \"push\"]\n' '${HARBOR_IP}' > /etc/containerd/certs.d/harbor.${DOMAIN}/hosts.toml
         if ! grep -q 'config_path.*certs' /etc/containerd/config.toml 2>/dev/null; then
           if grep -q '\[plugins\.\"io\.containerd\.grpc\.v1\.cri\"\.registry\]' /etc/containerd/config.toml 2>/dev/null; then
             sed -i '/\[plugins\.\"io\.containerd\.grpc\.v1\.cri\"\.registry\]/a\\  config_path = \"/etc/containerd/certs.d\"' /etc/containerd/config.toml
