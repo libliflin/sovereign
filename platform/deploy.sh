@@ -144,6 +144,15 @@ if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
         grep -qF 'harbor.${DOMAIN}' /etc/hosts || echo '${HARBOR_IP} harbor.${DOMAIN}' >> /etc/hosts
         mkdir -p /etc/containerd/certs.d/harbor.${DOMAIN}
         printf 'server = \"http://harbor.${DOMAIN}\"\n\n[host.\"http://%s:8080\"]\n  capabilities = [\"pull\", \"resolve\", \"push\"]\n' '${HARBOR_IP}' > /etc/containerd/certs.d/harbor.${DOMAIN}/hosts.toml
+        if ! grep -q 'config_path.*certs' /etc/containerd/config.toml 2>/dev/null; then
+          if grep -q '\[plugins\.\"io\.containerd\.grpc\.v1\.cri\"\.registry\]' /etc/containerd/config.toml 2>/dev/null; then
+            sed -i '/\[plugins\.\"io\.containerd\.grpc\.v1\.cri\"\.registry\]/a\\  config_path = \"/etc/containerd/certs.d\"' /etc/containerd/config.toml
+          else
+            printf '\n[plugins.\"io.containerd.grpc.v1.cri\".registry]\n  config_path = \"/etc/containerd/certs.d\"\n' >> /etc/containerd/config.toml
+          fi
+          kill -HUP \$(pgrep -x containerd) 2>/dev/null || true
+          sleep 1
+        fi
       "
     done < <(kind get nodes --name sovereign-test 2>/dev/null)
     log "Injected harbor.${DOMAIN} → ${HARBOR_IP} into kind node /etc/hosts and containerd certs.d"
@@ -198,8 +207,8 @@ if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
       log "Harbor already has bitnami/${img_spec} ✓"
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
-      docker pull "registry.bitnami.com/bitnami/${img_spec}" 2>&1 && \
-      docker tag "registry.bitnami.com/bitnami/${img_spec}" "${local_tag}" && \
+      docker pull "docker.io/bitnami/${img_spec}" 2>&1 && \
+      docker tag "docker.io/bitnami/${img_spec}" "${local_tag}" && \
       docker push "${local_tag}" 2>&1 && \
       log "Seeded bitnami/${img_spec} ✓" || \
       log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
