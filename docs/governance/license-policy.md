@@ -14,6 +14,7 @@ Sovereign uses permissive licenses only; copyleft licenses are incompatible with
 | BSD-3-Clause | Yes | None | Yes | Acceptable. Non-endorsement clause is benign. |
 | MPL 2.0 | Yes | File-level only | Yes | Acceptable. File-level copyleft does not propagate to the platform or other charts. |
 | ISC | Yes | None | Yes | Acceptable. Functionally MIT-equivalent. Common in Node.js ecosystem. |
+| GPL v2 / v3 | Yes | Strong (combined works) | Yes, with conditions | Permitted for services deployed independently — see "Deployment Platform Exception" below. Prohibited if incorporated (linked/bundled) into platform components. |
 
 ---
 
@@ -21,13 +22,39 @@ Sovereign uses permissive licenses only; copyleft licenses are incompatible with
 
 | License | OSI Approved | Copyleft Type | Distribution Compatible | Notes |
 |---------|-------------|---------------|------------------------|-------|
-| GPL v2 | Yes | Strong | No | Viral — incompatible with bundling permissive components. Any combined work must be GPL. |
-| GPL v3 | Yes | Strong | No | Viral. Tivoization clause adds complexity without resolving the distribution problem. |
-| LGPL v2 / v3 | Yes | Weak (linking) | No | Linking requirements affect Helm chart bundling and container image composition. |
-| AGPL v3 | Yes | Network (SaaS) | No | Network use triggers copyleft — any web UI is affected. Cannot be used in the platform. |
+| GPL v2 / v3 (incorporated) | Yes | Strong | No | Prohibited if incorporated into platform components — linked, bundled, or compiled in. See "Deployment Platform Exception" for the service deployment case. |
+| LGPL v2 / v3 | Yes | Weak (linking) | No | Linking requirements affect platform components. Permitted only for services deployed independently under the same exception as GPL. |
+| AGPL v3 | Yes | Network (SaaS) | No | Network use clause: any operator running modified AGPL software and exposing it to users must publish source for that service. Permitted with this understanding — the obligation applies to the AGPL component only, not to the platform or users' applications. Requires explicit review before adding. |
 | SSPL v1 | No | Extreme | No | MongoDB's anti-cloud license. Not OSI approved. Prohibits running the software as a service. |
 | BSL / BUSL | No | Time-delayed | No | Vendor controls when (and whether) it becomes open source. Incompatible with sovereign's guarantees. See "The Vault Precedent" in sovereignty.md. |
 | Commons Clause | No | Commercial restriction | No | Explicitly prohibits commercial use when appended to another license. |
+
+---
+
+## Deployment Platform Exception
+
+This platform deploys software as independent services that communicate over network APIs. It does not compile, link, or bundle third-party code into its own binaries. This distinction matters for copyleft analysis.
+
+**A Helm chart that deploys a GPL service is not a combined work with that service.** The chart is YAML referencing a container image name. The running service is a separate process. Communication happens over HTTP, git protocol, or gRPC — standard network interfaces. This is the same legal basis on which:
+
+- Alpine Linux (which ships GPL busybox) is used as a base image without making application code GPL.
+- The Linux kernel (GPL with syscall exception) runs under every container without making those containers GPL.
+- Homebrew (MIT) distributes formulae for hundreds of GPL packages without becoming GPL.
+
+**GPL v3 services deployed via this platform:**
+
+| Obligation | Applies? | Notes |
+|------------|----------|-------|
+| Keep GPL license intact for that service | Yes | Always. Do not modify or strip the license. |
+| Make source available for that service | Yes | Source must be vendored and accessible. The vendor system satisfies this by design. |
+| Publish modifications if distributed externally | Yes, if distributing | Running internally: no obligation. Handing built images to a third party: must provide source for GPL components. |
+| Platform Helm charts become GPL | No | Charts are not combined works with the services they deploy. |
+| Users' applications become GPL | No | Applications communicate with services via network APIs — not combined works. |
+| Publish modifications for internal use only | No | GPL does not require publication for internal deployment. |
+
+**Right-to-repair alignment:** The vendor system (fetch.sh mirrors source, build.sh builds from source) is structurally identical to what GPL requires vendors to provide. By vendoring source for every component — including GPL ones — the platform gives operators full right to inspect, modify, and rebuild any service. This is copyleft working as intended, not a conflict with it.
+
+**AGPL note:** AGPL adds one obligation GPL lacks — if you run modified AGPL software and expose it to users over a network, you must make the modified source available to those users. This applies to the AGPL service only. It does not propagate to the platform or to applications running alongside it. AGPL components require explicit review entry in this file before adoption.
 
 ---
 

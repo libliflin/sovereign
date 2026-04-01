@@ -37,10 +37,14 @@ with `deprecated_reason` and `alternative`.
 
 ## License Policy
 
-- Apache 2.0, MIT, BSD, LGPL -> approved
-- BSL (HashiCorp) -> BLOCKED. Use OpenBao instead of Vault.
-- AGPL -> review required
-- SSPL -> blocked
+See `docs/governance/license-policy.md` for the authoritative policy. Summary for vendor work:
+
+- Apache 2.0, MIT, BSD — approved
+- GPL v2 / v3 — approved for services deployed independently (source must be vendored, license preserved). Prohibited if linked or bundled into platform components.
+- LGPL — same conditions as GPL. Approved for independent services, prohibited if linked into platform components.
+- AGPL — requires explicit review entry in license-policy.md before adoption. Source publication obligation applies to the service if exposed to network users.
+- BSL (HashiCorp) — BLOCKED. Use OpenBao instead of Vault.
+- SSPL — blocked.
 - Run `vendor/audit.sh` before marking any vendor story as passing.
 
 ## Script Requirements
