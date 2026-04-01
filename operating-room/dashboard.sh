@@ -118,7 +118,7 @@ for name in ['operator','counsel','surgeon','retro']:
     # Cluster pod summary
     printf "\033[1;36m─── Cluster Pods ───\033[0m\n"
     if kubectl cluster-info --context kind-sovereign-test &>/dev/null; then
-        local running=0 failing=0 pending=0 total=0
+        running=0; failing=0; pending=0; total=0
         while IFS= read -r line; do
             total=$((total + 1))
             if echo "$line" | grep -qE 'Running|Completed'; then
