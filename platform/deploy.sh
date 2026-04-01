@@ -82,6 +82,14 @@ install_chart() {
     return 0
   fi
 
+  # Pull upstream chart dependencies if Chart.yaml declares any
+  if grep -q "^dependencies:" "${PLATFORM_DIR}/charts/${name}/Chart.yaml" 2>/dev/null; then
+    helm dep update "${PLATFORM_DIR}/charts/${name}/" 2>&1 || {
+      log "${name}: dep update FAILED (continuing to next chart)"
+      return 0
+    }
+  fi
+
   helm upgrade --install "${name}" "${PLATFORM_DIR}/charts/${name}/" \
     --namespace "${namespace}" --create-namespace \
     --set "global.domain=${DOMAIN}" \
