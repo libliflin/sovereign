@@ -161,20 +161,24 @@ run_agent() {
             ;;
     esac
 
-    # Invoke claude
-    local output
+    # Invoke claude — stream to terminal AND log file
+    local log_dir="$STATE_DIR/logs"
+    mkdir -p "$log_dir"
+    local log_file="$log_dir/cycle-$(printf '%03d' "$cycle")-${agent_name}.log"
     local exit_code=0
 
+    log "Logging to: $log_file"
+
     if [[ "$tool" == "claude" ]]; then
-        output=$(echo "$prompt" | claude --dangerously-skip-permissions --print 2>&1) || exit_code=$?
+        echo "$prompt" | claude --dangerously-skip-permissions --print 2>&1 \
+            | tee "$log_file" || exit_code=$?
     else
-        output=$(echo "$prompt" | amp --dangerously-allow-all 2>&1) || exit_code=$?
+        echo "$prompt" | amp --dangerously-allow-all 2>&1 \
+            | tee "$log_file" || exit_code=$?
     fi
 
-    echo "$output"
-
     # Rate limit detection
-    if echo "$output" | grep -q "You've hit your limit"; then
+    if grep -q "You've hit your limit" "$log_file" 2>/dev/null; then
         log "Rate limited. Sleeping 1 hour ..."
         sleep 3600
         run_agent "$agent_name" "$cycle" "$tool"
@@ -182,7 +186,7 @@ run_agent() {
     fi
 
     record_agent "$agent_name" "$exit_code"
-    log "$agent_name complete (exit $exit_code)."
+    log "$agent_name complete (exit $exit_code). Log: $log_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -324,6 +328,10 @@ CTO_COOLDOWN=300     # Don't re-trigger CTO within 5 minutes
 
 invoke_cto() {
     log "CTO intervention triggered."
+    local log_dir="$STATE_DIR/logs"
+    mkdir -p "$log_dir"
+    local cto_log="$log_dir/cto-$(date +%Y%m%d-%H%M%S).log"
+
     local cto_prompt
     cto_prompt="$(cat "$AGENTS_DIR/cto.md")"
     cto_prompt+=$'\n\n---\n## Current State\n\n'
@@ -334,7 +342,10 @@ invoke_cto() {
             cto_prompt+=$'\n```\n\n'
         fi
     done
-    echo "$cto_prompt" | claude --dangerously-skip-permissions --print 2>&1
+
+    log "CTO log: $cto_log"
+    echo "$cto_prompt" | claude --dangerously-skip-permissions --print 2>&1 \
+        | tee "$cto_log"
     log "CTO intervention complete."
 }
 
@@ -558,11 +569,31 @@ for name, info in c.get('agents', {}).items():
 }
 
 cmd_logs() {
+    local log_dir="$STATE_DIR/logs"
+
+    # Show latest log file
+    local latest
+    latest=$(ls -t "$log_dir"/*.log 2>/dev/null | head -1)
+    if [[ -n "$latest" ]]; then
+        echo "═══ Latest: $(basename "$latest") ═══"
+        echo ""
+        tail -50 "$latest"
+        echo ""
+        echo "───────────────────────────────────────────"
+        echo "  Tail live:  tail -f $latest"
+        echo "  All logs:   ls -lt $log_dir/"
+    else
+        echo "  No logs yet."
+    fi
+
+    echo ""
+    echo "═══ State Files ═══"
     for section in report.md directive.md changelog.md; do
         if [[ -f "$STATE_DIR/$section" ]]; then
-            echo "═══ ${section} ═══"
-            cat "$STATE_DIR/$section"
             echo ""
+            echo "--- ${section} ---"
+            head -20 "$STATE_DIR/$section"
+            echo "  ..."
         fi
     done
 }
