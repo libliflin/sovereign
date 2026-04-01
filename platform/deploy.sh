@@ -126,40 +126,88 @@ install_chart harbor harbor \
   --set "harbor.persistence.persistentVolumeClaim.redis.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.trivy.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
-  --set "global.s3.endpoint=${OBJECT_ENDPOINT}"
+  --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
+  --set "harbor.expose.tls.enabled=true"
+
+# ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
+# containerd on kind nodes uses the Docker bridge DNS (192.168.65.254) which
+# has no record for harbor.${DOMAIN}. Inject the pod IP directly so that
+# image pulls from containerd resolve without touching CoreDNS or hostAliases.
+# Use the harbor-nginx pod IP (not the ClusterIP) because Cilium kube-proxy-free
+# mode does not intercept ClusterIP traffic from the host network namespace.
+if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
+  HARBOR_IP=$(kubectl get pod -n harbor -l component=nginx --context "$CONTEXT" \
+    -o jsonpath='{.items[0].status.podIP}' 2>/dev/null) || true
+  if [[ -n "$HARBOR_IP" ]]; then
+    while IFS= read -r node; do
+      docker exec "$node" sh -c "
+        grep -qF 'harbor.${DOMAIN}' /etc/hosts || echo '${HARBOR_IP} harbor.${DOMAIN}' >> /etc/hosts
+        mkdir -p /etc/containerd/certs.d/harbor.${DOMAIN}
+        printf 'server = \"http://harbor.${DOMAIN}\"\n\n[host.\"http://%s:8080\"]\n  capabilities = [\"pull\", \"resolve\", \"push\"]\n' '${HARBOR_IP}' > /etc/containerd/certs.d/harbor.${DOMAIN}/hosts.toml
+      "
+    done < <(kind get nodes --name sovereign-test 2>/dev/null)
+    log "Injected harbor.${DOMAIN} → ${HARBOR_IP} into kind node /etc/hosts and containerd certs.d"
+  else
+    log "WARN: Could not resolve harbor ClusterIP — skipping hosts injection"
+  fi
+fi
 
 # ── Step 2b: Seed Harbor with upstream images (only during bootstrap) ─────
 # After Harbor is healthy, mirror images needed by later charts.
-# docker pull/tag/push is idempotent — if the image is already in Harbor, the
-# push is a no-op. If docker.io is unreachable, the pull fails and we continue.
+# Uses kubectl port-forward (localhost:5000 → harbor:80) because the host
+# docker daemon cannot route to Harbor's ClusterIP or pod IP directly.
+# Harbor listens on HTTP/8080 (no TLS configured) — docker treats localhost
+# as an insecure registry automatically.
 
 KEYCLOAK_TAG="24.0.5-debian-12-r0"
 PG_TAG="16.3.0-debian-12-r14"
+HARBOR_LOCAL_PORT="5000"
+
+harbor_api() {
+  # Run Harbor API call via port-forward on localhost
+  local method="$1"; shift
+  curl -sf -u "admin:${HARBOR_ADMIN_PASS}" \
+    -X "${method}" "http://localhost:${HARBOR_LOCAL_PORT}/api/v2.0/$1" \
+    -H "Content-Type: application/json" \
+    "${@:2}" 2>/dev/null
+}
 
 if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
   HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
 
+  # Start port-forward to Harbor (HTTP)
+  kubectl port-forward svc/harbor -n harbor "${HARBOR_LOCAL_PORT}:80" \
+    --context "${CONTEXT}" &>/dev/null &
+  HARBOR_PF_PID=$!
+  # Give port-forward a moment to establish
+  sleep 3
+  trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
+
   # Create bitnami project in Harbor (idempotent)
-  curl -sf -u "admin:${HARBOR_ADMIN_PASS}" --insecure \
-    -X POST "https://harbor.${DOMAIN}/api/v2.0/projects" \
-    -H "Content-Type: application/json" \
-    -d '{"project_name":"bitnami","public":false}' 2>/dev/null || true
+  harbor_api POST "projects" \
+    -d '{"project_name":"bitnami","public":true}' 2>/dev/null || true
 
   # Seed each image — failures are non-fatal (image may already be in Harbor,
-  # or docker.io may be unreachable; the install step will surface the real error)
+  # or upstream may be unreachable; the install step will surface the real error)
   for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}"; do
-    local_tag="harbor.${DOMAIN}/bitnami/${img_spec}"
-    if docker manifest inspect "$local_tag" &>/dev/null; then
+    local_tag="localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}"
+    # Check if already in Harbor via API
+    repo="${img_spec%:*}"
+    tag="${img_spec#*:}"
+    if harbor_api GET "projects/bitnami/repositories/${repo}/artifacts/${tag}" &>/dev/null; then
       log "Harbor already has bitnami/${img_spec} ✓"
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
-      docker pull "docker.io/bitnami/${img_spec}" 2>&1 && \
-      docker tag "docker.io/bitnami/${img_spec}" "$local_tag" && \
-      docker push "$local_tag" 2>&1 && \
+      docker pull "registry.bitnami.com/bitnami/${img_spec}" 2>&1 && \
+      docker tag "registry.bitnami.com/bitnami/${img_spec}" "${local_tag}" && \
+      docker push "${local_tag}" 2>&1 && \
       log "Seeded bitnami/${img_spec} ✓" || \
       log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
     fi
   done
+
+  kill "${HARBOR_PF_PID}" 2>/dev/null || true
+  trap - EXIT
 fi
 
 # ── Step 3: Keycloak (identity / SSO) ────────────────────────────────────
