@@ -1,3 +1,61 @@
+# Retro — After Cycle 35
+
+## Progress
+
+| Cycle | First Failure | Directive Target | Surgeon Action | Result |
+|-------|---------------|------------------|----------------|--------|
+| 31 | L2 harbor-core (Pending / Insufficient memory) | L2: remove `kubectl rollout restart` Step 2b block from deploy.sh | Applied — deleted lines 146–153 | No improvement — harbor-core still Pending (pod rescheduled same scheduling failure) |
+| 32 | L2 harbor-core (Pending / Insufficient memory) | L2: updateStrategy Recreate→RollingUpdate + registry memory 256Mi→128Mi | Applied — values.yaml | No improvement — harbor-core still Pending (freed 256Mi insufficient) |
+| 33 | L2 harbor-core (Pending / Insufficient memory) | L2: jobservice memory 128Mi→64Mi | Applied — values.yaml | **L2 resolved** — harbor-core Running; first failure advanced to L3 |
+| 34 | L3 keycloak (ImagePullBackOff — image absent from Harbor) | L3: dynamic KEYCLOAK_TAG derivation from packaged chart tgz | Applied — deploy.sh | No improvement — derived tag `24.0.5-debian-12-r0` unchanged; crane source still `bitnamilegacy` |
+| 35 | L3 keycloak (ImagePullBackOff — image absent from Harbor) | L3: crane source `bitnamilegacy`→`bitnami` | Applied — deploy.sh | Not yet evaluated (cycle in progress) |
+
+## Layer Trajectory
+- Started at Layer 2 (Cycles 31–33), advanced to Layer 3 (Cycles 34–35)
+- Net advancement: **+1 layer** over 5 cycles
+- Total pods Running in latest report (Cycle 35): ~67 of ~140
+
+## Patterns Detected
+
+### Harbor-core memory — iterative narrowing (not stagnation)
+- **Evidence:** Cycles 31, 32, 33 all targeted L2 harbor-core Pending. Each fix freed memory from a different component: (31) removed restart race condition, (32) changed update strategy + freed 256Mi from registry, (33) freed 128Mi from jobservice. Third fix cleared the layer.
+- **Impact:** Three cycles for one service. This is progressive narrowing in a tight kind memory envelope — each fix was the largest available lever at the time — not circular failure.
+- **Recommendation:** No process change needed. The fix sequence was correct.
+
+### Keycloak image — wrong fix axis in Cycle 34, corrected in Cycle 35
+- **Evidence:** Cycle 34 changed WHERE the tag was derived from (chart tgz instead of hardcoded), but the derived tag was still `24.0.5-debian-12-r0` and crane still pointed at `bitnamilegacy`. Zero runtime change. Cycle 35 correctly identified and changed the crane source namespace. The stagnation detection rule triggered appropriately.
+- **Impact:** One wasted cycle on the wrong axis.
+- **Recommendation:** No prompt change needed — the stagnation rule worked. Cycle 35's fix covers all five images in the seeding loop.
+
+### OPA-Gatekeeper CRD bootstrap loop — 4 consecutive cycles, structural failure
+- **Evidence:** Cycles 32, 33, 34, 35 all fail identically: `no matches for kind "K8sNoPrivilegeEscalation" in version "constraints.gatekeeper.sh/v1beta1" — ensure CRDs are installed first`. In Cycle 34, a two-pass approach was added (first-pass install → wait for CRDs → second-pass). Both passes fail with the identical error. The first pass fails **client-side before contacting the cluster** (manifest build error), so no CRDs are ever installed and the wait is useless.
+- **Impact:** 4 cycles of zero progress on opa-gatekeeper. The two-pass strategy in deploy.sh is dead.
+- **Recommendation:** **Update counsel.md** (see Prompt Adjustments). The correct fix requires either: (a) a values flag in the opa-gatekeeper chart that disables constraint Custom Resources so pass 1 installs only the controller+CRDs, or (b) removing the constraint templates from the chart and installing them as a separate `helm install` call after CRDs are established. The "wait" approach cannot work when the first pass does nothing.
+
+### Dormant autarky violations — 5 cycles, imminent L4 blocker
+- **Evidence:** All 5 cycles show the same pods pulling from docker.io directly: `gitlab-redis` (redis:6.2.7-debian-11-r11), `thanos-query` (thanos:0.36.0-debian-12-r1 — NotFound), `sonarqube-postgresql` (postgresql:11.14.0-debian-10-r22 — NotFound), `reportportal-rabbitmq` (rabbitmq:3.12.11). These were correctly deprioritized while L2/L3 were broken.
+- **Impact:** After L3 resolves: thanos images should land from the bitnami seeding fix. gitlab-redis (redis 6.2.7, 2021-vintage) and sonarqube-postgresql (postgresql 11.14.0, 2021-vintage) will remain broken — these old tags do not exist in docker.io/bitnami and are not seeded into Harbor. First L4 directive must address gitlab-redis tag.
+- **Recommendation:** No prompt change needed — pre-emptive batching rule is in place. Counsel should apply it for gitlab-redis and sonarqube-postgresql when L3 clears.
+
+### GitLab StatefulSet immutable field — 2 cycles, imminent L4 blocker
+- **Evidence:** Cycles 34 and 35: `StatefulSet.apps "gitlab-gitaly" is invalid: spec: Forbidden: updates to statefulset spec for fields other than 'replicas', 'ordinals', 'template'...`. Helm upgrade fails every cycle; gitlab never fully deploys.
+- **Impact:** Not yet 3 cycles, but will immediately become the primary L4 structural blocker when L3 resolves. `helm upgrade --force` (delete+recreate) or `kubectl delete statefulset gitlab-gitaly --cascade=orphan` before upgrade is required. Note: `--cascade=orphan` is safe here since gitaly's PVC (`repo-data-gitlab-gitaly-0`) is already Pending (ceph-block, never bound) — no data loss risk.
+- **Recommendation:** Not a prompt change yet (2 cycles). Noting here so the next retro has context.
+
+## Prompt Adjustments
+
+### counsel.md — OPA-Gatekeeper incompatibility: specify that two-pass deploy.sh approach fails
+**Evidence:** 4 consecutive cycles (32, 33, 34, 35). The two-pass approach added in Cycle 34 does not work because the first pass errors client-side and installs nothing. The existing entry ("split into two releases or use post-install hooks") is vague and was interpreted as the two-pass deploy.sh approach.
+
+**Change:** Updated the `opa-gatekeeper` bullet in the Known kind incompatibilities list to specify the failure mode and the correct approach.
+
+See updated `operating-room/agents/counsel.md`.
+
+## Escalation
+NONE
+
+---
+
 # Retro — After Cycle 29
 
 ## Progress
