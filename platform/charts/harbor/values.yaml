@@ -92,6 +92,8 @@ harbor:
 
   core:
     replicaCount: 2
+    updateStrategy:
+      type: Recreate
     resources:
       requests:
         cpu: "100m"
