@@ -143,15 +143,6 @@ helm upgrade --install harbor "${PLATFORM_DIR}/charts/harbor/" \
   2>&1 || { log "harbor: FAILED (continuing to next chart)"; }
 log "harbor: ready ✓"
 
-# ── Step 2b: Restart harbor-core to reload updated externalURL ConfigMap ──
-# helm upgrade updates ConfigMap values but does not restart pods whose
-# template hash is unchanged. harbor-core must restart to serve the correct
-# token URL (no :8080) before any image pull or seed step runs.
-if [[ "$DRY_RUN" != "true" ]]; then
-  kubectl rollout restart deployment/harbor-core -n harbor --context "${CONTEXT}"
-  kubectl rollout status deployment/harbor-core -n harbor --context "${CONTEXT}" --timeout "${TIMEOUT}"
-fi
-
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
 # containerd on kind nodes uses the Docker bridge DNS (192.168.65.254) which
 # has no record for harbor.${DOMAIN}. Inject the service ClusterIP so that
