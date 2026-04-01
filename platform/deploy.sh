@@ -280,7 +280,7 @@ fi
 
 install_chart keycloak keycloak \
   --set "global.imageRegistry=harbor.${DOMAIN}" \
-  --set "postgresql.image.tag=${PG_TAG}" \
+  --set "keycloak.postgresql.image.tag=${PG_TAG}" \
   --set-string "keycloak.postgresql.primary.podAnnotations.forceRestart=$(date +%s)" \
   ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
 
