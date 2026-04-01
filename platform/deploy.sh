@@ -155,7 +155,7 @@ if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
   if [[ -n "$HARBOR_IP" ]]; then
     while IFS= read -r node; do
       docker exec "$node" sh -c "
-        grep -qF 'harbor.${DOMAIN}' /etc/hosts || echo '${HARBOR_IP} harbor.${DOMAIN}' >> /etc/hosts
+        sed -i '/harbor\.${DOMAIN}/d' /etc/hosts && echo '${HARBOR_IP} harbor.${DOMAIN}' >> /etc/hosts
         mkdir -p /etc/containerd/certs.d/harbor.${DOMAIN}
         printf 'server = \"http://harbor.${DOMAIN}\"\n\n[host.\"http://%s:8080\"]\n  capabilities = [\"pull\", \"resolve\", \"push\"]\n' '${HARBOR_IP}' > /etc/containerd/certs.d/harbor.${DOMAIN}/hosts.toml
         if ! grep -q 'config_path.*certs' /etc/containerd/config.toml 2>/dev/null; then
