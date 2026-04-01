@@ -120,7 +120,7 @@ install_chart openbao openbao
 
 install_chart harbor harbor \
   --set "harbor.expose.ingress.hosts.core=harbor.${DOMAIN}" \
-  --set "harbor.externalURL=http://harbor.${DOMAIN}:8080" \
+  --set "harbor.externalURL=http://harbor.${DOMAIN}" \
   --set "harbor.persistence.persistentVolumeClaim.registry.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.database.storageClass=${BLOCK_SC}" \
   --set "harbor.persistence.persistentVolumeClaim.redis.storageClass=${BLOCK_SC}" \

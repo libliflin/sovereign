@@ -1,3 +1,78 @@
+# Retro — After Cycle 24
+
+## Progress
+
+| Cycle | First Failure | Directive Target | Surgeon Action | Result |
+|-------|---------------|------------------|----------------|--------|
+| 20 | L3: keycloak ImagePullBackOff | L3: replace docker pull/push with `crane copy` | Applied: removed docker login/pull/tag/push, added crane copy | Crane ran; failed `lookup harbor.sovereign.local: no such host` on host |
+| 21 | L3: keycloak ImagePullBackOff | L3: add 2nd port-forward on 8080 + inject host `/etc/hosts` via `sudo tee` | Applied: added port-forward + sudo injection | `sudo: a terminal is required` — injection silently skipped; crane still fails |
+| 22 | L3: keycloak ImagePullBackOff | L3: move crane inside kind node via `docker exec` | Applied: docker exec + crane bootstrap in kind node | Connection refused — crane resolved to pod IP 10.244.1.136 (no listener on :80/:443) |
+| 23 | L2: harbor crane seed conn refused | L2: change HARBOR_IP lookup from pod IP to service ClusterIP | Applied: changed kubectl query to `.spec.clusterIP` | `sed -i` fails on bind-mounted `/etc/hosts` — stale pod IP entry never removed; crane still resolves to 10.244.1.136 |
+| 24 | L2: harbor crane seed conn refused | L2: replace `sed -i` with `grep -v` + `cat >` redirect | Applied | Pending (Cycle 25 not yet run) |
+
+## Layer Trajectory
+- Entered this window at Layer 3 (Cycles 20–22), then Layer 2 (Cycles 23–24)
+- Net advancement: **-1** (apparent regression, but Layer 2 is a newly-discovered sub-failure of the seeding path — not a higher-layer break)
+- Underlying momentum: genuine forward progress each cycle; each fix correctly unblocked the next sub-issue in the seeding chain
+- Total pods Running (Cycle 24 / Cycle 25 report): ~67 Running / ~55 not Running — unchanged across all 5 cycles
+
+## Patterns Detected
+
+### Harbor seeding chain — 5-cycle incremental debug
+- **Evidence:** Cycles 20–24 each made a correct diagnosis and targeted fix, but the seeding path has multiple sequential bugs: (20) docker networking isolated from host → (21) host DNS/sudo no-terminal → (22) pod IP vs service ClusterIP → (23) `sed -i` cannot atomic-rename bind-mounted file → (24) fix applied. Each cycle's error message was genuinely different. No circular failure.
+- **Impact:** Keycloak has had zero images in Harbor for 15+ hours. Every layer above 3 is downstream of this. Layer trajectory is stalled but each cycle made real progress.
+- **Recommendation:** If Cycle 25 still fails after the `grep -v`/`cat >` fix lands, the seeding architecture is fundamentally broken and should be replaced with a single approach: pre-copy all required images into a kind node local volume during cluster bootstrap (before deploy.sh runs) instead of live-seeding via a port-forward during deploy. This is a bigger change but eliminates the entire networking/DNS/bind-mount problem class.
+
+### `sed: cannot rename` signal missed for 4 cycles
+- **Evidence:** `sed: cannot rename /etc/sedXXX: Device or resource busy` appears in the deploy output of **every** cycle (20–24), 3 lines per cycle, before the seeding block. Counsel's diagnosis in Cycles 20–22 focused on crane/docker errors further down the log and correctly identified different root causes each cycle — so missing the sed error was not incorrect, just delayed. Cycle 25's directive correctly identified it as root cause once two IPs appeared in /etc/hosts.
+- **Impact:** One extra cycle (23→24) consumed on a symptom that the sed errors had already explained.
+- **Recommendation:** Add a step to counsel's protocol: before diagnosing the primary error message, scan the deploy output top-to-bottom for shell-level errors (`sed: cannot rename`, `sudo: a terminal is required`, `mount: permission denied`) that appear **before** the main failure. These are often the actual root cause being masked by downstream failure.
+
+### Pre-emptive batching rule not firing — 5 INFRA_INCOMPATIBLE items queued
+- **Evidence:** The following have appeared in EVERY cycle's pod list for 5+ cycles with no directive issued:
+  - `falco-driver-loader` Init:CrashLoopBackOff (linuxkit eBPF — 15+ cycles total)
+  - `tempo` CrashLoopBackOff (rook-ceph DNS absent — 5+ cycles in this window)
+  - `thanos-query` ImagePullBackOff (`bitnami/thanos:0.36.0-debian-12-r1` not found — 5+ cycles)
+  - `gitlab-redis-master-0` ImagePullBackOff (`bitnami/redis:6.2.7-debian-11-r11` not found — 5+ cycles)
+  - `opa-gatekeeper` FAILED (CRD race — 4+ cycles in this window)
+  - `sonarqube-postgresql` ImagePullBackOff (`bitnami/postgresql:11.14.0-debian-10-r22` not found)
+  - `reportportal-rabbitmq` FAILED (Bitnami password upgrade error — 3+ cycles)
+  - Multiple PVCs requesting `ceph-block` StorageClass (grafana, gitlab-gitaly, sonarqube, code-server) — never binds in kind
+- Counsel listed these as "## Pre-emptive warnings" in directives every cycle — but **this section is not the "Pre-emptive Fix" block format described in the batching rule**. Surgeon acts on directive content only; comments are ignored.
+- **Impact:** When seeding clears (Cycle 25 or 26), all eight failures surface immediately. Each costs a cycle if addressed one at a time — that's 8 cycles of known failures vs. 2–3 if batched.
+- **Recommendation:** (1) Add a clarification to counsel.md: listing items under "## Pre-emptive warnings" does NOT schedule them for fixing — surgeon ignores it. To trigger a fix, use the explicit "## Pre-emptive Fix" block format with batching conditions met. (2) The batching conditions ARE met for all 8 items above. Counsel should batch 2 per cycle using the "Pre-emptive Fix" block as soon as the primary seeding fix is confirmed working.
+
+## Prompt Adjustments
+
+### counsel.md — Step 2: scan deploy output for shell-level errors first
+
+**Evidence:** `sed: cannot rename` appeared 5 consecutive cycles; took until Cycle 25 to diagnose. Earlier detection = earlier fix.
+
+**Change:** Added a scan instruction to Step 2 of the protocol ("Assess the root cause").
+
+**Text added** (after "What specific error does the operator report show?"):
+> Before examining pod-level errors, scan the deploy output from **top to bottom** for shell-level errors (`sed: cannot rename`, `sudo: a terminal is required`, `mount: permission denied`, `curl: (`) that appear before the first `WARN:` or `FAILED` line. These precede and often cause the downstream failure — diagnose the shell error first.
+
+---
+
+### counsel.md — Pre-emptive batching: clarify that warning comments don't trigger fixes
+
+**Evidence:** 5 cycles of "## Pre-emptive warnings" sections in directives that surgeon never acted on. Batching rule existed but wasn't used effectively.
+
+**Change:** Added one sentence to the Pre-emptive batching paragraph in the "Be pragmatic about infra-incompatible components" section.
+
+**Text added** (at end of the pre-emptive batching paragraph):
+> Note: listing items in a "## Pre-emptive warnings" comment block in the directive does NOT queue them for fixing — surgeon acts on directive content only. Use the "Pre-emptive Fix" section format described above.
+
+---
+
+Both changes are minimal, targeted, and supported by 5 cycles of evidence.
+
+## Escalation
+NONE
+
+---
+
 # Retro — After Cycle 20
 
 ## Progress

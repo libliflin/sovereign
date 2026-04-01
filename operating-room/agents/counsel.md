@@ -65,6 +65,7 @@ The report is appended below. Identify the **first failing layer** (lowest numbe
 ### 2. Assess the root cause
 
 For the first failing service in the first failing layer:
+- Before examining pod-level errors, scan the deploy output from **top to bottom** for shell-level errors (`sed: cannot rename`, `sudo: a terminal is required`, `mount: permission denied`, `curl: (`) that appear before the first `WARN:` or `FAILED` line. These precede and often cause the downstream failure — diagnose the shell error first.
 - What specific error does the operator report show?
 - Which root cause category fits?
 - What specific files would need to change?
@@ -100,7 +101,7 @@ Known kind incompatibilities (must be disabled or reconfigured):
 - `opa-gatekeeper`: constraint resources deploy before CRDs are ready → split into two releases or use post-install hooks
 - `ceph-block` StorageClass: does not exist in kind — PVCs for grafana, gitlab-gitaly, sonarqube, code-server will never bind. Change PVC storageClassName to `standard` in the affected chart values.
 
-**Pre-emptive batching:** When the current first-failing-layer fix is confirmed in-flight (surgeon applied it last cycle and it is a timing or config fix, not a structural failure), you MAY include a second "Pre-emptive Fix" in the directive targeting the next known INFRA_INCOMPATIBLE or dead-image-tag blocker — but ONLY if: (a) the next failure has appeared 3+ consecutive cycles in the failing pod list, (b) the fix does not touch the same files as the primary directive, and (c) the fix is mechanical (disable in values.yaml, update a tag). Label it clearly as "Pre-emptive Fix" and list it after the primary directive. Surgeon applies both in the same cycle.
+**Pre-emptive batching:** When the current first-failing-layer fix is confirmed in-flight (surgeon applied it last cycle and it is a timing or config fix, not a structural failure), you MAY include a second "Pre-emptive Fix" in the directive targeting the next known INFRA_INCOMPATIBLE or dead-image-tag blocker — but ONLY if: (a) the next failure has appeared 3+ consecutive cycles in the failing pod list, (b) the fix does not touch the same files as the primary directive, and (c) the fix is mechanical (disable in values.yaml, update a tag). Label it clearly as "Pre-emptive Fix" and list it after the primary directive. Surgeon applies both in the same cycle. Note: listing items in a "## Pre-emptive warnings" comment block does NOT queue them for fixing — surgeon acts on directive content only. Use the explicit "Pre-emptive Fix" section format described here.
 
 ### 5. Be pragmatic about image sources
 
