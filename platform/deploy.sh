@@ -336,8 +336,9 @@ helm rollback prometheus-stack -n monitoring --kube-context "${CONTEXT}" 2>/dev/
   || helm uninstall prometheus-stack -n monitoring --kube-context "${CONTEXT}" 2>/dev/null \
   || true
 install_chart prometheus-stack monitoring
-install_chart loki monitoring
-install_chart tempo monitoring
+install_chart victorialogs monitoring
+install_chart jaeger monitoring
+install_chart perses monitoring
 install_chart thanos monitoring \
   --set "thanos.image.registry=harbor.${DOMAIN}"
 

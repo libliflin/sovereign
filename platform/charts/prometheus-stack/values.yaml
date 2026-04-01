@@ -6,74 +6,12 @@ global:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
 
-# Keycloak OIDC for Grafana (disabled by default — enable after Keycloak is running)
-grafanaOidc:
-  enabled: false
-  clientID: "sovereign-grafana"
-  # clientSecret stored in a SealedSecret mounted at grafanaOidc.clientSecretRef
-  clientSecretRef: "grafana-keycloak-secret"
-
 # kube-prometheus-stack upstream chart values
 kube-prometheus-stack:
-  # ----- Grafana -----
+  # Grafana disabled — dashboards served by Perses (Apache 2.0, CNCF Sandbox)
+  # See platform/charts/perses/
   grafana:
-    replicaCount: 2
-    # Disable upstream ingress — we manage our own in templates/ingress.yaml
-    ingress:
-      enabled: false
-
-    # Persistence
-    persistence:
-      enabled: true
-      storageClassName: standard
-      size: 10Gi
-
-    # Grafana.ini config
-    grafana.ini:
-      server:
-        domain: "grafana.sovereign-autarky.dev"  # overridden at deploy time via --set
-        root_url: "https://grafana.sovereign-autarky.dev"
-      auth.generic_oauth:
-        enabled: true
-        name: "Keycloak"
-        allow_sign_up: true
-        client_id: "sovereign-grafana"
-        client_secret: "$__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
-        scopes: "openid profile email"
-        auth_url: "https://auth.sovereign-autarky.dev/realms/sovereign/protocol/openid-connect/auth"
-        token_url: "https://auth.sovereign-autarky.dev/realms/sovereign/protocol/openid-connect/token"
-        api_url: "https://auth.sovereign-autarky.dev/realms/sovereign/protocol/openid-connect/userinfo"
-        role_attribute_path: "contains(roles[*], 'admin') && 'Admin' || 'Viewer'"
-
-    # Sidecar picks up dashboard ConfigMaps with label grafana_dashboard="1"
-    sidecar:
-      dashboards:
-        enabled: true
-        label: grafana_dashboard
-        labelValue: "1"
-        searchNamespace: ALL
-
-    # Liveness / readiness probes are included by upstream chart
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: grafana
-              topologyKey: kubernetes.io/hostname
-
-    podDisruptionBudget:
-      minAvailable: 1
+    enabled: false
 
   # ----- Prometheus -----
   prometheus:

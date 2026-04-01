@@ -1,0 +1,79 @@
+## Sovereign Platform — Jaeger wrapper chart values
+## CNCF Graduated, Apache 2.0. OpenTelemetry-native in v2.
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "standard"
+
+jaeger:
+  ## Jaeger v2 uses OpenTelemetry Collector as its base.
+  ## OTLP receivers accept traces from all platform services.
+  collector:
+    replicaCount: 2
+
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - collector
+              topologyKey: kubernetes.io/hostname
+
+  query:
+    replicaCount: 2
+
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - query
+              topologyKey: kubernetes.io/hostname
+
+    ## Jaeger UI ingress managed by our own template
+    ingress:
+      enabled: false
+
+  ## Storage — Badger (embedded) for dev; swap to Cassandra/OpenSearch for prod
+  storage:
+    type: badger
+    badger:
+      ephemeral: false
+      persistence:
+        enabled: true
+        storageClass: "standard"
+        size: "20Gi"

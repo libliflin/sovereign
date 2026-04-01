@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "perses-sovereign.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perses-sovereign.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ include "perses-sovereign.host" . | quote }}
+      secretName: perses-tls
+  rules:
+    - host: {{ include "perses-sovereign.host" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-perses
+                port:
+                  number: 8080

@@ -1,0 +1,59 @@
+## Sovereign Platform — Perses wrapper chart values
+## CNCF Sandbox, Apache 2.0. GitOps-native dashboards as code.
+## Replaces Grafana (AGPL-3.0).
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "standard"
+
+perses:
+  replicaCount: 2
+
+  ## Perses stores dashboard definitions in its own database.
+  ## Dashboards can also be managed as CRs via the perses-operator.
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    size: "5Gi"
+
+  ## Data sources — configured at deploy time or via CR
+  ## Prometheus and Jaeger are pre-wired via the datasource CRs in templates/
+  config:
+    database:
+      file:
+        folder: /data/perses
+
+  ## Keycloak OIDC
+  security:
+    oidc:
+      discovery_url: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
+      client_id: "sovereign-perses"
+      client_secret: "${PERSES_OIDC_SECRET}"
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - perses
+            topologyKey: kubernetes.io/hostname
+
+  ingress:
+    enabled: false

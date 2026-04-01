@@ -1,0 +1,11 @@
+apiVersion: v2
+name: perses
+description: Perses observability dashboards — CNCF Sandbox, Apache 2.0. Replaces Grafana (AGPL).
+type: application
+version: 0.1.0
+appVersion: "0.52.0"
+dependencies:
+  - name: perses
+    version: "0.8.0"
+    repository: "https://perses.github.io/helm-charts"
+    alias: perses

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: jaeger
+description: Jaeger distributed tracing — CNCF Graduated, Apache 2.0. Replaces Grafana Tempo (AGPL).
+type: application
+version: 0.1.0
+appVersion: "2.1.0"
+dependencies:
+  - name: jaeger
+    version: "3.4.1"
+    repository: "https://jaegertracing.github.io/helm-charts"
+    alias: jaeger

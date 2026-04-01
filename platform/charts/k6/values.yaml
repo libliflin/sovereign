@@ -1,0 +1,26 @@
+## Sovereign Platform — k6 load testing scaffolding
+## k6 binary: MIT license. No operator required.
+## Tests run as Kubernetes Jobs — triggered by CI or manually.
+
+global:
+  domain: "sovereign-autarky.dev"
+
+## Image for k6 test runner Jobs
+image:
+  repository: "grafana/k6"
+  tag: "0.54.0"
+  pullPolicy: IfNotPresent
+
+## Default resource limits for k6 Job pods
+jobResources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "2000m"
+    memory: "1Gi"
+
+## ServiceAccount name used by k6 Job pods
+serviceAccount:
+  name: "k6-runner"
+  annotations: {}

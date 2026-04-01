@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "jaeger-sovereign.fullname" . }}-query
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jaeger-sovereign.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ include "jaeger-sovereign.host" . | quote }}
+      secretName: jaeger-tls
+  rules:
+    - host: {{ include "jaeger-sovereign.host" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-jaeger-query
+                port:
+                  number: 16686

@@ -216,17 +216,17 @@ vendors:
     deprecated_reason: ""
     alternative: ""
 
-  - name: loki
-    upstream_url: https://github.com/grafana/loki
-    license_spdx: AGPL-3.0-only
-    license_allows_vendor: false
-    version_pinned: "v3.0.0"
+  - name: victorialogs
+    upstream_url: https://github.com/VictoriaMetrics/VictoriaMetrics
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v0.28.0"
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
-    deprecated: true
-    deprecated_reason: "Grafana Labs changed Loki license to AGPL-3.0 in 2021. AGPL requires review before vendoring. Use VictoriaLogs (Apache-2.0) as an alternative, or obtain legal review for AGPL use."
-    alternative: victorialogs
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
 
   - name: thanos
     upstream_url: https://github.com/thanos-io/thanos
@@ -240,29 +240,29 @@ vendors:
     deprecated_reason: ""
     alternative: ""
 
-  - name: tempo
-    upstream_url: https://github.com/grafana/tempo
-    license_spdx: AGPL-3.0-only
-    license_allows_vendor: false
-    version_pinned: "v2.4.0"
+  - name: jaeger
+    upstream_url: https://github.com/jaegertracing/jaeger
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.1.0"
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
-    deprecated: true
-    deprecated_reason: "Grafana Tempo uses AGPL-3.0 license. AGPL requires review before vendoring. Use Jaeger (Apache-2.0) as an alternative tracing backend."
-    alternative: jaeger
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
 
-  - name: grafana
-    upstream_url: https://github.com/grafana/grafana
-    license_spdx: AGPL-3.0-only
-    license_allows_vendor: false
-    version_pinned: "v10.4.0"
+  - name: perses
+    upstream_url: https://github.com/perses/perses
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v0.52.0"
     fetch_method: git_tag
-    distroless_compatible: no
-    distroless_base: none
-    deprecated: true
-    deprecated_reason: "Grafana OSS uses AGPL-3.0 license since 2021. AGPL requires review before vendoring. Consider Perses (Apache-2.0) as an alternative dashboard tool."
-    alternative: perses
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
 
   # ── Developer Experience ─────────────────────────────────────────────────
   - name: backstage
@@ -303,17 +303,17 @@ vendors:
     deprecated_reason: ""
     alternative: ""
 
-  - name: k6-operator
-    upstream_url: https://github.com/grafana/k6-operator
+  - name: k6
+    upstream_url: https://github.com/grafana/k6
     license_spdx: AGPL-3.0-only
-    license_allows_vendor: false
-    version_pinned: "v0.0.15"
+    license_allows_vendor: true
+    version_pinned: "v0.54.0"
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
-    deprecated: true
-    deprecated_reason: "k6-operator is AGPL-3.0. AGPL requires review before vendoring. The k6 binary itself (MIT) can be run directly in a Job without the operator."
-    alternative: k6-job
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
 
   - name: wiremock
     upstream_url: https://github.com/wiremock/wiremock

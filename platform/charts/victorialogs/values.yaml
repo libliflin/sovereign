@@ -1,0 +1,40 @@
+## Sovereign Platform — VictoriaLogs wrapper chart values
+## Apache 2.0, single binary, zero-config. Replaces Loki (AGPL).
+## Uses LogsQL — see https://docs.victoriametrics.com/victorialogs/logsql/
+## LogQL → LogsQL migration: https://docs.victoriametrics.com/victorialogs/logql-to-logsql/
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "standard"
+
+victorialogs:
+  server:
+    ## Single-node mode — sufficient for most deployments.
+    ## VictoriaLogs is dramatically more resource-efficient than Loki:
+    ## up to 30x less RAM, 15x less disk at equivalent ingestion rates.
+    replicaCount: 1
+
+    ## Storage
+    persistentVolume:
+      enabled: true
+      storageClass: "standard"
+      size: "50Gi"
+
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+
+    ## Retention
+    retentionPeriod: "30d"
+
+    ## Ingress managed by our template
+    ingress:
+      enabled: false
+
+  ## Fluent Bit / Vector / Promtail can ship logs via:
+  ##   HTTP: POST /insert/jsonline
+  ##   Loki-compatible: POST /insert/loki/api/v1/push  (drop-in for existing Loki configs)
