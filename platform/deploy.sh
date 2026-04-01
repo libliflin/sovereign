@@ -190,8 +190,8 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
   kubectl port-forward svc/harbor -n harbor "${HARBOR_LOCAL_PORT}:80" \
     --context "${CONTEXT}" &>/dev/null &
   HARBOR_PF_PID=$!
-  # Give port-forward a moment to establish
-  sleep 3
+  # Wait for port-forward to be ready (poll until Harbor responds, max 30s)
+  for i in $(seq 1 15); do curl -s -o /dev/null "http://localhost:${HARBOR_LOCAL_PORT}/v2/" && break; sleep 2; done
   trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
 
   # Authenticate with Harbor before pushing
