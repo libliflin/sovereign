@@ -129,18 +129,18 @@ install_chart harbor harbor \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
   --set "harbor.expose.tls.enabled=false"
 
-# Force-apply externalURL and TLS config regardless of chart_healthy skip.
-# Harbor's WWW-Authenticate realm must embed an HTTP URL so containerd can
-# reach the token service without TLS termination (nothing listens on :443 in kind).
+# Unstick harbor-core rolling update and restart with HTTP externalURL.
+# The force-upgrade block previously triggered a second helm upgrade every cycle,
+# causing harbor-core to enter a perpetual rolling update (new pod Pending, old
+# pod Running with stale HTTPS config). Remove it; install_chart already passes
+# externalURL=http://... and tls.enabled=false. These three commands cancel any
+# stuck rolling update, lock in Recreate strategy, and do a single clean restart.
 if [[ "$DRY_RUN" != "true" ]]; then
-  helm upgrade harbor "${PLATFORM_DIR}/charts/harbor/" \
-    --namespace harbor \
-    --reuse-values \
-    --set "harbor.externalURL=http://harbor.${DOMAIN}:8080" \
-    --set "harbor.expose.tls.enabled=false" \
-    --kube-context "${CONTEXT}" \
-    --timeout "${TIMEOUT}" \
-    2>&1 || log "WARN: harbor forced-upgrade failed (continuing)"
+  kubectl rollout undo deployment/harbor-core -n harbor --context "$CONTEXT" 2>/dev/null || true
+  kubectl patch deployment harbor-core -n harbor --context "$CONTEXT" \
+    --type=merge -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}' 2>/dev/null || true
+  kubectl rollout restart deployment/harbor-core -n harbor --context "$CONTEXT" 2>/dev/null || true
+  kubectl rollout status deployment/harbor-core -n harbor --context "$CONTEXT" --timeout=180s 2>/dev/null || true
 fi
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
