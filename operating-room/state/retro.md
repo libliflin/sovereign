@@ -1,3 +1,75 @@
+# Retro — After Cycle 29
+
+## Progress
+
+| Cycle | First Failure | Directive Target | Surgeon Action | Result |
+|-------|---------------|------------------|----------------|--------|
+| 25 | L3: keycloak (harbor seed :8080 i/o timeout) | L2: remove `:8080` from `harbor.externalURL` in deploy.sh | Applied: line 123 changed | No change — `chart_healthy` skip gate fired, helm upgrade never ran |
+| 26 | L3: keycloak (harbor seed :8080 i/o timeout) | L2: bypass `chart_healthy` skip gate for harbor | Applied: replaced `install_chart harbor` with unconditional `helm upgrade --install` | Harbor upgraded (REVISION 30); harbor-core pod never restarted — serving stale config |
+| 27 | L3: keycloak (harbor seed :8080 i/o timeout) | L2: `kubectl rollout restart deployment/harbor-core` in deploy.sh | Applied: rollout restart + status block added | harbor-core restarted; new error: `UNAUTHORIZED: unauthorized to access repository: bitnami/keycloak, action: push` |
+| 28 | L3: keycloak (harbor seed UNAUTHORIZED push) | L2: add `--username admin --password "${HARBOR_ADMIN_PASS}"` to `crane copy` | Applied: flags added after `copy --insecure` | `Error: unknown flag: --username` — crane requires auth flags before subcommand |
+| 29 | L2: harbor (crane flag rejection) | L2: reorder flags to `crane --username --password copy --insecure` | Applied | TBD (Cycle 30 not yet run) |
+
+## Layer Trajectory
+- All 5 cycles: first failure at Layer 3 (Cycles 25–28) then Layer 2 (Cycle 29)
+- Net advancement: **0 layers** (still at L2/L3 boundary)
+- However: genuine sequential progress through harbor seeding chain each cycle — not circular stagnation
+- Total pods Running (Cycle 29 report): ~67 Running / ~55 not Running — unchanged from previous retro window
+
+## Patterns Detected
+
+### Harbor seeding chain — 10-cycle incremental debug (Cycles 20–29)
+- **Evidence:** This is the second 5-cycle window on the same root-cause chain. From the previous retro window (20–24): docker networking → sudo no-terminal → pod IP vs ClusterIP → sed bind-mount → grep-v fix. This window (25–29): externalURL wrong → helm skip gate → pod not restarting → crane auth missing → crane flag ordering. Each cycle surfaced the next sequential bug.
+- **Impact:** Keycloak has had zero images in Harbor for 20+ hours. All layers above 3 are downstream. But the progress is real — each fix correctly resolved the stated error and exposed the next one.
+- **Recommendation:** Crane flag reorder (Cycle 29) is the last known seeding bug. If Cycle 30 still fails, step back and check whether the Harbor project exists and has public push access before further crane flag diagnosis.
+
+### kubectl rollout restart rule violated — Cycles 27–28
+- **Evidence:** The Cycle 14 retro added an explicit rule to surgeon.md: "Never use kubectl to modify fields on Helm-managed resources." Despite this, Cycle 27's directive instructed `kubectl rollout restart deployment/harbor-core` be added to deploy.sh, and surgeon applied it. The violation occurred because counsel.md Step 3 still contains: "Direct a `kubectl rollout restart` this cycle." — directly contradicting the surgeon.md prohibition. Two agents received conflicting instructions; counsel's directive won.
+- **Impact:** So far no SSA field conflict has appeared (harbor upgraded to REVISIONs 31–32 without error in Cycles 28–29). Risk remains: if a future harbor chart update adds a checksum annotation to the core Deployment, Helm SSA will conflict with the kubectl-owned `restartedAt` annotation. Same failure mode as Cycles 11–13.
+- **Recommendation:** Fix counsel.md Step 3 to replace the `kubectl rollout restart` directive with the Helm-idiomatic approach: pass `--set "harbor.core.podAnnotations.forceRestart=$(date +%s)"` in the helm upgrade invocation to force pod template change. See Prompt Adjustments.
+
+### Pre-emptive queue: 8+ items, 5+ cycles each, still not batched
+- **Evidence:** All of the following have appeared in EVERY cycle (25–29) with no directive issued:
+  - `falco-lb9mk` Init:CrashLoopBackOff — eBPF kernel headers absent (15+ cycles total)
+  - `tempo-*` CrashLoopBackOff — rook-ceph-rgw DNS absent (10+ cycles)
+  - `thanos-query-*` ImagePullBackOff — `docker.io/bitnami/thanos:0.36.0-debian-12-r1` not found (10+ cycles)
+  - `gitlab-redis-master-0` ImagePullBackOff — `docker.io/bitnami/redis:6.2.7-debian-11-r11` not found (10+ cycles)
+  - `opa-gatekeeper` FAILED — CRD race, 5 cycles identical error
+  - `sonarqube-postgresql-0` ImagePullBackOff — `docker.io/bitnami/postgresql:11.14.0-debian-10-r22` not found
+  - `reportportal` FAILED — RabbitMQ password required on upgrade
+  - `harbor-jobservice-dcf699cdf-fstnh` — stale pod Pending/Running alongside new revision (Cycles 27–29)
+- Counsel has listed these as warnings in directives but has NOT issued pre-emptive Fix blocks. Pre-emptive batching conditions are met for all items.
+- **Impact:** When crane seeding succeeds (Cycle 30 expected), keycloak will start. Layer 4+ will then surface all eight failures simultaneously. If addressed one-at-a-time, that is 8+ cycles of known failures. Batching can compress this to 2–3 cycles.
+- **Recommendation:** Counsel should use the "Pre-emptive Fix" block format starting Cycle 30. Priority order: (1) thanos image tag update — docker.io/bitnami/thanos tag is gone, switch to current; (2) tempo storage reconfigure to MinIO (already running); (3) opa-gatekeeper CRD split; (4) falco disable driver-loader; (5) gitlab-redis image tag update.
+
+### harbor-jobservice stale pod (Cycles 27–29)
+- **Evidence:** `harbor-jobservice-dcf699cdf-fstnh Running` persists alongside new Pending revisions across 3 consecutive cycles. The old pod is not being evicted.
+- **Impact:** Minor — harbor is functional with the old jobservice pod. But stale pods accumulate and obscure cluster health.
+- **Recommendation:** Not critical. Note for when Layer 2 becomes the primary focus after keycloak unblocks.
+
+## Prompt Adjustments
+
+### counsel.md — Step 3: replace kubectl rollout restart directive with Helm-idiomatic approach
+
+**Evidence:** 3 cycles (26, 27, 28) where counsel needed to force harbor-core to reload updated config. Cycle 27 directive used `kubectl rollout restart` which violates surgeon.md's explicit prohibition. The prohibition was added in the Cycle 14 retro specifically because this pattern caused 5 cycles of SSA field conflicts (Cycles 10–14). Counsel.md Step 3 still contains the contradictory instruction at line 80: "Direct a `kubectl rollout restart` this cycle."
+
+**Change:** Replace the `kubectl rollout restart` instruction in Step 3 with guidance to force pod template change via Helm `--set` annotation. This keeps the fix Helm-idiomatic and avoids managedFields conflict.
+
+**Old text (line 80):**
+> - If last cycle directed a config change and the same pod is still Running with the same name, the fix didn't land. Direct a `kubectl rollout restart` this cycle.
+
+**New text:**
+> - If last cycle directed a config change and the same pod is still Running with the same name, the fix didn't land. Direct surgeon to add `--set "<component>.podAnnotations.forceRestart=$(date +%s)"` to the helm upgrade invocation for that component — this forces a pod template hash change and triggers a rolling restart without touching kubectl. Do NOT direct `kubectl rollout restart` on Helm-managed resources; it creates managedFields conflicts that break subsequent helm upgrades (see Cycles 10–14 incident).
+
+---
+
+No changes to operator.md or surgeon.md. Surgeon's rule is already correct; the violation came from counsel's conflicting instruction. This fix closes the contradiction.
+
+## Escalation
+NONE
+
+---
+
 # Retro — After Cycle 24
 
 ## Progress

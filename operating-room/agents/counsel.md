@@ -77,7 +77,7 @@ Before diagnosing a new root cause, check whether the targeted pod restarted.
 If the pod UID or name suffix matches across cycle reports, the config change was
 not applied at runtime — the pod is still running stale config.
 
-- If last cycle directed a config change and the same pod is still Running with the same name, the fix didn't land. Direct a `kubectl rollout restart` this cycle.
+- If last cycle directed a config change and the same pod is still Running with the same name, the fix didn't land. Direct surgeon to add `--set "<component>.podAnnotations.forceRestart=$(date +%s)"` to the helm upgrade invocation for that component — this forces a pod template hash change and triggers a rolling restart without touching kubectl. Do NOT direct `kubectl rollout restart` on Helm-managed resources; it creates managedFields conflicts that break subsequent helm upgrades (see Cycles 10–14 incident).
 - Only move on to diagnosing a new root cause once you've confirmed the previous fix's pod restarted.
 
 ### 4. Be pragmatic about infra-incompatible components
