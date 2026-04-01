@@ -183,7 +183,7 @@ harbor_api() {
     "${@:2}" 2>/dev/null
 }
 
-if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
+if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --context "$CONTEXT" --no-headers 2>/dev/null | grep -q Running; then
   HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
 
   # Start port-forward to Harbor (HTTP)
