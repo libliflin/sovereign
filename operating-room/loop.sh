@@ -319,8 +319,55 @@ cmd_stop() {
 # Monitor — live dashboard
 # ---------------------------------------------------------------------------
 
+STALL_THRESHOLD=900  # 15 minutes without cycle.json update = stalled
+CTO_COOLDOWN=300     # Don't re-trigger CTO within 5 minutes
+
+invoke_cto() {
+    log "CTO intervention triggered."
+    local cto_prompt
+    cto_prompt="$(cat "$AGENTS_DIR/cto.md")"
+    cto_prompt+=$'\n\n---\n## Current State\n\n'
+    for f in cycle.json report.md directive.md changelog.md; do
+        if [[ -f "$STATE_DIR/$f" ]]; then
+            cto_prompt+="### $f"$'\n```\n'
+            cto_prompt+="$(cat "$STATE_DIR/$f")"
+            cto_prompt+=$'\n```\n\n'
+        fi
+    done
+    echo "$cto_prompt" | claude --dangerously-skip-permissions --print 2>&1
+    log "CTO intervention complete."
+}
+
+loop_is_stalled() {
+    # Returns 0 (true) if loop PID is dead OR cycle.json hasn't been updated recently
+    if [[ -f "$PID_FILE" ]]; then
+        local pid
+        pid=$(cat "$PID_FILE")
+        if ! kill -0 "$pid" 2>/dev/null; then
+            return 0  # PID dead
+        fi
+    else
+        return 0  # No PID file
+    fi
+
+    # Check if cycle.json was updated recently
+    if [[ -f "$STATE_DIR/cycle.json" ]]; then
+        local last_update
+        last_update=$(stat -f '%m' "$STATE_DIR/cycle.json" 2>/dev/null || stat -c '%Y' "$STATE_DIR/cycle.json" 2>/dev/null || echo 0)
+        local now
+        now=$(date +%s)
+        local age=$(( now - last_update ))
+        if (( age > STALL_THRESHOLD )); then
+            return 0  # Stalled
+        fi
+    fi
+
+    return 1  # Running fine
+}
+
 cmd_monitor() {
     local interval="${1:-30}"
+    local last_cto=0
     trap 'printf "\n"; exit 0' INT
 
     while true; do
@@ -454,6 +501,21 @@ for name in agent_order:
             echo "  │ (no history yet)                                │"
         fi
         echo "  └─────────────────────────────────────────────────┘"
+
+        # CTO intervention check
+        local now
+        now=$(date +%s)
+        if loop_is_stalled && (( now - last_cto > CTO_COOLDOWN )); then
+            echo ""
+            printf "  \033[1;31m⚠  LOOP IS DOWN — invoking CTO...\033[0m\n"
+            echo ""
+            invoke_cto
+            last_cto=$(date +%s)
+            echo ""
+            printf "  \033[1;32m✓  CTO intervention complete. Resuming monitor.\033[0m\n"
+            sleep 5
+            continue
+        fi
 
         echo ""
         echo "  Refreshing in ${interval}s... (Ctrl-C to exit monitor)"
