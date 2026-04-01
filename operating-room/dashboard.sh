@@ -170,7 +170,7 @@ tmux split-window -h -t "$SESSION" -c "$REPO_ROOT" \
 
 # Pane 2 (bottom-left): Live log stream
 tmux split-window -v -t "${SESSION}.0" -c "$REPO_ROOT" \
-    "mkdir -p operating-room/state/logs; last_count=0; while true; do count=\$(ls operating-room/state/logs/*.log 2>/dev/null | wc -l | tr -d ' '); if [ \"\$count\" != \"\$last_count\" ] && [ \"\$count\" -gt 0 ]; then kill %1 2>/dev/null; wait %1 2>/dev/null; echo '=== Tailing \$count log files ==='; tail -f operating-room/state/logs/*.log & last_count=\$count; fi; sleep 2; done"
+    "./operating-room/log-stream.sh & sleep 1; tail -f operating-room/state/logs/stream.log"
 
 # Pane 3 (bottom-right): Monitor dashboard
 tmux split-window -v -t "${SESSION}.1" -c "$REPO_ROOT" \
