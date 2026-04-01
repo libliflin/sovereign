@@ -194,6 +194,9 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
   sleep 3
   trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
 
+  # Authenticate with Harbor before pushing
+  echo "${HARBOR_ADMIN_PASS}" | docker login "localhost:${HARBOR_LOCAL_PORT}" --username admin --password-stdin
+
   # Create bitnami project in Harbor (idempotent)
   harbor_api POST "projects" \
     -d '{"project_name":"bitnami","public":true}' 2>/dev/null || true
@@ -217,6 +220,7 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
     fi
   done
 
+  docker logout "localhost:${HARBOR_LOCAL_PORT}" 2>/dev/null || true
   kill "${HARBOR_PF_PID}" 2>/dev/null || true
   trap - EXIT
 fi
