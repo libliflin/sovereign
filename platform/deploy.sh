@@ -175,69 +175,78 @@ if [[ "$DRY_RUN" != "true" ]] && chart_healthy harbor harbor; then
   fi
 fi
 
-# ── Step 2b: Seed Harbor with upstream images (only during bootstrap) ─────
-# After Harbor is healthy, mirror images needed by later charts.
-# Uses kubectl port-forward (localhost:5000 → harbor:80) because the host
-# docker daemon cannot route to Harbor's ClusterIP or pod IP directly.
-# Harbor listens on HTTP/8080 (no TLS configured) — docker treats localhost
-# as an insecure registry automatically.
+# ── Step 2b: Seed bitnami images into the kind cluster ────────────────────
+# Bitnami images are sourced from docker.io/bitnamilegacy (the legacy namespace
+# where older pinned tags remain available after Bitnami's registry migration).
+# docker.io/bitnami/* no longer hosts these pinned version tags.
+#
+# For kind clusters: use 'kind load image-archive' to inject images directly
+# into each node's containerd cache.  This is the correct approach for kind
+# because the Docker Desktop daemon runs in a VM and cannot push to a
+# localhost:PORT port-forward (the host port is unreachable from the VM).
+#
+# Images are tagged harbor.${DOMAIN}/bitnami/... before loading so that
+# pod image references of that form resolve from the local cache without
+# needing Harbor to actually serve them.
 
-KEYCLOAK_TAG=$(helm show values "$(find platform/charts/keycloak/charts -name 'keycloak-*.tgz' | head -1)" \
-  2>/dev/null | awk '/^image:/{f=1} f && /tag:/{print $2; exit}' | tr -d '"')
-PG_TAG="16"
+KEYCLOAK_TAG="24.0.5-debian-12-r8"   # bitnamilegacy; r0 retired from docker.io/bitnami; r8 is latest available revision
+PG_TAG="16"                          # harbor tag for keycloak postgresql (short)
+PG_SRC_TAG="16.3.0-debian-12-r14"   # bitnamilegacy source tag
 REDIS_TAG="6.2.7-debian-11-r11"
+REDIS_EXPORTER_TAG="1.43.0-debian-11-r4"
 THANOS_TAG="0.36.0-debian-12-r1"
-SONARQUBE_PG_TAG="11.14.0-debian-10-r22"
-HARBOR_LOCAL_PORT="5000"
+KIND_CLUSTER="${CONTEXT#kind-}"      # cluster name for kind commands (strip 'kind-' prefix)
 
-harbor_api() {
-  # Run Harbor API call via port-forward on localhost
-  local method="$1"; shift
-  curl -sf -u "admin:${HARBOR_ADMIN_PASS}" \
-    -X "${method}" "http://localhost:${HARBOR_LOCAL_PORT}/api/v2.0/$1" \
-    -H "Content-Type: application/json" \
-    "${@:2}" 2>/dev/null
+# kind_load_image <bitnamilegacy-repo> <src-tag> <harbor-tag>
+# Pulls the arm64-specific digest of bitnamilegacy/<repo>:<src-tag>,
+# tags it as harbor.${DOMAIN}/bitnami/<repo>:<harbor-tag>, saves a
+# single-arch tar, and loads it via 'kind load image-archive'.
+kind_load_image() {
+  local repo="$1" src_tag="$2" harbor_tag="$3"
+  local harbor_ref="harbor.${DOMAIN}/bitnami/${repo}:${harbor_tag}"
+
+  # Idempotent — skip if any worker node already has the image
+  if docker exec "${KIND_CLUSTER}-worker" ctr --namespace=k8s.io images ls 2>/dev/null \
+      | grep -qF "${harbor_ref}"; then
+    log "kind already has ${harbor_ref} ✓"
+    return
+  fi
+
+  log "Loading ${harbor_ref} into kind nodes..."
+  # Prefer arm64-specific digest to avoid multi-platform manifest import errors
+  local arm64_digest
+  arm64_digest=$(docker manifest inspect "bitnamilegacy/${repo}:${src_tag}" 2>/dev/null \
+    | python3 -c "
+import sys, json
+m = json.load(sys.stdin)
+for p in m.get('manifests', []):
+    pl = p.get('platform', {})
+    if pl.get('os') == 'linux' and pl.get('architecture') == 'arm64':
+        print(p['digest']); break
+" 2>/dev/null | head -1)
+
+  if [[ -n "$arm64_digest" ]]; then
+    docker pull "bitnamilegacy/${repo}@${arm64_digest}" 2>/dev/null
+    docker tag "bitnamilegacy/${repo}@${arm64_digest}" "${harbor_ref}"
+  else
+    docker pull "bitnamilegacy/${repo}:${src_tag}" 2>/dev/null
+    docker tag "bitnamilegacy/${repo}:${src_tag}" "${harbor_ref}"
+  fi
+
+  local tmptar
+  tmptar=$(mktemp /tmp/kindimg.XXXXXX.tar)
+  docker save "${harbor_ref}" -o "${tmptar}"
+  kind load image-archive "${tmptar}" --name "${KIND_CLUSTER}" 2>/dev/null && \
+    log "Loaded ${harbor_ref} ✓" || log "WARN: kind load failed for ${harbor_ref}"
+  rm -f "${tmptar}"
 }
 
-if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --context "$CONTEXT" --no-headers 2>/dev/null | grep -q Running; then
-  HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
-
-  # Start port-forward to Harbor (HTTP) — used by harbor_api() health polling
-  kubectl port-forward svc/harbor -n harbor "${HARBOR_LOCAL_PORT}:80" \
-    --context "${CONTEXT}" &>/dev/null &
-  HARBOR_PF_PID=$!
-  # Wait for port-forward to be ready (poll until Harbor responds, max 30s)
-  for i in $(seq 1 15); do curl -s -o /dev/null "http://localhost:${HARBOR_LOCAL_PORT}/v2/" && break; sleep 2; done
-  trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
-
-  # Create bitnami project in Harbor (idempotent)
-  harbor_api POST "projects" \
-    -d '{"project_name":"bitnami","public":true}' 2>/dev/null || true
-
-  # Log in to local Harbor port-forward so docker push succeeds
-  echo "${HARBOR_ADMIN_PASS}" | docker login "localhost:${HARBOR_LOCAL_PORT}" -u admin --password-stdin &>/dev/null
-
-  # Seed each image — use host docker daemon (has docker.io auth + no rate-limit
-  # issues inside the kind node) and push via the established port-forward.
-  # Failures are non-fatal; the install step will surface the real error.
-  for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}" "redis:${REDIS_TAG}" "thanos:${THANOS_TAG}" "postgresql:${SONARQUBE_PG_TAG}"; do
-    # Check if already in Harbor via API
-    repo="${img_spec%:*}"
-    tag="${img_spec#*:}"
-    if harbor_api GET "projects/bitnami/repositories/${repo}/artifacts/${tag}" &>/dev/null; then
-      log "Harbor already has bitnami/${img_spec} ✓"
-    else
-      log "Seeding bitnami/${img_spec} into Harbor..."
-      docker pull "docker.io/bitnami/${img_spec}" && \
-        docker tag "docker.io/bitnami/${img_spec}" "localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}" && \
-        docker push "localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}" && \
-        log "Seeded bitnami/${img_spec} ✓" || \
-        log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
-    fi
-  done
-
-  kill "${HARBOR_PF_PID}" 2>/dev/null || true
-  trap - EXIT
+if [[ "$DRY_RUN" != "true" ]] && [[ "$CONTEXT" == kind-* ]]; then
+  kind_load_image "keycloak"        "${KEYCLOAK_TAG}"       "${KEYCLOAK_TAG}"
+  kind_load_image "postgresql"      "${PG_SRC_TAG}"         "${PG_TAG}"
+  kind_load_image "redis"           "${REDIS_TAG}"          "${REDIS_TAG}"
+  kind_load_image "redis-exporter"  "${REDIS_EXPORTER_TAG}" "${REDIS_EXPORTER_TAG}"
+  kind_load_image "thanos"          "${THANOS_TAG}"         "${THANOS_TAG}"
 fi
 
 # ── Step 3: Keycloak (identity / SSO) ────────────────────────────────────
@@ -275,6 +284,7 @@ fi
 
 install_chart keycloak keycloak \
   --set "global.imageRegistry=harbor.${DOMAIN}" \
+  --set "keycloak.image.tag=${KEYCLOAK_TAG}" \
   --set "keycloak.postgresql.image.tag=${PG_TAG}" \
   --set-string "keycloak.postgresql.primary.podAnnotations.forceRestart=$(date +%s)" \
   ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
@@ -282,7 +292,8 @@ install_chart keycloak keycloak \
 # ── Step 4: GitLab + ArgoCD ──────────────────────────────────────────────
 
 install_chart gitlab gitlab \
-  --set "gitlab.redis.image.registry=harbor.${DOMAIN}"
+  --set "gitlab.redis.image.registry=harbor.${DOMAIN}" \
+  --set "gitlab.redis.metrics.image.registry=harbor.${DOMAIN}"
 install_chart argocd argocd
 
 # ── Step 5: Observability ────────────────────────────────────────────────
@@ -331,7 +342,8 @@ install_chart trivy-operator trivy-system
 install_chart backstage backstage
 install_chart code-server code-server
 install_chart sonarqube sonarqube \
-  --set "sonarqube.postgresql.image.registry=harbor.${DOMAIN}"
+  --set "sonarqube.postgresql.image.registry=harbor.${DOMAIN}" \
+  --set "sonarqube.postgresql.image.tag=${PG_TAG}"
 # ReportPortal: pass existing rabbitmq password on upgrade (bitnami subchart requires this)
 RP_EXTRA=()
 if kubectl get secret reportportal-rabbitmq-secret -n reportportal --context "$CONTEXT" &>/dev/null; then
