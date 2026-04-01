@@ -182,7 +182,8 @@ fi
 # Harbor listens on HTTP/8080 (no TLS configured) — docker treats localhost
 # as an insecure registry automatically.
 
-KEYCLOAK_TAG="24.0.5-debian-12-r0"
+KEYCLOAK_TAG=$(helm show values "$(find platform/charts/keycloak/charts -name 'keycloak-*.tgz' | head -1)" \
+  2>/dev/null | awk '/^image:/{f=1} f && /tag:/{print $2; exit}' | tr -d '"')
 PG_TAG="16.3.0-debian-12-r14"
 REDIS_TAG="6.2.7-debian-11-r11"
 THANOS_TAG="0.36.0-debian-12-r1"
@@ -279,7 +280,6 @@ fi
 
 install_chart keycloak keycloak \
   --set "global.imageRegistry=harbor.${DOMAIN}" \
-  --set "keycloak.image.tag=${KEYCLOAK_TAG}" \
   --set "keycloak.postgresql.image.tag=${PG_TAG}" \
   ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
 
