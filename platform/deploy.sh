@@ -333,6 +333,10 @@ install_chart argocd argocd
 
 # ── Step 5: Observability ────────────────────────────────────────────────
 
+# Clear any stuck Helm pending state caused by API server restarts mid-deploy (Cycle 48 fix)
+helm rollback prometheus-stack -n monitoring --kube-context "${CONTEXT}" 2>/dev/null \
+  || helm uninstall prometheus-stack -n monitoring --kube-context "${CONTEXT}" 2>/dev/null \
+  || true
 install_chart prometheus-stack monitoring
 install_chart loki monitoring
 install_chart tempo monitoring
