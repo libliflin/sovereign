@@ -14,7 +14,7 @@ Rationale: if the CNI or secret store changes license, migrating is extremely pa
 
 ### Tier 2 — Application Layer
 
-GitLab, Keycloak, Harbor, Backstage, and similar services are Tier 2. These MUST have a permissive license (Apache 2.0, MIT, or BSD). Foundation governance is preferred but not required if the project has multiple maintainers and a track record of independence from any single company.
+GitLab, Harbor, Backstage, and similar services are Tier 2. These MUST have a permissive license (Apache 2.0, MIT, or BSD). Foundation governance is preferred but not required if the project has multiple maintainers and a track record of independence from any single company.
 
 Any Tier 2 component where a single vendor steers the roadmap MUST be explicitly documented in this audit table with a justification. "It's the best tool for the job" is not sufficient on its own — you must also document the exit path if the vendor changes its license or terms.
 
@@ -50,9 +50,9 @@ If a project fails any of these criteria, it cannot be Tier 1. Find the CNCF alt
 | Falco | 1 | CNCF | Apache 2.0 | Sovereign | Runtime security |
 | Trivy | 2 | Apache 2.0 | Apache 2.0 | Tier 2 exception | Aqua Security is primary maintainer; no CNCF home yet; acceptable at Tier 2, not Tier 1 |
 | OPA / Gatekeeper | 1 | CNCF | Apache 2.0 | Sovereign | Policy engine |
-| Keycloak | 2 | Apache 2.0 | Apache 2.0 | Tier 2 exception | Red Hat steers the project; documented exit: Zitadel (Apache 2.0, Go, ZITADEL GmbH) or Kanidm (Apache 2.0, Rust, community). Note: Dex (CNCF) is NOT a valid exit — it is a federation connector, not a full IdP; it has no user store, admin UI, or role management. |
-| GitLab | 2 | MIT (CE) | MIT | Acceptable | GitLab Inc. controls roadmap; exit path: Forgejo (GPL v3, Codeberg e.V.) or Gitea (MIT, Gitea Limited); CE edition only. Forgejo is preferred exit — community-governed non-profit, GPL v3 acceptable under the Deployment Platform Exception in license-policy.md. |
-| Forgejo | 2 | GPL v3 | GPL v3 | Acceptable under exception | Community-governed (Codeberg e.V., German non-profit); GPL v3 acceptable for service deployment — see license-policy.md Deployment Platform Exception. Preferred GitLab exit. Source vendored per right-to-repair model. |
+| Keycloak | 1 | CNCF Incubating (since April 2023) | Apache 2.0 | Sovereign | Donated to CNCF by Red Hat in 2023; on graduation track. Full IdP: OIDC, OAuth2, SAML, user management, admin UI. Future evaluation: Kanidm (Apache 2.0, Rust) — more resource-efficient; worth revisiting if it joins CNCF. |
+| GitLab | 2 | MIT (CE) | MIT | Acceptable | CE edition only. Exit path: Forgejo — community-governed non-profit (Codeberg e.V.), GPL v3 acceptable under the Deployment Platform Exception in license-policy.md. |
+| Forgejo | 2 | GPL v3 | GPL v3 | Acceptable under exception | Community-governed (Codeberg e.V., German non-profit); GPL v3 acceptable for service deployment — see license-policy.md Deployment Platform Exception. Source vendored per right-to-repair model. |
 | Harbor | 2 | CNCF Graduated | Apache 2.0 | Sovereign | Container registry |
 | Rook / Ceph | 1 | CNCF Graduated | Apache 2.0 | Sovereign | Distributed storage |
 | K3s | Bootstrap | Apache 2.0 | Apache 2.0 | Bootstrap convenience | SUSE/Rancher maintains; used in bootstrap scripts only — not a runtime platform dependency |
