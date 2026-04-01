@@ -34,14 +34,14 @@ The platform deploys in strict dependency order. **Fix the FIRST failing layer.*
 Never direct fixes to a higher layer while a lower layer is broken.
 
 ```
-Layer 0: Kind cluster + Cilium CNI          (network — everything depends on this)
-Layer 1: cert-manager + sealed-secrets      (PKI + secret management)
-Layer 2: Harbor                             (internal registry — autarky boundary)
-Layer 3: Keycloak                           (identity / SSO)
-Layer 4: GitLab + ArgoCD                    (SCM + GitOps orchestration)
-Layer 5: Prometheus, Loki, Tempo, Thanos    (observability stack)
-Layer 6: Istio, OPA-Gatekeeper, Falco, Trivy (security mesh)
-Layer 7: Backstage, code-server, SonarQube, ReportPortal (developer experience)
+Layer 0: Kind cluster + Cilium CNI                     (network — everything depends on this)
+Layer 1: cert-manager + sealed-secrets                 (PKI + secret management)
+Layer 2: Harbor                                        (internal registry — autarky boundary)
+Layer 3: Keycloak                                      (identity / SSO)
+Layer 4: Forgejo + ArgoCD                              (SCM + GitOps orchestration)
+Layer 5: Prometheus, VictoriaLogs, Jaeger, Thanos      (observability stack)
+Layer 6: Istio, OPA-Gatekeeper, Falco, Trivy           (security mesh)
+Layer 7: Backstage, mailpit                            (developer experience + testing tools)
 ```
 
 ## Root Cause Categories
@@ -99,9 +99,9 @@ note which INFRA_INCOMPATIBLE components will surface next so they can be queued
 
 Known kind incompatibilities (must be disabled or reconfigured):
 - `falco` falco-driver-loader: eBPF build requires kernel headers absent in linuxkit
-- `tempo` store backend: requires rook-ceph-rgw DNS that doesn't exist in kind → point at MinIO
 - `opa-gatekeeper`: constraint Custom Resources deploy before CRDs are ready → a two-pass deploy.sh approach (first-pass install → wait → second-pass) was tried in Cycles 34–35 and fails because the first pass errors client-side (manifest build) and installs nothing, so no CRDs are ever established. The correct fix requires either: (a) a values flag in the chart that disables all constraint resources so the first install deploys only the controller+CRDs, followed by a second `helm upgrade` with constraints enabled, OR (b) moving the constraint templates out of the chart entirely and into a separate release that deploy.sh runs only after the CRDs are confirmed `Established`. Do NOT add more wait time — the wait is irrelevant when pass 1 installs nothing.
-- `ceph-block` StorageClass: does not exist in kind — PVCs for grafana, gitlab-gitaly, sonarqube, code-server will never bind. Change PVC storageClassName to `standard` in the affected chart values.
+- `ceph-block` StorageClass: does not exist in kind — PVCs for any chart using ceph-block will never bind. Change PVC storageClassName to `standard` in the affected chart values.
+- `rook-ceph`: needs raw block devices; kind nodes don't have them. Disable for kind, use local-path or standard StorageClass instead.
 
 **Pre-emptive batching:** When the current first-failing-layer fix is confirmed in-flight (surgeon applied it last cycle and it is a timing or config fix, not a structural failure), you MAY include a second "Pre-emptive Fix" in the directive targeting the next known INFRA_INCOMPATIBLE or dead-image-tag blocker — but ONLY if: (a) the next failure has appeared 3+ consecutive cycles in the failing pod list, (b) the fix does not touch the same files as the primary directive, and (c) the fix is mechanical (disable in values.yaml, update a tag). Label it clearly as "Pre-emptive Fix" and list it after the primary directive. Surgeon applies both in the same cycle. Note: listing items in a "## Pre-emptive warnings" comment block does NOT queue them for fixing — surgeon acts on directive content only. Use the explicit "Pre-emptive Fix" section format described here.
 
@@ -145,6 +145,8 @@ Write `operating-room/state/directive.md` in this exact format:
 ```
 
 ## Rules
+
+- **HA is deferred.** This loop runs on kind with limited hardware. Do NOT issue directives about replicaCount, PodDisruptionBudgets, or podAntiAffinity. If a component is failing, HA configuration is never the cause. The HA loop runs later on real multi-node hardware. Vendor HA compatibility is already documented in VENDORS.yaml.
 
 - **ONE directive per cycle.** Not two. Not a list. One fix.
 - **First failing layer wins.** Always. No exceptions.

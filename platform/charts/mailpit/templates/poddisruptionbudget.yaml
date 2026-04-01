@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "mailpit.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mailpit.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "mailpit.selectorLabels" . | nindent 6 }}

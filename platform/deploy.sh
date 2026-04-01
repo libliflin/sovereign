@@ -111,6 +111,15 @@ ensure_namespace() {
     | kubectl apply -f - --context "$CONTEXT" &>/dev/null
 }
 
+# Mark a namespace as a chaos-mesh target.
+# Only production namespaces get this label — testing/tooling namespaces are
+# structurally excluded from chaos experiments (not per-experiment opt-out).
+# chaos-mesh controllerManager.enableFilterNamespace enforces this at the controller.
+label_namespace_production() {
+  kubectl label namespace "$1" chaos-mesh.org/inject=enabled --overwrite \
+    --context "$CONTEXT" &>/dev/null || true
+}
+
 ensure_secret() {
   local name="$1" namespace="$2"
   shift 2
@@ -387,7 +396,16 @@ install_chart trivy-operator trivy-system
 # ── Step 7: Developer experience ─────────────────────────────────────────
 
 install_chart backstage backstage
-install_chart code-server code-server
+install_chart mailpit testing
+
+# ── Label production namespaces for chaos-mesh targeting ──────────────────
+# testing namespace is intentionally absent — mailpit, selenium, k6, wiremock
+# are not chaos targets. chaos-mesh controller enforces this via enableFilterNamespace.
+
+for ns in openbao harbor keycloak forgejo argocd monitoring \
+           istio-system gatekeeper-system falco trivy-system backstage; do
+  label_namespace_production "$ns"
+done
 
 log ""
 log "Deploy pass complete."

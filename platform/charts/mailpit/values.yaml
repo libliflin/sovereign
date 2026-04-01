@@ -1,0 +1,30 @@
+replicaCount: 1  # ha_exception: single-instance SMTP capture tool, HA not applicable
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "standard"
+  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+
+image:
+  repository: "axllent/mailpit"
+  name: "axllent/mailpit"
+  tag: "v1.21.6"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+
+podDisruptionBudget:
+  minAvailable: 1
+
+service:
+  smtpPort: 1025
+  httpPort: 8025

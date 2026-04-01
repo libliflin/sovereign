@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mailpit.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mailpit.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mailpit.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        {{- include "mailpit.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mailpit
+          image: {{ include "mailpit.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: smtp
+              containerPort: 1025
+              protocol: TCP
+            - name: http
+              containerPort: 8025
+              protocol: TCP
+          env:
+            - name: MP_SMTP_BIND_ADDR
+              value: "0.0.0.0:1025"
+            - name: MP_UI_BIND_ADDR
+              value: "0.0.0.0:8025"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8025
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8025
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "mailpit.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "mailpit.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ include "mailpit.host" . | quote }}
+      secretName: mailpit-tls
+  rules:
+    - host: {{ include "mailpit.host" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "mailpit.fullname" . }}
+                port:
+                  number: {{ .Values.service.httpPort }}

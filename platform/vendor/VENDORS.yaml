@@ -8,6 +8,8 @@
 #   fetch_method:          enum    — git_tag | tarball | git_commit
 #   distroless_compatible: enum    — yes | partial | no
 #   distroless_base:       string  — gcr.io/distroless/static | java21 | nodejs | none
+#   ha_compatible:         enum    — yes | partial | no
+#   ha_notes:              string  — what HA requires; "deferred" means known compatible, work not done yet
 #   deprecated:            bool    — true if this entry should not be used as-is
 #   deprecated_reason:     string  — why it is deprecated (BSL violation, runtime concerns)
 #   alternative:           string  — replacement package name when deprecated: true
@@ -23,6 +25,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless control plane pods; scale replicas, add PDB — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -36,6 +40,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless controller with leader election; just bump replicas — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -49,6 +55,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless controller with leader election; scale replicas — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -62,6 +70,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "single controller holds private key; HA requires shared key config (--key-prefix flag + shared Secret) — non-trivial, deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -75,6 +85,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "Raft HA built in — moot, BSL-blocked"
     deprecated: true
     deprecated_reason: "HashiCorp changed license to BUSL-1.1 (Business Source License) in 2023. BSL is not approved for vendoring in the Sovereign Platform. Use OpenBao (Apache-2.0 fork) instead."
     alternative: openbao
@@ -87,6 +99,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "Raft HA built in (LF fork of Vault, same HA model) — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -100,6 +114,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: partial
     distroless_base: gcr.io/distroless/java21
+    ha_compatible: partial
+    ha_notes: "needs external DB + Infinispan/Redis for session clustering; Bitnami chart supports it but JVM heap sizing and cluster discovery need tuning — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -113,6 +129,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "HA is its entire purpose; Mon quorum + OSD replication — needs 3 nodes with raw block devices, kind-incompatible"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -126,6 +144,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "all components stateless; HA chart values exist upstream — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -138,6 +158,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "needs external PostgreSQL (SQLite is single-instance); Go binary is stateless once DB is external — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -150,6 +172,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "core/registry/jobservice are stateless; needs external DB + Redis for full HA — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -163,6 +187,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless data plane; istiod supports multiple replicas with leader election — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -175,6 +201,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless admission webhook; bump replicas and add PDB — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -187,6 +215,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless controller; bump replicas — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -199,6 +229,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: no
     distroless_base: none
+    ha_compatible: yes
+    ha_notes: "DaemonSet — inherently one-per-node; survives node failure by design; no replica count work needed"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -212,6 +244,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "Prometheus HA needs Thanos sidecar for dedup across replicas; AlertManager has native cluster mode — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -224,6 +258,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "single-node chart deployed; cluster chart available but different architecture and more components — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -236,6 +272,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "all components stateless and horizontally scalable by design — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -248,6 +286,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "Badger embedded storage is single-node; HA needs external storage (OpenSearch/Cassandra) — non-trivial storage swap, deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -260,6 +300,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless Go binary; bump replicas and add PDB — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -273,6 +315,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: partial
     distroless_base: gcr.io/distroless/nodejs
+    ha_compatible: partial
+    ha_notes: "stateless app but in-memory catalog cache is per-instance; needs external PostgreSQL + cache warm-up strategy — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -285,8 +329,10 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: partial
     distroless_base: gcr.io/distroless/nodejs
-    deprecated: false
-    deprecated_reason: ""
+    ha_compatible: no
+    ha_notes: "single-user IDE; HA not applicable — one instance per developer by design"
+    deprecated: true
+    deprecated_reason: "Browser IDE pattern predates AI coding assistants. Claude Code and similar tools give developers more power with no cluster infrastructure required. Removed from platform."
     alternative: ""
 
 
@@ -299,6 +345,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: no
     distroless_base: none
+    ha_compatible: yes
+    ha_notes: "designed for horizontal scale-out; hub + node model supports multiple replicas natively — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -311,6 +359,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "ephemeral Job pattern; stateless by nature — no HA work needed"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -323,23 +373,27 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: partial
     distroless_base: gcr.io/distroless/java21
+    ha_compatible: yes
+    ha_notes: "stateless mock server; bump replicas — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
 
-  - name: mailhog
-    upstream_url: https://github.com/mailhog/MailHog
+  - name: mailpit
+    upstream_url: https://github.com/axllent/mailpit
     license_spdx: MIT
     license_allows_vendor: true
-    version_pinned: "v1.0.1"
+    version_pinned: "v1.21.6"
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: no
+    ha_notes: "single-instance SMTP capture tool; HA not applicable — inbox is ephemeral by design"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
     ha_exception: true
-    ha_exception_reason: "MailHog is a single-instance SMTP testing tool with no horizontal scaling support. PDB is present to prevent accidental eviction; replicaCount is set to 1 per the ha_exception pattern."
+    ha_exception_reason: "Mailpit is a single-instance SMTP testing tool with no horizontal scaling support. PDB is present to prevent accidental eviction; replicaCount is set to 1 per the ha_exception pattern."
 
   - name: chaos-mesh
     upstream_url: https://github.com/chaos-mesh/chaos-mesh
@@ -349,6 +403,8 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
+    ha_compatible: yes
+    ha_notes: "stateless controller with leader election; bump replicas — deferred"
     deprecated: false
     deprecated_reason: ""
     alternative: ""

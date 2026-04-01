@@ -13,6 +13,10 @@ global:
 chaos-mesh:
   controllerManager:
     replicaCount: 2
+    # Only inject chaos into namespaces labeled chaos-mesh.org/inject=enabled.
+    # Production namespaces get this label in deploy.sh.
+    # testing/ namespace is unlabeled → structurally invisible to all experiments.
+    enableFilterNamespace: true
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
