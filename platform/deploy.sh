@@ -184,7 +184,7 @@ fi
 
 KEYCLOAK_TAG=$(helm show values "$(find platform/charts/keycloak/charts -name 'keycloak-*.tgz' | head -1)" \
   2>/dev/null | awk '/^image:/{f=1} f && /tag:/{print $2; exit}' | tr -d '"')
-PG_TAG="16.3.0-debian-12-r14"
+PG_TAG="16"
 REDIS_TAG="6.2.7-debian-11-r11"
 THANOS_TAG="0.36.0-debian-12-r1"
 SONARQUBE_PG_TAG="11.14.0-debian-10-r22"
@@ -234,7 +234,7 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
       docker exec "${KIND_NODE}" crane --username admin --password "${HARBOR_ADMIN_PASS}" copy --insecure \
-        "oci.registry.bitnami.com/bitnami/${img_spec}" \
+        "docker.io/bitnami/${img_spec}" \
         "harbor.sovereign.local/bitnami/${img_spec}" && \
         log "Seeded bitnami/${img_spec} ✓" || \
         log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
