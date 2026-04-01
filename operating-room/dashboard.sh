@@ -155,6 +155,7 @@ MONITOR_EOF
 )
 
 # Write the process monitor to a temp file
+rm -f /tmp/or-proc-*.sh
 PROC_SCRIPT=$(mktemp /tmp/or-proc-XXXXXX.sh)
 echo "$PROC_MONITOR" > "$PROC_SCRIPT"
 chmod +x "$PROC_SCRIPT"
