@@ -195,6 +195,7 @@ PG_SRC_TAG="16.3.0-debian-12-r14"   # bitnamilegacy source tag
 REDIS_TAG="6.2.7-debian-11-r11"
 REDIS_EXPORTER_TAG="1.43.0-debian-11-r4"
 THANOS_TAG="0.36.0-debian-12-r1"
+FALCOCTL_TAG="0.12.2"               # falcosecurity/falcoctl
 KIND_CLUSTER="${CONTEXT#kind-}"      # cluster name for kind commands (strip 'kind-' prefix)
 
 # kind_load_image <bitnamilegacy-repo> <src-tag> <harbor-tag>
@@ -247,6 +248,35 @@ if [[ "$DRY_RUN" != "true" ]] && [[ "$CONTEXT" == kind-* ]]; then
   kind_load_image "redis"           "${REDIS_TAG}"          "${REDIS_TAG}"
   kind_load_image "redis-exporter"  "${REDIS_EXPORTER_TAG}" "${REDIS_EXPORTER_TAG}"
   kind_load_image "thanos"          "${THANOS_TAG}"         "${THANOS_TAG}"
+
+  # falcoctl sidecar — from falcosecurity/ (not bitnamilegacy)
+  FALCOCTL_HARBOR="harbor.${DOMAIN}/falcosecurity/falcoctl:${FALCOCTL_TAG}"
+  if ! docker exec "${KIND_CLUSTER}-worker" ctr --namespace=k8s.io images ls 2>/dev/null | grep -qF "${FALCOCTL_HARBOR}"; then
+    log "Loading ${FALCOCTL_HARBOR} into kind nodes..."
+    FC_DIGEST=$(docker manifest inspect "falcosecurity/falcoctl:${FALCOCTL_TAG}" 2>/dev/null \
+      | python3 -c "
+import sys, json
+m = json.load(sys.stdin)
+for p in m.get('manifests', []):
+    pl = p.get('platform', {})
+    if pl.get('os') == 'linux' and pl.get('architecture') == 'arm64':
+        print(p['digest']); break
+" 2>/dev/null | head -1)
+    if [[ -n "$FC_DIGEST" ]]; then
+      docker pull "falcosecurity/falcoctl@${FC_DIGEST}" 2>/dev/null
+      docker tag "falcosecurity/falcoctl@${FC_DIGEST}" "${FALCOCTL_HARBOR}"
+    else
+      docker pull "falcosecurity/falcoctl:${FALCOCTL_TAG}" 2>/dev/null
+      docker tag "falcosecurity/falcoctl:${FALCOCTL_TAG}" "${FALCOCTL_HARBOR}"
+    fi
+    FCTMP=$(mktemp /tmp/kindimg.XXXXXX.tar)
+    docker save "${FALCOCTL_HARBOR}" -o "${FCTMP}"
+    kind load image-archive "${FCTMP}" --name "${KIND_CLUSTER}" 2>/dev/null && \
+      log "Loaded ${FALCOCTL_HARBOR} ✓" || log "WARN: kind load failed for ${FALCOCTL_HARBOR}"
+    rm -f "${FCTMP}"
+  else
+    log "kind already has ${FALCOCTL_HARBOR} ✓"
+  fi
 fi
 
 # ── Step 3: Keycloak (identity / SSO) ────────────────────────────────────
@@ -334,7 +364,8 @@ if ! helm status opa-gatekeeper -n gatekeeper-system --kube-context "$CONTEXT" &
   done
 fi
 install_chart opa-gatekeeper gatekeeper-system
-install_chart falco falco
+install_chart falco falco \
+  --set "falco.falcoctl.image.registry=harbor.${DOMAIN}"
 install_chart trivy-operator trivy-system
 
 # ── Step 7: Developer experience ─────────────────────────────────────────
