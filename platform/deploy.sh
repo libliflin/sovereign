@@ -234,7 +234,7 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
       docker exec "${KIND_NODE}" crane --username admin --password "${HARBOR_ADMIN_PASS}" copy --insecure \
-        "docker.io/bitnamilegacy/${img_spec}" \
+        "docker.io/bitnami/${img_spec}" \
         "harbor.sovereign.local/bitnami/${img_spec}" && \
         log "Seeded bitnami/${img_spec} ✓" || \
         log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
