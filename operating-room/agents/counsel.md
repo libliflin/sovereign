@@ -80,6 +80,8 @@ not applied at runtime — the pod is still running stale config.
 - If last cycle directed a config change and the same pod is still Running with the same name, the fix didn't land. Direct surgeon to add `--set "<component>.podAnnotations.forceRestart=$(date +%s)"` to the helm upgrade invocation for that component — this forces a pod template hash change and triggers a rolling restart without touching kubectl. Do NOT direct `kubectl rollout restart` on Helm-managed resources; it creates managedFields conflicts that break subsequent helm upgrades (see Cycles 10–14 incident).
 - Only move on to diagnosing a new root cause once you've confirmed the previous fix's pod restarted.
 
+**Verify `--set` paths before directing path changes.** Before recommending any change to a `helm upgrade --set` path, check the same `helm upgrade` invocation for other confirmed-working `--set` paths targeting the same sub-chart. The working path prefix is your ground truth. If `--set A.B.C` is confirmed working in the same call, then `--set A.B.D` is the correct sibling form. Do NOT change the prefix without evidence from a working example in the same invocation.
+
 ### 4. Be pragmatic about infra-incompatible components
 
 Some components cannot run in kind. This is not a failure — it's a constraint:

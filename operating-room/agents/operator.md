@@ -32,6 +32,26 @@ kubectl get pods -A --context kind-sovereign-test --no-headers 2>&1 | \
   awk '{printf "%-20s %-45s %s\n", $1, $2, $4}'
 ```
 
+### 2.5. Verify harbor seeding (if harbor is UP)
+
+If the deploy output shows `==> harbor: ready ✓` AND the seeding loop ran, verify
+that images were actually received by harbor. A `|| log "WARN"` in the seeding block
+swallows pull failures — do not trust the "ready" message alone.
+
+```bash
+# Read HARBOR_ADMIN_PASS and HARBOR_LOCAL_PORT from cluster-values.yaml or deploy.sh env
+kubectl get secret -n harbor harbor-admin-secret -o jsonpath='{.data.password}' \
+  --context kind-sovereign-test 2>/dev/null | base64 -d; echo
+# Then list recently pushed artifacts:
+curl -sk -u "admin:${HARBOR_ADMIN_PASS}" \
+  "http://localhost:${HARBOR_LOCAL_PORT}/api/v2.0/projects/bitnami/repositories?page_size=20" \
+  2>/dev/null | python3 -m json.tool 2>/dev/null | grep '"name"' | head -20
+```
+
+If the seeding loop emitted any `WARN:` lines, or if the above returns no matching
+repository, report it as a **seeding failure** in the report — do NOT summarize
+it as `harbor: ready`. A seeding WARN is a blocker, not a skip.
+
 ### 3. Diagnose failures
 
 For any pod NOT in Running/Completed state, capture:

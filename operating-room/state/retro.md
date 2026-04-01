@@ -1,55 +1,67 @@
-# Retro — After Cycle 39
+# Retro — After Cycle 44
 
 ## Progress
 
 | Cycle | First Failure | Directive Target | Surgeon Action | Result |
 |-------|---------------|------------------|----------------|--------|
-| 35 | Layer 3 — keycloak ImagePullBackOff (bitnami/postgresql:16.3.0-debian-12-r14) | Layer 3, keycloak, IMAGE_ISSUE | crane source: bitnamilegacy → docker.io/bitnami | No improvement — tag absent on docker.io/bitnami |
-| 36 | Layer 3 — keycloak ImagePullBackOff (same) | Layer 3, keycloak, IMAGE_ISSUE | crane source: docker.io/bitnami → ghcr.io/bitnami | No improvement — tag absent on ghcr.io |
-| 37 | Layer 3 — keycloak ImagePullBackOff (same) | Layer 3, keycloak, CONFIG_ERROR | crane source: ghcr.io/bitnami → oci.registry.bitnami.com/bitnami | No improvement — tag absent on oci.registry.bitnami.com |
-| 38 | Layer 3 — keycloak ImagePullBackOff (same) | Layer 3, keycloak, IMAGE_ISSUE | PG_TAG: 16.3.0-debian-12-r14 → 16; crane source → docker.io/bitnami | No pod restart — Helm state drift; StatefulSet never patched in Kubernetes |
-| 39 | Layer 3 — keycloak UPGRADE FAILED + ImagePullBackOff | Layer 3, keycloak, CHART_ERROR | Added --set forceRestart=$(date +%s) to keycloak install_chart | FAILED — Helm inferred int64 from bare integer; annotation requires string |
+| 40 | L3 — keycloak-postgresql ErrImagePull (`harbor.../bitnami/postgresql:16.3.0-debian-12-r14`, 19h) | L3 keycloak-postgresql, IMAGE_ISSUE | `PG_TAG="16"` → `"16.3.0-debian-12-r14"` to seed the full tag | No improvement — tag never seeded (crane silently failing); pod still pulls chart default |
+| 41 | L3 — keycloak-postgresql ImagePullBackOff (same tag, 19h) | L3 keycloak-postgresql, CONFIG_ERROR | Removed `keycloak.` prefix from `--set` path (line 283) | No improvement — wrong direction; `keycloak.` prefix is the sub-chart alias, not spurious |
+| 42 | L3 — keycloak-postgresql ImagePullBackOff (same tag, 19h) | L3 keycloak-postgresql, CONFIG_ERROR | Restored `keycloak.` prefix on line 283 | Timing lag; fix was correct but pod was never restarted by helm (StatefulSet) |
+| 43 | L3 — keycloak-0 ImagePullBackOff (`harbor.../bitnami/keycloak:24.0.5-debian-12-r0`, 19h) | L3 seeding mechanism, IMAGE_ISSUE | Replaced crane with host `docker pull`/`docker push` | Seeding mechanism now correct; tag `24.0.5-debian-12-r0` is retired — pull fails silently |
+| 44 | L3 — keycloak-0 ImagePullBackOff (`harbor.../bitnami/keycloak:24.0.5-debian-12-r0`, 20h) | L3 KEYCLOAK_TAG, IMAGE_ISSUE | Hardcoded `KEYCLOAK_TAG="24.0.5-debian-12-r8"`, added `--set keycloak.image.tag` | Pending — first cycle with this fix; Cycle 45 report confirms same state (fix just landed) |
 
 ## Layer Trajectory
 
 - Started at Layer 3, still at Layer 3 after 5 cycles
 - Net advancement: **0 (stagnant)**
-- Total pods Running (latest report, Cycle 39): ~78 Running, ~35 non-Running
-- Minor secondary movement: falco-f957h recovered to Running in Cycle 37 (oscillated back to Error/Running across cycles 38–39)
+- Total pods Running (Cycle 45 latest report): ~73 Running / ~113 total
+- No secondary layer movement — all DEGRADED layers (4–7) unchanged
 
 ## Patterns Detected
 
-### Registry cycling exhausted 3 cycles before tag was considered (Cycles 35–37)
-- **Evidence:** Three consecutive cycles tried distinct registry sources (docker.io/bitnami → ghcr.io/bitnami → oci.registry.bitnami.com) for the same tag `16.3.0-debian-12-r14`. All three failed. The tag-change fix (PG_TAG→16) did not arrive until Cycle 38.
-- **Impact:** 3 cycles lost. The rule "Never issue the same image-source directive twice" was technically satisfied (each source was distinct) while the spirit was violated — all three sources were being asked for the same retired tag.
-- **Recommendation:** Add a two-source cap to counsel.md Section 5: if two distinct sources fail for the same tag, stop changing the source and change the tag instead. (Prompt change applied — see below.)
+### Silent harbor seeding failures masked by "ready ✓" (Cycles 40–44)
+- **Evidence:** Every cycle, `==> harbor: ready ✓` appears in the deploy output regardless of whether images were actually seeded. The crane-based seeding used `|| log "WARN: ..."` which discarded the failure. The operator report format had no step to verify harbor image presence. The true root cause (images absent from harbor) was not identified until Cycle 43 — 4+ cycles after it began affecting pods.
+- **Impact:** 3 cycles (40–42) were spent on `--set` path manipulation for an override that was reaching a sub-chart that never had its image. All those fixes were correct mechanics applied to the wrong root cause.
+- **Recommendation:** Add a harbor verification step to operator.md — after the seeding loop, probe harbor for each expected image tag and surface failures explicitly. A silent WARN is not a skip; it is a blocker.
 
-### Helm `--set` typed integer rejected by Kubernetes annotation (Cycle 39)
-- **Evidence:** `failed to create typed patch object (keycloak/keycloak-postgresql; apps/v1, Kind=StatefulSet): .spec.template.metadata.annotations.forceRestart: expected string, got &value.valueUnstructured{Value:1775066426}` — `$(date +%s)` expanded to a bare integer; Helm's `--set` inferred int64; Kubernetes annotations require strings. The Cycle 40 directive correctly identifies `--set-string` as the fix.
-- **Impact:** 1 cycle lost. The mechanism (pod-annotation to force pod-template hash change) was correct; only the Helm flag was wrong.
-- **Recommendation:** Add to surgeon.md: when injecting timestamps or integers as annotation values via `helm upgrade`, use `--set-string`, not `--set`. (Prompt change applied — see below.)
+### --set path oscillation (Cycles 41–42)
+- **Evidence:** Cycle 41 removed `keycloak.` prefix from `postgresql.image.tag`; Cycle 42 restored it. Two cycles consumed. The evidence that `keycloak.` was correct (line 284's working `keycloak.postgresql.primary.podAnnotations.forceRestart`) was present in both cycles' reports.
+- **Impact:** 2 cycles lost. The correct fix (Cycle 42) was available in Cycle 41 had counsel cross-referenced the working path on line 284.
+- **Recommendation:** Add to counsel.md: before recommending a `--set` path change, verify it against at least one other working `--set` or values path in the same helm invocation for that component.
 
-### gitlab StatefulSet immutable field — queued but never addressed (Cycles 35–39)
-- **Evidence:** The error `StatefulSet.apps "gitlab-gitaly" is invalid: spec: Forbidden: updates to statefulset spec...` appears in the deploy output of every cycle in this window — 5 cycles straight, 7+ consecutive total. It is blocked by the Layer 3 rule (never fix Layer 4 while Layer 3 is down) and noted in every directive's anti-patterns.
-- **Impact:** None yet — correctly held. But once keycloak clears (Cycle 40 directive is the --set-string fix), this becomes the immediate Layer 4 primary. The fix is known: add `kubectl delete statefulset gitlab-gitaly -n gitlab --cascade=orphan` before the gitlab helm upgrade in deploy.sh.
-- **Recommendation:** No prompt change. Counsel should queue this as the Cycle 41 primary once Cycle 40's keycloak fix lands and Layer 3 is confirmed UP.
+### Queued structural failures growing (Cycles 40–44, all 5)
+- **Evidence:** gitlab StatefulSet immutable field, opa-gatekeeper CRD ordering, reportportal RabbitMQ password, tempo MinIO credential failure, thanos `docker.io` ImagePullBackOff — all appear in every cycle, never targeted (correctly, per layer rule).
+- **Impact:** None now — correctly suppressed. But once Layer 3 clears, ALL of these will surface simultaneously as the new first failures. The loop has no pre-queued fixes for them.
+- **Recommendation:** Cycle 45 counsel should include pre-emptive fixes per existing "Pre-emptive batching" rule: gitlab StatefulSet delete + reinstall, and thanos/sonarqube image routing through harbor. These have been visible 5+ cycles.
 
 ## Prompt Adjustments
 
-### counsel.md — two-source cap on registry cycling
-Added after "Never issue the same image-source directive twice" in Section 5:
+### operator.md — add harbor image verification step
+Added as Step 2.5 between "Quick layer status" and "Diagnose failures":
 
-> **Two-source rule:** If two distinct registry sources have been tried for the same image tag and both failed, STOP changing the source. The tag is retired or wrong. Reclassify as IMAGE_ISSUE and change the tag. Do not try a third source.
+```
+### 2.5. Verify harbor seeding (if harbor is UP)
 
-**Why:** Three cycles (35–37) were lost because each registry was technically "different" so the existing rule didn't fire. An explicit numeric cap closes the loophole.
+Check that the expected images were actually seeded. For any image the seeding loop
+attempted, verify presence by calling the harbor API via the port-forward:
 
-### surgeon.md — --set-string for annotation string values
-Added to Section 3 "Make the fix" under Shell scripts:
+    curl -sk -u admin:${HARBOR_ADMIN_PASS} \
+      "http://localhost:${HARBOR_LOCAL_PORT}/api/v2.0/repositories/bitnami/artifacts?page_size=5" \
+      | python3 -m json.tool 2>/dev/null | grep '"name"' | head -10
 
-> **Helm annotation strings:** When injecting a timestamp or numeric value as a Kubernetes annotation via `helm upgrade`, always use `--set-string` not `--set`. Helm's `--set` infers YAML scalar types: `$(date +%s)` becomes int64. Kubernetes annotation values must be strings. `--set-string` unconditionally coerces the value to string.
+If the seeding loop emitted any WARN lines or if the above returns no matching tag,
+report the seeding failure explicitly — do NOT summarize it as "harbor: ready".
+```
 
-**Why:** Cycle 39 lost a full cycle to this Helm gotcha. It is non-obvious, will recur in future forceRestart patterns, and the fix is one word.
+**Why:** Seeding failures were invisible for at least 4 cycles. The `|| log "WARN"` pattern in deploy.sh suppresses non-zero exits from `docker pull`. The operator must surface these as failures, not skip them.
+
+### counsel.md — verify --set paths against working examples
+Added to Section 3, before "Be pragmatic about infra-incompatible components":
+
+> **Verify `--set` paths before directing path changes.** Before recommending a change to a `helm upgrade --set` path, check the same invocation for other working `--set` paths targeting the same sub-chart. If `--set A.B.C` is confirmed working, then `--set A.B.D` is the correct form for a sibling value. Do not change the prefix without evidence from the working example.
+
+**Why:** Cycles 41–42 oscillated because counsel changed `keycloak.postgresql.image.tag` to `postgresql.image.tag` without noticing that `keycloak.postgresql.primary.podAnnotations.forceRestart` was working in the same invocation. The rule closes this gap.
 
 ## Escalation
 
-NONE. The loop is moving. The Cycle 40 fix (`--set` → `--set-string`) is correct and minimal. If keycloak-postgresql-0 does not restart after Cycle 40, the next diagnostic should verify that `keycloak.postgresql.primary.podAnnotations` is the correct values path in the Bitnami PostgreSQL subchart — if the path is wrong, the annotation lands in the wrong place and the pod template hash does not change.
+NONE. The Cycle 44 fix (hardcoded `KEYCLOAK_TAG="24.0.5-debian-12-r8"` with matching `--set keycloak.image.tag`) is the right direction. The seeding mechanism is now correct (host docker push, not crane). If Cycle 45's next report still shows keycloak ImagePullBackOff, counsel should verify the tag is reachable in harbor before trying another tag change — the operator verification step will surface this.
