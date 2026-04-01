@@ -137,6 +137,9 @@ helm upgrade --install harbor "${PLATFORM_DIR}/charts/harbor/" \
   --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
   --set "harbor.expose.tls.enabled=false" \
+  --set "harbor.database.internal.livenessProbe.timeoutSeconds=10" \
+  --set "harbor.database.internal.livenessProbe.failureThreshold=10" \
+  --set "harbor.database.internal.livenessProbe.initialDelaySeconds=60" \
   --force-conflicts \
   --timeout "${TIMEOUT}" \
   --kube-context "${CONTEXT}" \
