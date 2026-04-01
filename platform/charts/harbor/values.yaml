@@ -93,7 +93,7 @@ harbor:
   core:
     replicaCount: 2
     updateStrategy:
-      type: Recreate
+      type: RollingUpdate
     resources:
       requests:
         cpu: "100m"
@@ -141,7 +141,7 @@ harbor:
     resources:
       requests:
         cpu: "100m"
-        memory: "256Mi"
+        memory: "128Mi"
       limits:
         cpu: "500m"
         memory: "1Gi"
