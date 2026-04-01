@@ -1,0 +1,120 @@
+## Sovereign Platform — Forgejo wrapper chart values
+## All hostnames derived from global.domain — never hardcode.
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "standard"
+
+## ── Forgejo subchart values (alias: forgejo) ────────────────────────────────
+forgejo:
+
+  ## ── Admin credentials — from secret, never in values ──────────────────
+  admin:
+    existingSecret: forgejo-admin-secret
+
+  ## ── Core app.ini configuration ─────────────────────────────────────────
+  gitea:
+    config:
+      server:
+        DOMAIN: "forgejo.sovereign-autarky.dev"
+        ROOT_URL: "https://forgejo.sovereign-autarky.dev/"
+        SSH_DOMAIN: "forgejo.sovereign-autarky.dev"
+        SSH_PORT: 22
+        LFS_START_SERVER: true
+        LFS_CONTENT_PATH: /data/git/lfs
+
+      database:
+        DB_TYPE: postgres
+        HOST: "forgejo-postgresql.forgejo.svc.cluster.local:5432"
+        NAME: forgejo
+        USER: forgejo
+        SCHEMA: public
+        SSL_MODE: disable
+
+      session:
+        PROVIDER: db
+
+      cache:
+        ADAPTER: memory
+
+      queue:
+        TYPE: level
+
+      indexer:
+        ISSUE_INDEXER_TYPE: bleve
+        REPO_INDEXER_ENABLED: true
+
+      security:
+        INSTALL_LOCK: true
+
+    ## ── Keycloak OIDC via OAuth2 ─────────────────────────────────────────
+    ## Secret forgejo-keycloak-oidc-secret must contain:
+    ##   key:    the OAuth2 client ID
+    ##   secret: the OAuth2 client secret
+    oauth:
+      - name: Keycloak
+        provider: openidConnect
+        existingSecret: forgejo-keycloak-oidc-secret
+        autoDiscoverUrl: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
+        iconUrl: "https://auth.sovereign-autarky.dev/favicon.ico"
+        scopes: openid email profile groups
+
+  ## ── PostgreSQL — external, pre-provisioned ─────────────────────────────
+  ## DB secret: forgejo-postgresql-secret (key: password)
+  postgresql:
+    enabled: false
+
+  postgresql-ha:
+    enabled: false
+
+  ## ── Redis — disabled; using DB session/cache for simplicity ───────────
+  redis-cluster:
+    enabled: false
+
+  redis:
+    enabled: false
+
+  ## ── Persistence ─────────────────────────────────────────────────────────
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    size: "20Gi"
+    accessModes:
+      - ReadWriteOnce
+
+  ## ── HA — replicaCount 2, PDB, anti-affinity ─────────────────────────────
+  replicaCount: 2
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - forgejo
+            topologyKey: kubernetes.io/hostname
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+  ## ── Ingress — managed by our own template (see templates/ingress.yaml) ──
+  ingress:
+    enabled: false
+
+## ── Sovereign wrapper config ─────────────────────────────────────────────────
+## Values used only by our own templates (not the forgejo subchart)
+sovereign:
+  createPlaceholderSecrets: true

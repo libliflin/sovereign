@@ -1,0 +1,11 @@
+apiVersion: v2
+name: forgejo
+description: Forgejo self-hosted Git forge wrapper chart for the Sovereign Platform. Wraps the official Forgejo chart with Keycloak OIDC and sovereign-ca-issuer TLS pre-configured.
+type: application
+version: 0.1.0
+appVersion: "9.0.0"
+dependencies:
+  - name: forgejo
+    version: "11.0.1"
+    repository: "oci://codeberg.org/forgejo-contrib"
+    alias: forgejo

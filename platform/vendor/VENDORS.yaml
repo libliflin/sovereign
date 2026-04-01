@@ -130,14 +130,14 @@ vendors:
     deprecated_reason: ""
     alternative: ""
 
-  - name: gitlab
-    upstream_url: https://gitlab.com/gitlab-org/gitlab
-    license_spdx: MIT
+  - name: forgejo
+    upstream_url: https://code.forgejo.org/forgejo/forgejo
+    license_spdx: GPL-3.0-or-later
     license_allows_vendor: true
-    version_pinned: "17.1.0"
+    version_pinned: "9.0.0"
     fetch_method: git_tag
-    distroless_compatible: partial
-    distroless_base: none
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
     deprecated: false
     deprecated_reason: ""
     alternative: ""
@@ -289,31 +289,6 @@ vendors:
     deprecated_reason: ""
     alternative: ""
 
-  - name: sonarqube
-    upstream_url: https://github.com/SonarSource/sonarqube
-    license_spdx: LGPL-3.0-only
-    license_allows_vendor: true
-    version_pinned: "10.5.1"
-    fetch_method: git_tag
-    distroless_compatible: partial
-    distroless_base: gcr.io/distroless/java21
-    deprecated: false
-    deprecated_reason: ""
-    alternative: ""
-    ha_exception: true
-    ha_exception_reason: "SonarQube Community Edition is architecturally single-instance. HA clustering requires the Data Center Edition (commercial). replicaCount is set to 1 in charts/sonarqube/values.yaml per the ha_exception pattern."
-
-  - name: reportportal
-    upstream_url: https://github.com/reportportal/reportportal
-    license_spdx: Apache-2.0
-    license_allows_vendor: true
-    version_pinned: "23.2"
-    fetch_method: git_tag
-    distroless_compatible: partial
-    distroless_base: gcr.io/distroless/java21
-    deprecated: false
-    deprecated_reason: ""
-    alternative: ""
 
   # ── Testing Infrastructure ───────────────────────────────────────────────
   - name: selenium-grid

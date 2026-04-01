@@ -324,11 +324,9 @@ install_chart keycloak keycloak \
   --set "keycloak.postgresql.primary.resources.limits.memory=256Mi" \
   ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
 
-# ── Step 4: GitLab + ArgoCD ──────────────────────────────────────────────
+# ── Step 4: Forgejo + ArgoCD ─────────────────────────────────────────────
 
-install_chart gitlab gitlab \
-  --set "gitlab.redis.image.registry=harbor.${DOMAIN}" \
-  --set "gitlab.redis.metrics.image.registry=harbor.${DOMAIN}"
+install_chart forgejo forgejo
 install_chart argocd argocd
 
 # ── Step 5: Observability ────────────────────────────────────────────────
@@ -381,19 +379,6 @@ install_chart trivy-operator trivy-system
 
 install_chart backstage backstage
 install_chart code-server code-server
-install_chart sonarqube sonarqube \
-  --set "sonarqube.postgresql.image.registry=harbor.${DOMAIN}" \
-  --set "sonarqube.postgresql.image.tag=${PG_TAG}"
-# ReportPortal: pass existing rabbitmq password on upgrade (bitnami subchart requires this)
-RP_EXTRA=()
-if kubectl get secret reportportal-rabbitmq-secret -n reportportal --context "$CONTEXT" &>/dev/null; then
-  RP_RABBITMQ_PASS=$(kubectl get secret reportportal-rabbitmq-secret -n reportportal \
-    --context "$CONTEXT" -o jsonpath="{.data.rabbitmq-password}" | base64 -d 2>/dev/null || echo "")
-  if [[ -n "$RP_RABBITMQ_PASS" ]]; then
-    RP_EXTRA=(--set "reportportal.rabbitmq.auth.password=${RP_RABBITMQ_PASS}")
-  fi
-fi
-install_chart reportportal reportportal ${RP_EXTRA[@]+"${RP_EXTRA[@]}"}
 
 log ""
 log "Deploy pass complete."

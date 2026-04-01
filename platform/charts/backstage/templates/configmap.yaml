@@ -10,14 +10,12 @@ data:
     {{- with .Values.backstage.appConfig }}
     catalog:
       providers:
-        gitlab:
-          host: {{ .catalog.providers.gitlab.host | quote }}
-          apiBaseUrl: {{ .catalog.providers.gitlab.apiBaseUrl | quote }}
-          branch: {{ .catalog.providers.gitlab.branch | quote }}
-          fallbackBranch: {{ .catalog.providers.gitlab.fallbackBranch | quote }}
-          skipForkedRepos: {{ .catalog.providers.gitlab.skipForkedRepos }}
-          entityFilename: {{ .catalog.providers.gitlab.entityFilename | quote }}
-          projectPattern: {{ .catalog.providers.gitlab.projectPattern | quote }}
+        gitea:
+          forgejo:
+            host: {{ .catalog.providers.forgejo.host | quote }}
+            catalogPath: {{ .catalog.providers.forgejo.catalogPath | quote }}
+            branch: {{ .catalog.providers.forgejo.branch | quote }}
+            entityFilename: {{ .catalog.providers.forgejo.entityFilename | quote }}
     kubernetes:
       serviceLocatorMethod:
         type: {{ .kubernetes.serviceLocatorMethod.type | quote }}

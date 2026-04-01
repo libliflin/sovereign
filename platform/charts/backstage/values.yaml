@@ -60,14 +60,11 @@ backstage:
   appConfig:
     catalog:
       providers:
-        gitlab:
-          host: "gitlab.sovereign-autarky.dev"
-          apiBaseUrl: "https://gitlab.sovereign-autarky.dev/api/v4"
+        forgejo:
+          host: "forgejo.sovereign-autarky.dev"
+          catalogPath: "/catalog-info.yaml"
           branch: "main"
-          fallbackBranch: "master"
-          skipForkedRepos: false
           entityFilename: "catalog-info.yaml"
-          projectPattern: '[\s\S]*'
     kubernetes:
       serviceLocatorMethod:
         type: "multiTenant"

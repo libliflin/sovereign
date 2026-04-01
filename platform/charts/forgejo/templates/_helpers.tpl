@@ -1,14 +1,14 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "gitlab-sovereign.name" -}}
+{{- define "forgejo-sovereign.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "gitlab-sovereign.fullname" -}}
+{{- define "forgejo-sovereign.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -24,23 +24,16 @@ Create a default fully qualified app name.
 {{/*
 Common labels
 */}}
-{{- define "gitlab-sovereign.labels" -}}
-helm.sh/chart: {{ include "gitlab-sovereign.name" . }}-{{ .Chart.Version }}
-app.kubernetes.io/name: {{ include "gitlab-sovereign.name" . }}
+{{- define "forgejo-sovereign.labels" -}}
+helm.sh/chart: {{ include "forgejo-sovereign.name" . }}-{{ .Chart.Version }}
+app.kubernetes.io/name: {{ include "forgejo-sovereign.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
-GitLab hostname
+Forgejo hostname
 */}}
-{{- define "gitlab-sovereign.gitlabHost" -}}
-{{- printf "gitlab.%s" .Values.global.domain }}
-{{- end }}
-
-{{/*
-Registry hostname
-*/}}
-{{- define "gitlab-sovereign.registryHost" -}}
-{{- printf "registry.%s" .Values.global.domain }}
+{{- define "forgejo-sovereign.host" -}}
+{{- printf "forgejo.%s" .Values.global.domain }}
 {{- end }}
