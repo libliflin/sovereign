@@ -141,8 +141,6 @@ if [[ "$DRY_RUN" != "true" ]]; then
     --kube-context "${CONTEXT}" \
     --timeout "${TIMEOUT}" \
     2>&1 || log "WARN: harbor forced-upgrade failed (continuing)"
-  kubectl rollout restart deployment/harbor-core -n harbor --context "${CONTEXT}"
-  kubectl rollout status deployment/harbor-core -n harbor --context "${CONTEXT}" --timeout=300s || true
 fi
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
