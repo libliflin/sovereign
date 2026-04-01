@@ -159,9 +159,11 @@ harbor:
               topologyKey: kubernetes.io/hostname
 
   ## ── Trivy scanner ─────────────────────────────────────────────────────
-  ## Enabled and uses internal Ceph storage for vulnerability DB cache
+  ## Disabled: trivy-operator in trivy-system covers vulnerability scanning.
+  ## Enabling this held 512Mi of memory request on each worker node, causing
+  ## harbor-core to remain Pending due to insufficient memory on kind nodes.
   trivy:
-    enabled: true
+    enabled: false
     replicaCount: 1
     resources:
       requests:
