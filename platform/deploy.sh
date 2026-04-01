@@ -210,21 +210,16 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
   for i in $(seq 1 15); do curl -s -o /dev/null "http://localhost:${HARBOR_LOCAL_PORT}/v2/" && break; sleep 2; done
   trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
 
-  # Install crane inside the kind control-plane node — the node already has
-  # harbor.sovereign.local in its /etc/hosts and can reach Harbor directly on
-  # the cluster network, so no host-side DNS or sudo is required.
-  KIND_NODE="sovereign-test-control-plane"
-  docker exec "${KIND_NODE}" sh -c \
-    "test -x /usr/local/bin/crane || \
-     (curl -fsSL https://github.com/google/go-containerregistry/releases/download/v0.20.2/go-containerregistry_Linux_x86_64.tar.gz \
-       | tar xz -C /tmp crane && mv /tmp/crane /usr/local/bin/crane)"
-
   # Create bitnami project in Harbor (idempotent)
   harbor_api POST "projects" \
     -d '{"project_name":"bitnami","public":true}' 2>/dev/null || true
 
-  # Seed each image — failures are non-fatal (image may already be in Harbor,
-  # or upstream may be unreachable; the install step will surface the real error)
+  # Log in to local Harbor port-forward so docker push succeeds
+  echo "${HARBOR_ADMIN_PASS}" | docker login "localhost:${HARBOR_LOCAL_PORT}" -u admin --password-stdin &>/dev/null
+
+  # Seed each image — use host docker daemon (has docker.io auth + no rate-limit
+  # issues inside the kind node) and push via the established port-forward.
+  # Failures are non-fatal; the install step will surface the real error.
   for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}" "redis:${REDIS_TAG}" "thanos:${THANOS_TAG}" "postgresql:${SONARQUBE_PG_TAG}"; do
     # Check if already in Harbor via API
     repo="${img_spec%:*}"
@@ -233,9 +228,9 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
       log "Harbor already has bitnami/${img_spec} ✓"
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
-      docker exec "${KIND_NODE}" crane --username admin --password "${HARBOR_ADMIN_PASS}" copy --insecure \
-        "docker.io/bitnami/${img_spec}" \
-        "harbor.sovereign.local/bitnami/${img_spec}" && \
+      docker pull "docker.io/bitnami/${img_spec}" && \
+        docker tag "docker.io/bitnami/${img_spec}" "localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}" && \
+        docker push "localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}" && \
         log "Seeded bitnami/${img_spec} ✓" || \
         log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
     fi
