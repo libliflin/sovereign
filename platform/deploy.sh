@@ -186,34 +186,22 @@ harbor_api() {
 if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --context "$CONTEXT" --no-headers 2>/dev/null | grep -q Running; then
   HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
 
-  # Start port-forward to Harbor (HTTP) — used by harbor_api() and crane push
+  # Start port-forward to Harbor (HTTP) — used by harbor_api() health polling
   kubectl port-forward svc/harbor -n harbor "${HARBOR_LOCAL_PORT}:80" \
     --context "${CONTEXT}" &>/dev/null &
   HARBOR_PF_PID=$!
-  # Second port-forward on 8080 — Harbor token service redirects to
-  # harbor.sovereign.local:8080; crane follows that redirect on the host,
-  # so we must bind 8080 on localhost to resolve the bearer-auth challenge.
-  kubectl port-forward svc/harbor -n harbor "8080:80" \
-    --context "${CONTEXT}" &>/dev/null &
-  HARBOR_AUTH_PF_PID=$!
   # Wait for port-forward to be ready (poll until Harbor responds, max 30s)
   for i in $(seq 1 15); do curl -s -o /dev/null "http://localhost:${HARBOR_LOCAL_PORT}/v2/" && break; sleep 2; done
-  trap 'kill ${HARBOR_PF_PID} ${HARBOR_AUTH_PF_PID} 2>/dev/null || true' EXIT
+  trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
 
-  # Verify crane is available — crane runs in the host shell and shares the host
-  # network stack, so it can reach localhost:5000 (kubectl port-forward) unlike
-  # the Docker daemon which runs in the LinuxKit VM on macOS.
-  if ! command -v crane &>/dev/null; then
-    log "ERROR: crane not found — install with: brew install crane"
-    kill "${HARBOR_PF_PID}" 2>/dev/null || true
-    trap - EXIT
-    exit 1
-  fi
-
-  # Inject harbor.sovereign.local into the HOST /etc/hosts so crane can resolve
-  # the bearer-auth token URL (Harbor redirects to harbor.sovereign.local:8080).
-  grep -qF 'harbor.sovereign.local' /etc/hosts || \
-    sudo tee -a /etc/hosts <<< "127.0.0.1 harbor.sovereign.local"
+  # Install crane inside the kind control-plane node — the node already has
+  # harbor.sovereign.local in its /etc/hosts and can reach Harbor directly on
+  # the cluster network, so no host-side DNS or sudo is required.
+  KIND_NODE="sovereign-test-control-plane"
+  docker exec "${KIND_NODE}" sh -c \
+    "test -x /usr/local/bin/crane || \
+     (curl -fsSL https://github.com/google/go-containerregistry/releases/download/v0.20.2/go-containerregistry_Linux_x86_64.tar.gz \
+       | tar xz -C /tmp crane && mv /tmp/crane /usr/local/bin/crane)"
 
   # Create bitnami project in Harbor (idempotent)
   harbor_api POST "projects" \
@@ -229,15 +217,15 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
       log "Harbor already has bitnami/${img_spec} ✓"
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
-      crane copy --insecure \
+      docker exec "${KIND_NODE}" crane copy --insecure \
         "docker.io/bitnamilegacy/${img_spec}" \
-        "harbor.sovereign.local:8080/bitnami/${img_spec}" && \
+        "harbor.sovereign.local/bitnami/${img_spec}" && \
         log "Seeded bitnami/${img_spec} ✓" || \
         log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
     fi
   done
 
-  kill "${HARBOR_PF_PID}" "${HARBOR_AUTH_PF_PID}" 2>/dev/null || true
+  kill "${HARBOR_PF_PID}" 2>/dev/null || true
   trap - EXIT
 fi
 
