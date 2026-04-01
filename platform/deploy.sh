@@ -186,13 +186,19 @@ harbor_api() {
 if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --context "$CONTEXT" --no-headers 2>/dev/null | grep -q Running; then
   HARBOR_ADMIN_PASS=$(python3 -c "import yaml; d=yaml.safe_load(open('${PLATFORM_DIR}/charts/harbor/values.yaml')); print(d['harbor']['harborAdminPassword'])")
 
-  # Start port-forward to Harbor (HTTP)
+  # Start port-forward to Harbor (HTTP) — used by harbor_api() and crane push
   kubectl port-forward svc/harbor -n harbor "${HARBOR_LOCAL_PORT}:80" \
     --context "${CONTEXT}" &>/dev/null &
   HARBOR_PF_PID=$!
+  # Second port-forward on 8080 — Harbor token service redirects to
+  # harbor.sovereign.local:8080; crane follows that redirect on the host,
+  # so we must bind 8080 on localhost to resolve the bearer-auth challenge.
+  kubectl port-forward svc/harbor -n harbor "8080:80" \
+    --context "${CONTEXT}" &>/dev/null &
+  HARBOR_AUTH_PF_PID=$!
   # Wait for port-forward to be ready (poll until Harbor responds, max 30s)
   for i in $(seq 1 15); do curl -s -o /dev/null "http://localhost:${HARBOR_LOCAL_PORT}/v2/" && break; sleep 2; done
-  trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
+  trap 'kill ${HARBOR_PF_PID} ${HARBOR_AUTH_PF_PID} 2>/dev/null || true' EXIT
 
   # Verify crane is available — crane runs in the host shell and shares the host
   # network stack, so it can reach localhost:5000 (kubectl port-forward) unlike
@@ -203,6 +209,11 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
     trap - EXIT
     exit 1
   fi
+
+  # Inject harbor.sovereign.local into the HOST /etc/hosts so crane can resolve
+  # the bearer-auth token URL (Harbor redirects to harbor.sovereign.local:8080).
+  grep -qF 'harbor.sovereign.local' /etc/hosts || \
+    sudo tee -a /etc/hosts <<< "127.0.0.1 harbor.sovereign.local"
 
   # Create bitnami project in Harbor (idempotent)
   harbor_api POST "projects" \
@@ -220,13 +231,13 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
       log "Seeding bitnami/${img_spec} into Harbor..."
       crane copy --insecure \
         "docker.io/bitnamilegacy/${img_spec}" \
-        "localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}" && \
+        "harbor.sovereign.local:8080/bitnami/${img_spec}" && \
         log "Seeded bitnami/${img_spec} ✓" || \
         log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
     fi
   done
 
-  kill "${HARBOR_PF_PID}" 2>/dev/null || true
+  kill "${HARBOR_PF_PID}" "${HARBOR_AUTH_PF_PID}" 2>/dev/null || true
   trap - EXIT
 fi
 
