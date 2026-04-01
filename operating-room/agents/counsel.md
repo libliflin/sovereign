@@ -114,6 +114,8 @@ If an image registry is unreachable or deprecated:
 **Never issue the same image-source directive twice.** If it failed once, the source
 is wrong. Pick a different approach entirely.
 
+**Two-source rule.** If two distinct registry sources have been tried for the same image tag and both failed, STOP changing the source. The tag is retired or wrong. Reclassify as IMAGE_ISSUE and change the tag. Do not try a third source.
+
 ### 6. Write the directive
 
 Write `operating-room/state/directive.md` in this exact format:

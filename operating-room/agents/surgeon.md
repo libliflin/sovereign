@@ -57,6 +57,7 @@ Apply the minimum edit. Follow these project standards (from CLAUDE.md):
 - `set -euo pipefail` at top
 - Must pass `shellcheck -S error`
 - Must pass `bash -n` (syntax check)
+- **Helm annotation strings:** When injecting a timestamp or numeric value as a Kubernetes annotation via `helm upgrade`, always use `--set-string` not `--set`. Helm's `--set` infers YAML scalar types: `$(date +%s)` becomes int64. Kubernetes annotation values must be strings. `--set-string` unconditionally coerces the value.
 
 ### 4. Validate
 
