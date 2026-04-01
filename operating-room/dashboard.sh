@@ -161,21 +161,22 @@ echo "$PROC_MONITOR" > "$PROC_SCRIPT"
 chmod +x "$PROC_SCRIPT"
 
 # Create tmux session with 4 panes
-# Pane 0 (top-left): Loop
+
+# Pane 0 (top-left): Start loop then tail the stream
 tmux new-session -d -s "$SESSION" -c "$REPO_ROOT" \
-    "echo '  Starting loop (${CYCLES} cycles)...'; sleep 1; ./operating-room/loop.sh start --cycles ${CYCLES}; echo ''; echo '  Loop exited. Press enter to close.'; read"
+    "./operating-room/loop.sh start --cycles ${CYCLES}; echo '  Loop started.'; sleep 2; ./operating-room/log-stream.sh & sleep 1; echo '  Tailing stream...'; tail -f operating-room/state/logs/stream.log"
 
 # Pane 1 (top-right): Process monitor
 tmux split-window -h -t "$SESSION" -c "$REPO_ROOT" \
     "bash '$PROC_SCRIPT' '$REPO_ROOT'"
 
-# Pane 2 (bottom-left): Live log stream
+# Pane 2 (bottom-left): Plain loop output (tail the loop's stdout via stream)
 tmux split-window -v -t "${SESSION}.0" -c "$REPO_ROOT" \
-    "./operating-room/log-stream.sh & sleep 1; tail -f operating-room/state/logs/stream.log"
+    "echo '  Waiting for logs...'; while [ ! -f operating-room/state/logs/stream.log ]; do sleep 1; done; tail -f operating-room/state/logs/stream.log"
 
-# Pane 3 (bottom-right): Monitor dashboard
+# Pane 3 (bottom-right): Monitor dashboard (delay start so loop PID exists)
 tmux split-window -v -t "${SESSION}.1" -c "$REPO_ROOT" \
-    "./operating-room/loop.sh monitor 15"
+    "sleep 10; ./operating-room/loop.sh monitor 15"
 
 # Set pane titles
 tmux select-pane -t "${SESSION}.0" -T "Loop"

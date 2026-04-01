@@ -358,7 +358,7 @@ loop_is_stalled() {
             return 0  # PID dead
         fi
     else
-        return 0  # No PID file
+        return 1  # No PID file yet — loop may be starting, don't trigger CTO
     fi
 
     # Check if cycle.json was updated recently
