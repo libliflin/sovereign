@@ -129,19 +129,6 @@ install_chart harbor harbor \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
   --set "harbor.expose.tls.enabled=false"
 
-# Unstick harbor-core rolling update and restart with HTTP externalURL.
-# The force-upgrade block previously triggered a second helm upgrade every cycle,
-# causing harbor-core to enter a perpetual rolling update (new pod Pending, old
-# pod Running with stale HTTPS config). Remove it; install_chart already passes
-# externalURL=http://... and tls.enabled=false. These three commands cancel any
-# stuck rolling update, lock in Recreate strategy, and do a single clean restart.
-if [[ "$DRY_RUN" != "true" ]]; then
-  kubectl rollout undo deployment/harbor-core -n harbor --context "$CONTEXT" 2>/dev/null || true
-  kubectl patch deployment harbor-core -n harbor --context "$CONTEXT" \
-    --type=merge -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}' 2>/dev/null || true
-  kubectl rollout restart deployment/harbor-core -n harbor --context "$CONTEXT" 2>/dev/null || true
-  kubectl rollout status deployment/harbor-core -n harbor --context "$CONTEXT" --timeout=180s 2>/dev/null || true
-fi
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
 # containerd on kind nodes uses the Docker bridge DNS (192.168.65.254) which
