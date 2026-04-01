@@ -194,8 +194,15 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
   for i in $(seq 1 15); do curl -s -o /dev/null "http://localhost:${HARBOR_LOCAL_PORT}/v2/" && break; sleep 2; done
   trap 'kill ${HARBOR_PF_PID} 2>/dev/null || true' EXIT
 
-  # Authenticate with Harbor before pushing
-  echo "${HARBOR_ADMIN_PASS}" | docker login "localhost:${HARBOR_LOCAL_PORT}" --username admin --password-stdin
+  # Verify crane is available — crane runs in the host shell and shares the host
+  # network stack, so it can reach localhost:5000 (kubectl port-forward) unlike
+  # the Docker daemon which runs in the LinuxKit VM on macOS.
+  if ! command -v crane &>/dev/null; then
+    log "ERROR: crane not found — install with: brew install crane"
+    kill "${HARBOR_PF_PID}" 2>/dev/null || true
+    trap - EXIT
+    exit 1
+  fi
 
   # Create bitnami project in Harbor (idempotent)
   harbor_api POST "projects" \
@@ -204,7 +211,6 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
   # Seed each image — failures are non-fatal (image may already be in Harbor,
   # or upstream may be unreachable; the install step will surface the real error)
   for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}"; do
-    local_tag="localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}"
     # Check if already in Harbor via API
     repo="${img_spec%:*}"
     tag="${img_spec#*:}"
@@ -212,15 +218,14 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
       log "Harbor already has bitnami/${img_spec} ✓"
     else
       log "Seeding bitnami/${img_spec} into Harbor..."
-      docker pull "bitnamilegacy/${img_spec}" 2>&1 && \
-      docker tag "bitnamilegacy/${img_spec}" "${local_tag}" && \
-      docker push "${local_tag}" 2>&1 && \
-      log "Seeded bitnami/${img_spec} ✓" || \
-      log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
+      crane copy --insecure \
+        "docker.io/bitnamilegacy/${img_spec}" \
+        "localhost:${HARBOR_LOCAL_PORT}/bitnami/${img_spec}" && \
+        log "Seeded bitnami/${img_spec} ✓" || \
+        log "WARN: Failed to seed bitnami/${img_spec} (will retry next cycle)"
     fi
   done
 
-  docker logout "localhost:${HARBOR_LOCAL_PORT}" 2>/dev/null || true
   kill "${HARBOR_PF_PID}" 2>/dev/null || true
   trap - EXIT
 fi
