@@ -184,7 +184,7 @@ fi
 
 KEYCLOAK_TAG=$(helm show values "$(find platform/charts/keycloak/charts -name 'keycloak-*.tgz' | head -1)" \
   2>/dev/null | awk '/^image:/{f=1} f && /tag:/{print $2; exit}' | tr -d '"')
-PG_TAG="16.3.0-debian-12-r14"
+PG_TAG="16"
 REDIS_TAG="6.2.7-debian-11-r11"
 THANOS_TAG="0.36.0-debian-12-r1"
 SONARQUBE_PG_TAG="11.14.0-debian-10-r22"
@@ -280,7 +280,7 @@ fi
 
 install_chart keycloak keycloak \
   --set "global.imageRegistry=harbor.${DOMAIN}" \
-  --set "keycloak.postgresql.image.tag=${PG_TAG}" \
+  --set "postgresql.image.tag=${PG_TAG}" \
   --set-string "keycloak.postgresql.primary.podAnnotations.forceRestart=$(date +%s)" \
   ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
 
