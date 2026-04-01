@@ -317,6 +317,8 @@ install_chart keycloak keycloak \
   --set "keycloak.image.tag=${KEYCLOAK_TAG}" \
   --set "keycloak.postgresql.image.tag=${PG_TAG}" \
   --set-string "keycloak.postgresql.primary.podAnnotations.forceRestart=$(date +%s)" \
+  --set "keycloak.postgresql.primary.resources.requests.memory=64Mi" \
+  --set "keycloak.postgresql.primary.resources.limits.memory=256Mi" \
   ${KEYCLOAK_EXTRA[@]+"${KEYCLOAK_EXTRA[@]}"}
 
 # ── Step 4: GitLab + ArgoCD ──────────────────────────────────────────────
