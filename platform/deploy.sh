@@ -119,7 +119,6 @@ install_chart openbao openbao
 # ── Step 2: Harbor (internal registry — closes autarky bootstrap window) ──
 
 install_chart harbor harbor \
-  --force \
   --set "harbor.expose.ingress.hosts.core=harbor.${DOMAIN}" \
   --set "harbor.externalURL=http://harbor.${DOMAIN}:8080" \
   --set "harbor.persistence.persistentVolumeClaim.registry.storageClass=${BLOCK_SC}" \
