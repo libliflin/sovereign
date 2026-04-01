@@ -43,6 +43,7 @@ kubectl logs <pod-name> -n <namespace> --context kind-sovereign-test --tail=15 2
 For any PVC in Pending state:
 ```bash
 kubectl get pvc -A --context kind-sovereign-test 2>&1
+kubectl get storageclass --context kind-sovereign-test 2>&1
 ```
 
 ### 4. Write the report
