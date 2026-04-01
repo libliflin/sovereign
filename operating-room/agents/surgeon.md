@@ -107,3 +107,4 @@ Write `operating-room/state/changelog.md`:
   the approach that does work and document why.
 - **A working fix now beats a perfect fix never.** Ship the simplest thing that unblocks
   the next layer. It can be refined in future cycles.
+- **Never use kubectl to modify fields on Helm-managed resources.** `kubectl patch`, `kubectl rollout restart`, `kubectl set`, and similar commands create `managedFields` entries with `manager=kubectl` that Helm's server-side apply cannot reclaim. Subsequent `helm upgrade` will fail with `conflict with "kubectl" using apps/v1`. If a Helm-managed Deployment needs a restart, change a value in the chart's values.yaml to force a pod template hash change. Reserve kubectl for resources that Helm does not own (e.g., Jobs, manual ConfigMaps, CRDs installed separately).

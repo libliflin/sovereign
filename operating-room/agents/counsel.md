@@ -98,6 +98,7 @@ Known kind incompatibilities (must be disabled or reconfigured):
 - `falco` falco-driver-loader: eBPF build requires kernel headers absent in linuxkit
 - `tempo` store backend: requires rook-ceph-rgw DNS that doesn't exist in kind → point at MinIO
 - `opa-gatekeeper`: constraint resources deploy before CRDs are ready → split into two releases or use post-install hooks
+- `ceph-block` StorageClass: does not exist in kind — PVCs for grafana, gitlab-gitaly, sonarqube, code-server will never bind. Change PVC storageClassName to `standard` in the affected chart values.
 
 ### 5. Be pragmatic about image sources
 
