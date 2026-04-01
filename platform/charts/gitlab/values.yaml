@@ -7,7 +7,7 @@
 ## via the global pass-through mechanism.
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "standard"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -143,7 +143,7 @@ gitlab:
       replicaCount: 1  # Gitaly clustering (Praefect) out of scope for phase 3
       persistence:
         enabled: true
-        storageClass: "ceph-block"
+        storageClass: "standard"
         size: "50Gi"
       resources:
         requests:

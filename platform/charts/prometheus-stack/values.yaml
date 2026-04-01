@@ -1,6 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "standard"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -25,7 +25,7 @@ kube-prometheus-stack:
     # Persistence
     persistence:
       enabled: true
-      storageClassName: ceph-block
+      storageClassName: standard
       size: 10Gi
 
     # Grafana.ini config
@@ -85,7 +85,7 @@ kube-prometheus-stack:
       storageSpec:
         volumeClaimTemplate:
           spec:
-            storageClassName: ceph-block
+            storageClassName: standard
             accessModes:
               - ReadWriteOnce
             resources:

@@ -184,6 +184,9 @@ fi
 
 KEYCLOAK_TAG="24.0.5-debian-12-r0"
 PG_TAG="16.3.0-debian-12-r14"
+REDIS_TAG="6.2.7-debian-11-r11"
+THANOS_TAG="0.36.0-debian-12-r1"
+SONARQUBE_PG_TAG="11.14.0-debian-10-r22"
 HARBOR_LOCAL_PORT="5000"
 
 harbor_api() {
@@ -221,7 +224,7 @@ if [[ "$DRY_RUN" != "true" ]] && kubectl get pods -n harbor -l component=core --
 
   # Seed each image — failures are non-fatal (image may already be in Harbor,
   # or upstream may be unreachable; the install step will surface the real error)
-  for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}"; do
+  for img_spec in "keycloak:${KEYCLOAK_TAG}" "postgresql:${PG_TAG}" "redis:${REDIS_TAG}" "thanos:${THANOS_TAG}" "postgresql:${SONARQUBE_PG_TAG}"; do
     # Check if already in Harbor via API
     repo="${img_spec%:*}"
     tag="${img_spec#*:}"
@@ -282,7 +285,8 @@ install_chart keycloak keycloak \
 
 # ── Step 4: GitLab + ArgoCD ──────────────────────────────────────────────
 
-install_chart gitlab gitlab
+install_chart gitlab gitlab \
+  --set "gitlab.redis.image.registry=harbor.${DOMAIN}"
 install_chart argocd argocd
 
 # ── Step 5: Observability ────────────────────────────────────────────────
@@ -290,11 +294,38 @@ install_chart argocd argocd
 install_chart prometheus-stack monitoring
 install_chart loki monitoring
 install_chart tempo monitoring
-install_chart thanos monitoring
+install_chart thanos monitoring \
+  --set "thanos.image.registry=harbor.${DOMAIN}"
 
 # ── Step 6: Security mesh ────────────────────────────────────────────────
 
+# Clear stale istiod webhook to prevent SSA conflict (cycle 33 fix — pilot-discovery conflicts
+# with helm's server-side apply on ValidatingWebhookConfiguration istiod-default-validator)
+kubectl delete validatingwebhookconfiguration istiod-default-validator \
+  --context "$CONTEXT" --ignore-not-found 2>/dev/null || true
+
 install_chart istio istio-system
+# OPA Gatekeeper requires a two-pass install: the controller must process
+# ConstraintTemplates into runtime CRDs before Constraint resources can be applied.
+# First pass installs gatekeeper + ConstraintTemplates; constraints may fail — that's expected.
+# Second pass installs constraints after CRDs are established.
+if ! helm status opa-gatekeeper -n gatekeeper-system --kube-context "$CONTEXT" &>/dev/null; then
+  log "opa-gatekeeper: first-pass install (establishing CRDs)..."
+  helm upgrade --install opa-gatekeeper "${PLATFORM_DIR}/charts/opa-gatekeeper/" \
+    --namespace gatekeeper-system --create-namespace \
+    --set "global.domain=${DOMAIN}" \
+    --set "global.storageClass=${BLOCK_SC}" \
+    --timeout "${TIMEOUT}" \
+    --kube-context "${CONTEXT}" \
+    2>&1 || true  # constraints will fail on first install — expected
+  # Wait for gatekeeper webhook to register ConstraintTemplate CRDs
+  log "opa-gatekeeper: waiting for constraint CRDs to be established..."
+  for i in $(seq 1 30); do
+    kubectl get crd k8snoprivilegeescalations.constraints.gatekeeper.sh \
+      --context "$CONTEXT" &>/dev/null && break
+    sleep 2
+  done
+fi
 install_chart opa-gatekeeper gatekeeper-system
 install_chart falco falco
 install_chart trivy-operator trivy-system
@@ -303,8 +334,18 @@ install_chart trivy-operator trivy-system
 
 install_chart backstage backstage
 install_chart code-server code-server
-install_chart sonarqube sonarqube
-install_chart reportportal reportportal
+install_chart sonarqube sonarqube \
+  --set "sonarqube.postgresql.image.registry=harbor.${DOMAIN}"
+# ReportPortal: pass existing rabbitmq password on upgrade (bitnami subchart requires this)
+RP_EXTRA=()
+if kubectl get secret reportportal-rabbitmq-secret -n reportportal --context "$CONTEXT" &>/dev/null; then
+  RP_RABBITMQ_PASS=$(kubectl get secret reportportal-rabbitmq-secret -n reportportal \
+    --context "$CONTEXT" -o jsonpath="{.data.rabbitmq-password}" | base64 -d 2>/dev/null || echo "")
+  if [[ -n "$RP_RABBITMQ_PASS" ]]; then
+    RP_EXTRA=(--set "reportportal.rabbitmq.auth.password=${RP_RABBITMQ_PASS}")
+  fi
+fi
+install_chart reportportal reportportal ${RP_EXTRA[@]+"${RP_EXTRA[@]}"}
 
 log ""
 log "Deploy pass complete."

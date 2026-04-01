@@ -27,6 +27,7 @@ falco:
       cpu: "500m"
       memory: "512Mi"
 
-  # Driver mode: ebpf for modern kernels (no kernel module required)
+  # Driver mode: modern_ebpf uses CO-RE (embedded in falco binary, no kernel headers
+  # required). Works on kernels 5.8+ with BTF support. linuxkit 6.10.14 qualifies.
   driver:
-    kind: ebpf
+    kind: modern_ebpf

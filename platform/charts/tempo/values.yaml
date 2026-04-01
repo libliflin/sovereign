@@ -13,7 +13,7 @@ tempo:
       backend: s3
       s3:
         bucket: tempo
-        endpoint: rook-ceph-rgw-sovereign.rook-ceph.svc.cluster.local
+        endpoint: minio.minio.svc:9000
         region: us-east-1
         access_key: ${TEMPO_S3_ACCESS_KEY}
         secret_key: ${TEMPO_S3_SECRET_KEY}
