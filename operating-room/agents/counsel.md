@@ -100,6 +100,8 @@ Known kind incompatibilities (must be disabled or reconfigured):
 - `opa-gatekeeper`: constraint resources deploy before CRDs are ready → split into two releases or use post-install hooks
 - `ceph-block` StorageClass: does not exist in kind — PVCs for grafana, gitlab-gitaly, sonarqube, code-server will never bind. Change PVC storageClassName to `standard` in the affected chart values.
 
+**Pre-emptive batching:** When the current first-failing-layer fix is confirmed in-flight (surgeon applied it last cycle and it is a timing or config fix, not a structural failure), you MAY include a second "Pre-emptive Fix" in the directive targeting the next known INFRA_INCOMPATIBLE or dead-image-tag blocker — but ONLY if: (a) the next failure has appeared 3+ consecutive cycles in the failing pod list, (b) the fix does not touch the same files as the primary directive, and (c) the fix is mechanical (disable in values.yaml, update a tag). Label it clearly as "Pre-emptive Fix" and list it after the primary directive. Surgeon applies both in the same cycle.
+
 ### 5. Be pragmatic about image sources
 
 If an image registry is unreachable or deprecated:
