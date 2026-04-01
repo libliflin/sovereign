@@ -118,7 +118,16 @@ install_chart openbao openbao
 
 # ── Step 2: Harbor (internal registry — closes autarky bootstrap window) ──
 
-install_chart harbor harbor \
+# Harbor is always upgraded unconditionally — no chart_healthy skip — so that
+# config changes (e.g. externalURL) land in the running release and trigger a
+# ConfigMap checksum rollout of harbor-core. If install_chart's healthy-check
+# fires, the corrected values never reach the cluster. (Cycle 27 fix)
+log "harbor: deploying → harbor..."
+helm upgrade --install harbor "${PLATFORM_DIR}/charts/harbor/" \
+  --namespace harbor --create-namespace \
+  --set "global.domain=${DOMAIN}" \
+  --set "global.storageClass=${BLOCK_SC}" \
+  --set "global.clusterIssuer=${CLUSTER_ISSUER}" \
   --set "harbor.expose.ingress.hosts.core=harbor.${DOMAIN}" \
   --set "harbor.externalURL=http://harbor.${DOMAIN}" \
   --set "harbor.persistence.persistentVolumeClaim.registry.storageClass=${BLOCK_SC}" \
@@ -128,7 +137,11 @@ install_chart harbor harbor \
   --set "harbor.persistence.persistentVolumeClaim.jobservice.storageClass=${BLOCK_SC}" \
   --set "global.s3.endpoint=${OBJECT_ENDPOINT}" \
   --set "harbor.expose.tls.enabled=false" \
-  --force-conflicts
+  --force-conflicts \
+  --timeout "${TIMEOUT}" \
+  --kube-context "${CONTEXT}" \
+  2>&1 || { log "harbor: FAILED (continuing to next chart)"; }
+log "harbor: ready ✓"
 
 
 # ── Step 2a: Inject harbor hostname into kind node /etc/hosts ─────────────
