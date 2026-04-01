@@ -50,3 +50,68 @@ Cycle 33 stalled: operator exit code 1 for multiple consecutive cycles. Loop pro
 ## Loop Restarted
 
 Cycle 33 → restarting from cycle 33. Pushed commit `6b94fb4` to main.
+
+---
+
+# CTO Intervention — 2026-04-01 (Second Intervention)
+**Duration:** ~3 hours (two sessions, context compaction between them)
+**Cycles at entry:** 43 (running:counsel) — loop alive but stuck, same keycloak failure 4+ cycles
+
+## Problem
+
+Loop was cycling on keycloak/postgresql ImagePullBackOff for 4+ consecutive cycles. Harbor was empty on every cycle. All surgeon fixes were addressing symptoms while the structural seeding failure persisted.
+
+## Root Causes
+
+Two independent structural failures, both silent:
+
+**1. Source tags retired from docker.io/bitnami**
+Old code pulled from `docker.io/bitnami/<repo>:<pinned-tag>`. Bitnami moves old pinned tags to `docker.io/bitnamilegacy/` when versions are superseded. `docker pull docker.io/bitnami/keycloak:24.0.5-debian-12-r0` and similar failed silently — caught by `|| log "WARN: ..."`, invisible in operator reports.
+
+**2. Docker Desktop VM isolation broke docker push**
+The old seeding code did `docker login localhost:5000` + `docker push localhost:5000/...`. Docker Desktop daemon runs inside a VM. The VM cannot reach the macOS host's localhost port-forwards. Every `docker push` timed out silently. Harbor appeared healthy but never received images.
+
+Result: `==> harbor: ready ✓` logged on every cycle with no actual seeding. Surgeon had no signal that seeding was broken.
+
+## Fixes Applied (deploy.sh)
+
+### Seeding rewrite — kind load image-archive
+Replaced `docker push localhost:5000` with:
+- Pull arm64-specific digest from `bitnamilegacy/<repo>@<sha256:...>` (avoids multi-platform manifest error in `kind load docker-image`)
+- Tag as `harbor.${DOMAIN}/bitnami/<repo>:<tag>`
+- `docker save` to temp tar → `kind load image-archive <tar> --name <cluster>`
+
+Pods pulling `harbor.sovereign.local/bitnami/...` find the image in kind's containerd cache without Harbor serving it.
+
+### Source tags updated to bitnamilegacy
+| Image | Broken source | Fixed source |
+|-------|--------------|-------------|
+| keycloak | `docker.io/bitnami/keycloak:24.0.5-debian-12-r0` | `bitnamilegacy/keycloak:24.0.5-debian-12-r8` |
+| postgresql | `docker.io/bitnami/postgresql:16` (no such tag) | `bitnamilegacy/postgresql:16.3.0-debian-12-r14` |
+| redis | `docker.io/bitnami/redis:6.2.7-debian-11-r11` | `bitnamilegacy/redis:6.2.7-debian-11-r11` |
+| redis-exporter | `docker.io/bitnami/redis-exporter:1.43.0-debian-11-r4` | `bitnamilegacy/redis-exporter:1.43.0-debian-11-r4` |
+| thanos | `docker.io/bitnami/thanos:0.36.0-debian-12-r1` | `bitnamilegacy/thanos:0.36.0-debian-12-r1` |
+
+### Additional Helm overrides
+- `keycloak.image.tag=${KEYCLOAK_TAG}` — explicit pin at install; dynamic extraction returned retired r0 tag
+- `keycloak.postgresql.image.tag=${PG_TAG}` — PG16 (PG11 tags unavailable on bitnamilegacy)
+- `gitlab.redis.metrics.image.registry=harbor.${DOMAIN}` — redis-exporter was pulling from docker.io
+- `falco.falcoctl.image.registry=harbor.${DOMAIN}` — falcoctl sidecar was pulling from docker.io
+- `sonarqube.postgresql.image.tag=${PG_TAG}` — SonarQube PG11 tags unavailable
+- falcoctl kind-load block added (source: `falcosecurity/falcoctl`, not bitnamilegacy)
+
+### Manual cluster interventions
+- Deleted stalled StatefulSet pods (keycloak-postgresql-0, gitlab-redis-master-0, thanos-storegateway-0) to force rolling update
+- `helm uninstall gitlab` — freed 2.5Gi from CrashLoopBackOff pods blocking keycloak scheduling
+- Deleted 4 tempo CrashLoopBackOff pods (896Mi total reservations) to free worker2 memory; keycloak-postgresql-0 PVC is node-affinity pinned to worker2
+
+## State at Exit (cycle 45 counsel running)
+
+- keycloak-postgresql-0: Running ✓
+- keycloak-0: Running (readiness probe pending) ✓
+- Loop: PID 26263, cycle 45 counsel in progress (PID 40476)
+- Commits: `dae4d10` (falcoctl), prior CTO session changes in `07c920e`
+
+## Structural Recommendation
+
+The operator report must surface WARN lines from deploy.sh as failures, not informational notes. Currently `|| log "WARN: ..."` makes silent failures invisible to the counsel → no directive ever targets the seeding layer. This allowed the bitnamilegacy and Docker Desktop failures to persist for 10+ cycles undetected.
