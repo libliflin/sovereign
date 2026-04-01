@@ -160,29 +160,37 @@ PROC_SCRIPT=$(mktemp /tmp/or-proc-XXXXXX.sh)
 echo "$PROC_MONITOR" > "$PROC_SCRIPT"
 chmod +x "$PROC_SCRIPT"
 
-# Create tmux session with 4 panes
+# Step 1: Start the loop (backgrounds immediately)
+"$SCRIPT_DIR/loop.sh" start --cycles "${CYCLES}"
 
-# Pane 0 (top-left): Start loop then tail the stream
+# Step 2: Start the log stream aggregator (backgrounds)
+"$SCRIPT_DIR/log-stream.sh" &
+LOG_STREAM_PID=$!
+sleep 2
+
+# Create tmux session with 3 panes
+#   ┌─────────────────────────────────────────┐
+#   │            Log Stream (top)             │
+#   ├────────────────────┬────────────────────┤
+#   │ Processes (bot-L)  │ Dashboard (bot-R)  │
+#   └────────────────────┴────────────────────┘
+
+# Pane 0 (top): Live agent output — the main thing you watch
 tmux new-session -d -s "$SESSION" -c "$REPO_ROOT" \
-    "./operating-room/loop.sh start --cycles ${CYCLES}; echo '  Loop started.'; sleep 2; ./operating-room/log-stream.sh & sleep 1; echo '  Tailing stream...'; tail -f operating-room/state/logs/stream.log"
+    "tail -f operating-room/state/logs/stream.log"
 
-# Pane 1 (top-right): Process monitor
-tmux split-window -h -t "$SESSION" -c "$REPO_ROOT" \
+# Pane 1 (bottom-left): Process monitor
+tmux split-window -v -t "${SESSION}.0" -c "$REPO_ROOT" -p 35 \
     "bash '$PROC_SCRIPT' '$REPO_ROOT'"
 
-# Pane 2 (bottom-left): Plain loop output (tail the loop's stdout via stream)
-tmux split-window -v -t "${SESSION}.0" -c "$REPO_ROOT" \
-    "echo '  Waiting for logs...'; while [ ! -f operating-room/state/logs/stream.log ]; do sleep 1; done; tail -f operating-room/state/logs/stream.log"
-
-# Pane 3 (bottom-right): Monitor dashboard (delay start so loop PID exists)
-tmux split-window -v -t "${SESSION}.1" -c "$REPO_ROOT" \
-    "sleep 10; ./operating-room/loop.sh monitor 15"
+# Pane 2 (bottom-right): Dashboard with CTO
+tmux split-window -h -t "${SESSION}.1" -c "$REPO_ROOT" \
+    "sleep 15; ./operating-room/loop.sh monitor 15"
 
 # Set pane titles
-tmux select-pane -t "${SESSION}.0" -T "Loop"
+tmux select-pane -t "${SESSION}.0" -T "Log Stream"
 tmux select-pane -t "${SESSION}.1" -T "Processes"
-tmux select-pane -t "${SESSION}.2" -T "Log Stream"
-tmux select-pane -t "${SESSION}.3" -T "Dashboard"
+tmux select-pane -t "${SESSION}.2" -T "Dashboard"
 
 # Enable pane borders with titles
 tmux set-option -t "$SESSION" pane-border-status top
