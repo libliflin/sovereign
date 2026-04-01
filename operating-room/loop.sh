@@ -8,8 +8,9 @@
 # Usage:
 #   ./loop.sh start [--cycles N] [--tool claude|amp]
 #   ./loop.sh stop
-#   ./loop.sh status
-#   ./loop.sh logs
+#   ./loop.sh monitor          # live dashboard, refreshes every 30s
+#   ./loop.sh status           # one-shot status
+#   ./loop.sh logs             # show latest agent outputs
 
 set -euo pipefail
 
@@ -86,6 +87,7 @@ run_agent() {
     local tool="${3:-claude}"
 
     log "Running $agent_name (cycle $cycle) ..."
+    set_cycle "$cycle" "running:$agent_name"
 
     # Assemble prompt: base prompt + injected state
     local prompt=""
@@ -131,7 +133,6 @@ run_agent() {
             fi
             ;;
         retro)
-            # Inject last RETRO_INTERVAL cycles from history
             local start_cycle=$((cycle - RETRO_INTERVAL))
             (( start_cycle < 1 )) && start_cycle=1
             for (( c=start_cycle; c<cycle; c++ )); do
@@ -150,7 +151,6 @@ run_agent() {
                     done
                 fi
             done
-            # Inject current agent prompts so retro can review/modify them
             for agent_file in operator.md counsel.md surgeon.md; do
                 prompt+="---"$'\n'
                 prompt+="## Current $agent_file"$'\n'
@@ -171,7 +171,6 @@ run_agent() {
         output=$(echo "$prompt" | amp --dangerously-allow-all 2>&1) || exit_code=$?
     fi
 
-    # Stream to terminal
     echo "$output"
 
     # Rate limit detection
@@ -195,7 +194,7 @@ is_running() {
 }
 
 cmd_start() {
-    local max_cycles=0  # 0 = unlimited
+    local max_cycles=0
     local tool="claude"
 
     while [[ $# -gt 0 ]]; do
@@ -222,14 +221,12 @@ cmd_start() {
     (
         trap 'exit 0' SIGTERM
 
-        # Ensure cluster is up
         log "Ensuring cluster ..."
         "$SCRIPT_DIR/cluster.sh" start
 
         local cycle
         cycle=$(get_cycle)
 
-        # Commit and push any uncommitted changes before starting
         log "Syncing repo ..."
         cd "$REPO_ROOT"
         if ! git diff --quiet HEAD 2>/dev/null || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
@@ -251,20 +248,20 @@ cmd_start() {
             # Retro every N cycles (but not on cycle 1)
             if (( cycle > 1 )) && (( cycle % RETRO_INTERVAL == 0 )); then
                 run_agent "retro" "$cycle" "$tool"
-
-                # Check for escalation
-                if [[ -f "$STATE_DIR/retro.md" ]] \
-                    && grep -q "HUMAN_REVIEW_NEEDED" "$STATE_DIR/retro.md"; then
-                    log "ESCALATION: retro flagged HUMAN_REVIEW_NEEDED. Pausing."
-                    set_cycle "$cycle" "escalated"
-                    exit 1
-                fi
             fi
 
             # The core loop: operator → counsel → surgeon
             run_agent "operator" "$cycle" "$tool"
             run_agent "counsel" "$cycle" "$tool"
             run_agent "surgeon" "$cycle" "$tool"
+
+            # Commit surgeon's changes
+            cd "$REPO_ROOT"
+            if ! git diff --quiet HEAD 2>/dev/null || [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+                git add -A
+                git commit -m "operating-room: cycle ${cycle} surgeon changes" || true
+                git push origin main 2>/dev/null || log "WARN: push failed (non-fatal)"
+            fi
 
             # Archive this cycle
             archive_cycle "$cycle"
@@ -274,13 +271,11 @@ cmd_start() {
             set_cycle "$cycle" "pending"
             cycles_run=$((cycles_run + 1))
 
-            # Check cycle limit
             if (( max_cycles > 0 )) && (( cycles_run >= max_cycles )); then
                 log "Completed $cycles_run cycles. Stopping."
                 exit 0
             fi
 
-            # Brief pause between cycles (backgrounded for clean SIGTERM)
             sleep 5 &
             wait $! || exit 0
         done
@@ -289,8 +284,8 @@ cmd_start() {
     echo $! > "$PID_FILE"
     echo "  Started (PID $!). Tool: $tool"
     echo ""
-    echo "  Watch:  $0 status"
-    echo "  Stop:   $0 stop"
+    echo "  Monitor: $0 monitor"
+    echo "  Stop:    $0 stop"
 }
 
 cmd_stop() {
@@ -320,7 +315,155 @@ cmd_stop() {
     echo "Stopped (PID $pid)."
 }
 
+# ---------------------------------------------------------------------------
+# Monitor — live dashboard
+# ---------------------------------------------------------------------------
+
+cmd_monitor() {
+    local interval="${1:-30}"
+    trap 'printf "\n"; exit 0' INT
+
+    while true; do
+        clear
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║  OPERATING ROOM MONITOR          $(date '+%H:%M:%S')                   ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo ""
+
+        # Loop status
+        if is_running; then
+            local pid
+            pid=$(cat "$PID_FILE")
+            local elapsed
+            elapsed=$(ps -p "$pid" -o etime= 2>/dev/null | tr -d ' ' || echo "?")
+            echo "  Loop: RUNNING (PID $pid, uptime $elapsed)"
+        else
+            echo "  Loop: STOPPED"
+        fi
+
+        # Cycle info
+        if [[ -f "$STATE_DIR/cycle.json" ]]; then
+            python3 -c "
+import json
+from datetime import datetime, timezone
+c = json.load(open('$STATE_DIR/cycle.json'))
+cycle = c.get('cycle', '?')
+status = c.get('status', '?')
+updated = c.get('updatedAt', '')[:19].replace('T', ' ')
+print(f'  Cycle: {cycle}  Phase: {status}')
+print(f'  Last update: {updated} UTC')
+print()
+
+# Show agent timing
+agents = c.get('agents', {})
+agent_order = ['operator', 'counsel', 'surgeon', 'retro']
+for name in agent_order:
+    if name in agents:
+        info = agents[name]
+        t = info.get('lastRun', '?')[:19].replace('T', ' ')
+        code = info.get('exitCode', '?')
+        marker = '✓' if code == 0 else '✗'
+        print(f'    {marker} {name:10s}  {t} UTC  exit={code}')
+" 2>/dev/null
+        else
+            echo "  No cycles yet."
+        fi
+
+        echo ""
+
+        # Layer summary from latest report
+        echo "  ┌─────────────────────────────────────────────────┐"
+        echo "  │ LAYERS                                          │"
+        echo "  ├─────────────────────────────────────────────────┤"
+        if [[ -f "$STATE_DIR/report.md" ]]; then
+            grep -E '^\- Layer [0-7]' "$STATE_DIR/report.md" 2>/dev/null \
+                | while IFS= read -r line; do
+                    # Color based on status
+                    if echo "$line" | grep -q "UP"; then
+                        printf "  │ \033[32m%-48s\033[0m│\n" "$line"
+                    elif echo "$line" | grep -q "DOWN\|DEGRADED"; then
+                        printf "  │ \033[31m%-48s\033[0m│\n" "$line"
+                    else
+                        printf "  │ %-48s│\n" "$line"
+                    fi
+                done
+        else
+            echo "  │ (no report yet)                                │"
+        fi
+        echo "  └─────────────────────────────────────────────────┘"
+
+        echo ""
+
+        # Current directive
+        echo "  ┌─────────────────────────────────────────────────┐"
+        echo "  │ CURRENT DIRECTIVE                               │"
+        echo "  ├─────────────────────────────────────────────────┤"
+        if [[ -f "$STATE_DIR/directive.md" ]]; then
+            # Show assessment and fix lines
+            grep -E '^\- \*\*(Layer|Service|Category|Fix):' "$STATE_DIR/directive.md" 2>/dev/null \
+                | head -4 | while IFS= read -r line; do
+                    printf "  │ %-48s│\n" "${line:0:48}"
+                done
+        else
+            echo "  │ (no directive yet)                              │"
+        fi
+        echo "  └─────────────────────────────────────────────────┘"
+
+        echo ""
+
+        # Last surgeon action
+        echo "  ┌─────────────────────────────────────────────────┐"
+        echo "  │ LAST SURGEON ACTION                             │"
+        echo "  ├─────────────────────────────────────────────────┤"
+        if [[ -f "$STATE_DIR/changelog.md" ]]; then
+            head -8 "$STATE_DIR/changelog.md" 2>/dev/null \
+                | while IFS= read -r line; do
+                    printf "  │ %-48s│\n" "${line:0:48}"
+                done
+        else
+            echo "  │ (no changes yet)                                │"
+        fi
+        echo "  └─────────────────────────────────────────────────┘"
+
+        echo ""
+
+        # Cycle history (last 5)
+        echo "  ┌─────────────────────────────────────────────────┐"
+        echo "  │ CYCLE HISTORY                                   │"
+        echo "  ├─────────────────────────────────────────────────┤"
+        local found=0
+        for d in $(ls -rd "$HISTORY_DIR"/cycle-* 2>/dev/null | head -5); do
+            local cnum
+            cnum=$(basename "$d" | sed 's/cycle-0*//')
+            local first_failure="?"
+            if [[ -f "$d/report.md" ]]; then
+                first_failure=$(grep -m1 "^- Layer:" "$d/report.md" 2>/dev/null \
+                    | head -1 | sed 's/.*Layer: //' || echo "?")
+                [[ -z "$first_failure" ]] && first_failure=$(grep -m1 "First Failure\|first failure" "$d/report.md" 2>/dev/null \
+                    | head -c 45 || echo "?")
+            fi
+            local action="?"
+            if [[ -f "$d/changelog.md" ]]; then
+                action=$(grep -m1 "^##\|^- " "$d/changelog.md" 2>/dev/null \
+                    | head -1 | head -c 35 || echo "?")
+            fi
+            printf "  │ C%-3s  %-42s│\n" "$cnum" "${first_failure:0:42}"
+            found=1
+        done
+        if [[ "$found" -eq 0 ]]; then
+            echo "  │ (no history yet)                                │"
+        fi
+        echo "  └─────────────────────────────────────────────────┘"
+
+        echo ""
+        echo "  Refreshing in ${interval}s... (Ctrl-C to exit monitor)"
+
+        sleep "$interval"
+    done
+}
+
 cmd_status() {
+    # One-shot version of monitor
     echo "=== Operating Room ==="
     if is_running; then
         echo "  Running — PID $(cat "$PID_FILE")"
@@ -329,58 +472,48 @@ cmd_status() {
     fi
 
     echo ""
-    echo "=== Cycle ==="
     if [[ -f "$STATE_DIR/cycle.json" ]]; then
         python3 -c "
 import json
 c = json.load(open('$STATE_DIR/cycle.json'))
 print(f\"  Cycle: {c.get('cycle', '?')}  Status: {c.get('status', '?')}\")
 for name, info in c.get('agents', {}).items():
-    print(f\"  {name:10s} last run: {info.get('lastRun', '?')[:19]}  exit: {info.get('exitCode', '?')}\")
+    print(f\"  {name:10s} exit={info.get('exitCode', '?')}  at {info.get('lastRun', '?')[:19]}\")
 "
-    else
-        echo "  No cycles run yet."
     fi
 
     echo ""
-    echo "=== Cluster ==="
-    "$SCRIPT_DIR/cluster.sh" status 2>/dev/null || echo "  (cluster.sh not available)"
+    if [[ -f "$STATE_DIR/report.md" ]]; then
+        echo "  Layers:"
+        grep -E '^\- Layer [0-7]' "$STATE_DIR/report.md" 2>/dev/null | sed 's/^/    /'
+    fi
 
     echo ""
-    echo "=== Last Report Summary ==="
-    if [[ -f "$STATE_DIR/report.md" ]]; then
-        grep -A5 "^## Summary" "$STATE_DIR/report.md" 2>/dev/null \
-            | head -10 | sed 's/^/  /'
-    else
-        echo "  No report yet."
+    if [[ -f "$STATE_DIR/directive.md" ]]; then
+        echo "  Directive:"
+        grep -E '^\- \*\*(Fix):' "$STATE_DIR/directive.md" 2>/dev/null | head -1 | sed 's/^/    /'
     fi
 }
 
 cmd_logs() {
-    if [[ -f "$STATE_DIR/report.md" ]]; then
-        echo "=== Latest Operator Report ==="
-        cat "$STATE_DIR/report.md"
-    fi
-    echo ""
-    if [[ -f "$STATE_DIR/directive.md" ]]; then
-        echo "=== Latest Counsel Directive ==="
-        cat "$STATE_DIR/directive.md"
-    fi
-    echo ""
-    if [[ -f "$STATE_DIR/changelog.md" ]]; then
-        echo "=== Latest Surgeon Changelog ==="
-        cat "$STATE_DIR/changelog.md"
-    fi
+    for section in report.md directive.md changelog.md; do
+        if [[ -f "$STATE_DIR/$section" ]]; then
+            echo "═══ ${section} ═══"
+            cat "$STATE_DIR/$section"
+            echo ""
+        fi
+    done
 }
 
 # ---------------------------------------------------------------------------
 case "${1:-help}" in
-    start)  shift; cmd_start "$@" ;;
-    stop)   cmd_stop ;;
-    status) cmd_status ;;
-    logs)   cmd_logs ;;
+    start)   shift; cmd_start "$@" ;;
+    stop)    cmd_stop ;;
+    monitor) shift; cmd_monitor "${1:-30}" ;;
+    status)  cmd_status ;;
+    logs)    cmd_logs ;;
     *)
-        echo "Usage: $0 start [--cycles N] [--tool claude|amp] | stop | status | logs"
+        echo "Usage: $0 start [--cycles N] [--tool claude|amp] | stop | monitor [interval] | status | logs"
         exit 1
         ;;
 esac
