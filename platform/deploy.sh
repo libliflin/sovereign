@@ -3,7 +3,7 @@
 #
 # Deploys the Sovereign Platform in dependency order.
 # Idempotent — safe to run repeatedly. Each step checks if its chart is
-# already healthy before installing. 3-minute timeout per chart.
+# already healthy before installing. 90-second timeout per chart.
 #
 # Usage:
 #   ./platform/deploy.sh --cluster-values cluster-values.yaml
@@ -20,7 +20,7 @@ PLATFORM_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${PLATFORM_DIR}/.." && pwd)"
 CONTRACT_VALIDATE="${REPO_ROOT}/contract/validate.py"
 CONTEXT="kind-sovereign-test"
-TIMEOUT="3m0s"
+TIMEOUT="90s"
 
 usage() {
   echo "Usage: $0 --cluster-values <path> [--dry-run]"
