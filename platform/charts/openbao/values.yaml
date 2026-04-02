@@ -8,6 +8,11 @@ global:
 # Upstream openbao subchart values (alias: openbao)
 # ---------------------------------------------------------------------------
 openbao:
+  global:
+    # TLS is enabled in the HCL listener config (tls_cert_file/tls_key_file).
+    # Setting tlsDisable: false makes the chart use HTTPS scheme for probes.
+    tlsDisable: false
+
   server:
     image:
       registry: "quay.io"  # bootstrap default; override with global.imageRegistry after Harbor
@@ -33,6 +38,12 @@ openbao:
       - name: tls
         mountPath: /openbao/tls
         readOnly: true
+
+    # Allow pods to pass readiness while sealed/uninitialized so all 3 HA
+    # pods can start. Initialization is a separate manual step.
+    readinessProbe:
+      path: "/v1/sys/health?standbyok=true&sealedok=true&uninitcode=200"
+      port: 8200
 
     ha:
       enabled: true
