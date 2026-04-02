@@ -225,6 +225,12 @@ cmd_start() {
     (
         trap 'exit 0' SIGTERM
 
+        # Redirect stdout+stderr into stream.log immediately.
+        # This prevents SIGPIPE from killing the subshell when the
+        # terminal that launched us closes or is taken over by tmux.
+        mkdir -p "$STATE_DIR/logs"
+        exec >> "$STATE_DIR/logs/stream.log" 2>&1
+
         log "Ensuring cluster ..."
         "$SCRIPT_DIR/cluster.sh" start
 

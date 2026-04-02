@@ -182,22 +182,19 @@ chmod +x "$PROC_SCRIPT" "$CYCLE_SCRIPT"
 #   Pane 0 (top 65%):   live agent log stream
 #   Pane 1 (bot-left):  process monitor
 #   Pane 2 (bot-right): cycle/pod monitor
+#
+# Commands are passed directly to new-session/split-window (not send-keys)
+# so they don't echo into the pane and dimensions are set at attach time.
 
-tmux new-session -d -s "$SESSION" -x "$(tput cols)" -y "$(tput lines)" -c "$REPO_ROOT"
+LOG_CMD="tail -n 0 -f '$REPO_ROOT/operating-room/state/logs/stream.log'"
 
-# Top pane: agent output stream
-tmux send-keys -t "${SESSION}.0" \
-    "tail -n 0 -f operating-room/state/logs/stream.log 2>/dev/null || { echo 'Waiting for agent output...'; sleep 2; tail -n 0 -f operating-room/state/logs/stream.log; }" Enter
+tmux new-session -d -s "$SESSION" -c "$REPO_ROOT" "$LOG_CMD"
 
-# Split bottom 35% for monitors
-tmux split-window -v -t "${SESSION}.0" -p 35 -c "$REPO_ROOT"
+tmux split-window -v -t "${SESSION}.0" -p 35 -c "$REPO_ROOT" \
+    "bash '$PROC_SCRIPT' '$REPO_ROOT'"
 
-# Left monitor: processes
-tmux send-keys -t "${SESSION}.1" "bash '$PROC_SCRIPT' '$REPO_ROOT'" Enter
-
-# Right monitor: cycle state + pods
-tmux split-window -h -t "${SESSION}.1" -c "$REPO_ROOT"
-tmux send-keys -t "${SESSION}.2" "bash '$CYCLE_SCRIPT' '$REPO_ROOT'" Enter
+tmux split-window -h -t "${SESSION}.1" -c "$REPO_ROOT" \
+    "bash '$CYCLE_SCRIPT' '$REPO_ROOT'"
 
 # Pane titles
 tmux select-pane -t "${SESSION}.0" -T "Agent Output"
