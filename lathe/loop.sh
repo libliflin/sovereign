@@ -19,7 +19,7 @@ SKILLS_DIR="$SCRIPT_DIR/skills"
 HISTORY_DIR="$STATE_DIR/history"
 PID_FILE="$REPO_ROOT/.lathe.pid"
 RETRO_INTERVAL=5
-CONTEXT="kind-sovereign-test"
+VM_SERVER="sovereign-0"
 
 log() { echo "  [lathe] $(date '+%H:%M:%S') $*"; }
 
@@ -60,6 +60,14 @@ archive_cycle() {
 # Phase 1: Snapshot — collect cluster state with bash, no LLM
 # ---------------------------------------------------------------------------
 
+setup_kubeconfig() {
+    # Set KUBECONFIG from Lima VM if available
+    if limactl list "$VM_SERVER" --format '{{.Status}}' 2>/dev/null | grep -q "Running"; then
+        KUBECONFIG=$(limactl list "$VM_SERVER" --format 'unix://{{.Dir}}/copied-from-guest/kubeconfig.yaml' 2>/dev/null)
+        export KUBECONFIG
+    fi
+}
+
 collect_snapshot() {
     log "Collecting cluster snapshot ..."
     local out="$STATE_DIR/snapshot.txt"
@@ -69,12 +77,17 @@ collect_snapshot() {
         echo "Generated: $(date)"
         echo ""
 
+        # Check Lima VMs
+        echo "## Lima VMs"
+        limactl list 2>/dev/null | grep -E 'sovereign-|NAME' || echo "(no VMs found)"
+        echo ""
+
         echo "## Cluster Exists"
-        if kind get clusters 2>/dev/null | grep -q "^sovereign-test$"; then
-            echo "yes"
+        if limactl list "$VM_SERVER" --format '{{.Status}}' 2>/dev/null | grep -q "Running"; then
+            echo "yes — $VM_SERVER is Running"
+            setup_kubeconfig
         else
-            echo "NO — cluster does not exist. Use kind.md skill to create it."
-            # No cluster means no kubectl commands will work
+            echo "NO — $VM_SERVER is not running. Use lima skill to create it."
             echo ""
             echo "## Pod Status"
             echo "(no cluster)"
@@ -84,44 +97,57 @@ collect_snapshot() {
         fi
         echo ""
 
-        # Only collect kubectl/helm data if cluster exists
-        if kubectl cluster-info --context "$CONTEXT" &>/dev/null; then
+        # Only collect kubectl/helm data if kubeconfig is set and cluster responds
+        if [[ -n "${KUBECONFIG:-}" ]] && timeout 5 kubectl cluster-info &>/dev/null; then
+            echo "## Nodes"
+            timeout 10 kubectl get nodes -o wide 2>&1 || echo "(kubectl failed)"
+            echo ""
+
             echo "## Pod Status"
-            kubectl get pods -A --context "$CONTEXT" --no-headers 2>&1 | \
+            timeout 10 kubectl get pods -A --no-headers 2>&1 | \
                 awk '{printf "%-25s %-50s %-12s %s\n", $1, $2, $4, $5}' || echo "(kubectl failed)"
             echo ""
 
             echo "## Helm Releases"
-            helm list -A --kube-context "$CONTEXT" 2>&1 || echo "(helm failed)"
+            timeout 10 helm list -A 2>&1 || echo "(helm failed)"
             echo ""
 
-            echo "## Recent Events (last 30)"
-            kubectl get events -A --sort-by='.lastTimestamp' --context "$CONTEXT" 2>&1 | tail -30 || echo "(no events)"
+            echo "## Recent Events (last 20)"
+            timeout 10 kubectl get events -A --sort-by='.lastTimestamp' 2>&1 | tail -20 || echo "(no events)"
             echo ""
 
-            # Capture logs from non-Running pods
+            # Capture logs from non-Running pods (capped: max 8 pods, 15 lines each)
             echo "## Failing Pod Logs"
             local failing_pods
-            failing_pods=$(kubectl get pods -A --context "$CONTEXT" --no-headers 2>/dev/null \
+            failing_pods=$(timeout 10 kubectl get pods -A --no-headers 2>/dev/null \
                 | grep -v -E 'Running|Completed|Succeeded' \
+                | head -8 \
                 | awk '{print $1 "," $2}' || true)
 
             if [[ -z "$failing_pods" ]]; then
                 echo "(all pods healthy)"
             else
+                local pod_count=0
                 while IFS=',' read -r ns pod; do
                     echo "### $ns/$pod"
                     echo '```'
-                    kubectl logs -n "$ns" "$pod" --context "$CONTEXT" --tail=30 2>&1 || \
-                        kubectl describe pod -n "$ns" "$pod" --context "$CONTEXT" 2>&1 | tail -20 || \
+                    timeout 5 kubectl logs -n "$ns" "$pod" --tail=15 2>&1 | head -15 || \
+                        timeout 5 kubectl describe pod -n "$ns" "$pod" 2>&1 | tail -15 || \
                         echo "(no logs available)"
                     echo '```'
                     echo ""
+                    pod_count=$((pod_count + 1))
                 done <<< "$failing_pods"
+                local total_failing
+                total_failing=$(timeout 10 kubectl get pods -A --no-headers 2>/dev/null \
+                    | grep -v -E 'Running|Completed|Succeeded' | wc -l | tr -d ' ')
+                if (( total_failing > pod_count )); then
+                    echo "(showing $pod_count of $total_failing failing pods)"
+                fi
             fi
 
             echo "## Node Resources"
-            kubectl top nodes --context "$CONTEXT" 2>&1 || echo "(metrics-server not available)"
+            timeout 10 kubectl top nodes 2>&1 || echo "(metrics-server not available)"
             echo ""
         fi
     } > "$out" 2>&1

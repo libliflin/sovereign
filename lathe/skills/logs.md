@@ -4,17 +4,19 @@
 
 ```bash
 # Tail recent logs from a specific pod
-kubectl logs -n <namespace> <pod-name> --context kind-sovereign-test --tail=50
+timeout 10 kubectl logs -n <namespace> <pod-name> --tail=50
 
 # Logs from a specific container (multi-container pods)
-kubectl logs -n <namespace> <pod-name> -c <container> --context kind-sovereign-test --tail=50
+timeout 10 kubectl logs -n <namespace> <pod-name> -c <container> --tail=50
 
 # Previous container logs (after a crash)
-kubectl logs -n <namespace> <pod-name> --previous --context kind-sovereign-test --tail=50
+timeout 10 kubectl logs -n <namespace> <pod-name> --previous --tail=50
 
 # Follow logs live
-kubectl logs -n <namespace> <pod-name> --context kind-sovereign-test -f
+kubectl logs -n <namespace> <pod-name> -f
 ```
+
+Note: KUBECONFIG is set by the loop from Lima. No `--context` needed.
 
 ## Events
 
@@ -22,14 +24,13 @@ Events are the first place to look for scheduling failures, pull errors, and cra
 
 ```bash
 # All events, most recent last
-kubectl get events -A --sort-by='.lastTimestamp' --context kind-sovereign-test | tail -30
+timeout 10 kubectl get events -A --sort-by='.lastTimestamp' | tail -30
 
 # Events for a specific namespace
-kubectl get events -n <namespace> --sort-by='.lastTimestamp' --context kind-sovereign-test
+timeout 10 kubectl get events -n <namespace> --sort-by='.lastTimestamp'
 
 # Events for a specific pod
-kubectl get events -n <namespace> --field-selector involvedObject.name=<pod-name> \
-  --context kind-sovereign-test
+timeout 10 kubectl get events -n <namespace> --field-selector involvedObject.name=<pod-name>
 ```
 
 ## Common Log Visibility Issues
@@ -61,10 +62,10 @@ Check in that order.
 
 ```bash
 # See what helm thinks the release status is
-helm status <release> -n <namespace> --kube-context kind-sovereign-test
+timeout 10 helm status <release> -n <namespace>
 
 # See the helm history (shows failed upgrades)
-helm history <release> -n <namespace> --kube-context kind-sovereign-test
+timeout 10 helm history <release> -n <namespace>
 ```
 
 ## Aggregating Logs
@@ -73,9 +74,9 @@ To quickly see what's failing across the cluster:
 
 ```bash
 # All non-Running pods with their status
-kubectl get pods -A --context kind-sovereign-test --no-headers | grep -v -E 'Running|Completed'
+timeout 10 kubectl get pods -A --no-headers | grep -v -E 'Running|Completed'
 
 # Quick scan of recent warnings
-kubectl get events -A --context kind-sovereign-test --field-selector type=Warning \
+timeout 10 kubectl get events -A --field-selector type=Warning \
   --sort-by='.lastTimestamp' | tail -20
 ```

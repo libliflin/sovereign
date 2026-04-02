@@ -2,12 +2,13 @@
 
 ## Rule
 
-**Never download, pull, or transfer images inside the loop.** No `docker pull`,
-no `docker save`, no `kind load`, no `curl` for large files. These block the
+**Never download, pull, or transfer images inside the agent cycle.** No `docker pull`,
+no `docker save`, no `ctr import`, no `curl` for large files. These block the
 cycle and defeat the 5-minute budget.
 
-Instead, write what you need to `lathe/state/downloads.json`. A separate script
-(`lathe/fetch.sh`) runs the queue between cycles or on-demand.
+Instead, write what you need to `lathe/state/downloads.json`. The fetch script
+(`lathe/fetch.sh`) runs automatically at the start of each cycle, before the
+snapshot is collected. Downloads from cycle N are available in cycle N+1.
 
 ## Writing a Download Request
 
@@ -19,14 +20,7 @@ Append to `lathe/state/downloads.json`. The file is a JSON array of requests:
     "type": "image",
     "source": "docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r8",
     "tag_as": "harbor.sovereign.local/bitnami/keycloak:24.0.5-debian-12-r8",
-    "reason": "keycloak chart needs bitnami keycloak image, not available in kind",
-    "added_by_cycle": 3
-  },
-  {
-    "type": "image",
-    "source": "docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14",
-    "tag_as": "harbor.sovereign.local/bitnami/postgresql:16",
-    "reason": "keycloak depends on postgresql, tag :16 expected by chart",
+    "reason": "keycloak chart needs bitnami keycloak image",
     "added_by_cycle": 3
   },
   {
@@ -49,15 +43,18 @@ Append to `lathe/state/downloads.json`. The file is a JSON array of requests:
 ## Request Types
 
 ### `image`
-Container image to pull, optionally re-tag, and load into kind.
-**All images are always loaded into kind after pull.** There is no other target.
+Container image to pull on the host, optionally re-tag, and import into all
+Lima k3s nodes.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `source` | yes | Full image reference to pull (e.g., `docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r8`) |
-| `tag_as` | no | Re-tag to this before loading (e.g., `harbor.sovereign.local/bitnami/keycloak:...`) |
+| `source` | yes | Full image reference to pull |
+| `tag_as` | no | Re-tag before importing (e.g., `harbor.sovereign.local/bitnami/...`) |
 | `reason` | yes | Why this is needed (which chart, what error) |
 | `added_by_cycle` | yes | Cycle number that requested it |
+
+The fetch script pulls the image, re-tags if needed, saves to a tar, and imports
+into every Lima node via `k3s ctr images import`.
 
 ### `helm_repo`
 Helm repository to add.
@@ -81,39 +78,13 @@ File to download via curl.
 
 ## How to Add Requests
 
-Read the existing file (or start with `[]`), append your entries, write it back.
-The fetch script handles deduplication by `source`+`tag_as` for images.
+Read the existing file (or start with `[]`), append your entries, write it back:
 
 ```bash
-# If the file doesn't exist, start fresh
 if [[ ! -f lathe/state/downloads.json ]]; then
     echo '[]' > lathe/state/downloads.json
 fi
 ```
-
-Then use python3 or jq to append:
-```bash
-python3 -c "
-import json
-path = 'lathe/state/downloads.json'
-q = json.load(open(path))
-q.append({
-    'type': 'image',
-    'source': 'docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r8',
-    'tag_as': 'harbor.sovereign.local/bitnami/keycloak:24.0.5-debian-12-r8',
-    'target': 'kind',
-    'reason': 'keycloak chart needs this image',
-    'added_by_cycle': CYCLE_NUMBER
-})
-json.dump(q, open(path, 'w'), indent=2)
-"
-```
-
-## What Happens Next
-
-The human runs `./lathe/fetch.sh` (or it runs automatically between cycles).
-It processes each entry, marks it done, and the next cycle's snapshot will
-reflect the newly available images.
 
 ## In Your Changelog
 
@@ -121,8 +92,5 @@ When you add download requests, note them:
 
 ```markdown
 ## Downloads Queued
-- image: bitnamilegacy/keycloak:24.0.5-debian-12-r8 → kind (keycloak needs it)
-- image: bitnamilegacy/postgresql:16.3.0-debian-12-r14 → kind (keycloak db)
+- image: bitnamilegacy/keycloak:24.0.5-debian-12-r8 → k3s nodes (keycloak needs it)
 ```
-
-This makes it visible what the cycle is waiting on.

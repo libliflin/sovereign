@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # lathe/fetch.sh — Process the download queue.
 #
-# Runs outside the loop. Pulls images, adds helm repos, downloads files.
+# Pulls images, imports into Lima k3s nodes, adds helm repos, downloads files.
 # Marks entries as completed so they aren't re-processed.
 #
 # Usage:
@@ -13,7 +13,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 QUEUE="$SCRIPT_DIR/state/downloads.json"
-CLUSTER_NAME="sovereign-test"
+VM_NODES=("sovereign-0" "sovereign-1" "sovereign-2")
 
 log() { echo "  [fetch] $*"; }
 
@@ -42,13 +42,30 @@ cmd_fetch() {
     local dry_run="${1:-false}"
 
     python3 -c "
-import json, subprocess, sys
+import json, subprocess, sys, tempfile, os, platform as plat
 
 queue_path = '$QUEUE'
 dry_run = '$dry_run' == 'true'
-cluster = '$CLUSTER_NAME'
+vm_nodes = $( printf '['; for n in "${VM_NODES[@]}"; do printf '"%s",' "$n"; done | sed 's/,$//' ; printf ']' )
 q = json.load(open(queue_path))
 processed = 0
+
+# Detect platform for single-arch pull
+arch = 'arm64' if plat.machine() == 'arm64' else 'amd64'
+
+# Find running Lima VMs
+running_vms = []
+for vm in vm_nodes:
+    try:
+        r = subprocess.run(['limactl', 'list', vm, '--format', '{{.Status}}'],
+                           capture_output=True, text=True)
+        if 'Running' in r.stdout:
+            running_vms.append(vm)
+    except Exception:
+        pass
+
+if not running_vms and not dry_run:
+    print('  WARN: No running Lima VMs found. Image imports will be skipped.')
 
 for i, entry in enumerate(q):
     if entry.get('done'):
@@ -66,9 +83,7 @@ for i, entry in enumerate(q):
             source = entry['source']
             tag_as = entry.get('tag_as', '')
 
-            # Pull (single-platform to avoid kind load digest issues with multi-arch)
-            import platform as plat
-            arch = 'arm64' if plat.machine() == 'arm64' else 'amd64'
+            # Pull single-platform to avoid multi-arch issues
             print(f'    Pulling {source} (linux/{arch}) ...')
             subprocess.run(['docker', 'pull', '--platform', f'linux/{arch}', source], check=True)
 
@@ -77,21 +92,26 @@ for i, entry in enumerate(q):
                 print(f'    Tagging as {tag_as} ...')
                 subprocess.run(['docker', 'tag', source, tag_as], check=True)
 
-            # Always load into kind via archive (avoids content digest mismatches)
+            # Save to tar and import into each running Lima VM
             load_image = tag_as if tag_as else source
-            print(f'    Loading {load_image} into kind ...')
-            import tempfile, os
             with tempfile.NamedTemporaryFile(suffix='.tar', delete=False) as tf:
                 tar_path = tf.name
             try:
+                print(f'    Saving {load_image} to tar ...')
                 subprocess.run(['docker', 'save', load_image, '-o', tar_path], check=True)
-                subprocess.run(['kind', 'load', 'image-archive', tar_path, '--name', cluster], check=True)
+
+                for vm in running_vms:
+                    print(f'    Importing into {vm} ...')
+                    remote_path = f'/tmp/{os.path.basename(tar_path)}'
+                    subprocess.run(['limactl', 'copy', tar_path, f'{vm}:{remote_path}'], check=True)
+                    subprocess.run(['limactl', 'shell', vm, 'sudo', 'k3s', 'ctr', 'images', 'import', remote_path], check=True)
+                    subprocess.run(['limactl', 'shell', vm, 'rm', '-f', remote_path], check=True)
             finally:
                 if os.path.exists(tar_path):
                     os.unlink(tar_path)
 
             entry['done'] = True
-            entry['result'] = 'ok'
+            entry['result'] = f'ok — imported into {len(running_vms)} nodes'
             processed += 1
 
         elif etype == 'helm_repo':
@@ -107,8 +127,8 @@ for i, entry in enumerate(q):
         elif etype == 'file':
             url = entry['url']
             dest = entry['dest']
-            print(f'    Downloading {url} → {dest} ...')
-            subprocess.run(['curl', '-fsSL', '-o', dest, url], check=True)
+            print(f'    Downloading {url} -> {dest} ...')
+            subprocess.run(['curl', '-fsSL', '-o', dest, '--max-time', '60', url], check=True)
             entry['done'] = True
             entry['result'] = 'ok'
             processed += 1

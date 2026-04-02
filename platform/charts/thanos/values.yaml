@@ -1,6 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "standard"
   imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"

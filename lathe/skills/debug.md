@@ -4,10 +4,10 @@
 
 ```bash
 # Full pod details (scheduling, conditions, events, volumes)
-kubectl describe pod -n <namespace> <pod-name> --context kind-sovereign-test
+timeout 10 kubectl describe pod -n <namespace> <pod-name>
 
 # Quick status of all pods in a namespace
-kubectl get pods -n <namespace> --context kind-sovereign-test -o wide
+timeout 10 kubectl get pods -n <namespace> -o wide
 ```
 
 ## Common Failure Modes
@@ -15,115 +15,114 @@ kubectl get pods -n <namespace> --context kind-sovereign-test -o wide
 ### ImagePullBackOff
 Image can't be pulled. Causes:
 - Wrong image name or tag
-- Registry unreachable from kind nodes
-- Image not loaded into kind (use `kind load docker-image`)
+- Registry unreachable from nodes
+- Image not imported into k3s nodes (pre-Harbor)
 
-**Fix:** Check the image reference in the helm values. For kind, images must be
-pre-loaded or available from a registry the nodes can reach.
+**Fix:** Check the image reference in helm values. Pre-Harbor: queue the image in
+downloads.json. Post-Harbor: ensure the image is in Harbor and nodes can reach it.
+Never point templates at external registries.
 
 ### CrashLoopBackOff
 Container starts and immediately exits. Causes:
-- Missing ConfigMap or Secret that the app expects
+- Missing ConfigMap or Secret
 - Wrong command or entrypoint
 - Database/dependency not ready
 - Insufficient memory (OOMKilled)
 
-**Fix:** Check `kubectl logs --previous` for the crash output. Check events for OOMKilled.
+**Fix:** Check `kubectl logs --previous` for crash output. Check events for OOMKilled.
 
 ### Pending
 Pod can't be scheduled. Causes:
 - Insufficient CPU/memory on nodes
 - PVC can't bind (wrong StorageClass)
-- Node affinity/anti-affinity can't be satisfied
+- Anti-affinity can't be satisfied
 - Taints preventing scheduling
 
-**Fix:** Run `kubectl describe pod` and look at the Events section for the scheduling failure reason.
+**Fix:** `kubectl describe pod` — Events section shows scheduling failure reason.
 
 ### CreateContainerConfigError
-Container can't start because a referenced ConfigMap or Secret doesn't exist.
+Referenced ConfigMap or Secret doesn't exist.
 
-**Fix:** Check what ConfigMaps/Secrets the pod references and ensure they exist:
+**Fix:**
 ```bash
-kubectl get configmaps -n <namespace> --context kind-sovereign-test
-kubectl get secrets -n <namespace> --context kind-sovereign-test
+timeout 10 kubectl get configmaps -n <namespace>
+timeout 10 kubectl get secrets -n <namespace>
 ```
 
 ## Resource Availability
 
 ```bash
-# Node resource usage (requires metrics-server)
-kubectl top nodes --context kind-sovereign-test
+# Node resource usage
+timeout 10 kubectl top nodes
 
 # Pod resource usage
-kubectl top pods -A --context kind-sovereign-test
+timeout 10 kubectl top pods -A
 
-# Node capacity and allocatable
-kubectl describe nodes --context kind-sovereign-test | grep -A 5 "Allocated resources"
+# Node capacity
+timeout 10 kubectl describe nodes | grep -A 5 "Allocated resources"
 ```
 
-Kind nodes share the host machine's resources. If pods are Pending due to resources,
-reduce `resources.requests` in chart values (not `resources.limits`).
+Lima VMs have dedicated resources (CPU/memory configured at creation). If pods are
+Pending, either reduce resource requests or increase VM resources.
 
 ## CRD Readiness
 
-Some components (OPA Gatekeeper, cert-manager) need CRDs to be Established before
-resources that use them can be created.
-
 ```bash
 # Check CRD status
-kubectl get crd --context kind-sovereign-test | grep <pattern>
+timeout 10 kubectl get crd | grep <pattern>
 
 # Wait for a specific CRD
-kubectl wait --for=condition=Established crd/<crd-name> \
-  --context kind-sovereign-test --timeout=60s
+timeout 30 kubectl wait --for=condition=Established crd/<crd-name> --timeout=60s
+```
+
+## VM-Level Debugging
+
+When k8s-level debugging isn't enough, check the node directly:
+
+```bash
+# k3s service status
+limactl shell sovereign-0 systemctl status k3s
+
+# k3s logs
+limactl shell sovereign-0 journalctl -u k3s --tail=30
+
+# Agent node logs
+limactl shell sovereign-1 journalctl -u k3s-agent --tail=30
+
+# containerd images on a node
+limactl shell sovereign-0 sudo k3s ctr images list | grep <image>
+
+# Disk usage
+limactl shell sovereign-0 df -h
 ```
 
 ## Stuck Helm Releases
 
-If helm shows a release in `pending-install` or `pending-upgrade`:
-
 ```bash
-# Check current state
-helm status <release> -n <namespace> --kube-context kind-sovereign-test
-helm history <release> -n <namespace> --kube-context kind-sovereign-test
-
-# Rollback to last good state
-helm rollback <release> 0 -n <namespace> --kube-context kind-sovereign-test
+helm status <release> -n <namespace>
+helm history <release> -n <namespace>
+helm rollback <release> 0 -n <namespace>
 
 # Nuclear: uninstall and reinstall
-helm uninstall <release> -n <namespace> --kube-context kind-sovereign-test
-# Then re-run helm upgrade --install
-```
-
-## Namespace Issues
-
-```bash
-# Check if namespace exists
-kubectl get namespace <ns> --context kind-sovereign-test
-
-# Create if missing (helm --create-namespace also does this)
-kubectl create namespace <ns> --context kind-sovereign-test
+helm uninstall <release> -n <namespace>
 ```
 
 ## Network Debugging
 
 ```bash
-# Check if a service is reachable from within the cluster
-kubectl run tmp-debug --rm -i --restart=Never \
-  --image=busybox --context kind-sovereign-test \
-  -- wget -qO- http://<service>.<namespace>.svc:port/health
+# Check service reachability from inside cluster
+timeout 10 kubectl run tmp-debug --rm -i --restart=Never \
+  --image=busybox -- wget -qO- http://<service>.<namespace>.svc:port/health
 
-# Check DNS resolution
-kubectl run tmp-debug --rm -i --restart=Never \
-  --image=busybox --context kind-sovereign-test \
-  -- nslookup <service>.<namespace>.svc
+# DNS resolution
+timeout 10 kubectl run tmp-debug --rm -i --restart=Never \
+  --image=busybox -- nslookup <service>.<namespace>.svc
 ```
 
 ## When Nothing Else Works
 
-If a component has been failing for 3+ cycles with the same error despite different
-fix approaches:
-1. Check if it's a known kind incompatibility (see kind.md skill)
-2. Consider disabling for kind: `--set <component>.enabled=false`
-3. Document the reason in the changelog
+If a component fails 3+ cycles with the same error:
+1. Check if it's a known limitation (see lima.md skill)
+2. Consider disabling: `--set <component>.enabled=false`
+3. Document the reason in changelog
 4. Move on to the next layer
