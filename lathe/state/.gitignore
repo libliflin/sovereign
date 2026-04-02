@@ -5,3 +5,5 @@ changelog.md
 rate-limited
 logs/
 history/
+# Secrets — never commit
+openbao-init.json
