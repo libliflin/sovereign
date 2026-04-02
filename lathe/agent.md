@@ -43,11 +43,34 @@ Classify every finding into exactly one:
 - **IMAGE_ISSUE** — Pull failure, wrong tag, missing from registry
 - **INFRA_INCOMPATIBLE** — Cannot run in kind (eBPF, raw block devices, etc.)
 
+## Values Hierarchy
+
+Every decision is made through these values, in priority order:
+
+**T6 Working Software.** Verified by running, not by templates. If nothing runs, nothing else matters.
+
+**T1 Sovereignty.** Zero dependency on any external registry, cloud provider, or proprietary
+service. After bootstrap, ALL images come from the internal registry. Chart templates
+NEVER reference external registries (docker.io, quay.io, ghcr.io, gcr.io, registry.k8s.io).
+This is not a guideline — it is constitutional gate G6. If an image isn't available
+internally, the fix is to GET IT THERE (via the download queue + kind load), not to
+point the template at an external source. Hardcoding an external registry in a template
+to "make it work" violates T1 and will be reverted.
+
+**T2 Zero Trust.** mTLS everywhere, deny-all NetworkPolicy, OPA enforcement.
+
+**T3 Developer Autonomy.** Clone, configure, run in under 30 minutes.
+
+**T4 Observability.** Every signal captured — metrics, logs, traces, security events.
+
+**T5 Resilience.** Survives node failures, upgrades, chaos.
+
 ## Decision Authority
 
-You are **fully empowered** to make technical decisions:
+You are **fully empowered** to make technical decisions within the values above:
 
-- **Image sources:** Switch registries freely. Prefer chart defaults, then official project registries.
+- **Image availability:** If an image isn't in kind, queue it in downloads.json. Never
+  point a chart template at an external registry as a workaround.
 - **Versions:** If a pinned tag doesn't exist, find one that does.
 - **Config:** If a value doesn't work in kind, change it to what works.
 - **Components:** If something fundamentally can't run in kind, disable it and document why.

@@ -66,19 +66,29 @@ for i, entry in enumerate(q):
             source = entry['source']
             tag_as = entry.get('tag_as', '')
 
-            # Pull
-            print(f'    Pulling {source} ...')
-            subprocess.run(['docker', 'pull', source], check=True)
+            # Pull (single-platform to avoid kind load digest issues with multi-arch)
+            import platform as plat
+            arch = 'arm64' if plat.machine() == 'arm64' else 'amd64'
+            print(f'    Pulling {source} (linux/{arch}) ...')
+            subprocess.run(['docker', 'pull', '--platform', f'linux/{arch}', source], check=True)
 
             # Re-tag if needed
             if tag_as:
                 print(f'    Tagging as {tag_as} ...')
                 subprocess.run(['docker', 'tag', source, tag_as], check=True)
 
-            # Always load into kind
+            # Always load into kind via archive (avoids content digest mismatches)
             load_image = tag_as if tag_as else source
             print(f'    Loading {load_image} into kind ...')
-            subprocess.run(['kind', 'load', 'docker-image', load_image, '--name', cluster], check=True)
+            import tempfile, os
+            with tempfile.NamedTemporaryFile(suffix='.tar', delete=False) as tf:
+                tar_path = tf.name
+            try:
+                subprocess.run(['docker', 'save', load_image, '-o', tar_path], check=True)
+                subprocess.run(['kind', 'load', 'image-archive', tar_path, '--name', cluster], check=True)
+            finally:
+                if os.path.exists(tar_path):
+                    os.unlink(tar_path)
 
             entry['done'] = True
             entry['result'] = 'ok'
