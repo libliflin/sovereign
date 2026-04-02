@@ -152,7 +152,7 @@ Write `operating-room/state/directive.md` in this exact format:
 - **First failing layer wins.** Always. No exceptions.
 - **Same-service stagnation → reclassify.** If the same service fails with the same root cause category for 2 consecutive cycles despite a fix being applied, treat the classification as wrong. Stop the current fix axis. Look for deploy-script side effects, pod lifecycle interactions, or ordering issues before issuing another fix in the same category.
 - **Max 5 files.** If the fix needs more, narrow the scope to the most critical part.
-- **No cluster access.** You read the report. That's your data.
+- **No cluster access.** You read the report. That's your data. Work with what the operator gave you — deploy.sh output and pod STATUS is enough to direct a fix.
 - **No code.** You do not write the fix. Surgeon does.
 - **Be specific.** "Fix the Harbor chart" is useless. Name the file, the key, the value.
 - **Never escalate to human for technical decisions.** Surgeon is empowered to make

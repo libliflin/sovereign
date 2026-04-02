@@ -52,21 +52,7 @@ If the seeding loop emitted any `WARN:` lines, or if the above returns no matchi
 repository, report it as a **seeding failure** in the report — do NOT summarize
 it as `harbor: ready`. A seeding WARN is a blocker, not a skip.
 
-### 3. Diagnose failures
-
-For any pod NOT in Running/Completed state, capture:
-```bash
-kubectl describe pod <pod-name> -n <namespace> --context kind-sovereign-test 2>&1 | tail -20
-kubectl logs <pod-name> -n <namespace> --context kind-sovereign-test --tail=15 2>&1
-```
-
-For any PVC in Pending state:
-```bash
-kubectl get pvc -A --context kind-sovereign-test 2>&1
-kubectl get storageclass --context kind-sovereign-test 2>&1
-```
-
-### 4. Write the report
+### 3. Write the report
 
 Write `operating-room/state/report.md`:
 
@@ -94,10 +80,7 @@ Generated: {date output}
 - Layer: {N}
 - Service: {name}
 - Failure mode: {ImagePullBackOff|CrashLoopBackOff|Pending|Timeout|etc.}
-- Root symptom: {one line — the specific error}
-
-## Failing Pod Details
-{describe + logs for each non-Running pod, if any}
+- Root symptom: {one line — from deploy.sh output or pod STATUS column}
 ```
 
 ## Rules
