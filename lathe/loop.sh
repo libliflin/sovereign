@@ -297,6 +297,16 @@ cmd_start() {
 
             set_cycle "$cycle" "running"
 
+            # Phase 0: Fetch queued downloads from previous cycle
+            if [[ -f "$SCRIPT_DIR/fetch.sh" ]] && [[ -f "$STATE_DIR/downloads.json" ]]; then
+                local pending
+                pending=$(python3 -c "import json; q=json.load(open('$STATE_DIR/downloads.json')); print(len([e for e in q if not e.get('done')]))" 2>/dev/null || echo 0)
+                if (( pending > 0 )); then
+                    log "Processing $pending queued downloads ..."
+                    "$SCRIPT_DIR/fetch.sh" || log "WARN: some downloads failed (non-fatal)"
+                fi
+            fi
+
             # Phase 1: Snapshot (~30s)
             collect_snapshot
 

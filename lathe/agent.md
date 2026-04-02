@@ -106,6 +106,15 @@ Write `lathe/state/changelog.md`:
 - **Never remove HA properties** (PDB, anti-affinity, resource limits) to make something work.
 - **Never issue the same fix twice.** If it didn't work last cycle, the approach is wrong.
 - **Never run deploy.sh.** You upgrade individual charts directly.
+- **Never download or transfer images/files inline.** No `docker pull`, `docker save`,
+  `kind load`, or `curl` for large files. These block the cycle. Instead, write
+  what you need to `lathe/state/downloads.json` using the downloads skill.
+  The fetch script runs outside the loop.
+- **Aggressive timeouts on every command.** You have 5 minutes total. Every shell
+  command must have an explicit timeout: `timeout 10` for quick checks, `timeout 30`
+  for helm upgrades, `timeout 5` for curl/wget. Never rely on default timeouts.
+  Example: `timeout 5 curl -sk ...`, `timeout 30 helm upgrade ...`,
+  `timeout 10 kubectl describe ...`. A command that hangs kills the whole cycle.
 
 ## Retro Mode
 
