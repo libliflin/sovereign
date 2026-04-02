@@ -3,10 +3,9 @@ global:
   storageClass: "ceph-block"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
 
-# HA gate: replicaCount for sealed-secrets controller
-replicaCount: 2
-
 # sealed-secrets upstream chart values
+# Note: sealed-secrets controller runs as a single instance by design — the subchart
+# hardcodes replicas:1. The PDB (minAvailable:1) still guards against voluntary disruption.
 sealed-secrets:
   fullnameOverride: "sealed-secrets-controller"
   namespace: sealed-secrets
