@@ -1,0 +1,7 @@
+# Runtime state — not version controlled
+cycle.json
+snapshot.txt
+changelog.md
+rate-limited
+logs/
+history/

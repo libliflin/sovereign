@@ -75,7 +75,14 @@ install_chart() {
     return 0
   fi
 
-  log "${name}: deploying → ${namespace}..."
+  # Skip if a release already exists (healthy or not) — surgeon fixes broken releases,
+  # operator doesn't retry them. This keeps the operator pass fast.
+  if helm status "${name}" --namespace "${namespace}" --kube-context "${CONTEXT}" &>/dev/null; then
+    log "${name}: deployed but unhealthy (skipped — surgeon will fix)"
+    return 0
+  fi
+
+  log "${name}: not yet deployed → installing..."
 
   if [[ "$DRY_RUN" == "true" ]]; then
     log "[dry-run] helm upgrade --install ${name} ${PLATFORM_DIR}/charts/${name}/ -n ${namespace}"
@@ -100,7 +107,7 @@ install_chart() {
     ${extra_args[@]+"${extra_args[@]}"} \
     2>&1 || {
       log "${name}: FAILED (continuing to next chart)"
-      return 0  # Don't abort — report the failure and keep going
+      return 0
     }
 
   log "${name}: ready ✓"
