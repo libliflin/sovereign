@@ -65,7 +65,6 @@ for i, entry in enumerate(q):
         if etype == 'image':
             source = entry['source']
             tag_as = entry.get('tag_as', '')
-            target = entry.get('target', 'kind')
 
             # Pull
             print(f'    Pulling {source} ...')
@@ -76,11 +75,10 @@ for i, entry in enumerate(q):
                 print(f'    Tagging as {tag_as} ...')
                 subprocess.run(['docker', 'tag', source, tag_as], check=True)
 
-            # Load into kind
+            # Always load into kind
             load_image = tag_as if tag_as else source
-            if target == 'kind':
-                print(f'    Loading {load_image} into kind ...')
-                subprocess.run(['kind', 'load', 'docker-image', load_image, '--name', cluster], check=True)
+            print(f'    Loading {load_image} into kind ...')
+            subprocess.run(['kind', 'load', 'docker-image', load_image, '--name', cluster], check=True)
 
             entry['done'] = True
             entry['result'] = 'ok'

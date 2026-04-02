@@ -19,7 +19,6 @@ Append to `lathe/state/downloads.json`. The file is a JSON array of requests:
     "type": "image",
     "source": "docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r8",
     "tag_as": "harbor.sovereign.local/bitnami/keycloak:24.0.5-debian-12-r8",
-    "target": "kind",
     "reason": "keycloak chart needs bitnami keycloak image, not available in kind",
     "added_by_cycle": 3
   },
@@ -27,7 +26,6 @@ Append to `lathe/state/downloads.json`. The file is a JSON array of requests:
     "type": "image",
     "source": "docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14",
     "tag_as": "harbor.sovereign.local/bitnami/postgresql:16",
-    "target": "kind",
     "reason": "keycloak depends on postgresql, tag :16 expected by chart",
     "added_by_cycle": 3
   },
@@ -52,12 +50,12 @@ Append to `lathe/state/downloads.json`. The file is a JSON array of requests:
 
 ### `image`
 Container image to pull, optionally re-tag, and load into kind.
+**All images are always loaded into kind after pull.** There is no other target.
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `source` | yes | Full image reference to pull (e.g., `docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r8`) |
 | `tag_as` | no | Re-tag to this before loading (e.g., `harbor.sovereign.local/bitnami/keycloak:...`) |
-| `target` | yes | Where to load: `kind` (kind load) or `local` (just pull to docker) |
 | `reason` | yes | Why this is needed (which chart, what error) |
 | `added_by_cycle` | yes | Cycle number that requested it |
 
