@@ -1,10 +1,1 @@
-[
-  {
-    "type": "image",
-    "source": "quay.io/keycloak/keycloak:23.0.7",
-    "tag_as": "harbor.sovereign.local/keycloak/keycloak:23.0.7",
-    "target": "kind",
-    "reason": "keycloak-realm-init pulls harbor.sovereign.local/keycloak/keycloak:23.0.7; harbor project does not exist and push from host is not possible via ClusterIP. Load into kind nodes with the harbor tag — kubelet finds it locally with imagePullPolicy:IfNotPresent, bypassing harbor DNS entirely.",
-    "added_by_cycle": 3
-  }
-]
+[]

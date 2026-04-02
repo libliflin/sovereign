@@ -28,7 +28,7 @@ spec:
       serviceAccountName: {{ .Values.keycloak.serviceAccount.name }}
       containers:
         - name: realm-init
-          image: "{{ if .Values.global.imageRegistry }}{{ .Values.global.imageRegistry }}{{ else }}{{ .Values.realmInit.image.registry }}{{ end }}/{{ .Values.realmInit.image.repository }}:{{ .Values.realmInit.image.tag }}"
+          image: "{{ .Values.realmInit.image.registry }}/{{ .Values.realmInit.image.repository }}:{{ .Values.realmInit.image.tag }}"
           command:
             - /bin/bash
             - -c
