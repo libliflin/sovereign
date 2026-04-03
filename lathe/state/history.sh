@@ -356,3 +356,18 @@ kubectl delete pods -n argocd --field-selector status.phase=Failed
 kubectl delete pods -n kube-system --field-selector status.phase=Failed
 kubectl delete pods -n jaeger --field-selector status.phase=Failed
 kubectl delete pods -n monitoring --field-selector status.phase=Failed
+
+# cycle 34 (follow-up): confirm DiskPressure cleared, taint removed from sovereign-2
+kubectl describe node lima-sovereign-2 | grep -i taint
+# → Taints: <none>
+
+# cycle 34 (follow-up): remove pv-protection finalizers from Released Harbor PVs (previous patch didn't persist)
+kubectl patch pv pvc-2b4807f7-49e9-4f5f-9ee3-fd9e9cbf52b2 -p '{"metadata":{"finalizers":null}}'
+kubectl patch pv pvc-9215aa1c-c091-41b9-b2dd-5a8c48134be1 -p '{"metadata":{"finalizers":null}}'
+
+# cycle 34 (follow-up): delete Released Harbor PVs (stops helper-pod eviction loop)
+kubectl delete pv pvc-2b4807f7-49e9-4f5f-9ee3-fd9e9cbf52b2 pvc-9215aa1c-c091-41b9-b2dd-5a8c48134be1
+
+# cycle 34 (follow-up): delete evicted/error/stale pods cluster-wide
+kubectl delete pod tmp-debug -n default --grace-period=0
+kubectl delete pod cert-manager-cainjector-7f45ffb9d5-gjc77 -n cert-manager --grace-period=0

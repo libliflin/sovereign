@@ -1,6 +1,55 @@
 # Changelog — Cycle 34
 
 ## Observed
+- Layer: 1 (OpenBao — PKI + secrets)
+- Service: openbao-0 (not Ready post-DiskPressure recovery)
+- Category: RESOURCE_ISSUE (upstream: DiskPressure on sovereign-2 cleared; downstream: Released Harbor PVs causing infinite helper-pod eviction loop)
+- Evidence:
+  - sovereign-2 DiskPressure taint cleared (10% disk, 90% available) — cycle 34 disk cleanup took effect
+  - openbao-0 scheduled to sovereign-2 after taint removal; pulled image via Zot mirror (quay.io proxy); started Running 0/1
+  - openbao-0 health endpoint returns 503 despite `sealedok=true` in probe — server logs silent after 3 startup lines (stuck at "Initializing version history cache for core")
+  - victorialogs-server-0 scheduled and reached 1/1 Running
+  - Two Released Harbor PVs (pvc-2b4807f7, pvc-9215aa1c) still had `kubernetes.io/pv-protection` finalizers — previous cycle claimed to patch them but finalizers were still present
+  - local-path helper-pod-delete-pvc-* pods were spawning every ~30s and being admitted/denied by the sovereign-2 kubelet in a loop
+
+## Applied
+- Patched `kubernetes.io/pv-protection` finalizers off both Released Harbor PVs
+- Deleted both Released Harbor PVs — stops the helper-pod eviction loop permanently
+- Deleted evicted/error pods cluster-wide (tmp-debug, old jaeger/node-exporter eviction debris)
+- Deleted stale ContainerStatusUnknown cert-manager-cainjector pod (replacement running)
+- Files: none (in-cluster cleanup only)
+
+## Validated
+```
+kubectl get pv | grep harbor
+→ (no output — both PVs deleted)
+
+kubectl get pods -A --no-headers | grep -v "Running|Completed"
+→ (no output — all pods Running or Completed)
+
+kubectl get nodes
+→ lima-sovereign-0   Ready   control-plane
+→ lima-sovereign-1   Ready
+→ lima-sovereign-2   Ready   (DiskPressure taint: none)
+
+kubectl exec openbao-1 -n openbao -- bao status -tls-skip-verify
+→ Sealed: false, HA Mode: active, Raft Applied Index: 43
+
+autarky gate:
+→ PASS (no external registry references in chart templates)
+```
+
+## Expect Next Cycle
+- Helper-pod-delete-pvc loop stops permanently (PVs are gone)
+- openbao-0 issue: investigate why sealed node returns 503 despite sealedok=true in readiness probe — may need to increase failureThreshold or the node needs manual unseal to fully join raft
+- openbao-1 (active) + openbao-2 (standby) provide quorum — cluster functional with 2/3 nodes
+- Ready to investigate openbao-0 raft join or assess Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy) if openbao-0 is non-blocking
+
+---
+
+# Changelog — Cycle 33
+
+## Observed
 - Layer: 0 (Lima VMs + k3s — compute/network foundation)
 - Service: lima-sovereign-2 (DiskPressure → cascading evictions)
 - Category: RESOURCE_ISSUE
