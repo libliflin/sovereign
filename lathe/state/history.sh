@@ -83,3 +83,10 @@ helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set ingr
 
 # cycle 11: uninstall failed keycloak release
 helm uninstall keycloak -n keycloak
+
+# cycle 12: fix fetch.sh — was pulling linux/arm64 but k3s nodes run linux/amd64 via QEMU
+# changed: arch = 'amd64'  (hardcoded instead of detecting host arch)
+# edit lathe/fetch.sh
+
+# cycle 12: reset failed downloads for retry with correct arch
+# edit lathe/state/downloads.json — removed result/done fields from cycle 11 failures

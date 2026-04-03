@@ -1,3 +1,49 @@
+# Changelog — Cycle 12
+
+## Observed
+
+- Layer: 3 (Keycloak — identity / SSO)
+- Service: keycloak — images still not imported; download failed in cycle 11
+- Category: CONFIG_ERROR (fetch.sh using wrong architecture)
+- Evidence:
+  - `downloads.json` shows both cycle 11 entries with `result: "failed: Command '['docker', 'pull', '--platform', 'linux/arm64', ...]' returned non-zero exit status 1."`
+  - Root cause: `fetch.sh` detects host machine arch (`arm64` on Apple Silicon) and pulls `linux/arm64` images — but Lima k3s nodes run `linux/amd64` (x86_64 via QEMU emulation). An arm64 image would fail to run even if imported.
+  - Both `docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r0` and `docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14` DO exist for `amd64` (confirmed via `docker manifest inspect`).
+  - No keycloak helm release exists; namespace is empty — clean state for next deploy.
+
+## Applied
+
+- Fixed `lathe/fetch.sh`: changed arch detection from `'arm64' if plat.machine() == 'arm64' else 'amd64'` to hardcoded `'amd64'`. Lima k3s nodes always run x86_64 via QEMU; host arch is irrelevant for import target.
+- Reset `lathe/state/downloads.json`: removed `result` and `done` fields from both cycle 11 entries so fetch.sh retries them next cycle with the correct platform.
+- Files: `lathe/fetch.sh`, `lathe/state/downloads.json`
+
+## Validated
+
+```
+# fetch.sh syntax
+bash -n lathe/fetch.sh
+→ PASS: syntax ok
+
+# Autarky gate
+grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/*/templates/
+→ PASS
+```
+
+## Downloads Queued (retry)
+
+- image: `docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r0` → k3s nodes as `docker.io/bitnami/keycloak:24.0.5-debian-12-r0` (now pulls linux/amd64)
+- image: `docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14` → k3s nodes as `docker.io/bitnami/postgresql:16.3.0-debian-12-r14` (now pulls linux/amd64)
+
+## Expect Next Cycle
+
+- fetch.sh runs at cycle start, pulls both images as `linux/amd64`, imports into all 3 k3s nodes
+- Deploy keycloak: `helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set ingress.enabled=false --set realmInit.enabled=false`
+- `keycloak-0` finds image locally → starts
+- `keycloak-postgresql-0` gets `local-path` PVC (global.storageClass is `local-path` in values.yaml) → binds → starts
+- Layer 3 first pod running
+
+---
+
 # Changelog — Cycle 11
 
 ## Observed

@@ -50,8 +50,9 @@ vm_nodes = $( printf '['; for n in "${VM_NODES[@]}"; do printf '"%s",' "$n"; don
 q = json.load(open(queue_path))
 processed = 0
 
-# Detect platform for single-arch pull
-arch = 'arm64' if plat.machine() == 'arm64' else 'amd64'
+# Lima k3s nodes always run x86_64 via QEMU emulation (even on ARM64 host).
+# Pulling arm64 images would import successfully but fail to run on the nodes.
+arch = 'amd64'
 
 # Find running Lima VMs
 running_vms = []
