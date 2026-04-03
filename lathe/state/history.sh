@@ -51,6 +51,20 @@ kubectl -n harbor patch statefulset harbor-redis --type=json \
 # cycle 9: restart jobservice after core is healthy
 kubectl -n harbor delete pod -l component=jobservice
 
+# cycle 10: check openbao-2 seal status (restarted, needs unseal)
+kubectl exec -n openbao openbao-2 -- bao status -tls-skip-verify
+
+# cycle 10: unseal openbao-2 (keys 1, 2, 3)
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 10: verify raft cluster (all 3 voters)
+kubectl exec -n openbao openbao-0 -- sh -c 'BAO_TOKEN=<ROOT_TOKEN> bao operator raft list-peers -tls-skip-verify'
+
+# cycle 10: verify harbor API from inside cluster
+kubectl run tmp-ping --rm -i --restart=Never --image=busybox -n harbor -- wget -qO- --timeout=5 http://harbor-core.harbor:80/api/v2.0/ping
+
 # cycle 9: verify harbor API
 curl -sk --resolve harbor.sovereign-autarky.dev:443:192.168.104.1 \
   -u admin:Harbor12345 https://harbor.sovereign-autarky.dev/api/v2.0/ping
