@@ -1,34 +1,43 @@
-# Changelog — Cycle 23
+# Changelog — Cycle 24
 
 ## Observed
 
-- Layer: 3 (Keycloak — identity / SSO)
-- Service: keycloak
-- Category: CHART_ERROR — helm release stuck in `failed` state from cycle 22 timeout; both pods were already Running 1/1 after fetch.sh imported bitnami images
-- Evidence: `helm status keycloak -n keycloak` → `STATUS: failed`, `DESCRIPTION: context deadline exceeded`; pods showed `keycloak-0 1/1 Running` and `keycloak-postgresql-0 1/1 Running`
+- Layer: 2 (Harbor — internal registry / autarky boundary)
+- Service: harbor
+- Category: DEPENDENCY_MISSING — Harbor not yet installed; Layer 3 (Keycloak) is healthy but Layer 2 was skipped
+- Evidence: `helm list -A` showed no harbor release; Layer 3 complete, Layer 2 gap
 
 ## Applied
 
-- Ran `helm upgrade keycloak` with `realmInit.enabled=false` to reconcile release from `failed` → `deployed`
-- No chart changes required — pods were already healthy, release just needed the upgrade to acknowledge current state
+- Installed harbor chart (goharbor/harbor 1.15.0 wrapper) into harbor namespace
+- All Harbor sub-components applied: core, portal, registry, jobservice, nginx, database, redis
+- Images pulled from docker.io/goharbor (bootstrap window — acceptable pre-Harbor)
+- Files: `platform/charts/harbor/` (no changes needed, chart was ready)
 
 ## Validated
 
 ```
-helm lint platform/charts/keycloak/
+helm lint platform/charts/harbor/
 → 1 chart(s) linted, 0 chart(s) failed
 
-helm upgrade keycloak platform/charts/keycloak/ -n keycloak --set realmInit.enabled=false --timeout 150s --wait
-→ STATUS: deployed, REVISION: 2, Upgrade complete
+helm upgrade --install harbor platform/charts/harbor/ -n harbor --create-namespace
+→ STATUS: deployed, REVISION: 1, Install complete
 
-kubectl get pods -n keycloak
-→ keycloak-0              1/1 Running   0
-→ keycloak-postgresql-0   1/1 Running   0
+kubectl get events -n harbor (immediate post-install):
+→ PVCs: all provisioned successfully (local-path)
+→ Images: goharbor/nginx-photon:v2.11.0 already present on machine
+→ Images: goharbor/harbor-portal:v2.11.0 pulled (5.2s)
+→ Images: goharbor/harbor-jobservice:v2.11.0 already present on machine
+→ harbor-nginx pod: Started container nginx
 
-autarky gate
+autarky gate (all chart templates):
 → PASS
 ```
 
 ## Expect Next Cycle
 
-Layer 3 (Keycloak) is healthy and deployed. Next cycle should advance to Layer 2 — Harbor (internal registry / autarky boundary). Harbor must be installed before Layer 4 (Forgejo + ArgoCD) so all subsequent images come from the internal registry.
+Harbor pods should be Running or close to it. Expect:
+- harbor-nginx, harbor-portal, harbor-core, harbor-jobservice, harbor-registry, harbor-database, harbor-redis to reach Running
+- harbor-nginx readiness (502 at install time — waiting for core/portal to be ready)
+- If harbor-database is slow (QEMU emulation), may need readinessProbe timeout increase (already set to 10s in values.yaml)
+- Once Harbor is Running, configure k3s registry mirrors to point nodes at harbor.sovereign-autarky.dev and advance to Layer 4 (Forgejo + ArgoCD)

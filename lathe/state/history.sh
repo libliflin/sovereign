@@ -274,3 +274,6 @@ helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set real
 
 # cycle 23: reconcile keycloak release from failed to deployed (pods were already running after fetch.sh imported images)
 helm upgrade keycloak platform/charts/keycloak/ -n keycloak --set realmInit.enabled=false --timeout 150s --wait
+
+# cycle 24: install harbor (layer 2 - internal registry / autarky boundary)
+helm upgrade --install harbor platform/charts/harbor/ -n harbor --create-namespace
