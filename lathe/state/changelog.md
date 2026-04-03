@@ -1,30 +1,28 @@
-# Changelog — Cycle 37
+# Changelog — Cycle 38
 
 ## Observed
 - Layer: 6 (Istio, OPA-Gatekeeper, Falco, Trivy — security mesh)
-- Service: falco (Layer 6, third component — not yet deployed)
-- Category: DEPENDENCY_MISSING (Falco not started; Istio + OPA-Gatekeeper healthy)
+- Service: trivy-operator (Layer 6, fourth and final component — not yet deployed)
+- Category: DEPENDENCY_MISSING (Trivy not started; Istio + OPA-Gatekeeper + Falco all healthy)
 - Evidence:
   - All pods Running or Completed — no failures in snapshot
-  - Istio: istiod 2/2 Running, STRICT PeerAuthentication active
-  - OPA-Gatekeeper: 4 pods Running, 3 constraints enforcing deny
-  - No `falco` helm release; no `falco` namespace
-  - `falco/values.yaml` had `storageClass: "ceph-block"` (same pattern as cycles 35–36)
-  - OPA Gatekeeper `no-privilege-escalation` constraint had no namespace exclusions — would block Falco's `privileged: true` DaemonSet pods
-  - OPA Gatekeeper `require-resource-limits` would block falcoctl sidecar/init containers (upstream chart has `resources: {}`)
+  - No `trivy-operator` helm release; no `trivy-system` namespace
+  - `trivy-operator/values.yaml` had `global.storageClass: "ceph-block"` (same pattern as prior cycles)
+  - OPA Gatekeeper `require-labels` constraint (enforcing `app` and `tier` on Deployments) had no namespace exclusions — would block upstream trivy-operator Deployment
+  - OPA Gatekeeper `require-resource-limits` would block trivy-operator operator controller pod (upstream chart has `resources: {}` for the controller)
 
 ## Applied
-- Fixed `global.storageClass: "ceph-block"` → `"local-path"` in `platform/charts/falco/values.yaml`
-- Added resource limits to falcoctl sidecar and init containers in `platform/charts/falco/values.yaml` (falcoctl.artifact.follow.resources, falcoctl.artifact.install.resources, driver.loader.initContainer.resources)
-- Added `privilegeEscalationExcludedNamespaces: [falco]` to `platform/charts/opa-gatekeeper/values.yaml`
-- Updated `constraint-no-privilege-escalation.yaml` template to emit `spec.match.excludedNamespaces` from the new value
-- Upgraded OPA-Gatekeeper (revision 3) to apply the constraint update with falco namespace exclusion
-- Installed Falco DaemonSet (revision 1→2 after resource fix); all 3 pods 2/2 Running
-- Files: `platform/charts/falco/values.yaml`, `platform/charts/opa-gatekeeper/values.yaml`, `platform/charts/opa-gatekeeper/templates/constraint-no-privilege-escalation.yaml`
+- Fixed `global.storageClass: "ceph-block"` → `"local-path"` in `platform/charts/trivy-operator/values.yaml`
+- Added `resources:` for operator controller pod to `platform/charts/trivy-operator/values.yaml` (cpu 100m-500m, memory 128Mi-512Mi)
+- Added `requireLabelsExcludedNamespaces: [trivy-system]` to `platform/charts/opa-gatekeeper/values.yaml`
+- Updated `constraint-require-labels.yaml` template to emit `spec.match.excludedNamespaces` from the new value
+- Upgraded OPA-Gatekeeper (revision 3→4) to apply the constraint update with trivy-system exclusion
+- Installed trivy-operator (revision 1); operator pod 1/1 Running, scan jobs firing immediately
+- Files: `platform/charts/trivy-operator/values.yaml`, `platform/charts/opa-gatekeeper/values.yaml`, `platform/charts/opa-gatekeeper/templates/constraint-require-labels.yaml`
 
 ## Validated
 ```
-helm lint platform/charts/falco/
+helm lint platform/charts/trivy-operator/
 → 1 chart(s) linted, 0 chart(s) failed
 
 helm lint platform/charts/opa-gatekeeper/
@@ -32,22 +30,21 @@ helm lint platform/charts/opa-gatekeeper/
 
 autarky gate: PASS
 
-helm upgrade opa-gatekeeper ... --set constraintsEnabled=true → STATUS: deployed REVISION: 3
+helm upgrade opa-gatekeeper ... --set constraintsEnabled=true → STATUS: deployed REVISION: 4
 
-kubectl get k8snoprivilegeescalation no-privilege-escalation -o yaml | grep -A5 match:
+kubectl get k8srequirelabels require-labels -o yaml | grep -A5 match:
 → match:
 →   excludedNamespaces:
-→   - falco
+→   - trivy-system
 
-helm upgrade --install falco platform/charts/falco/ -n falco → STATUS: deployed REVISION: 2
+helm upgrade --install trivy-operator ... → STATUS: deployed REVISION: 1
 
-kubectl get pods -n falco
-→ falco-5sph2   2/2   Running   0   39s
-→ falco-r9www   2/2   Running   0   39s
-→ falco-rsxbc   2/2   Running   0   39s
+kubectl get pods -n trivy-system
+→ trivy-operator-77fdcfdd67-hdvzh   1/1   Running   0   21s
+→ scan jobs: Init:0/1 (ephemeral scan pods firing — expected)
 ```
 
 ## Expect Next Cycle
-- Falco DaemonSet: 3/3 pods Running on all nodes (runtime syscall monitoring active, JSON→stdout for Loki)
-- Next Layer 6 component: Trivy (vulnerability scanning / admission)
-- Layer 6 will be complete after Trivy
+- trivy-operator: 1/1 Running, VulnerabilityReport CRDs populated with scan results
+- Layer 6 is complete: Istio ✓, OPA-Gatekeeper ✓, Falco ✓, Trivy ✓
+- Next layer: Layer 7 (Backstage, mailpit — developer experience)

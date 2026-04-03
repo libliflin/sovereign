@@ -396,3 +396,9 @@ helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system
 
 # cycle 37: install falco DaemonSet (modern_ebpf, 3 nodes)
 helm upgrade --install falco platform/charts/falco/ -n falco --create-namespace --timeout 90s
+
+# cycle 38: upgrade opa-gatekeeper to add trivy-system exclusion from require-labels constraint
+helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --set constraintsEnabled=true --timeout 90s --wait
+
+# cycle 38: install trivy-operator (Layer 6 final component)
+helm upgrade --install trivy-operator platform/charts/trivy-operator/ -n trivy-system --create-namespace --timeout 120s --wait

@@ -40,3 +40,8 @@ constraintsEnabled: false
 # Falco (runtime security DaemonSet) requires privileged: true for eBPF syscall monitoring.
 privilegeEscalationExcludedNamespaces:
   - falco
+
+# Namespaces exempt from the require-labels constraint.
+# Upstream charts (trivy-operator) don't include sovereign-convention labels (app, tier).
+requireLabelsExcludedNamespaces:
+  - trivy-system

@@ -1,6 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "local-path"
   imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -33,6 +33,15 @@ trivy-operator:
     configAuditReportsPlugin: "Trivy"
     # Scan images when new workloads are created or updated
     scanJobsConcurrentLimit: 3
+
+  # Resource limits for the operator controller pod itself
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
 
   trivy:
     # Use filesystem mode for scanning
