@@ -5,6 +5,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "backstage.labels" . | nindent 4 }}
+    app: backstage
+    tier: devex
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -34,6 +36,8 @@ spec:
         - name: backstage
           image: {{ include "backstage.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

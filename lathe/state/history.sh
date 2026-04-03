@@ -402,3 +402,11 @@ helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system
 
 # cycle 38: install trivy-operator (Layer 6 final component)
 helm upgrade --install trivy-operator platform/charts/trivy-operator/ -n trivy-system --create-namespace --timeout 120s --wait
+
+# cycle 39: fix backstage values (storageClass, image tag, ingress, OPA labels+securityContext)
+# changed: storageClass ceph-block→local-path, tag latest→1.30.2, class nginx→traefik, issuer letsencrypt-prod→sovereign-ca-issuer
+# added app+tier labels to Deployment, allowPrivilegeEscalation: false to container
+
+# cycle 39: install backstage (timed out — image pulling through Zot from ghcr.io)
+helm upgrade --install backstage platform/charts/backstage/ -n backstage --create-namespace --timeout 90s --wait
+# → timed out, pod backstage-5d64db89b9-m6kpv ContainerCreating (pulling ghcr.io/backstage/backstage:1.30.2)

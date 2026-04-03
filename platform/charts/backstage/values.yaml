@@ -1,7 +1,7 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
-  imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
+  storageClass: "local-path"
+  imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
     realm: "sovereign"
@@ -11,7 +11,7 @@ replicaCount: 2
 image:
   repository: "ghcr.io/backstage/backstage"
   name: "backstage/backstage"
-  tag: "latest"
+  tag: "1.30.2"
   pullPolicy: IfNotPresent
 
 keycloak:
@@ -25,10 +25,9 @@ service:
 
 ingress:
   enabled: true
-  className: "nginx"
+  className: "traefik"
   annotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
   tls: true
 
 podDisruptionBudget:
