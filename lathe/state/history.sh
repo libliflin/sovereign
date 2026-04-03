@@ -27,3 +27,31 @@ kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY3>
 
 # cycle 8: verify raft cluster (all 3 voters)
 kubectl exec -n openbao openbao-0 -- sh -c 'BAO_TOKEN=<ROOT_TOKEN> bao operator raft list-peers -tls-skip-verify'
+
+# cycle 9: check harbor pod status
+kubectl -n harbor get pods
+
+# cycle 9: verify QEMU patches on all nodes (6 patches: P1-P6)
+limactl shell sovereign-0 -- python3 -c "import struct; ..."  # check offsets 0xbfdf0,0xdf6f4,0xdf6f8,0xcd3cc,0xcd024,0xcd044
+
+# cycle 9: set postgres password (was NULL despite secret having 'changeit')
+kubectl -n harbor exec harbor-database-0 -- psql -U postgres -c "ALTER USER postgres WITH PASSWORD 'changeit'"
+
+# cycle 9: run harbor init SQL (registry DB not created during broken QEMU period)
+kubectl -n harbor exec harbor-database-0 -- psql -U postgres -f /docker-entrypoint-initdb.d/initial-registry.sql
+
+# cycle 9: restart harbor-core after DB fixes
+kubectl -n harbor delete pod -l component=core
+
+# cycle 9: fix redis stop-writes-on-bgsave-error (bgsave fork crashes under QEMU after write)
+kubectl -n harbor exec harbor-redis-0 -- redis-cli CONFIG SET stop-writes-on-bgsave-error no
+kubectl -n harbor patch statefulset harbor-redis --type=json \
+  -p='[{"op":"add","path":"/spec/template/spec/containers/0/command","value":["/usr/bin/redis-server"]},{"op":"add","path":"/spec/template/spec/containers/0/args","value":["/etc/redis.conf","--stop-writes-on-bgsave-error","no"]}]'
+
+# cycle 9: restart jobservice after core is healthy
+kubectl -n harbor delete pod -l component=jobservice
+
+# cycle 9: verify harbor API
+curl -sk --resolve harbor.sovereign-autarky.dev:443:192.168.104.1 \
+  -u admin:Harbor12345 https://harbor.sovereign-autarky.dev/api/v2.0/ping
+# → Pong

@@ -3,7 +3,7 @@
 
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "local-path"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -57,15 +57,17 @@ harbor:
     ## imageChartStorage uses S3-compatible Ceph RGW endpoint
     imageChartStorage:
       disableredirect: true
-      type: s3
-      s3:
-        region: us-east-1
-        bucket: harbor-registry
-        regionendpoint: "http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local"
-        accesskey: "REPLACEME"
-        secretkey: "REPLACEME"
-        ## In production, use existingSecret for S3 credentials:
-        ## existingSecret: harbor-s3-credentials
+      type: filesystem
+      filesystem:
+        rootdirectory: /storage
+      ## S3/Ceph backend (re-enable when Rook-Ceph RGW is available):
+      ## type: s3
+      ## s3:
+      ##   region: us-east-1
+      ##   bucket: harbor-registry
+      ##   regionendpoint: "http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local"
+      ##   accesskey: "REPLACEME"
+      ##   secretkey: "REPLACEME"
 
   ## ── High Availability ───────────────────────────────────────────────────
   portal:
@@ -199,6 +201,17 @@ harbor:
       password: "changeit"  # placeholder — use Sealed Secret in prod
 
   ## ── Redis (built-in) ────────────────────────────────────────────────────
+  ## ARM64/QEMU workaround: after deploy, patch the StatefulSet to add:
+  ##   command: ["/usr/bin/redis-server"]
+  ##   args: ["/etc/redis.conf", "--stop-writes-on-bgsave-error", "no"]
+  ## The bgsave child process crashes with SIGSEGV (addr=0x20, QEMU bug) after
+  ## successfully writing the RDB. Without this flag, Redis blocks all writes.
+  ## The upstream chart does not expose command/args overrides; patch directly:
+  ##   kubectl -n harbor patch statefulset harbor-redis --type=json \
+  ##     -p='[{"op":"add","path":"/spec/template/spec/containers/0/command",
+  ##           "value":["/usr/bin/redis-server"]},
+  ##          {"op":"add","path":"/spec/template/spec/containers/0/args",
+  ##           "value":["/etc/redis.conf","--stop-writes-on-bgsave-error","no"]}]'
   redis:
     type: internal
 
