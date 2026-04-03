@@ -1,0 +1,6 @@
+apiVersion: v2
+name: zot
+description: Zot OCI-native registry for the Sovereign Platform — Layer 2 autarky boundary. CNCF Sandbox, Apache 2.0, multi-arch (amd64 + arm64).
+type: application
+version: 0.1.0
+appVersion: "v2.1.2"

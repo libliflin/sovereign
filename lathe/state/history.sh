@@ -227,3 +227,16 @@ kubectl logs -n harbor harbor-core-77849f6c68-s67zt --tail=5
 helm uninstall harbor -n harbor
 kubectl delete pvc -n harbor --all
 kubectl delete namespace harbor
+
+# cycle 19: create Zot OCI registry chart (Layer 2 replacement for Harbor — multi-arch)
+# platform/charts/zot/ — Chart.yaml, values.yaml, templates/{_helpers.tpl,configmap.yaml,deployment.yaml,service.yaml,pvc.yaml,pdb.yaml}
+
+# cycle 19: lint and autarky gate
+helm lint platform/charts/zot/
+grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/ && echo "FAIL" || echo "PASS"
+
+# cycle 19: deploy Zot
+helm upgrade --install zot platform/charts/zot/ -n zot --create-namespace --timeout 120s
+
+# cycle 19: verify Zot OCI v2 endpoint
+kubectl run zot-check2 --rm -i --restart=Never --image=busybox -- wget -S -qO- http://zot.zot.svc.cluster.local:5000/v2/

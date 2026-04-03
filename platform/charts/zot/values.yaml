@@ -1,0 +1,77 @@
+global:
+  domain: "sovereign-autarky.dev"
+  # Bootstrap default: local-path is pre-installed on k3s. Switch to ceph-block once Ceph is running.
+  storageClass: "local-path"
+  # Bootstrap default: empty means use image.repository (ghcr.io) for the initial pull.
+  # Override to zot.<domain>/sovereign once Zot is running and images are mirrored.
+  imageRegistry: ""
+
+# replicaCount: 1 during bootstrap — local-path PVC is ReadWriteOnce.
+# Set to 2+ only when using a ReadWriteMany (ceph-filesystem) or S3 backend.
+replicaCount: 1
+
+image:
+  # Short name used when imageRegistry is set (zot.<domain>/sovereign/project-zot/zot)
+  name: "project-zot/zot"
+  # Full repository used during bootstrap when imageRegistry is empty
+  repository: "ghcr.io/project-zot/zot"
+  tag: "v2.1.2"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000
+
+# PVC for /var/lib/registry
+persistence:
+  size: 20Gi
+  accessMode: ReadWriteOnce
+
+# Zot configuration rendered into ConfigMap
+config:
+  distSpecVersion: "1.1.0"
+  storage:
+    rootDirectory: /var/lib/registry
+    dedupe: true
+    commit: true
+  http:
+    address: "0.0.0.0"
+    port: "5000"
+  log:
+    level: info
+  extensions:
+    metrics:
+      enable: true
+      prometheus:
+        path: /metrics
+    search:
+      enable: true
+    ui:
+      enable: true
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+podDisruptionBudget:
+  minAvailable: 1
+
+readinessProbe:
+  httpGet:
+    path: /v2/
+    port: 5000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /v2/
+    port: 5000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  failureThreshold: 3

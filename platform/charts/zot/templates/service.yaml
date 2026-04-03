@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zot.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "zot.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: registry
+      port: {{ .Values.service.port }}
+      targetPort: registry
+      protocol: TCP
+  selector:
+    {{- include "zot.selectorLabels" . | nindent 4 }}
