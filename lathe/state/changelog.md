@@ -1,43 +1,66 @@
-# Changelog — Cycle 24
+# Changelog — Cycle 25
+
+## Retro (Cycles 20–24)
+
+| Cycle | Layer | Action | Outcome |
+|-------|-------|--------|---------|
+| 20 | L2 (Zot) | Pull-through proxy configured | ✓ |
+| 21 | L2 (Zot) | k3s registry mirrors written | ✓ Verified via Zot logs |
+| 22 | L3 (Keycloak) | Deploy attempted; bitnami images missing | → downloads queued |
+| 23 | L3 (Keycloak) | Pods Running, release reconciled | ✓ |
+| 24 | L2 (Harbor) | Harbor installed | ✓ All pods Running |
+
+**Pattern:** Advancing cleanly through layers. No regressions. One recurring theme: bitnami pinned tags require bitnamilegacy source — this repeats every time a new bitnami-backed chart deploys.
+
+---
 
 ## Observed
 
-- Layer: 2 (Harbor — internal registry / autarky boundary)
-- Service: harbor
-- Category: DEPENDENCY_MISSING — Harbor not yet installed; Layer 3 (Keycloak) is healthy but Layer 2 was skipped
-- Evidence: `helm list -A` showed no harbor release; Layer 3 complete, Layer 2 gap
+- Layer: 4 (Forgejo — SCM)
+- Service: forgejo
+- Category: CONFIG_ERROR + IMAGE_ISSUE (dual)
+  1. `forgejo.postgresql.enabled: false` — no DB would exist, but forgejo app config pointed at `forgejo-postgresql.forgejo.svc.cluster.local:5432`
+  2. `storageClass: "standard"` — doesn't exist; only `local-path` available
+  3. Upstream chart PDB template bug: renders `spec.enabled: false` into PodDisruptionBudget spec (invalid)
+  4. `docker.io/bitnami/postgresql:17.2.0-debian-12-r6` not found — bitnami pinned tags moved to `bitnamilegacy`
+- Evidence: PVCs stuck Pending (`standard` StorageClass); PDB create error `.spec.enabled field not declared in schema`; `ImagePullBackOff: docker.io/bitnami/postgresql:17.2.0-debian-12-r6 not found`
 
 ## Applied
 
-- Installed harbor chart (goharbor/harbor 1.15.0 wrapper) into harbor namespace
-- All Harbor sub-components applied: core, portal, registry, jobservice, nginx, database, redis
-- Images pulled from docker.io/goharbor (bootstrap window — acceptable pre-Harbor)
-- Files: `platform/charts/harbor/` (no changes needed, chart was ready)
+- Enabled `forgejo.postgresql.enabled: true` with auth credentials
+- Changed all `storageClass: "standard"` → `local-path` (3 occurrences)
+- Fixed PDB values: replaced `{enabled: false}` with `{maxUnavailable: 1}` — only valid PDB spec fields; `enabled` is not a PDB spec field and caused schema validation failure
+- Set `replicaCount: 1` (RWX not available with local-path; HA revisit when Ceph arrives)
+- Set `ISSUE_INDEXER_TYPE: db` (bleve requires single instance; db works with postgres)
+- Moved deprecated `LFS_CONTENT_PATH` from `[server]` to `[lfs]` section
+- Queued `bitnami/postgresql:17.2.0-debian-12-r6` in downloads.json (source: bitnamilegacy)
+- Files: `platform/charts/forgejo/values.yaml`, `lathe/state/downloads.json`
 
 ## Validated
 
 ```
-helm lint platform/charts/harbor/
+helm lint platform/charts/forgejo/
 → 1 chart(s) linted, 0 chart(s) failed
 
-helm upgrade --install harbor platform/charts/harbor/ -n harbor --create-namespace
-→ STATUS: deployed, REVISION: 1, Install complete
-
-kubectl get events -n harbor (immediate post-install):
-→ PVCs: all provisioned successfully (local-path)
-→ Images: goharbor/nginx-photon:v2.11.0 already present on machine
-→ Images: goharbor/harbor-portal:v2.11.0 pulled (5.2s)
-→ Images: goharbor/harbor-jobservice:v2.11.0 already present on machine
-→ harbor-nginx pod: Started container nginx
-
-autarky gate (all chart templates):
+autarky gate:
 → PASS
+
+helm upgrade --install forgejo (with 180s timeout):
+→ PVCs: Bound (local-path provisioned successfully)
+→ forgejo pod: image pulled from code.forgejo.org in 6.2s (via Zot proxy)
+→ forgejo configure-gitea init container: retrying (DB not ready — postgresql ImagePullBackOff)
+→ forgejo-postgresql-0: ImagePullBackOff — docker.io/bitnami/postgresql:17.2.0-debian-12-r6 not found
+→ Release in failed state awaiting bitnami postgresql image (queued in downloads.json)
 ```
+
+## Downloads Queued
+
+- image: `docker.io/bitnamilegacy/postgresql:17.2.0-debian-12-r6` → tag as `docker.io/bitnami/postgresql:17.2.0-debian-12-r6` → k3s nodes
 
 ## Expect Next Cycle
 
-Harbor pods should be Running or close to it. Expect:
-- harbor-nginx, harbor-portal, harbor-core, harbor-jobservice, harbor-registry, harbor-database, harbor-redis to reach Running
-- harbor-nginx readiness (502 at install time — waiting for core/portal to be ready)
-- If harbor-database is slow (QEMU emulation), may need readinessProbe timeout increase (already set to 10s in values.yaml)
-- Once Harbor is Running, configure k3s registry mirrors to point nodes at harbor.sovereign-autarky.dev and advance to Layer 4 (Forgejo + ArgoCD)
+After fetch.sh imports `bitnami/postgresql:17.2.0-debian-12-r6` into all 3 nodes:
+- `forgejo-postgresql-0` will start
+- `forgejo configure-gitea` init container will complete (DB connection succeeds)
+- Forgejo main container will reach Running state
+- Run: `helm upgrade forgejo platform/charts/forgejo/ -n forgejo --timeout 180s --wait`

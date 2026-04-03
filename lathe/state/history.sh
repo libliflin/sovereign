@@ -277,3 +277,15 @@ helm upgrade keycloak platform/charts/keycloak/ -n keycloak --set realmInit.enab
 
 # cycle 24: install harbor (layer 2 - internal registry / autarky boundary)
 helm upgrade --install harbor platform/charts/harbor/ -n harbor --create-namespace
+
+# cycle 25: fix forgejo values — enable postgresql subchart, fix storageClass standard→local-path, fix PDB bug
+# edit platform/charts/forgejo/values.yaml
+
+# cycle 25: uninstall failed forgejo + clear stuck PVCs
+helm uninstall forgejo -n forgejo
+kubectl delete pvc -n forgejo --all
+
+# cycle 25: install forgejo (timed out — bitnami/postgresql:17.2.0-debian-12-r6 ImagePullBackOff)
+helm upgrade --install forgejo platform/charts/forgejo/ -n forgejo --create-namespace --timeout 180s --wait
+# → PVCs bound, forgejo image pulled via Zot, postgresql stuck on bitnami image not found
+# → queued docker.io/bitnamilegacy/postgresql:17.2.0-debian-12-r6 in downloads.json

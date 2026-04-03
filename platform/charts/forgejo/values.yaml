@@ -3,7 +3,7 @@
 
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "standard"
+  storageClass: "local-path"
 
 ## ── Forgejo subchart values (alias: forgejo) ────────────────────────────────
 forgejo:
@@ -21,13 +21,16 @@ forgejo:
         SSH_DOMAIN: "forgejo.sovereign-autarky.dev"
         SSH_PORT: 22
         LFS_START_SERVER: true
-        LFS_CONTENT_PATH: /data/git/lfs
+
+      lfs:
+        PATH: /data/git/lfs
 
       database:
         DB_TYPE: postgres
         HOST: "forgejo-postgresql.forgejo.svc.cluster.local:5432"
         NAME: forgejo
         USER: forgejo
+        PASSWD: "Forgejo12345"
         SCHEMA: public
         SSL_MODE: disable
 
@@ -41,8 +44,8 @@ forgejo:
         TYPE: level
 
       indexer:
-        ISSUE_INDEXER_TYPE: bleve
-        REPO_INDEXER_ENABLED: true
+        ISSUE_INDEXER_TYPE: db
+        REPO_INDEXER_ENABLED: false
 
       security:
         INSTALL_LOCK: true
@@ -59,10 +62,19 @@ forgejo:
         iconUrl: "https://auth.sovereign-autarky.dev/favicon.ico"
         scopes: openid email profile groups
 
-  ## ── PostgreSQL — external, pre-provisioned ─────────────────────────────
-  ## DB secret: forgejo-postgresql-secret (key: password)
+  ## ── PostgreSQL — built-in bitnami subchart ──────────────────────────────
   postgresql:
-    enabled: false
+    enabled: true
+    global:
+      postgresql:
+        auth:
+          username: forgejo
+          password: "Forgejo12345"
+          database: forgejo
+    primary:
+      persistence:
+        size: "5Gi"
+        storageClass: "local-path"
 
   postgresql-ha:
     enabled: false
@@ -77,17 +89,16 @@ forgejo:
   ## ── Persistence ─────────────────────────────────────────────────────────
   persistence:
     enabled: true
-    storageClass: "standard"
+    storageClass: "local-path"
     size: "20Gi"
     accessModes:
       - ReadWriteOnce
 
-  ## ── HA — replicaCount 2, PDB, anti-affinity ─────────────────────────────
-  replicaCount: 2
+  ## ── HA — single replica (RWX not available with local-path; revisit with Ceph)
+  replicaCount: 1
 
   podDisruptionBudget:
-    enabled: true
-    minAvailable: 1
+    maxUnavailable: 1
 
   affinity:
     podAntiAffinity:

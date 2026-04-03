@@ -35,4 +35,12 @@
     "done": true,
     "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   }
+  ,
+  {
+    "type": "image",
+    "source": "docker.io/bitnamilegacy/postgresql:17.2.0-debian-12-r6",
+    "tag_as": "docker.io/bitnami/postgresql:17.2.0-debian-12-r6",
+    "reason": "forgejo chart embeds bitnami postgresql 17.2.0-debian-12-r6; pinned tags migrated to bitnamilegacy, not found at docker.io/bitnami",
+    "added_by_cycle": 25
+  }
 ]
