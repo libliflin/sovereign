@@ -1,52 +1,41 @@
-# Changelog — Cycle 39
+# Changelog — Cycle 40
 
 ## Observed
-- Layer: 7 (Backstage, mailpit — developer experience)
-- Service: backstage (first Layer 7 component — not yet deployed)
-- Category: CONFIG_ERROR (multiple values blocking install; chart never deployed)
+- Layer: 6 (Falco — runtime security)
+- Service: falco (falcoctl-artifact-follow sidecar)
+- Category: CONFIG_ERROR (sidecar attempting external network call; crashes in sovereign environment)
 - Evidence:
-  - No `backstage` helm release; no `backstage` namespace in snapshot
-  - `values.yaml` had `storageClass: "ceph-block"`, `image.tag: "latest"`, `ingress.className: "nginx"`, `cert-manager.io/cluster-issuer: "letsencrypt-prod"`
-  - OPA `no-privilege-escalation` constraint (enforcing `allowPrivilegeEscalation: false` on Pods) blocked pod creation: `[no-privilege-escalation] Container backstage must explicitly set allowPrivilegeEscalation: false`
-  - OPA `require-labels` constraint required `app` and `tier` on Deployment metadata (backstage template lacked them)
-  - Available issuers: `selfsigned-issuer`, `sovereign-ca-issuer` (no letsencrypt)
-  - Confirmed `ghcr.io/backstage/backstage:1.30.2` exists (queried ghcr.io tags list from sovereign-0)
-  - k3s registry mirrors route `ghcr.io` through Zot (10.43.32.173:5000) on-demand
+  - `falco-r9www`: CrashLoopBackOff (5 restarts); `falco-5sph2`, `falco-rsxbc`: Running but BackOff events on falcoctl-artifact-follow sidecar
+  - Events: `Back-off restarting failed container falcoctl-artifact-follow` on 2/3 pods
+  - Root cause: falcoctl-artifact-follow sidecar polls `https://falcosecurity.github.io/falcoctl/index.yaml` (external) every 168h to pull updated rule files — external call fails in sovereign cluster
+  - Secondary: Backstage (Layer 7) pod CrashLoopBackOff: `connect ECONNREFUSED ::1:5432` — no PostgreSQL deployed; helm release in `failed` state; will be addressed next cycle
 
 ## Applied
-- Fixed `global.storageClass`: `"ceph-block"` → `"local-path"` in `platform/charts/backstage/values.yaml`
-- Fixed `image.tag`: `"latest"` → `"1.30.2"` (confirmed available at ghcr.io)
-- Fixed `ingress.className`: `"nginx"` → `"traefik"`
-- Fixed `ingress.annotations`: removed nginx annotation, changed issuer to `"sovereign-ca-issuer"`
-- Added `app: backstage` and `tier: devex` labels to Deployment metadata in `deployment.yaml`
-- Added `securityContext.allowPrivilegeEscalation: false` to backstage container in `deployment.yaml`
-- Installed backstage (revision 1→2); namespace created, ingress/cert/PDB/svc provisioned; pod in ContainerCreating (image pulling through Zot from ghcr.io)
-- Files: `platform/charts/backstage/values.yaml`, `platform/charts/backstage/templates/deployment.yaml`
+- Disabled `falcoctl.artifact.follow.enabled: false` in `platform/charts/falco/values.yaml`
+- Rules already installed at pod startup by `falcoctl-artifact-install` init container; live-update sidecar not needed and violates T1 (external hub dependency)
+- Upgraded falco (revision 3 → 4); all 3 DaemonSet pods now 1/1 Running, 0 restarts
+- Files: `platform/charts/falco/values.yaml`
 
 ## Validated
 ```
-helm lint platform/charts/backstage/
+helm lint platform/charts/falco/
 → 1 chart(s) linted, 0 chart(s) failed
 
-autarky gate (templates):
-grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/backstage/templates/
+autarky gate:
+grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/falco/templates/
 → PASS
 
-helm template ... | grep -E "app:|tier:|PodDisruptionBudget|podAntiAffinity"
-→ kind: PodDisruptionBudget ✓
-→ app: backstage ✓
-→ tier: devex ✓
-→ podAntiAffinity ✓
+helm upgrade falco platform/charts/falco/ -n falco --timeout 90s --wait
+→ Release "falco" has been upgraded. STATUS: deployed REVISION: 4
 
-helm upgrade backstage ... --timeout 90s --wait
-→ timed out at 90s (image still pulling through Zot from ghcr.io — expected for first pull)
-→ backstage-5d64db89b9-m6kpv: ContainerCreating on lima-sovereign-2
-→ Certificate issued by sovereign-ca-issuer ✓
-→ Ingress provisioned at backstage.sovereign-autarky.dev ✓
+kubectl get pods -n falco
+→ falco-cfsgn   1/1   Running   0   65s
+→ falco-gkn8h   1/1   Running   0   71s
+→ falco-jbt2l   1/1   Running   0   83s
 ```
 
 ## Expect Next Cycle
-- backstage image (`ghcr.io/backstage/backstage:1.30.2`, ~1GB+) fully cached in Zot
-- Pod(s) Running; second replica created once first becomes Ready (rolling update: maxSurge=1, maxUnavailable=0)
-- `helm upgrade backstage ...` succeeds with 2/2 replicas Ready
-- Layer 7 partial: backstage up, mailpit next
+- Falco: 3/3 DaemonSet pods remain 1/1 Running, no sidecar crashes
+- Layer 6 fully healthy: Istio ✓ OPA-Gatekeeper ✓ Falco ✓ Trivy ✓
+- Backstage: needs PostgreSQL — will deploy postgresql subchart dependency or StatefulSet in backstage namespace
+- Fix: add PostgreSQL subchart to `platform/charts/backstage/Chart.yaml` + configure `APP_CONFIG_backend_database_*` env vars in deployment

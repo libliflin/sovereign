@@ -52,6 +52,9 @@ falco:
             cpu: "200m"
             memory: "128Mi"
       follow:
+        # Disabled: pulls updated rules from falcosecurity.github.io (external) — T1 violation
+        # Rules are installed at startup by the init container; live updates not needed.
+        enabled: false
         resources:
           requests:
             cpu: "50m"

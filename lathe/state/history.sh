@@ -410,3 +410,5 @@ helm upgrade --install trivy-operator platform/charts/trivy-operator/ -n trivy-s
 # cycle 39: install backstage (timed out — image pulling through Zot from ghcr.io)
 helm upgrade --install backstage platform/charts/backstage/ -n backstage --create-namespace --timeout 90s --wait
 # → timed out, pod backstage-5d64db89b9-m6kpv ContainerCreating (pulling ghcr.io/backstage/backstage:1.30.2)
+# cycle 40: disable falcoctl-artifact-follow sidecar (external hub dependency crashes in sovereign cluster)
+helm upgrade falco platform/charts/falco/ -n falco --timeout 90s --wait
