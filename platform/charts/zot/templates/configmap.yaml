@@ -34,5 +34,10 @@ data:
         "ui": {
           "enable": {{ .Values.config.extensions.ui.enable }}
         }
+        {{- if .Values.config.extensions.sync.enable }},
+        "sync": {
+          "registries": {{ .Values.config.extensions.sync.registries | toJson }}
+        }
+        {{- end }}
       }
     }

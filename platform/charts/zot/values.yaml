@@ -48,6 +48,39 @@ config:
       enable: true
     ui:
       enable: true
+    sync:
+      enable: true
+      registries:
+        - urls:
+            - "https://ghcr.io"
+          tlsVerify: true
+          onDemand: true
+          content:
+            - prefix: "**"
+        - urls:
+            - "https://registry-1.docker.io"
+          tlsVerify: true
+          onDemand: true
+          content:
+            - prefix: "**"
+        - urls:
+            - "https://quay.io"
+          tlsVerify: true
+          onDemand: true
+          content:
+            - prefix: "**"
+        - urls:
+            - "https://gcr.io"
+          tlsVerify: true
+          onDemand: true
+          content:
+            - prefix: "**"
+        - urls:
+            - "https://registry.k8s.io"
+          tlsVerify: true
+          onDemand: true
+          content:
+            - prefix: "**"
 
 resources:
   requests:

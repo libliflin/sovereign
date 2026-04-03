@@ -1,19 +1,17 @@
-# Changelog — Cycle 19
+# Changelog — Cycle 20
 
 ## Observed
 
 - Layer: 2 (internal registry — autarky boundary)
-- Service: Harbor → blocked (amd64-only images, QEMU SIGSEGV on arm64 Lima VMs)
-- Category: IMAGE_ISSUE — Harbor has no arm64 images; replaced with Zot (CNCF, Apache 2.0, multi-arch)
-- Evidence (from cycle 18): `QEMU internal SIGSEGV {code=MAPERR, addr=0x20}` on harbor-core, harbor-jobservice; Docker Hub API confirmed every Harbor tag v2.11.0–v2.14.3 is amd64-only
+- Service: Zot — running but acting as a plain OCI registry; pull-through proxy not enabled
+- Category: CONFIG_ERROR — Zot had no sync/onDemand configuration; the autarky boundary was structurally incomplete (Zot couldn't serve as a transparent cache for upstream registries)
+- Evidence: Zot configmap had no `sync` extension; k3s nodes still pulled directly from external registries; Zot was effectively unused
 
 ## Applied
 
-- Created `platform/charts/zot/` — first-party Helm chart for Zot OCI registry (CNCF Sandbox, Apache 2.0, arm64-native)
-- Chart files: `Chart.yaml`, `values.yaml`, `templates/_helpers.tpl`, `templates/configmap.yaml`, `templates/deployment.yaml`, `templates/service.yaml`, `templates/pvc.yaml`, `templates/pdb.yaml`
-- Deployed `helm upgrade --install zot platform/charts/zot/ -n zot --create-namespace`
-- Zot pod Running 1/1, PVC bound (local-path 20Gi), Service ClusterIP 10.43.32.173:5000
-- Verified: `GET http://zot.zot.svc.cluster.local:5000/v2/ → HTTP 200 OK, Docker-Distribution-Api-Version: registry/2.0`
+- Enabled Zot `sync` extension with `onDemand: true` for 5 upstream registries: ghcr.io, registry-1.docker.io, quay.io, gcr.io, registry.k8s.io
+- Fixed deployment update strategy from `RollingUpdate` (maxUnavailable:0, maxSurge:1) to `Recreate` — RollingUpdate caused a boltdb deadlock on the ReadWriteOnce PVC: new pod couldn't acquire `cache.db` lock while old pod was still running
+- Files: `platform/charts/zot/values.yaml`, `platform/charts/zot/templates/configmap.yaml`, `platform/charts/zot/templates/deployment.yaml`
 
 ## Validated
 
@@ -22,13 +20,13 @@
 helm lint platform/charts/zot/
 → 1 chart(s) linted, 0 chart(s) failed
 
-# Autarky gate (no external registries in templates)
+# Autarky gate
 grep -rn "docker.io|quay.io|ghcr.io|gcr.io|registry.k8s.io" platform/charts/*/templates/
 → PASS
 
-# Zot running
+# Pod status
 kubectl get pods -n zot
-→ zot-9785c7865-nntqg   1/1   Running   0
+→ zot-756c7b788b-m5w5w   1/1   Running   0   (after Recreate)
 
 # OCI v2 API
 wget -S -qO- http://zot.zot.svc.cluster.local:5000/v2/
@@ -38,9 +36,14 @@ wget -S -qO- http://zot.zot.svc.cluster.local:5000/v2/
 
 ## Expect Next Cycle
 
-Layer 2 is now live. Next cycle should:
-1. Configure k3s registry mirrors on all 3 nodes to route pulls through Zot (`/etc/rancher/k3s/registries.yaml`)
-2. Push Layer 1 images (cert-manager, sealed-secrets, openbao) into Zot so subsequent chart upgrades can use `global.imageRegistry`
-3. Begin populating Zot with Layer 3+ images via downloads.json queue
+Zot is now a pull-through proxy. Next cycle:
+1. Configure k3s registry mirrors on all 3 nodes (`/etc/rancher/k3s/registries.yaml`) to route external pulls through Zot:
+   - `ghcr.io` → `http://zot.zot.svc.cluster.local:5000`
+   - `docker.io` → `http://zot.zot.svc.cluster.local:5000`
+   - `quay.io` → `http://zot.zot.svc.cluster.local:5000`
+   - `gcr.io` → `http://zot.zot.svc.cluster.local:5000`
+   - `registry.k8s.io` → `http://zot.zot.svc.cluster.local:5000`
+2. Restart k3s on each node after writing registries.yaml
+3. Verify a new pod pull goes through Zot (check Zot logs for a sync hit)
 
-Zot endpoint (in-cluster): `http://zot.zot.svc.cluster.local:5000`
+Note: k3s registry mirrors can't reach Zot by its cluster DNS name from the node level — will need to use the ClusterIP (`10.43.32.173:5000`) or set up a NodePort/HostNetwork service for Zot so it's reachable from the host network the nodes use.

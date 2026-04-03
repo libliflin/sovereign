@@ -240,3 +240,8 @@ helm upgrade --install zot platform/charts/zot/ -n zot --create-namespace --time
 
 # cycle 19: verify Zot OCI v2 endpoint
 kubectl run zot-check2 --rm -i --restart=Never --image=busybox -- wget -S -qO- http://zot.zot.svc.cluster.local:5000/v2/
+
+# cycle 20: enable Zot pull-through proxy (sync extension, onDemand for 5 upstream registries)
+helm upgrade --install zot platform/charts/zot/ -n zot --create-namespace --timeout 120s --wait
+# cycle 20: verify Zot OCI v2 API after sync extension enabled
+kubectl run zot-verify2 --rm -i --restart=Never --image=busybox -- wget -S -qO- http://zot.zot.svc.cluster.local:5000/v2/
