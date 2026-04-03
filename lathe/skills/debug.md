@@ -16,10 +16,11 @@ timeout 10 kubectl get pods -n <namespace> -o wide
 Image can't be pulled. Causes:
 - Wrong image name or tag
 - Registry unreachable from nodes
-- Image not imported into k3s nodes (pre-Harbor)
+- Image not imported into k3s nodes (pre-Zot)
 
-**Fix:** Check the image reference in helm values. Pre-Harbor: queue the image in
-downloads.json. Post-Harbor: ensure the image is in Harbor and nodes can reach it.
+**Fix:** Check the image reference in helm values. Pre-Zot: queue the image in
+downloads.json. Post-Zot: images pull through Zot's proxy automatically. If a
+bitnami image is missing (migrated to bitnamilegacy), queue it in downloads.json.
 Never point templates at external registries.
 
 ### CrashLoopBackOff

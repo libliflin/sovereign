@@ -92,11 +92,11 @@ k3s uses containerd. Import images directly — no kind load, no docker save dan
 limactl copy image.tar sovereign-0:/tmp/image.tar
 limactl shell sovereign-0 sudo k3s ctr images import /tmp/image.tar
 
-# Repeat for each node (or let k3s pull from internal registry once Harbor is up)
+# Repeat for each node (or let k3s pull through Zot once Layer 2 is up)
 ```
 
-For images already in a registry the nodes can reach (like Harbor running inside the
-cluster), k3s pulls normally — no special loading needed.
+Once Zot is running with pull-through proxy and k3s registry mirrors configured,
+k3s pulls through Zot automatically — no manual loading needed.
 
 ## Stopping / Starting
 

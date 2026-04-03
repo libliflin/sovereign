@@ -338,3 +338,21 @@ helm upgrade jaeger platform/charts/jaeger/ -n jaeger --timeout 60s --wait
 bash -n lathe/fetch.sh
 # cycle 33: reset harbor image downloads.json entries to done=false for re-pull with --platform
 python3 -c "import json; q=json.load(open('lathe/state/downloads.json')); print([e['source'] for e in q if not e.get('done')])"
+
+# cycle 34: check disk usage on sovereign-2 (DiskPressure diagnosis)
+limactl shell sovereign-2 df -h /
+limactl shell sovereign-2 sudo du -sh /var/lib/rancher/k3s/storage/
+
+# cycle 34: delete 22GB harbor database PVC directory (Harbor is dead code, D1)
+limactl shell sovereign-2 sudo rm -rf /var/lib/rancher/k3s/storage/pvc-2b4807f7-49e9-4f5f-9ee3-fd9e9cbf52b2_harbor_database-data-harbor-database-0
+limactl shell sovereign-2 sudo rm -rf /var/lib/rancher/k3s/storage/pvc-9215aa1c-c091-41b9-b2dd-5a8c48134be1_harbor_data-harbor-redis-0
+
+# cycle 34: remove pv-protection finalizers from Released Harbor PVs
+kubectl patch pv pvc-2b4807f7-49e9-4f5f-9ee3-fd9e9cbf52b2 -p '{"metadata":{"finalizers":null}}'
+kubectl patch pv pvc-9215aa1c-c091-41b9-b2dd-5a8c48134be1 -p '{"metadata":{"finalizers":null}}'
+
+# cycle 34: clean up eviction debris
+kubectl delete pods -n argocd --field-selector status.phase=Failed
+kubectl delete pods -n kube-system --field-selector status.phase=Failed
+kubectl delete pods -n jaeger --field-selector status.phase=Failed
+kubectl delete pods -n monitoring --field-selector status.phase=Failed

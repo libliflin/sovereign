@@ -3,81 +3,27 @@
     "type": "image",
     "source": "docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r0",
     "tag_as": "docker.io/bitnami/keycloak:24.0.5-debian-12-r0",
-    "reason": "bitnami keycloak chart 21.4.4 references docker.io/bitnami/keycloak:24.0.5-debian-12-r0 which is not found; pinned tags migrated to bitnamilegacy",
-    "added_by_cycle": 11,
+    "reason": "bitnami keycloak chart references docker.io/bitnami/keycloak which migrated to bitnamilegacy",
+    "added_by_cycle": 22,
     "done": true,
-    "result": "ok \u2014 imported into 3 nodes (manually confirmed cycle 13)"
+    "result": "ok — pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14",
     "tag_as": "docker.io/bitnami/postgresql:16.3.0-debian-12-r14",
-    "reason": "bitnami keycloak chart 21.4.4 uses embedded postgresql with this image; pinned tags migrated to bitnamilegacy",
-    "added_by_cycle": 11,
-    "done": true,
-    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
-  },
-  {
-    "type": "image",
-    "source": "docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r0",
-    "tag_as": "docker.io/bitnami/keycloak:24.0.5-debian-12-r0",
-    "reason": "VMs recreated at cycle 14 \u2014 images lost. Re-queue for new nodes. keycloak StatefulSet stuck in ImagePullBackOff: docker.io/bitnami/keycloak:24.0.5-debian-12-r0 not found (bitnami tags migrated to bitnamilegacy).",
+    "reason": "bitnami keycloak chart uses embedded postgresql; migrated to bitnamilegacy",
     "added_by_cycle": 22,
     "done": true,
-    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
-  },
-  {
-    "type": "image",
-    "source": "docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14",
-    "tag_as": "docker.io/bitnami/postgresql:16.3.0-debian-12-r14",
-    "reason": "VMs recreated at cycle 14 \u2014 images lost. Re-queue for new nodes. keycloak-postgresql StatefulSet stuck in ImagePullBackOff.",
-    "added_by_cycle": 22,
-    "done": true,
-    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
+    "result": "ok — pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/bitnamilegacy/postgresql:17.2.0-debian-12-r6",
     "tag_as": "docker.io/bitnami/postgresql:17.2.0-debian-12-r6",
-    "reason": "forgejo chart embeds bitnami postgresql 17.2.0-debian-12-r6; pinned tags migrated to bitnamilegacy, not found at docker.io/bitnami",
+    "reason": "forgejo chart embeds bitnami postgresql 17.2.0; migrated to bitnamilegacy",
     "added_by_cycle": 25,
     "done": true,
-    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
-  },
-  {
-    "type": "image",
-    "source": "docker.io/goharbor/harbor-core:v2.11.0",
-    "reason": "cycle 31 no-daemon pull did not specify --platform linux/arm64; images landed as amd64 causing QEMU SIGSEGV. Cycle 33: fetch.sh fixed to pass --platform, re-queued to force arm64 pull.",
-    "added_by_cycle": 33
-  },
-  {
-    "type": "image",
-    "source": "docker.io/goharbor/harbor-db:v2.11.0",
-    "reason": "cycle 31 no-daemon pull did not specify --platform linux/arm64; images landed as amd64 causing healthcheck timeouts under QEMU. Cycle 33: fetch.sh fixed to pass --platform, re-queued to force arm64 pull.",
-    "added_by_cycle": 33
-  },
-  {
-    "type": "image",
-    "source": "docker.io/goharbor/harbor-jobservice:v2.11.0",
-    "reason": "cycle 31 no-daemon pull did not specify --platform linux/arm64; images landed as amd64 causing QEMU SIGSEGV. Cycle 33: fetch.sh fixed to pass --platform, re-queued to force arm64 pull.",
-    "added_by_cycle": 33
-  },
-  {
-    "type": "image",
-    "source": "docker.io/goharbor/harbor-registryctl:v2.11.0",
-    "reason": "cycle 31 no-daemon pull did not specify --platform linux/arm64; images landed as amd64 causing harbor-registry 1/2. Cycle 33: fetch.sh fixed to pass --platform, re-queued to force arm64 pull.",
-    "added_by_cycle": 33
-  },
-  {
-    "type": "image",
-    "source": "docker.io/goharbor/registry-photon:v2.11.0",
-    "reason": "cycle 31 no-daemon pull did not specify --platform linux/arm64; images landed as amd64. Cycle 33: fetch.sh fixed to pass --platform, re-queued to force arm64 pull.",
-    "added_by_cycle": 33
-  },
-  {
-    "type": "image",
-    "source": "docker.io/goharbor/redis-photon:v2.11.0",
-    "reason": "cycle 31 no-daemon pull did not specify --platform linux/arm64; images landed as amd64. Cycle 33: fetch.sh fixed to pass --platform, re-queued to force arm64 pull.",
-    "added_by_cycle": 33
+    "result": "ok — pulled directly on 3 nodes"
   }
 ]

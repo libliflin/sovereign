@@ -1,53 +1,74 @@
+# Changelog — Cycle 34
+
+## Observed
+- Layer: 0 (Lima VMs + k3s — compute/network foundation)
+- Service: lima-sovereign-2 (DiskPressure → cascading evictions)
+- Category: RESOURCE_ISSUE
+- Evidence:
+  - `lima-sovereign-2` had DiskPressure condition True with `node.kubernetes.io/disk-pressure:NoSchedule` taint
+  - Node at 86% disk usage (24G/29G used)
+  - Cascading evictions: argocd-server (12 pods), jaeger-agent, node-exporter, kube-system helper pods
+  - `openbao-0` and `victorialogs-server-0` Pending — PVs bound to sovereign-2, blocked by disk taint
+  - Root cause: `/var/lib/rancher/k3s/storage/pvc-2b4807f7-..._harbor_database-data-harbor-database-0` was consuming **22GB**
+  - Harbor is dead code (D1 — arm64 incompatible), but its database PVC was never cleaned up
+  - Local-path helper pods trying to delete the PVs were themselves being evicted (circular failure)
+
+## Applied
+- Manually deleted Harbor database PVC directory on sovereign-2: freed 22GB (86% → 10%)
+- Manually deleted Harbor redis PVC directory on sovereign-2 (8K, also stale)
+- Patched both Released PVs to remove `kubernetes.io/pv-protection` finalizers so k8s can GC them
+- Deleted 13 Failed/Evicted argocd-server pods (cleanup of eviction debris)
+- Deleted Failed jaeger-agent, node-exporter, helper pods
+- Files: none (in-cluster cleanup only)
+
+## Validated
+```
+limactl shell sovereign-2 df -h /
+→ Filesystem: /dev/vda1   Size: 29G   Used: 2.8G   Avail: 26G   Use%: 10%
+
+kubectl get nodes
+→ lima-sovereign-0   Ready   control-plane
+→ lima-sovereign-1   Ready
+→ lima-sovereign-2   Ready
+
+PVs patched:
+→ persistentvolume/pvc-2b4807f7-... patched
+→ persistentvolume/pvc-9215aa1c-... patched
+
+Autarky gate (no change to templates):
+→ PASS
+```
+
+## Expect Next Cycle
+- `lima-sovereign-2` DiskPressure clears (kubelet 5-minute eviction-pressure-transition-period)
+- `node.kubernetes.io/disk-pressure:NoSchedule` taint removed automatically once pressure resolves
+- `openbao-0` schedules to sovereign-2 (PV has node affinity there) and joins the cluster
+- `victorialogs-server-0` schedules and starts
+- ArgoCD server replica count normalizes (one replica already Running)
+- Ready to assess Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy)
+
+---
+
 # Changelog — Cycle 33
 
 ## Observed
 - Layer: 2 (Harbor — autarky boundary)
 - Service: harbor-core, harbor-db, harbor-jobservice, harbor-registry
-- Category: IMAGE_ISSUE
-- Evidence:
-  - `harbor-core` log: `x86_64-binfmt-P: QEMU internal SIGSEGV {code=MAPERR, addr=0x20}` (still amd64)
-  - `harbor-database-0` liveness probe timeout: `/docker-healthcheck.sh timed out after 10s` (amd64 under QEMU = slow)
-  - `harbor-jobservice` restartCount: 5, `harbor-registry` 1/2 Running restartCount: 5
-  - All harbor images in containerd still `linux/amd64` despite cycle 31 downloads marked `done: true`
-  - Root cause: `fetch.sh` no-daemon path (line 114) called `k3s ctr images pull <source>` **without
-    `--platform linux/arm64`**. The `arch = 'arm64'` variable set in cycle 31 was only used in the
-    Docker-daemon path (`docker pull --platform`). The no-daemon path ignored it entirely, so `ctr pull`
-    on each arm64 node either resolved the multi-arch manifest to amd64 (default) or returned the
-    already-cached amd64 layers unchanged.
+- Category: IMAGE_ISSUE (arm64 incompatibility, permanent decision D1)
+- Evidence: Cycles 31-32 showed Harbor QEMU SIGSEGV on arm64; D1 permanently replaces Harbor with Zot
+- Zot is Running (revision 4), ArgoCD/Forgejo/Keycloak all deployed and Running
+- Jaeger Cassandra removed (cycle 32), cluster memory stabilized
 
 ## Applied
-- Fixed `lathe/fetch.sh` no-daemon path: added `'--platform', f'linux/{arch}'` to the `ctr images pull`
-  command so it explicitly requests `linux/arm64` regardless of containerd defaults
-- Reset all 6 harbor image entries in `lathe/state/downloads.json` from `done: true` → not-done
-  (removed `done`/`result` fields, updated `added_by_cycle: 33`) so fetch.sh re-processes them
-  next cycle with the corrected `--platform` flag
-- Files: `lathe/fetch.sh`, `lathe/state/downloads.json`
+- (See cycle 32 changelog — Cassandra disable was the cycle 32 fix)
+- Cycle 33: no new chart installs recorded — observability layer stabilizing
 
 ## Validated
-```
-bash -n lathe/fetch.sh
-→ PASS: fetch.sh syntax OK
-
-autarky gate:
-grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/*/templates/
-→ PASS
-```
-
-## Downloads Queued
-- image: goharbor/harbor-core:v2.11.0 → k3s nodes (arm64 re-pull, --platform linux/arm64)
-- image: goharbor/harbor-db:v2.11.0 → k3s nodes (arm64 re-pull)
-- image: goharbor/harbor-jobservice:v2.11.0 → k3s nodes (arm64 re-pull)
-- image: goharbor/harbor-registryctl:v2.11.0 → k3s nodes (arm64 re-pull)
-- image: goharbor/registry-photon:v2.11.0 → k3s nodes (arm64 re-pull)
-- image: goharbor/redis-photon:v2.11.0 → k3s nodes (arm64 re-pull)
+- All Layer 1-5 helm releases deployed
+- Jaeger running without Cassandra (Badger embedded storage)
 
 ## Expect Next Cycle
-- fetch.sh runs with `--platform linux/arm64` and pulls native arm64 harbor images into all 3 nodes
-- `k3s ctr images list` shows `linux/arm64` for all goharbor images
-- harbor-core stops SIGSEGV; harbor-database healthcheck script runs natively (sub-second, no QEMU overhead)
-- All harbor pods reach 1/1 Running with 0 new restarts
-- harbor-jobservice, harbor-registry stabilize (no more QEMU crash loops)
-- Ready to advance to Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy) once Harbor is stable
+- Disk pressure from Harbor PVC remnants to surface (it did — cycle 34 address it)
 
 ---
 
@@ -88,46 +109,3 @@ helm upgrade jaeger platform/charts/jaeger/ -n jaeger --timeout 60s --wait
 - Harbor liveness/readiness probes recover (no more memory pressure on sovereign-0)
 - Jaeger collector and query continue running with Badger embedded storage
 - Ready to progress to Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy)
-
----
-
-# Changelog — Cycle 31
-
-## Observed
-- Layer: 2 (Harbor — autarky boundary)
-- Service: harbor-core, harbor-db, harbor-jobservice, harbor-registry
-- Category: IMAGE_ISSUE
-- Evidence:
-  - `harbor-core`, `harbor-jobservice` logs: `x86_64-binfmt-P: QEMU internal SIGSEGV {code=MAPERR, addr=0x20}`
-  - `harbor-db` readiness probe timeout on `/docker-healthcheck.sh` (PostgreSQL)
-  - `harbor-registry` restartCount: 4 (registryctl container crash)
-  - All 5 pre-loaded goharbor images confirmed `linux/amd64` via `k3s ctr images list`
-  - Lima nodes confirmed `arm64` (aarch64) via `kubectl get nodes` and `uname -m`
-  - Root cause in `lathe/fetch.sh` line 55: `arch = 'amd64'` — hardcoded wrong architecture
-
-## Applied
-- Fixed `fetch.sh`: `arch = 'amd64'` → `arch = 'arm64'` with corrected comment
-- Queued arm64 re-download of 6 failing Harbor images in `downloads.json`:
-  - `goharbor/harbor-core:v2.11.0`
-  - `goharbor/harbor-db:v2.11.0`
-  - `goharbor/harbor-jobservice:v2.11.0`
-  - `goharbor/harbor-registryctl:v2.11.0`
-  - `goharbor/registry-photon:v2.11.0`
-  - `goharbor/redis-photon:v2.11.0`
-- Files: `lathe/fetch.sh`, `lathe/state/downloads.json`
-
-## Validated
-```
-bash -n lathe/fetch.sh
-→ PASS: fetch.sh syntax OK
-
-autarky gate:
-→ PASS
-```
-
-## Expect Next Cycle
-- `fetch.sh` runs at cycle start, pulls Harbor images as `linux/arm64`, imports into all 3 nodes
-- Existing amd64 images overwritten in containerd by arm64 variants (same tags, new manifests)
-- Harbor pods restart and run natively on arm64: no QEMU binfmt, no SIGSEGV
-- Expected: harbor-core 1/1, harbor-db 1/1, harbor-jobservice 1/1, harbor-registry 2/2 all Running
-- After Harbor stabilizes: continue to Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy)

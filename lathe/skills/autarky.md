@@ -2,61 +2,71 @@
 
 ## Principle
 
-After Harbor (Layer 2) is running, the cluster never pulls from external registries.
-All images are served from `harbor.<domain>/sovereign/` (or the configured registry).
+After Zot (Layer 2) is running, the cluster never pulls from external registries.
+Zot acts as a pull-through proxy + cache — upstream images are fetched on demand
+and cached locally. All chart image references go through Zot.
 
 Chart templates NEVER contain external registry URLs. This is constitutional gate G6.
 
+## Zot as Layer 2
+
+Zot replaces Harbor. Harbor is amd64-only and cannot run on arm64 Lima VMs.
+This is a permanent decision (see decisions.md D1). Never install Harbor.
+
+Zot provides:
+- OCI v2 registry API (same as Harbor, Docker Hub, etc.)
+- Pull-through proxy with `sync.onDemand: true` for docker.io, ghcr.io, quay.io, gcr.io, registry.k8s.io
+- Single binary, no database, no redis
+- CNCF Sandbox, Apache 2.0, multi-arch (arm64 native)
+
 ## Bootstrap Window
 
-Before Harbor is deployed, Layers 0-1 may pull from upstream (k3s handles this
-natively — no special loading needed). The bootstrap window closes once Harbor is
-healthy and image mirroring is configured.
+Before Zot is deployed, Layers 0-1 may pull from upstream (k3s handles this
+natively). The bootstrap window closes once Zot is healthy and k3s registry
+mirrors are configured.
 
-## Image Loading for Lima + k3s
+## Image Loading for Pre-Zot Bootstrap
 
-k3s uses containerd. Images can be imported directly into each node:
+For images needed before Zot is running, queue them in `lathe/state/downloads.json`
+(see downloads skill). The fetch script pulls them on the host or directly on
+nodes and imports via `k3s ctr images import`.
 
-```bash
-# Import a tar archive into a node
-limactl copy image.tar sovereign-0:/tmp/image.tar
-limactl shell sovereign-0 sudo k3s ctr images import /tmp/image.tar
-```
+Once Zot is running with pull-through proxy, k3s pulls through Zot automatically —
+no manual image loading needed. This is the target state.
 
-For pre-Harbor bootstrap, queue images in `lathe/state/downloads.json` (see
-downloads skill). The fetch script pulls them on the host and imports into all
-nodes.
+## k3s Registry Mirror Setup
 
-Once Harbor is running, k3s pulls from Harbor like any normal registry — no
-special import needed. This is the target state.
+k3s nodes route all image pulls through Zot via `/etc/rancher/k3s/registries.yaml`:
 
-## Harbor Setup
-
-Harbor runs inside the cluster. k3s nodes need to trust it:
-
-```bash
-# On each node, configure k3s registries
-limactl shell sovereign-0 sudo tee /etc/rancher/k3s/registries.yaml <<'EOF'
+```yaml
 mirrors:
-  "harbor.sovereign.local":
+  "docker.io":
     endpoint:
-      - "http://harbor.sovereign.local"
-configs:
-  "harbor.sovereign.local":
-    tls:
-      insecure_skip_verify: true
-EOF
-limactl shell sovereign-0 sudo systemctl restart k3s
+      - "http://<zot-clusterip>:5000"
+  "ghcr.io":
+    endpoint:
+      - "http://<zot-clusterip>:5000"
+  "quay.io":
+    endpoint:
+      - "http://<zot-clusterip>:5000"
+  "gcr.io":
+    endpoint:
+      - "http://<zot-clusterip>:5000"
+  "registry.k8s.io":
+    endpoint:
+      - "http://<zot-clusterip>:5000"
 ```
 
-k3s natively supports registry mirrors via `/etc/rancher/k3s/registries.yaml` —
-no containerd certs.d hacking needed.
+After writing this config, restart k3s on each node for it to take effect.
 
 ## Bitnami Images
 
 Bitnami migrated from docker.io/bitnami. Pinned version tags remain at
 `docker.io/bitnamilegacy/`. Queue these in downloads.json with the correct
-`tag_as` for the harbor namespace.
+`tag_as` so they appear as `docker.io/bitnami/<name>:<tag>` when imported.
+
+Zot's pull-through proxy will NOT find these at docker.io/bitnami (they're gone).
+They must be manually pulled from bitnamilegacy and re-tagged.
 
 ## Autarky Gate
 
@@ -66,8 +76,6 @@ No external registry URLs in chart templates:
 grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
   platform/charts/*/templates/ && echo "FAIL: external registry reference found" || echo "PASS"
 ```
-
-If this gate fails, the reference must be replaced with `{{ .Values.global.imageRegistry }}`.
 
 ## Chart Image References
 
@@ -81,4 +89,4 @@ image:
 ```
 
 Never hardcode a registry URL in a template file. If an image isn't available
-internally, queue it in downloads.json — never point the template externally.
+through Zot's proxy, queue it in downloads.json — never point the template externally.

@@ -26,7 +26,7 @@ Fix in this order — lowest broken layer always wins:
 ```
 Layer 0: Lima VMs + k3s + Cilium CNI            (compute + network foundation)
 Layer 1: cert-manager + sealed-secrets + OpenBao (PKI + secrets)
-Layer 2: Harbor                                  (internal registry — autarky boundary)
+Layer 2: Zot                                     (internal registry — autarky boundary)
 Layer 3: Keycloak                                (identity / SSO)
 Layer 4: Forgejo + ArgoCD                        (SCM + GitOps)
 Layer 5: Prometheus, VictoriaLogs, Jaeger        (observability)
@@ -140,6 +140,23 @@ Write `lathe/state/changelog.md`:
   for helm upgrades, `timeout 5` for curl/wget. Never rely on default timeouts.
   Example: `timeout 5 curl -sk ...`, `timeout 30 helm upgrade ...`,
   `timeout 10 kubectl describe ...`. A command that hangs kills the whole cycle.
+
+## Permanent Decisions
+
+When you make an architectural decision that should never be revisited (component
+swap, incompatibility discovery, design choice), append it to `lathe/state/decisions.md`.
+This file is injected into every cycle's prompt. Format:
+
+```markdown
+## D{N}: {short title} (Cycle {N})
+
+**Decision:** {what was decided}
+**Reason:** {why, with evidence}
+**Implication:** {what this means going forward}
+```
+
+This prevents future cycles from re-discovering the same problem or reverting to
+an approach that was already proven to fail.
 
 ## Command History
 

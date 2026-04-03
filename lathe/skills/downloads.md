@@ -19,7 +19,7 @@ Append to `lathe/state/downloads.json`. The file is a JSON array of requests:
   {
     "type": "image",
     "source": "docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r8",
-    "tag_as": "harbor.sovereign.local/bitnami/keycloak:24.0.5-debian-12-r8",
+    "tag_as": "docker.io/bitnami/keycloak:24.0.5-debian-12-r8",
     "reason": "keycloak chart needs bitnami keycloak image",
     "added_by_cycle": 3
   },
@@ -49,7 +49,7 @@ Lima k3s nodes.
 | Field | Required | Description |
 |-------|----------|-------------|
 | `source` | yes | Full image reference to pull |
-| `tag_as` | no | Re-tag before importing (e.g., `harbor.sovereign.local/bitnami/...`) |
+| `tag_as` | no | Re-tag before importing (e.g., `docker.io/bitnami/keycloak:...` for bitnamilegacy images) |
 | `reason` | yes | Why this is needed (which chart, what error) |
 | `added_by_cycle` | yes | Cycle number that requested it |
 

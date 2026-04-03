@@ -22,7 +22,7 @@
 - No exceptions — these are load-bearing walls
 - No single company >50% of maintainers with merge rights
 
-**Tier 2 (Application Layer):** GitLab, Harbor, Backstage, etc.
+**Tier 2 (Application Layer):** GitLab, Zot, Backstage, etc.
 - MUST have permissive license (Apache 2.0, MIT, BSD)
 - Foundation governance preferred but not required
 - Must have documented exit path if single-vendor steered

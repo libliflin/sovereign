@@ -180,6 +180,14 @@ run_agent() {
         fi
     done
 
+    # Inject permanent decisions (if any)
+    if [[ -f "$STATE_DIR/decisions.md" ]]; then
+        prompt+="---"$'\n'
+        prompt+="# PERMANENT DECISIONS — DO NOT REVISIT"$'\n\n'
+        prompt+="$(cat "$STATE_DIR/decisions.md")"
+        prompt+=$'\n\n'
+    fi
+
     # Inject current snapshot
     prompt+="---"$'\n'
     prompt+="# Current Cluster Snapshot"$'\n\n'

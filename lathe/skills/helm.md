@@ -35,7 +35,7 @@ a lower layer has failures:
 ```
 Layer 0: k3s + Cilium CNI (managed by Lima + k3s bootstrap)
 Layer 1: cert-manager + sealed-secrets + OpenBao
-Layer 2: Harbor (autarky boundary — after this, all images internal)
+Layer 2: Zot (autarky boundary — pull-through proxy + cache, after this all images route internally)
 Layer 3: Keycloak (identity / SSO)
 Layer 4: Forgejo + ArgoCD (SCM + GitOps)
 Layer 5: Prometheus, VictoriaLogs, Jaeger, Perses, Thanos (observability)
