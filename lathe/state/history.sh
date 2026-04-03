@@ -310,3 +310,7 @@ helm upgrade --install argocd platform/charts/argocd/ -n argocd --create-namespa
 
 # cycle 28: install prometheus-stack
 helm upgrade --install prometheus-stack platform/charts/prometheus-stack/ -n monitoring --create-namespace --timeout 120s --wait
+
+# cycle 29: fix victorialogs storageClass and storage size, install
+# (same CONFIG_ERROR pattern as cycle 28 prometheus-stack)
+helm upgrade --install victorialogs platform/charts/victorialogs/ -n monitoring --create-namespace --timeout 90s --wait

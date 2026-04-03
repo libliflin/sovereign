@@ -5,7 +5,7 @@
 
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "standard"
+  storageClass: "local-path"
 
 victorialogs:
   server:
@@ -17,8 +17,8 @@ victorialogs:
     ## Storage
     persistentVolume:
       enabled: true
-      storageClass: "standard"
-      size: "50Gi"
+      storageClass: "local-path"
+      size: "5Gi"
 
     resources:
       requests:
