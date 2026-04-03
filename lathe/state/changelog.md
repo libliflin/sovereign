@@ -1,47 +1,68 @@
-# Changelog — Cycle 17
+# Changelog — Cycle 18
 
 ## Observed
 
-- Layer: 1 (cert-manager + sealed-secrets + OpenBao — PKI + secrets)
-- Service: OpenBao — all 3 pods Running but uninitialized (fresh cluster rebuild from cycle 16)
-- Category: CONFIG_ERROR — OpenBao requires explicit `bao operator init` + unseal after every cluster creation
-- Evidence: `bao status` → `Initialized: false`, `Sealed: true`
+- Layer: 2 (Harbor — internal registry / autarky boundary)
+- Service: Harbor — all components fail with `exec format error` or `QEMU internal SIGSEGV`
+- Category: IMAGE_ISSUE — Harbor publishes amd64-only images; no arm64 variant exists on Docker Hub or GHCR
+- Evidence:
+  - `k3s ctr content get <hash>` → `application/vnd.docker.distribution.manifest.v2+json`, `arch: amd64 os: linux`
+  - `kubectl logs harbor-redis-0 --previous` → `exec /usr/bin/redis-server: exec format error`
+  - `kubectl logs harbor-core-* --tail` → `QEMU internal SIGSEGV {code=MAPERR, addr=0x20}`
+  - Docker Hub API confirmed: every Harbor tag (`v2.11.0` through `v2.14.3`) has only `['amd64']` images
+  - GHCR `ghcr.io/goharbor/` confirmed: manifest type `application/vnd.docker.distribution.manifest.v2+json` (single-arch, amd64)
 
 ## Applied
 
-- Initialized OpenBao: `bao operator init -key-shares=5 -key-threshold=3 -tls-skip-verify` on openbao-0
-- Saved unseal keys + root token to `lathe/state/openbao-keys.json`
-- Unsealed openbao-0 (3 of 5 keys) → became raft leader
-- Joined openbao-1 and openbao-2 to raft cluster, unsealed both
-- Files: `lathe/state/openbao-keys.json`, `lathe/state/history.sh`, `lathe/state/changelog.md`
+1. Fixed Harbor chart PVC storageClass: changed all 5 PVC storageClass fields from `""` to `"local-path"` in `platform/charts/harbor/values.yaml`
+2. Deployed Harbor — PVCs bound (local-path), pods started, but crashed on `exec format error`
+3. Installed `qemu-user-static` on all 3 Lima nodes → registered `qemu-x86_64` binfmt_misc handler with `F` (fix-binary) flag
+4. Result: nginx, portal, and redis started successfully under QEMU emulation; but `harbor-core`, `harbor-registryctl`, and `harbor-db` (init container) all hit `QEMU internal SIGSEGV {code=MAPERR, addr=0x20}` — Go runtime and PostgreSQL use memory patterns that QEMU user-mode cannot reliably emulate on arm64 Apple VZ
+5. Uninstalled Harbor, cleaned up PVCs and namespace
+
+- Files: `platform/charts/harbor/values.yaml` (storageClass fix preserved — correct for next attempt)
 
 ## Validated
 
 ```
-# openbao-0 status
-bao status -tls-skip-verify
-→ Initialized: true, Sealed: false, HA Mode: active
+# Helm lint
+helm lint platform/charts/harbor/
+→ 1 chart(s) linted, 0 chart(s) failed
 
-# raft peers
-bao operator raft list-peers -tls-skip-verify
-→ openbao-0  leader   voter: true
-→ openbao-1  follower voter: true
-→ openbao-2  follower voter: true
-
-# pod status
-kubectl get pods -n openbao
-→ openbao-0  1/1  Running  0
-→ openbao-1  1/1  Running  0
-→ openbao-2  1/1  Running  0
-
-# autarky gate
+# Autarky gate
 grep -rn "docker.io|quay.io|..." platform/charts/*/templates/
 → PASS
+
+# Cluster clean
+kubectl get pods -A → Layer 1 healthy (cert-manager, sealed-secrets, openbao all 1/1 Running)
 ```
+
+## Blocker: Human Decision Required
+
+Harbor is **amd64-only**. The platform runs on **arm64 Lima VMs** (Apple Silicon host). QEMU user-mode emulation is insufficient — Go's runtime and PostgreSQL both hit SIGSEGV under emulation.
+
+**This is not fixable within the current image set.** Options require a human decision:
+
+**Option A — Switch Layer 2 registry to Zot:**
+- [Zot](https://zotregistry.dev/) is CNCF Sandbox, Apache 2.0, OCI-compliant
+- Publishes multi-arch images (amd64 + arm64) to Docker Hub and GHCR
+- Has auth, garbage collection, replication, Trivy scanning plugin
+- Could serve as bootstrap registry; Harbor can be re-added when arm64 images are available
+- Requires adding a `platform/charts/zot/` chart (architectural change)
+
+**Option B — Accept amd64 cluster:**
+- Re-provision Lima VMs as x86_64 (Lima supports x86_64 VMs via QEMU on Apple Silicon)
+- All official images work without emulation issues
+- Performance cost of running x86_64 VMs on Apple Silicon
+- Change Lima template from `template:k3s` to `template:k3s` with `--arch x86_64`
+
+**Option C — Wait for Harbor arm64:**
+- Harbor project has not committed to arm64 images (all 2.11–2.14 releases are amd64-only)
+- No timeline known
 
 ## Expect Next Cycle
 
-- Layer 1 complete: cert-manager, sealed-secrets, OpenBao all healthy
-- Next: deploy Harbor (Layer 2) — subchart already present at platform/charts/harbor/charts/harbor-1.15.0.tgz
-- Harbor will need storageClass override (local-path) and may need to create harbor namespace + admin secret
-- goharbor images will pull from external during bootstrap window (pre-autarky, acceptable)
+Pending human decision. Layer 1 remains healthy. No regression on lower layers.
+
+If Option A (Zot): next cycle deploys a Zot chart and establishes the autarky boundary with arm64-compatible images.
+If Option B (x86_64 VMs): next cycle rebuilds cluster nodes as x86_64 and redeploys Harbor.

@@ -193,3 +193,37 @@ kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY3>
 # cycle 17: verify raft cluster (all 3 voters)
 kubectl exec -n openbao openbao-0 -- sh -c 'BAO_TOKEN=<ROOT_TOKEN> bao operator raft list-peers -tls-skip-verify'
 # → openbao-0 leader voter:true, openbao-1 follower voter:true, openbao-2 follower voter:true
+
+# cycle 18: check harbor PVC storageClass gap (all were empty string)
+# Fixed in platform/charts/harbor/values.yaml
+
+# cycle 18: deploy harbor
+export KUBECONFIG=$(limactl list sovereign-0 --format 'unix://{{.Dir}}/copied-from-guest/kubeconfig.yaml')
+helm upgrade --install harbor platform/charts/harbor/ -n harbor --create-namespace --timeout 180s
+
+# cycle 18: confirm exec format error — amd64-only images on arm64 nodes
+kubectl logs -n harbor harbor-redis-0 --previous --tail=5
+# → exec /usr/bin/redis-server: exec format error
+
+# cycle 18: verify amd64 manifest type
+limactl shell sovereign-0 sudo k3s ctr content get sha256:a7fad8c1072a21345b8757f34ac75f0d9aacb06f6daa41688c7a267f44fea24a
+# → "mediaType": "application/vnd.docker.distribution.manifest.v2+json" (single-arch amd64)
+
+# cycle 18: install qemu-user-static on all nodes (binfmt_misc emulation)
+limactl shell sovereign-0 sudo apt-get update -qq && limactl shell sovereign-0 sudo apt-get install -y qemu-user-static
+limactl shell sovereign-1 sudo apt-get update -qq && limactl shell sovereign-1 sudo apt-get install -y qemu-user-static
+limactl shell sovereign-2 sudo apt-get update -qq && limactl shell sovereign-2 sudo apt-get install -y qemu-user-static
+# → qemu-x86_64 registered with POF flags
+
+# cycle 18: force harbor-registry restart after qemu install
+helm upgrade harbor platform/charts/harbor/ -n harbor --set-string "harbor.registry.podAnnotations.forceRestart=$(date +%s)" --timeout 90s
+# → nginx/portal/redis came up; core/registryctl/db hit QEMU SIGSEGV
+
+# cycle 18: confirm QEMU instability — all Harbor Go/postgres binaries hit SIGSEGV
+kubectl logs -n harbor harbor-core-77849f6c68-s67zt --tail=5
+# → QEMU internal SIGSEGV {code=MAPERR, addr=0x20}
+
+# cycle 18: clean up broken harbor deployment
+helm uninstall harbor -n harbor
+kubectl delete pvc -n harbor --all
+kubectl delete namespace harbor
