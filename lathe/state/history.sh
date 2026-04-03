@@ -245,3 +245,16 @@ kubectl run zot-check2 --rm -i --restart=Never --image=busybox -- wget -S -qO- h
 helm upgrade --install zot platform/charts/zot/ -n zot --create-namespace --timeout 120s --wait
 # cycle 20: verify Zot OCI v2 API after sync extension enabled
 kubectl run zot-verify2 --rm -i --restart=Never --image=busybox -- wget -S -qO- http://zot.zot.svc.cluster.local:5000/v2/
+
+# cycle 21: write k3s registry mirrors to all 3 nodes (route external pulls through Zot at ClusterIP 10.43.32.173:5000)
+limactl shell sovereign-0 sudo tee /etc/rancher/k3s/registries.yaml
+limactl shell sovereign-1 sudo tee /etc/rancher/k3s/registries.yaml
+limactl shell sovereign-2 sudo tee /etc/rancher/k3s/registries.yaml
+
+# cycle 21: restart k3s-agent on workers, then k3s on server
+limactl shell sovereign-1 sudo systemctl restart k3s-agent
+limactl shell sovereign-2 sudo systemctl restart k3s-agent
+limactl shell sovereign-0 sudo systemctl restart k3s
+
+# cycle 21: verify mirror active (Zot logs show ?ns=ghcr.io on blob requests)
+kubectl logs -n zot -l app.kubernetes.io/name=zot --tail=20
