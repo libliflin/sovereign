@@ -90,3 +90,36 @@ helm uninstall keycloak -n keycloak
 
 # cycle 12: reset failed downloads for retry with correct arch
 # edit lathe/state/downloads.json — removed result/done fields from cycle 11 failures
+
+# cycle 13: fix fetch.sh — docker daemon unavailable (Docker Desktop not running)
+# added daemon detection + crane fallback; crane tarball incompatible with k3s ctr import
+# fixed: no-daemon path uses limactl shell + k3s ctr images pull directly on nodes
+# docker daemon timeout increased from 5s to 15s for slow-start case
+# edit lathe/fetch.sh
+
+# cycle 13: delete lingering ceph-block PVC from previous failed deploy
+kubectl delete pvc data-keycloak-postgresql-0 -n keycloak
+
+# cycle 13: run fetch.sh — keycloak image via docker (daemon came up), postgresql via no-daemon ctr pull
+bash lathe/fetch.sh
+
+# cycle 13: deploy keycloak (images now present on all nodes, storageClass fixed to local-path)
+helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set ingress.enabled=false --set realmInit.enabled=false --timeout 120s --wait
+
+# cycle 13: force restart sovereign-0 (VM hung with I/O errors during large image import)
+limactl stop sovereign-0 --force && limactl start sovereign-0
+
+# cycle 13: force restart sovereign-1, sovereign-2 (hung after sovereign-0 restart)
+limactl stop sovereign-1 --force && limactl start sovereign-1
+limactl stop sovereign-2 --force && limactl start sovereign-2
+
+# cycle 13: delete stuck local-path helper pod (was Unknown after node restart, blocked PVC binding)
+kubectl delete pod -n kube-system helper-pod-create-pvc-a317cc41-d4ea-487d-91d6-dc8652b6c95d --force
+
+# cycle 13: patch helm release from pending-install to deployed (timed out waiting, pods actually running)
+kubectl patch secret sh.helm.release.v1.keycloak.v1 -n keycloak --type=json -p '[...]'
+
+# cycle 13: verify keycloak Layer 3 running
+kubectl get pods -n keycloak
+# → keycloak-0  1/1 Running  sovereign-1
+# → keycloak-postgresql-0  1/1 Running  sovereign-0

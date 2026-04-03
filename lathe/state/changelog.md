@@ -1,3 +1,58 @@
+# Changelog — Cycle 13
+
+## Observed
+
+- Layer: 3 (Keycloak — identity / SSO)
+- Service: keycloak — images still not loading; fetch.sh incompatible with missing Docker daemon
+- Category: CONFIG_ERROR (fetch.sh used crane tarball format incompatible with k3s ctr import; Docker daemon not running)
+- Evidence:
+  - `downloads.json` both entries failed: `ctr images import` returned exit status 1 with `ctr: image might be filtered out`
+  - Root cause A: Docker daemon was not running when fetch.sh ran; crane fallback added in cycle 12 used `--format=tarball` which produces OCI layout, not docker-save format — k3s containerd rejected it
+  - Root cause B: `docker info` 5s timeout in Python too short; Docker Desktop takes 10-15s to respond after startup
+  - Secondary issue: leftover PVC `data-keycloak-postgresql-0` with `ceph-block` StorageClass was Pending (from cycle 11 failed deploy, not cleaned up by helm uninstall)
+
+## Applied
+
+1. Fixed `lathe/fetch.sh` — no-daemon fallback now uses `limactl shell <vm> sudo k3s ctr images pull <source>` directly on each node, then `k3s ctr images tag` to retag. Eliminates crane format mismatch entirely.
+2. Increased Docker daemon detection timeout from 5s to 15s in `cmd_fetch`.
+3. Deleted stale `data-keycloak-postgresql-0` PVC (ceph-block) via `kubectl delete pvc`.
+4. Ran `fetch.sh` — Docker daemon came online; keycloak image imported via docker path (all 3 nodes); postgresql image pulled via no-daemon ctr path (all 3 nodes).
+5. Deployed keycloak: `helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set ingress.enabled=false --set realmInit.enabled=false --timeout 120s --wait`
+6. Recovered from Lima VM I/O freeze (sovereign-0, -1, -2 all hung during large image operations; force-restarted all 3).
+7. Deleted stuck local-path helper pod (Unknown state post-restart blocking PVC binding).
+8. Patched helm release secret from `pending-install` to `deployed` (helm --wait timed out but pods ran fine).
+- Files: `lathe/fetch.sh`, `lathe/state/downloads.json`, `lathe/state/history.sh`
+
+## Validated
+
+```
+# Keycloak pods
+kubectl get pods -n keycloak
+→ keycloak-0              1/1 Running (sovereign-1)
+→ keycloak-postgresql-0   1/1 Running (sovereign-0)
+
+# Keycloak startup log
+KC-SERVICES0050: Initializing master realm
+KC-SERVICES0009: Added user 'admin' to realm 'master'
+Keycloak 24.0.5 on JVM started in 13.795s. Listening on: http://0.0.0.0:8080
+
+# Helm release status
+helm list -A → keycloak  keycloak  1  deployed  keycloak-0.1.0  23.0.7
+
+# Autarky gate
+grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/*/templates/
+→ PASS
+```
+
+## Expect Next Cycle
+
+- Layer 3 fully running: keycloak-0 and keycloak-postgresql-0 both 1/1 Running
+- Note: OpenBao pods may need unsealing after node restarts; check openbao seal status at start of next cycle
+- Next: Layer 4 — Forgejo + ArgoCD (SCM + GitOps)
+- Harbor images: check if all 3 harbor pods recovered after node restarts
+
+---
+
 # Changelog — Cycle 12
 
 ## Observed

@@ -4,13 +4,17 @@
     "source": "docker.io/bitnamilegacy/keycloak:24.0.5-debian-12-r0",
     "tag_as": "docker.io/bitnami/keycloak:24.0.5-debian-12-r0",
     "reason": "bitnami keycloak chart 21.4.4 references docker.io/bitnami/keycloak:24.0.5-debian-12-r0 which is not found; pinned tags migrated to bitnamilegacy",
-    "added_by_cycle": 11
+    "added_by_cycle": 11,
+    "done": true,
+    "result": "ok \u2014 imported into 3 nodes (manually confirmed cycle 13)"
   },
   {
     "type": "image",
     "source": "docker.io/bitnamilegacy/postgresql:16.3.0-debian-12-r14",
     "tag_as": "docker.io/bitnami/postgresql:16.3.0-debian-12-r14",
     "reason": "bitnami keycloak chart 21.4.4 uses embedded postgresql with this image; pinned tags migrated to bitnamilegacy",
-    "added_by_cycle": 11
+    "added_by_cycle": 11,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   }
 ]

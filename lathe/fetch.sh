@@ -84,22 +84,44 @@ for i, entry in enumerate(q):
             source = entry['source']
             tag_as = entry.get('tag_as', '')
 
-            # Pull single-platform to avoid multi-arch issues
-            print(f'    Pulling {source} (linux/{arch}) ...')
-            subprocess.run(['docker', 'pull', '--platform', f'linux/{arch}', source], check=True)
+            # Detect whether Docker daemon is available (allow 15s for slow start)
+            docker_ok = False
+            try:
+                subprocess.run(['docker', 'info'], check=True, capture_output=True, timeout=15)
+                docker_ok = True
+            except Exception:
+                pass
 
-            # Re-tag if needed
-            if tag_as:
-                print(f'    Tagging as {tag_as} ...')
-                subprocess.run(['docker', 'tag', source, tag_as], check=True)
-
-            # Save to tar and import into each running Lima VM
-            load_image = tag_as if tag_as else source
             with tempfile.NamedTemporaryFile(suffix='.tar', delete=False) as tf:
                 tar_path = tf.name
             try:
-                print(f'    Saving {load_image} to tar ...')
-                subprocess.run(['docker', 'save', load_image, '-o', tar_path], check=True)
+                if docker_ok:
+                    # Docker daemon available — pull, tag, save
+                    print(f'    Pulling {source} (linux/{arch}) via docker ...')
+                    subprocess.run(['docker', 'pull', '--platform', f'linux/{arch}', source], check=True)
+                    if tag_as:
+                        print(f'    Tagging as {tag_as} ...')
+                        subprocess.run(['docker', 'tag', source, tag_as], check=True)
+                    load_image = tag_as if tag_as else source
+                    print(f'    Saving {load_image} to tar ...')
+                    subprocess.run(['docker', 'save', load_image, '-o', tar_path], check=True)
+                else:
+                    # No Docker daemon — pull directly into each Lima node's containerd.
+                    # k3s nodes have internet access and ctr pull is faster than host-side save+copy.
+                    print(f'    Docker daemon unavailable — pulling {source} directly on nodes ...')
+                    for vm in running_vms:
+                        print(f'    ctr pull on {vm} ...')
+                        subprocess.run(['limactl', 'shell', vm, 'sudo', 'k3s', 'ctr', 'images', 'pull',
+                                        source], check=True)
+                        if tag_as:
+                            print(f'    Tagging {source} -> {tag_as} on {vm} ...')
+                            subprocess.run(['limactl', 'shell', vm, 'sudo', 'k3s', 'ctr', 'images', 'tag',
+                                            source, tag_as], check=True)
+
+                    entry['done'] = True
+                    entry['result'] = f'ok (no-daemon path) — pulled directly on {len(running_vms)} nodes'
+                    processed += 1
+                    continue  # skip the docker-path import block below
 
                 for vm in running_vms:
                     print(f'    Importing into {vm} ...')
