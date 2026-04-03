@@ -258,3 +258,16 @@ limactl shell sovereign-0 sudo systemctl restart k3s
 
 # cycle 21: verify mirror active (Zot logs show ?ns=ghcr.io on blob requests)
 kubectl logs -n zot -l app.kubernetes.io/name=zot --tail=20
+
+# cycle 22: fix ingress annotation nginx → traefik in platform/charts/keycloak/values.yaml
+# edit platform/charts/keycloak/values.yaml
+
+# cycle 22: create keycloak namespace and bootstrap secrets
+kubectl create namespace keycloak
+kubectl create secret generic keycloak-admin-secret --from-literal=admin-password='Keycloak12345' -n keycloak
+kubectl create secret generic keycloak-db-secret --from-literal=postgres-password='Postgres12345' --from-literal=password='Keycloak12345' -n keycloak
+
+# cycle 22: deploy keycloak (timed out — bitnami images ImagePullBackOff on new VMs)
+helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set realmInit.enabled=false --timeout 150s --wait
+# → failed: bitnami images not found (VMs recreated at cycle 14, images lost; bitnami tags migrated to bitnamilegacy)
+# → queued bitnami images in downloads.json for cycle 22; fetch.sh will re-import next cycle

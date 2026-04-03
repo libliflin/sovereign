@@ -13,7 +13,7 @@ ingress:
   enabled: true
   # Hostname is always auth.{{ .Values.global.domain }} — set via _helpers.tpl
   annotations:
-    kubernetes.io/ingress.class: nginx
+    kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: sovereign-ca-issuer
     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
   tls: true
