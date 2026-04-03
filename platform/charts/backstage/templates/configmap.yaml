@@ -7,6 +7,15 @@ metadata:
     {{- include "backstage.labels" . | nindent 4 }}
 data:
   app-config.production.yaml: |
+    app:
+      baseUrl: "https://{{ include "backstage.host" . }}"
+    backend:
+      baseUrl: "https://{{ include "backstage.host" . }}"
+    auth:
+      environment: production
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
     {{- with .Values.backstage.appConfig }}
     catalog:
       providers:

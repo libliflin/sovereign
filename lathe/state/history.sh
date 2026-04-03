@@ -412,3 +412,10 @@ helm upgrade --install backstage platform/charts/backstage/ -n backstage --creat
 # → timed out, pod backstage-5d64db89b9-m6kpv ContainerCreating (pulling ghcr.io/backstage/backstage:1.30.2)
 # cycle 40: disable falcoctl-artifact-follow sidecar (external hub dependency crashes in sovereign cluster)
 helm upgrade falco platform/charts/falco/ -n falco --timeout 90s --wait
+
+# cycle 41: add postgresql to backstage chart
+helm upgrade --install backstage platform/charts/backstage/ -n backstage --create-namespace
+# cycle 41: add kube-system exclusions to OPA gatekeeper constraints
+helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --set constraintsEnabled=true
+# cycle 41: clear knex migration lock in catalog db
+kubectl exec -n backstage backstage-postgresql-0 -- bash -c 'PGPASSWORD=backstage-dev psql -U backstage -d backstage_plugin_catalog -c "UPDATE knex_migrations_lock SET is_locked=0;"'

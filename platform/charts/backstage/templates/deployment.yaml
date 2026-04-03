@@ -51,9 +51,29 @@ spec:
               value: {{ .Values.keycloak.clientId | quote }}
             - name: APP_CONFIG_auth_providers_oidc_production_metadataUrl
               value: "{{ include "backstage.oidcIssuerURL" . }}/.well-known/openid-configuration"
+            {{- if .Values.postgresql.enabled }}
+            - name: APP_CONFIG_backend_database_client
+              value: "pg"
+            - name: APP_CONFIG_backend_database_connection_host
+              value: "{{ include "backstage.fullname" . }}-postgresql"
+            - name: APP_CONFIG_backend_database_connection_port
+              value: "5432"
+            - name: APP_CONFIG_backend_database_connection_user
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: APP_CONFIG_backend_database_connection_password
+              value: {{ .Values.postgresql.auth.password | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/app-config.production.yaml
+              subPath: app-config.production.yaml
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: app-config
+          configMap:
+            name: {{ include "backstage.fullname" . }}-app-config

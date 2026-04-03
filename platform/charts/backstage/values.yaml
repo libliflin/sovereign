@@ -55,6 +55,27 @@ resources:
     cpu: "1000m"
     memory: "1Gi"
 
+postgresql:
+  enabled: true
+  image:
+    registry: ""
+    repository: "bitnami/postgresql"
+    tag: "16.3.0-debian-12-r14"
+    pullPolicy: IfNotPresent
+  auth:
+    database: "backstage"
+    username: "backstage"
+    password: "backstage-dev"
+  storage:
+    size: "5Gi"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
 backstage:
   appConfig:
     catalog:
