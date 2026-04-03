@@ -271,3 +271,6 @@ kubectl create secret generic keycloak-db-secret --from-literal=postgres-passwor
 helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set realmInit.enabled=false --timeout 150s --wait
 # → failed: bitnami images not found (VMs recreated at cycle 14, images lost; bitnami tags migrated to bitnamilegacy)
 # → queued bitnami images in downloads.json for cycle 22; fetch.sh will re-import next cycle
+
+# cycle 23: reconcile keycloak release from failed to deployed (pods were already running after fetch.sh imported images)
+helm upgrade keycloak platform/charts/keycloak/ -n keycloak --set realmInit.enabled=false --timeout 150s --wait
