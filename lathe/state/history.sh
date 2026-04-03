@@ -371,3 +371,9 @@ kubectl delete pv pvc-2b4807f7-49e9-4f5f-9ee3-fd9e9cbf52b2 pvc-9215aa1c-c091-41b
 # cycle 34 (follow-up): delete evicted/error/stale pods cluster-wide
 kubectl delete pod tmp-debug -n default --grace-period=0
 kubectl delete pod cert-manager-cainjector-7f45ffb9d5-gjc77 -n cert-manager --grace-period=0
+
+# cycle 35: fix istio values.yaml storageClass ceph-block -> local-path
+# (edit to platform/charts/istio/values.yaml)
+
+# cycle 35: install istio (Layer 6 first component)
+helm upgrade --install istio platform/charts/istio/ -n istio-system --create-namespace --timeout 120s --wait
