@@ -428,3 +428,11 @@ helm upgrade zot platform/charts/zot/ -n zot --timeout 90s --wait
 
 # cycle 42: verify zot running with 0 restarts
 kubectl get pods -n zot
+
+# cycle 43: check openbao-0 sealed status
+kubectl exec -n openbao openbao-0 -- sh -c 'BAO_SKIP_VERIFY=true BAO_ADDR=https://127.0.0.1:8200 bao status 2>&1'
+# cycle 43: unseal openbao-0 (restarted pod needs manual unseal - Shamir requires 3 of 5 keys)
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY3>
+# → openbao-0: Sealed=false, HA Mode=standby, all 3 pods 1/1 Running

@@ -1,41 +1,39 @@
-# Changelog — Cycle 42
+# Changelog — Cycle 43
 
 ## Observed
-- Layer: 2 (Zot — autarky boundary / internal registry)
-- Service: zot
+- Layer: 1 (OpenBao — PKI + secrets)
+- Service: openbao-0
 - Category: CONFIG_ERROR
-- Evidence: `"error":"operation timeout: boltdb file is already in use, path '/var/lib/registry/cache.db'"` — Zot pod had 5 restarts; each restart timed out waiting for BoltDB lock released by the previous crashed container
+- Evidence: `openbao-0` was `0/1 Running` with 807 failed readiness probes over 66 minutes — `bao status` confirmed `Sealed: true`. Pod had restarted at ~18:09 EDT; openbao-1 and openbao-2 remained unsealed and healthy. Readiness probe (`/v1/sys/health?standbyok=true&sealedok=true&uninitcode=200` via HTTPS) returned 503 despite `sealedok=true` — OpenBao 2.5.x does not appear to honor `sealedok` in the sealed+raft-joining state.
 
 ## Applied
-
-### Fix 1: Disable BoltDB dedupe to eliminate lock contention
-- Changed `config.storage.dedupe: true` → `dedupe: false` in `platform/charts/zot/values.yaml`
-- With `dedupe: true`, Zot maintains a BoltDB file (`cache.db`) for content-addressable deduplication. On restart (especially with `strategy: Recreate`), the new process timed out waiting for the lock from the killed container. Disabling dedupe removes BoltDB entirely — Zot no longer creates or needs `cache.db`.
-- Tradeoff: minor storage increase (duplicate blobs not deduplicated). Acceptable on a 20Gi PVC with a small local dev cluster.
-- Files: `platform/charts/zot/values.yaml`
-
-### Fix 2: Add required OPA Gatekeeper labels to Zot Deployment
-- OPA's `require-labels` constraint blocked the upgrade: `Deployment zot is missing required label: app, tier`
-- Added `app: zot` and `tier: registry` to the `zot.labels` helper in `_helpers.tpl`
-- Files: `platform/charts/zot/templates/_helpers.tpl`
+- Manually unsealed openbao-0 using stored Shamir keys (3 of 5 threshold) from `lathe/state/openbao-keys.json`
+- Commands: `kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY1/2/3>`
+- Files: none (operational action, no chart changes)
 
 ## Validated
 ```
-helm lint platform/charts/zot/
-→ 1 chart(s) linted, 0 chart(s) failed
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY3>
+→ Sealed: false, HA Mode: standby, Raft Committed Index: 36
 
-autarky gate:
-grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/zot/templates/
-→ PASS
-
-helm upgrade zot platform/charts/zot/ -n zot --timeout 90s --wait
-→ Release "zot" has been upgraded. REVISION: 6. STATUS: deployed
-
-kubectl get pods -n zot
-→ zot-6c69787c8d-qsdc6   1/1   Running   0   16s
+kubectl get pods -n openbao
+→ openbao-0  1/1  Running  0  6h57m
+→ openbao-1  1/1  Running  0  13h
+→ openbao-2  1/1  Running  0  13h
 ```
 
+## Operational Note
+OpenBao with Shamir unseal requires manual intervention after every pod restart. The
+readiness probe's `sealedok=true` parameter does not prevent 503 responses in OpenBao
+2.5.2 when a node is sealed — the probe correctly marks the pod not-ready, which is
+actually correct behavior (sealed nodes should not serve traffic). The manual unseal
+procedure is: `bao operator unseal -tls-skip-verify <KEY>` × 3 using keys from
+`lathe/state/openbao-keys.json`.
+
+Future work: add a Kubernetes-native unseal operator or configure transit auto-unseal
+to eliminate this manual step.
+
 ## Expect Next Cycle
-- Zot restart count stays at 0 (BoltDB lock no longer an issue)
-- All 8 layers healthy: sovereign-0 memory at 88% may still cause transient probe warnings but all pods running
-- Consider investigating whether any charts other than Zot and Backstage are missing `app`/`tier` labels (to prevent future Gatekeeper blocks on upgrades)
+- openbao-0 stays 1/1 Running (no further restarts expected)
+- All Layer 1 services healthy: cert-manager, sealed-secrets, openbao ×3
+- Backstage pod with 4 restarts (Layer 7) is the next candidate if it's still restarting
