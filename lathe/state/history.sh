@@ -69,3 +69,17 @@ kubectl run tmp-ping --rm -i --restart=Never --image=busybox -n harbor -- wget -
 curl -sk --resolve harbor.sovereign-autarky.dev:443:192.168.104.1 \
   -u admin:Harbor12345 https://harbor.sovereign-autarky.dev/api/v2.0/ping
 # → Pong
+
+# cycle 11: check openbao-2 seal status
+kubectl exec -n openbao openbao-2 -- bao status -tls-skip-verify
+
+# cycle 11: create keycloak namespace and secrets
+kubectl create namespace keycloak
+kubectl create secret generic keycloak-admin-secret --from-literal=admin-password='Keycloak12345' -n keycloak
+kubectl create secret generic keycloak-db-secret --from-literal=postgres-password='Postgres12345' --from-literal=password='Keycloak12345' -n keycloak
+
+# cycle 11: attempt keycloak deploy (failed: image pull error + wrong storageClass)
+helm upgrade --install keycloak platform/charts/keycloak/ -n keycloak --set ingress.enabled=false --set realmInit.enabled=false --timeout 120s --wait
+
+# cycle 11: uninstall failed keycloak release
+helm uninstall keycloak -n keycloak
