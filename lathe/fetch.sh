@@ -50,9 +50,9 @@ vm_nodes = $( printf '['; for n in "${VM_NODES[@]}"; do printf '"%s",' "$n"; don
 q = json.load(open(queue_path))
 processed = 0
 
-# Lima k3s nodes always run x86_64 via QEMU emulation (even on ARM64 host).
-# Pulling arm64 images would import successfully but fail to run on the nodes.
-arch = 'amd64'
+# Lima k3s nodes are arm64 (native aarch64). Pull arm64 images to avoid QEMU emulation
+# of amd64 binaries, which causes SIGSEGV crashes in complex Go binaries.
+arch = 'arm64'
 
 # Find running Lima VMs
 running_vms = []

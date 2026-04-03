@@ -320,3 +320,12 @@ helm upgrade --install victorialogs platform/charts/victorialogs/ -n monitoring 
 helm uninstall jaeger -n jaeger
 # Fix badger ephemeral:true and reinstall
 helm upgrade --install jaeger platform/charts/jaeger/ -n jaeger --create-namespace --timeout 120s --wait
+
+# cycle 31: diagnose Harbor QEMU SIGSEGV — all goharbor images are linux/amd64 on arm64 nodes
+limactl shell sovereign-0 sudo k3s ctr images list | grep goharbor | grep -v "@sha256" | awk '{print $1, $6}'
+
+# cycle 31: fix fetch.sh arch assumption amd64 -> arm64 (Lima VMs are native arm64/aarch64)
+# edit: lathe/fetch.sh line 55: arch = 'amd64' -> arch = 'arm64'
+
+# cycle 31: queue arm64 Harbor images for re-download (next cycle fetch.sh will import them)
+# python3 appended 6 entries to lathe/state/downloads.json
