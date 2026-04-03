@@ -21,6 +21,8 @@ spec:
     metadata:
       labels:
         {{- include "backstage.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       # podAntiAffinity: spread replicas across nodes
       affinity:

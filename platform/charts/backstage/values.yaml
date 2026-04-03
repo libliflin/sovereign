@@ -105,13 +105,8 @@ backstage:
             - name: "sovereign"
               url: "https://argocd.sovereign-autarky.dev"
     techdocs:
-      builder: "external"
+      builder: "local"
       generator:
-        runIn: "docker"
+        runIn: "local"
       publisher:
-        type: "awsS3"
-        awsS3:
-          bucketName: "techdocs"
-          region: "us-east-1"
-          endpoint: "https://s3.sovereign-autarky.dev"
-          s3ForcePathStyle: true
+        type: "local"

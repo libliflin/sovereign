@@ -57,9 +57,11 @@ data:
         runIn: {{ .techdocs.generator.runIn | quote }}
       publisher:
         type: {{ .techdocs.publisher.type | quote }}
+        {{- if eq .techdocs.publisher.type "awsS3" }}
         awsS3:
           bucketName: {{ .techdocs.publisher.awsS3.bucketName | quote }}
           region: {{ .techdocs.publisher.awsS3.region | quote }}
           endpoint: {{ .techdocs.publisher.awsS3.endpoint | quote }}
           s3ForcePathStyle: {{ .techdocs.publisher.awsS3.s3ForcePathStyle }}
+        {{- end }}
     {{- end }}
