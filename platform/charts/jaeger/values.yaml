@@ -3,7 +3,7 @@
 
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "standard"
+  storageClass: "local-path"
 
 jaeger:
   ## Jaeger v2 uses OpenTelemetry Collector as its base.
@@ -72,8 +72,4 @@ jaeger:
   storage:
     type: badger
     badger:
-      ephemeral: false
-      persistence:
-        enabled: true
-        storageClass: "standard"
-        size: "20Gi"
+      ephemeral: true

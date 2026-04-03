@@ -314,3 +314,9 @@ helm upgrade --install prometheus-stack platform/charts/prometheus-stack/ -n mon
 # cycle 29: fix victorialogs storageClass and storage size, install
 # (same CONFIG_ERROR pattern as cycle 28 prometheus-stack)
 helm upgrade --install victorialogs platform/charts/victorialogs/ -n monitoring --create-namespace --timeout 90s --wait
+
+# cycle 30: fix jaeger ingress (nginx→traefik), storage (standard→local-path, 20Gi→5Gi), badger ephemeral
+# First attempt failed: ephemeral:false + no PVC mount = permission denied on /mnt/data
+helm uninstall jaeger -n jaeger
+# Fix badger ephemeral:true and reinstall
+helm upgrade --install jaeger platform/charts/jaeger/ -n jaeger --create-namespace --timeout 120s --wait

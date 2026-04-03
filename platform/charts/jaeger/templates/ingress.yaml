@@ -7,9 +7,8 @@ metadata:
     {{- include "jaeger-sovereign.labels" . | nindent 4 }}
   annotations:
     cert-manager.io/cluster-issuer: "sovereign-ca-issuer"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   tls:
     - hosts:
         - {{ include "jaeger-sovereign.host" . | quote }}
