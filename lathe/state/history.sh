@@ -123,3 +123,38 @@ kubectl patch secret sh.helm.release.v1.keycloak.v1 -n keycloak --type=json -p '
 kubectl get pods -n keycloak
 # → keycloak-0  1/1 Running  sovereign-1
 # → keycloak-postgresql-0  1/1 Running  sovereign-0
+
+# cycle 15: add jetstack helm repo (cert-manager)
+helm repo add jetstack https://charts.jetstack.io
+helm repo update jetstack
+
+# cycle 15: install cert-manager (cluster recreated, Layer 1 restart)
+helm upgrade --install cert-manager jetstack/cert-manager -n cert-manager --create-namespace --set crds.enabled=true --timeout 120s --wait
+
+# cycle 14: check openbao pod status (sealed after node restart, openbao-1 missing)
+kubectl get pods -n openbao
+
+# cycle 14: unseal openbao-0 (StatefulSet OrderedReady — must unseal -0 first for -1 to be created)
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 14: unseal openbao-1 (created once openbao-0 became Ready)
+kubectl exec -n openbao openbao-1 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-1 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-1 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 14: unseal openbao-2
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 14: fix harbor-database readiness probe (exec/1s → tcpSocket; QEMU: psql takes >60s to spawn)
+# 1. updated values.yaml: harbor.database.internal.readinessProbe.timeoutSeconds=10
+helm upgrade harbor platform/charts/harbor/ -n harbor --timeout 90s --wait  # FAILED (context canceled)
+# 2. values.yaml update applied to StatefulSet spec but pod needed recreation
+kubectl delete pod harbor-database-0 -n harbor --force --grace-period=0
+# 3. timeoutSeconds=10 still too slow (psql >60s on QEMU) → patched to tcpSocket
+kubectl patch statefulset harbor-database -n harbor --type=json -p='[...]'
+kubectl delete pod harbor-database-0 -n harbor --force --grace-period=0
+# Result: harbor-database-0 1/1 Ready; harbor-core connecting to DB (running migrations)

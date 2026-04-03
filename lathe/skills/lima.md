@@ -31,8 +31,11 @@ The loop.sh sets this automatically. All kubectl/helm commands use this kubeconf
 ### Step 1: Server node
 
 ```bash
-limactl start --name sovereign-0 --network lima:user-v2 template:k3s
+limactl start --name sovereign-0 --network lima:user-v2 --disk 30 template:k3s
 ```
+
+Always pass `--disk 30` (30GB). Default is 100GB — three VMs at 100GB can fill a
+228GB drive. 30GB is plenty for k3s + all charts.
 
 Wait for it to be ready:
 ```bash
@@ -49,10 +52,10 @@ TOKEN=$(limactl shell sovereign-0 sudo cat /var/lib/rancher/k3s/server/node-toke
 ### Step 3: Agent nodes
 
 ```bash
-limactl start --name sovereign-1 --network lima:user-v2 template:k3s \
+limactl start --name sovereign-1 --network lima:user-v2 --disk 30 template:k3s \
   --set ".param.url=\"${SERVER_URL}\" | .param.token=\"${TOKEN}\""
 
-limactl start --name sovereign-2 --network lima:user-v2 template:k3s \
+limactl start --name sovereign-2 --network lima:user-v2 --disk 30 template:k3s \
   --set ".param.url=\"${SERVER_URL}\" | .param.token=\"${TOKEN}\""
 ```
 

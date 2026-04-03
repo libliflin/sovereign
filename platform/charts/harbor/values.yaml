@@ -199,6 +199,12 @@ harbor:
     type: internal
     internal:
       password: "changeit"  # placeholder — use Sealed Secret in prod
+      ## QEMU workaround: /docker-healthcheck.sh runs too slowly under x86 emulation
+      ## on ARM64 host. Increase from default 1s to avoid perpetual 0/1 not-ready.
+      readinessProbe:
+        timeoutSeconds: 10
+      livenessProbe:
+        timeoutSeconds: 10
 
   ## ── Redis (built-in) ────────────────────────────────────────────────────
   ## ARM64/QEMU workaround: after deploy, patch the StatefulSet to add:
