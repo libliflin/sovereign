@@ -377,3 +377,16 @@ kubectl delete pod cert-manager-cainjector-7f45ffb9d5-gjc77 -n cert-manager --gr
 
 # cycle 35: install istio (Layer 6 first component)
 helm upgrade --install istio platform/charts/istio/ -n istio-system --create-namespace --timeout 120s --wait
+# cycle 36: fix storageClass + add constraintsEnabled flag to opa-gatekeeper chart
+# (edit platform/charts/opa-gatekeeper/values.yaml + templates/constraint-*.yaml)
+
+# cycle 36: opa-gatekeeper pass 1 — controller + CRDs + ConstraintTemplates (no Constraints)
+timeout 120 helm upgrade --install opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --create-namespace --set constraintsEnabled=false --timeout 90s --wait
+
+# cycle 36: wait for K8s* CRDs to be Established
+kubectl wait --for=condition=Established crd/k8snoprivilegeescalation.constraints.gatekeeper.sh --timeout=60s
+kubectl wait --for=condition=Established crd/k8srequirelabels.constraints.gatekeeper.sh --timeout=60s
+kubectl wait --for=condition=Established crd/k8srequireresourcelimits.constraints.gatekeeper.sh --timeout=60s
+
+# cycle 36: opa-gatekeeper pass 2 — enable Constraints
+timeout 60 helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --set constraintsEnabled=true --timeout 90s --wait

@@ -1,3 +1,61 @@
+# Changelog — Cycle 36
+
+## Observed
+- Layer: 6 (Istio, OPA-Gatekeeper, Falco, Trivy — security mesh)
+- Service: opa-gatekeeper (Layer 6, second component — not yet deployed)
+- Category: DEPENDENCY_MISSING (Layer 6 second component not started; all lower layers and Istio healthy)
+- Evidence:
+  - All pods Running or Completed — no failures in snapshot
+  - Istio deployed and healthy (istiod 2/2 Running, STRICT PeerAuthentication active)
+  - No `opa-gatekeeper` helm release, no `gatekeeper-system` namespace
+  - `values.yaml` had `storageClass: "ceph-block"` (same pattern corrected in cycle 35 for istio)
+  - Constraint templates had no `constraintsEnabled` guard — required for two-pass install
+
+## Applied
+- Fixed `global.storageClass: "ceph-block"` → `"local-path"` in `platform/charts/opa-gatekeeper/values.yaml`
+- Added `constraintsEnabled: false` flag to `values.yaml`
+- Wrapped all 3 constraint files with `{{- if .Values.constraintsEnabled }}` guard (ConstraintTemplate files untouched — safe in pass 1)
+- Pass 1: installed `opa-gatekeeper` with `constraintsEnabled=false` — controller (3 replicas), audit, and ConstraintTemplates deployed
+- Waited for Gatekeeper controller to process ConstraintTemplates and establish K8s* CRDs
+- Pass 2: upgraded with `constraintsEnabled=true` — all 3 constraints active with `deny` enforcement
+- Files: `platform/charts/opa-gatekeeper/values.yaml`, `templates/constraint-no-privilege-escalation.yaml`, `templates/constraint-require-labels.yaml`, `templates/constraint-require-resource-limits.yaml`
+
+## Validated
+```
+helm lint platform/charts/opa-gatekeeper/
+→ 1 chart(s) linted, 0 chart(s) failed
+
+autarky gate: PASS
+
+helm upgrade --install opa-gatekeeper ... --set constraintsEnabled=false
+→ STATUS: deployed REVISION: 1
+
+kubectl get pods -n gatekeeper-system
+→ gatekeeper-audit-59cdddbc9d-spg7f                1/1   Running   0
+→ gatekeeper-controller-manager-6d4f7fcc4c-4fgmn   1/1   Running   0
+→ gatekeeper-controller-manager-6d4f7fcc4c-bfzp4   1/1   Running   0
+→ gatekeeper-controller-manager-6d4f7fcc4c-tz4rb   1/1   Running   0
+
+kubectl get constrainttemplates
+→ k8snoprivilegeescalation, k8srequirelabels, k8srequireresourcelimits
+
+kubectl wait --for=condition=Established crd/k8snoprivilegeescalation.constraints.gatekeeper.sh → condition met (all 3)
+
+helm upgrade opa-gatekeeper ... --set constraintsEnabled=true → STATUS: deployed REVISION: 2
+
+kubectl get constraints -A
+→ k8snoprivilegeescalation/no-privilege-escalation   deny
+→ k8srequirelabels/require-labels                    deny
+→ k8srequireresourcelimits/require-resource-limits   deny
+```
+
+## Expect Next Cycle
+- OPA-Gatekeeper remains healthy (4 pods Running, 3 constraints enforcing deny)
+- Next Layer 6 component: Falco (runtime security / syscall detection)
+- Falco requires a real kernel — Lima VMs have kernel 6.8.0-101-generic (real kernel, eBPF capable)
+
+---
+
 # Changelog — Cycle 35
 
 ## Retro Analysis (Cycles 30–34)

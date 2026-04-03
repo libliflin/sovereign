@@ -1,6 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "local-path"
   imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -31,3 +31,7 @@ gatekeeper:
 
 # Constraint enforcement action: deny | dryrun | warn
 constraintEnforcementAction: deny
+
+# Two-pass install: false on first pass (CRDs + controller + templates),
+# true on second pass (constraints require K8s* CRDs from ConstraintTemplate processing)
+constraintsEnabled: false
