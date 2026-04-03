@@ -1,3 +1,43 @@
+# Changelog — Cycle 32
+
+## Observed
+- Layer: 5 (Prometheus, VictoriaLogs, Jaeger — observability)
+- Service: jaeger-cassandra-2 (CrashLoopBackOff), propagating to Layer 2 Harbor probe failures
+- Category: CONFIG_ERROR
+- Evidence:
+  - `jaeger-cassandra-2` in CrashLoopBackOff (5 restarts) on lima-sovereign-0
+  - 5× `SystemOOM: victim process java` on lima-sovereign-0 within the snapshot window
+  - Harbor liveness/readiness probe timeouts on same node under memory pressure
+  - Root cause: upstream `jaeger-3.4.1` chart defaults `provisionDataStore.cassandra: true`;
+    our `values.yaml` set `storage.type: badger` but never disabled the Cassandra subchart,
+    so 3 Cassandra pods (Java, ~1–2GB heap each) deployed despite being unreachable/unused
+
+## Applied
+- Added `jaeger.provisionDataStore.cassandra: false` to `platform/charts/jaeger/values.yaml`
+- Ran `helm upgrade jaeger` — Cassandra StatefulSet removed, cassandra-0/1/2 Terminating
+- Files: `platform/charts/jaeger/values.yaml`
+
+## Validated
+```
+helm lint platform/charts/jaeger/
+→ 1 chart(s) linted, 0 chart(s) failed
+
+autarky gate:
+→ PASS
+
+helm upgrade jaeger platform/charts/jaeger/ -n jaeger --timeout 60s --wait
+→ Release "jaeger" has been upgraded. STATUS: deployed REVISION: 2
+```
+
+## Expect Next Cycle
+- Cassandra pods fully terminated; ~3GB of Java heap freed across the cluster
+- sovereign-0 OOM events cease; nodes return to stable memory utilization
+- Harbor liveness/readiness probes recover (no more memory pressure on sovereign-0)
+- Jaeger collector and query continue running with Badger embedded storage
+- Ready to progress to Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy)
+
+---
+
 # Changelog — Cycle 31
 
 ## Observed

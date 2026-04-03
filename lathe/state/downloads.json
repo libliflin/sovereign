@@ -48,36 +48,48 @@
     "type": "image",
     "source": "docker.io/goharbor/harbor-core:v2.11.0",
     "reason": "harbor-core amd64 image crashes with QEMU SIGSEGV on arm64 nodes; re-pulling as arm64",
-    "added_by_cycle": 31
+    "added_by_cycle": 31,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/goharbor/harbor-db:v2.11.0",
     "reason": "harbor-db amd64 healthcheck script crashes under QEMU on arm64 nodes; re-pulling as arm64",
-    "added_by_cycle": 31
+    "added_by_cycle": 31,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/goharbor/harbor-jobservice:v2.11.0",
     "reason": "harbor-jobservice amd64 crashes with QEMU SIGSEGV on arm64 nodes; re-pulling as arm64",
-    "added_by_cycle": 31
+    "added_by_cycle": 31,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/goharbor/harbor-registryctl:v2.11.0",
     "reason": "harbor-registryctl amd64 causes harbor-registry 1/2 on arm64 nodes; re-pulling as arm64",
-    "added_by_cycle": 31
+    "added_by_cycle": 31,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/goharbor/registry-photon:v2.11.0",
     "reason": "harbor-registry amd64 crashes (restartCount 4) on arm64 nodes; re-pulling as arm64",
-    "added_by_cycle": 31
+    "added_by_cycle": 31,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   },
   {
     "type": "image",
     "source": "docker.io/goharbor/redis-photon:v2.11.0",
     "reason": "harbor-redis amd64 image on arm64 nodes; re-pulling as arm64 for consistency",
-    "added_by_cycle": 31
+    "added_by_cycle": 31,
+    "done": true,
+    "result": "ok (no-daemon path) \u2014 pulled directly on 3 nodes"
   }
 ]
