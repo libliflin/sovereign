@@ -54,13 +54,15 @@ forgejo:
     ## Secret forgejo-keycloak-oidc-secret must contain:
     ##   key:    the OAuth2 client ID
     ##   secret: the OAuth2 client secret
-    oauth:
-      - name: Keycloak
-        provider: openidConnect
-        existingSecret: forgejo-keycloak-oidc-secret
-        autoDiscoverUrl: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
-        iconUrl: "https://auth.sovereign-autarky.dev/favicon.ico"
-        scopes: openid email profile groups
+    ## oauth disabled until Keycloak sovereign realm exists.
+    ## Re-enable once: http://keycloak.keycloak.svc.cluster.local/realms/sovereign → 200
+    ## oauth:
+    ##   - name: Keycloak
+    ##     provider: openidConnect
+    ##     existingSecret: forgejo-keycloak-oidc-secret
+    ##     autoDiscoverUrl: "http://keycloak.keycloak.svc.cluster.local/realms/sovereign/.well-known/openid-configuration"
+    ##     iconUrl: "https://auth.sovereign-autarky.dev/favicon.ico"
+    ##     scopes: openid email profile groups
 
   ## ── PostgreSQL — built-in bitnami subchart ──────────────────────────────
   postgresql:

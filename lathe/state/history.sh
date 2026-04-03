@@ -289,3 +289,12 @@ kubectl delete pvc -n forgejo --all
 helm upgrade --install forgejo platform/charts/forgejo/ -n forgejo --create-namespace --timeout 180s --wait
 # → PVCs bound, forgejo image pulled via Zot, postgresql stuck on bitnami image not found
 # → queued docker.io/bitnamilegacy/postgresql:17.2.0-debian-12-r6 in downloads.json
+
+# cycle 26: get configure-gitea init container crash logs
+kubectl logs -n forgejo forgejo-6b7c5d8c5b-d8szq -c configure-gitea --previous
+
+# cycle 26: test keycloak sovereign realm in-cluster
+kubectl run tmp-debug2 --rm -i --restart=Never --image=busybox -- sh -c 'wget -qO- http://keycloak.keycloak.svc.cluster.local/realms/sovereign/.well-known/openid-configuration 2>&1 | head -3'
+
+# cycle 26: upgrade forgejo with oauth disabled (sovereign realm not yet created)
+helm upgrade --install forgejo platform/charts/forgejo/ -n forgejo --create-namespace --timeout 180s --wait
