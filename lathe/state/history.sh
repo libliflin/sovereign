@@ -160,3 +160,8 @@ kubectl delete pod harbor-database-0 -n harbor --force --grace-period=0
 # Result: harbor-database-0 1/1 Ready; harbor-core connecting to DB (running migrations)
 # cycle 15: install sealed-secrets controller from bitnami-labs helm chart
 helm upgrade --install sealed-secrets sealed-secrets/sealed-secrets -n kube-system --set fullnameOverride=sealed-secrets-controller --timeout 90s --wait
+
+# cycle 16: bootstrap cert-manager CA (selfsigned-issuer → sovereign-ca cert → sovereign-ca-issuer)
+kubectl apply -f - # (selfsigned ClusterIssuer + sovereign-ca Certificate + sovereign-ca-issuer ClusterIssuer)
+# cycle 16: install openbao (Layer 1, HA Raft, local-path storage override)
+helm upgrade --install openbao platform/charts/openbao/ -n openbao --create-namespace --set global.storageClass=local-path --timeout 90s --wait
