@@ -1,62 +1,41 @@
-# Changelog — Cycle 41
+# Changelog — Cycle 42
 
 ## Observed
-- Layer: 7 (Backstage — developer experience)
-- Service: backstage
-- Category: DEPENDENCY_MISSING + CONFIG_ERROR (compound)
-- Evidence: `connect ECONNREFUSED ::1:5432` — no PostgreSQL deployed; helm release in `failed` state
+- Layer: 2 (Zot — autarky boundary / internal registry)
+- Service: zot
+- Category: CONFIG_ERROR
+- Evidence: `"error":"operation timeout: boltdb file is already in use, path '/var/lib/registry/cache.db'"` — Zot pod had 5 restarts; each restart timed out waiting for BoltDB lock released by the previous crashed container
 
 ## Applied
 
-### Fix 1: Add PostgreSQL to Backstage chart
-- Added `platform/charts/backstage/templates/postgresql-statefulset.yaml` — bitnami/postgresql:16.3.0-debian-12-r14 StatefulSet (image already on nodes from cycle 22)
-- Added `platform/charts/backstage/templates/postgresql-service.yaml` — ClusterIP service on port 5432
-- Added `postgresql:` section to `platform/charts/backstage/values.yaml`
-- Added DB env vars to `platform/charts/backstage/templates/deployment.yaml` (`APP_CONFIG_backend_database_*`)
-- Added ConfigMap volumeMount to deployment
-- Files: `platform/charts/backstage/templates/postgresql-statefulset.yaml`, `platform/charts/backstage/templates/postgresql-service.yaml`, `platform/charts/backstage/values.yaml`, `platform/charts/backstage/templates/deployment.yaml`
+### Fix 1: Disable BoltDB dedupe to eliminate lock contention
+- Changed `config.storage.dedupe: true` → `dedupe: false` in `platform/charts/zot/values.yaml`
+- With `dedupe: true`, Zot maintains a BoltDB file (`cache.db`) for content-addressable deduplication. On restart (especially with `strategy: Recreate`), the new process timed out waiting for the lock from the killed container. Disabling dedupe removes BoltDB entirely — Zot no longer creates or needs `cache.db`.
+- Tradeoff: minor storage increase (duplicate blobs not deduplicated). Acceptable on a 20Gi PVC with a small local dev cluster.
+- Files: `platform/charts/zot/values.yaml`
 
-### Fix 2: OPA Gatekeeper blocking local-path provisioner helper-pod (kube-system)
-- Added `kube-system` to `privilegeEscalationExcludedNamespaces` in `platform/charts/opa-gatekeeper/values.yaml`
-- Added `excludedNamespaces` support to `constraint-require-resource-limits.yaml` template (previously had none)
-- Added `resourceLimitsExcludedNamespaces: [kube-system]` to `platform/charts/opa-gatekeeper/values.yaml`
-- Files: `platform/charts/opa-gatekeeper/values.yaml`, `platform/charts/opa-gatekeeper/templates/constraint-require-resource-limits.yaml`
-
-### Fix 3: OPA Gatekeeper blocking PostgreSQL container (no allowPrivilegeEscalation)
-- Added `securityContext.allowPrivilegeEscalation: false` to postgresql container in StatefulSet
-- Files: `platform/charts/backstage/templates/postgresql-statefulset.yaml`
-
-### Fix 4: Guest auth provider blocking Backstage startup in production
-- Baked-in `app-config.yaml` in `ghcr.io/backstage/backstage:1.30.2` has `auth.providers.guest: {}`. In production mode, Backstage 1.30 refuses to initialize guest auth and throws fatal error
-- Added `auth.environment: production` and `auth.providers.guest.dangerouslyAllowOutsideDevelopment: true` to `platform/charts/backstage/templates/configmap.yaml`
-- Acceptable for local dev cluster; Keycloak OIDC is the target auth path once client is configured
-- Files: `platform/charts/backstage/templates/configmap.yaml`
-
-### Fix 5: Knex migration lock from concurrent startup
-- Two pods tried to run DB migrations simultaneously; one crashed mid-lock
-- Cleared lock: `UPDATE knex_migrations_lock SET is_locked=0` in `backstage_plugin_catalog` database
+### Fix 2: Add required OPA Gatekeeper labels to Zot Deployment
+- OPA's `require-labels` constraint blocked the upgrade: `Deployment zot is missing required label: app, tier`
+- Added `app: zot` and `tier: registry` to the `zot.labels` helper in `_helpers.tpl`
+- Files: `platform/charts/zot/templates/_helpers.tpl`
 
 ## Validated
 ```
-helm lint platform/charts/backstage/
-→ 1 chart(s) linted, 0 chart(s) failed
-
-helm lint platform/charts/opa-gatekeeper/
+helm lint platform/charts/zot/
 → 1 chart(s) linted, 0 chart(s) failed
 
 autarky gate:
-grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" \
-  platform/charts/backstage/templates/ platform/charts/opa-gatekeeper/templates/
+grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/zot/templates/
 → PASS
 
-kubectl get pods -n backstage
-→ backstage-84b9fc674d-4w96c   1/1   Running   4   2m56s
-→ backstage-84b9fc674d-qjf5m   1/1   Running   0   50s
-→ backstage-postgresql-0       1/1   Running   0   17m
+helm upgrade zot platform/charts/zot/ -n zot --timeout 90s --wait
+→ Release "zot" has been upgraded. REVISION: 6. STATUS: deployed
+
+kubectl get pods -n zot
+→ zot-6c69787c8d-qsdc6   1/1   Running   0   16s
 ```
 
 ## Expect Next Cycle
-- All 8 layers fully healthy: Layer 0-7 complete
-- Backstage accessible at https://backstage.sovereign-autarky.dev with guest auth
-- Zot still shows 5 restarts — investigate if persistent or stabilized
-- Consider configuring Keycloak Backstage OIDC client to replace `dangerouslyAllowOutsideDevelopment: true`
+- Zot restart count stays at 0 (BoltDB lock no longer an issue)
+- All 8 layers healthy: sovereign-0 memory at 88% may still cause transient probe warnings but all pods running
+- Consider investigating whether any charts other than Zot and Backstage are missing `app`/`tier` labels (to prevent future Gatekeeper blocks on upgrades)

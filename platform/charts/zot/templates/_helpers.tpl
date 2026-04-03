@@ -35,6 +35,8 @@ Common labels.
 helm.sh/chart: {{ include "zot.chart" . }}
 {{ include "zot.selectorLabels" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app: zot
+tier: registry
 {{- end }}
 
 {{/*

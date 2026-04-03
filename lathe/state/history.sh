@@ -419,3 +419,12 @@ helm upgrade --install backstage platform/charts/backstage/ -n backstage --creat
 helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --set constraintsEnabled=true
 # cycle 41: clear knex migration lock in catalog db
 kubectl exec -n backstage backstage-postgresql-0 -- bash -c 'PGPASSWORD=backstage-dev psql -U backstage -d backstage_plugin_catalog -c "UPDATE knex_migrations_lock SET is_locked=0;"'
+
+# cycle 42: check zot previous logs (crash cause: boltdb cache.db lock)
+kubectl logs -n zot zot-756c7b788b-m5w5w --previous --tail=30
+
+# cycle 42: upgrade zot with dedupe:false + app/tier labels (fixes boltdb restart loop)
+helm upgrade zot platform/charts/zot/ -n zot --timeout 90s --wait
+
+# cycle 42: verify zot running with 0 restarts
+kubectl get pods -n zot
