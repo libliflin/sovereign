@@ -298,3 +298,9 @@ kubectl run tmp-debug2 --rm -i --restart=Never --image=busybox -- sh -c 'wget -q
 
 # cycle 26: upgrade forgejo with oauth disabled (sovereign realm not yet created)
 helm upgrade --install forgejo platform/charts/forgejo/ -n forgejo --create-namespace --timeout 180s --wait
+
+# cycle 27: fix argocd ingress — nginx ingressClass → traefik
+# edit platform/charts/argocd/templates/ingress.yaml
+
+# cycle 27: install argocd
+helm upgrade --install argocd platform/charts/argocd/ -n argocd --create-namespace --timeout 120s --wait

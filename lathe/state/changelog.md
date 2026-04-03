@@ -1,35 +1,38 @@
-# Changelog — Cycle 26
+# Changelog — Cycle 27
 
 ## Observed
-- Layer: 4 (Forgejo — SCM)
-- Service: forgejo
+- Layer: 4 (ArgoCD — GitOps)
+- Service: argocd
 - Category: CONFIG_ERROR
-- Evidence: `configure-gitea` init container crashing with:
-  `Failed to initialize OpenID Connect Provider with name 'Keycloak' with url '...': dial tcp: lookup auth.sovereign-autarky.dev on 10.43.0.10:53: no such host`
-  Root cause: `autoDiscoverUrl` used external hostname not resolvable in-cluster; confirmed Keycloak `sovereign` realm returns 404 (realm not yet created)
+- Evidence: `ingress.yaml` specified `ingressClassName: nginx` but only `traefik` IngressClass exists in the cluster; would have caused Ingress to be ignored
 
 ## Applied
-- Disabled `forgejo.gitea.oauth` block in values.yaml — OIDC cannot be configured until Keycloak sovereign realm exists
-- Updated commented-out URL to internal service URL for when realm is ready: `http://keycloak.keycloak.svc.cluster.local/realms/sovereign/...`
-- Files: `platform/charts/forgejo/values.yaml`
+- Fixed `ingressClassName: nginx` → `ingressClassName: traefik` in `platform/charts/argocd/templates/ingress.yaml`; removed nginx-specific annotations
+- Installed ArgoCD: `helm upgrade --install argocd platform/charts/argocd/ -n argocd --create-namespace --timeout 120s --wait`
+- Files: `platform/charts/argocd/templates/ingress.yaml`
 
 ## Validated
 ```
-helm lint platform/charts/forgejo/
+helm lint platform/charts/argocd/
 → 1 chart(s) linted, 0 chart(s) failed
 
 autarky gate:
 → PASS
 
-helm upgrade --install forgejo ... --timeout 180s --wait
-→ Release "forgejo" upgraded, REVISION: 3, STATUS: deployed
+helm upgrade --install argocd ... --timeout 120s --wait
+→ Release "argocd" installed, REVISION: 1, STATUS: deployed
 
-kubectl get pods -n forgejo:
-→ forgejo-5868d8f9dc-m54zd   1/1 Running  0  27s
-→ forgejo-postgresql-0       1/1 Running  0  11m
+kubectl get pods -n argocd:
+→ argocd-application-controller-0                     1/1 Running  0  46s
+→ argocd-applicationset-controller-7578ddc89b-wdn5b   1/1 Running  0  46s
+→ argocd-dex-server-567c57d876-jm2hp                  1/1 Running  0  46s
+→ argocd-notifications-controller-cc6794c8b-z2zw7     1/1 Running  0  46s
+→ argocd-redis-7d54cffc56-dxb6b                       1/1 Running  0  46s
+→ argocd-repo-server-77cb89f598-7hs56                 1/1 Running  0  46s
+→ argocd-server-7d846cfdd-gcgvf                       1/1 Running  0  46s
 ```
 
 ## Expect Next Cycle
-- Forgejo is Running at Layer 4. Next layer: ArgoCD (Layer 4).
-- Keycloak sovereign realm must be created before re-enabling OIDC in forgejo values.
-- Install ArgoCD chart next cycle.
+- Layer 4 complete: Forgejo + ArgoCD both Running
+- Next layer: Layer 5 — Prometheus, VictoriaLogs, Jaeger (observability)
+- Begin with Prometheus chart next cycle
