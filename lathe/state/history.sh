@@ -158,3 +158,5 @@ kubectl delete pod harbor-database-0 -n harbor --force --grace-period=0
 kubectl patch statefulset harbor-database -n harbor --type=json -p='[...]'
 kubectl delete pod harbor-database-0 -n harbor --force --grace-period=0
 # Result: harbor-database-0 1/1 Ready; harbor-core connecting to DB (running migrations)
+# cycle 15: install sealed-secrets controller from bitnami-labs helm chart
+helm upgrade --install sealed-secrets sealed-secrets/sealed-secrets -n kube-system --set fullnameOverride=sealed-secrets-controller --timeout 90s --wait
