@@ -165,3 +165,31 @@ helm upgrade --install sealed-secrets sealed-secrets/sealed-secrets -n kube-syst
 kubectl apply -f - # (selfsigned ClusterIssuer + sovereign-ca Certificate + sovereign-ca-issuer ClusterIssuer)
 # cycle 16: install openbao (Layer 1, HA Raft, local-path storage override)
 helm upgrade --install openbao platform/charts/openbao/ -n openbao --create-namespace --set global.storageClass=local-path --timeout 90s --wait
+
+# cycle 17: check openbao initialization status
+kubectl exec -n openbao openbao-0 -- bao status -address=https://openbao.openbao.svc:8200 -tls-skip-verify
+
+# cycle 17: initialize openbao (5 shares, threshold 3)
+kubectl exec -n openbao openbao-0 -- bao operator init -key-shares=5 -key-threshold=3 -tls-skip-verify
+# keys saved to lathe/state/openbao-keys.json
+
+# cycle 17: unseal openbao-0
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-0 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 17: join openbao-1 to raft and unseal
+kubectl exec -n openbao openbao-1 -- bao operator raft join -tls-skip-verify -leader-ca-cert=@/openbao/tls/ca.crt "https://openbao-0.openbao-internal.openbao.svc.cluster.local:8200"
+kubectl exec -n openbao openbao-1 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-1 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-1 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 17: join openbao-2 to raft and unseal
+kubectl exec -n openbao openbao-2 -- bao operator raft join -tls-skip-verify -leader-ca-cert=@/openbao/tls/ca.crt "https://openbao-0.openbao-internal.openbao.svc.cluster.local:8200"
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY1>
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY2>
+kubectl exec -n openbao openbao-2 -- bao operator unseal -tls-skip-verify <KEY3>
+
+# cycle 17: verify raft cluster (all 3 voters)
+kubectl exec -n openbao openbao-0 -- sh -c 'BAO_TOKEN=<ROOT_TOKEN> bao operator raft list-peers -tls-skip-verify'
+# → openbao-0 leader voter:true, openbao-1 follower voter:true, openbao-2 follower voter:true

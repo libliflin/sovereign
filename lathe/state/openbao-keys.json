@@ -1,0 +1,13 @@
+{
+  "unseal_keys": [
+    "7DKzwRjGKaptpNkjGAKxaRgEy4djUzV0NyFFA91Myd9W",
+    "4uxxD+AIOwGMWnQFHU2lx+mqFPawF4pUVfFDxgXtf8FK",
+    "FZmfLzaIFld4f6okHQLl5Vt1FGiWbvnxVYTX3VYhphs8",
+    "mvh0TJibqz7jVRmA8CYbtudCvU4CXjl8Wwmhhssfi7KN",
+    "NOcGpBX8dOdpKLgqK6Fbh3a3QlgBskUyP66OhIVwTkTv"
+  ],
+  "root_token": "s.N3MSL27lUELNiTQnT8J61lKX",
+  "initialized_cycle": 17,
+  "key_threshold": 3,
+  "key_shares": 5
+}
