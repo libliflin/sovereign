@@ -1,6 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "standard"
+  storageClass: "local-path"
   imageRegistry: ""  # set to harbor.<domain>/sovereign after Harbor is running
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -23,12 +23,12 @@ kube-prometheus-stack:
       storageSpec:
         volumeClaimTemplate:
           spec:
-            storageClassName: standard
+            storageClassName: local-path
             accessModes:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 50Gi
+                storage: 5Gi
 
       resources:
         requests:

@@ -304,3 +304,9 @@ helm upgrade --install forgejo platform/charts/forgejo/ -n forgejo --create-name
 
 # cycle 27: install argocd
 helm upgrade --install argocd platform/charts/argocd/ -n argocd --create-namespace --timeout 120s --wait
+
+# cycle 28: fix prometheus-stack storageClass standard → local-path, storage 50Gi → 5Gi
+# edit platform/charts/prometheus-stack/values.yaml
+
+# cycle 28: install prometheus-stack
+helm upgrade --install prometheus-stack platform/charts/prometheus-stack/ -n monitoring --create-namespace --timeout 120s --wait
