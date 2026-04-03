@@ -110,9 +110,9 @@ for i, entry in enumerate(q):
                     # k3s nodes have internet access and ctr pull is faster than host-side save+copy.
                     print(f'    Docker daemon unavailable — pulling {source} directly on nodes ...')
                     for vm in running_vms:
-                        print(f'    ctr pull on {vm} ...')
+                        print(f'    ctr pull on {vm} (linux/{arch}) ...')
                         subprocess.run(['limactl', 'shell', vm, 'sudo', 'k3s', 'ctr', 'images', 'pull',
-                                        source], check=True)
+                                        '--platform', f'linux/{arch}', source], check=True)
                         if tag_as:
                             print(f'    Tagging {source} -> {tag_as} on {vm} ...')
                             subprocess.run(['limactl', 'shell', vm, 'sudo', 'k3s', 'ctr', 'images', 'tag',

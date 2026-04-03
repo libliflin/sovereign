@@ -1,3 +1,56 @@
+# Changelog — Cycle 33
+
+## Observed
+- Layer: 2 (Harbor — autarky boundary)
+- Service: harbor-core, harbor-db, harbor-jobservice, harbor-registry
+- Category: IMAGE_ISSUE
+- Evidence:
+  - `harbor-core` log: `x86_64-binfmt-P: QEMU internal SIGSEGV {code=MAPERR, addr=0x20}` (still amd64)
+  - `harbor-database-0` liveness probe timeout: `/docker-healthcheck.sh timed out after 10s` (amd64 under QEMU = slow)
+  - `harbor-jobservice` restartCount: 5, `harbor-registry` 1/2 Running restartCount: 5
+  - All harbor images in containerd still `linux/amd64` despite cycle 31 downloads marked `done: true`
+  - Root cause: `fetch.sh` no-daemon path (line 114) called `k3s ctr images pull <source>` **without
+    `--platform linux/arm64`**. The `arch = 'arm64'` variable set in cycle 31 was only used in the
+    Docker-daemon path (`docker pull --platform`). The no-daemon path ignored it entirely, so `ctr pull`
+    on each arm64 node either resolved the multi-arch manifest to amd64 (default) or returned the
+    already-cached amd64 layers unchanged.
+
+## Applied
+- Fixed `lathe/fetch.sh` no-daemon path: added `'--platform', f'linux/{arch}'` to the `ctr images pull`
+  command so it explicitly requests `linux/arm64` regardless of containerd defaults
+- Reset all 6 harbor image entries in `lathe/state/downloads.json` from `done: true` → not-done
+  (removed `done`/`result` fields, updated `added_by_cycle: 33`) so fetch.sh re-processes them
+  next cycle with the corrected `--platform` flag
+- Files: `lathe/fetch.sh`, `lathe/state/downloads.json`
+
+## Validated
+```
+bash -n lathe/fetch.sh
+→ PASS: fetch.sh syntax OK
+
+autarky gate:
+grep -rn "docker\.io|quay\.io|ghcr\.io|gcr\.io|registry\.k8s\.io" platform/charts/*/templates/
+→ PASS
+```
+
+## Downloads Queued
+- image: goharbor/harbor-core:v2.11.0 → k3s nodes (arm64 re-pull, --platform linux/arm64)
+- image: goharbor/harbor-db:v2.11.0 → k3s nodes (arm64 re-pull)
+- image: goharbor/harbor-jobservice:v2.11.0 → k3s nodes (arm64 re-pull)
+- image: goharbor/harbor-registryctl:v2.11.0 → k3s nodes (arm64 re-pull)
+- image: goharbor/registry-photon:v2.11.0 → k3s nodes (arm64 re-pull)
+- image: goharbor/redis-photon:v2.11.0 → k3s nodes (arm64 re-pull)
+
+## Expect Next Cycle
+- fetch.sh runs with `--platform linux/arm64` and pulls native arm64 harbor images into all 3 nodes
+- `k3s ctr images list` shows `linux/arm64` for all goharbor images
+- harbor-core stops SIGSEGV; harbor-database healthcheck script runs natively (sub-second, no QEMU overhead)
+- All harbor pods reach 1/1 Running with 0 new restarts
+- harbor-jobservice, harbor-registry stabilize (no more QEMU crash loops)
+- Ready to advance to Layer 6 (Istio, OPA-Gatekeeper, Falco, Trivy) once Harbor is stable
+
+---
+
 # Changelog — Cycle 32
 
 ## Observed

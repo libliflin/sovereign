@@ -333,3 +333,8 @@ limactl shell sovereign-0 sudo k3s ctr images list | grep goharbor | grep -v "@s
 # cycle 32: disable Cassandra in jaeger — provisionDataStore.cassandra was true by default,
 #           OOM-killing 4GB nodes; storage.type: badger needs no Cassandra
 helm upgrade jaeger platform/charts/jaeger/ -n jaeger --timeout 60s --wait
+# cycle 33: fix fetch.sh no-daemon path to pass --platform linux/arm64 to ctr images pull
+# (cycle 31 fix changed arch var but no-daemon path never used it — harbor images landed as amd64)
+bash -n lathe/fetch.sh
+# cycle 33: reset harbor image downloads.json entries to done=false for re-pull with --platform
+python3 -c "import json; q=json.load(open('lathe/state/downloads.json')); print([e['source'] for e in q if not e.get('done')])"
