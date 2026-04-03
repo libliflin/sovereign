@@ -1,6 +1,6 @@
 global:
   domain: "sovereign-autarky.dev"
-  storageClass: "ceph-block"
+  storageClass: "local-path"
   imageRegistry: ""
   keycloak:
     url: "https://auth.sovereign-autarky.dev"
@@ -31,3 +31,31 @@ falco:
   # required). Works on kernels 5.8+ with BTF support. linuxkit 6.10.14 qualifies.
   driver:
     kind: modern_ebpf
+    loader:
+      initContainer:
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+
+  falcoctl:
+    artifact:
+      install:
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"
+      follow:
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "128Mi"

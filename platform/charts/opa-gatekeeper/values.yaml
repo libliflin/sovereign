@@ -35,3 +35,8 @@ constraintEnforcementAction: deny
 # Two-pass install: false on first pass (CRDs + controller + templates),
 # true on second pass (constraints require K8s* CRDs from ConstraintTemplate processing)
 constraintsEnabled: false
+
+# Namespaces exempt from the no-privilege-escalation constraint.
+# Falco (runtime security DaemonSet) requires privileged: true for eBPF syscall monitoring.
+privilegeEscalationExcludedNamespaces:
+  - falco

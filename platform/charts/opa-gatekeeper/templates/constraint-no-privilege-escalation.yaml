@@ -10,6 +10,8 @@ metadata:
 spec:
   enforcementAction: {{ .Values.constraintEnforcementAction }}
   match:
+    excludedNamespaces:
+      {{- toYaml .Values.privilegeEscalationExcludedNamespaces | nindent 6 }}
     kinds:
       - apiGroups:
           - ""

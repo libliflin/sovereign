@@ -390,3 +390,9 @@ kubectl wait --for=condition=Established crd/k8srequireresourcelimits.constraint
 
 # cycle 36: opa-gatekeeper pass 2 — enable Constraints
 timeout 60 helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --set constraintsEnabled=true --timeout 90s --wait
+
+# cycle 37: fix opa-gatekeeper constraint to exclude falco namespace (privileged DaemonSet)
+helm upgrade opa-gatekeeper platform/charts/opa-gatekeeper/ -n gatekeeper-system --set constraintsEnabled=true --timeout 60s --wait
+
+# cycle 37: install falco DaemonSet (modern_ebpf, 3 nodes)
+helm upgrade --install falco platform/charts/falco/ -n falco --create-namespace --timeout 90s
