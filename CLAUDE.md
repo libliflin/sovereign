@@ -110,6 +110,7 @@ Run before marking any story `passes: true`:
 helm lint platform/charts/<name>/
 helm template platform/charts/<name>/ | grep PodDisruptionBudget
 helm template platform/charts/<name>/ | grep podAntiAffinity
+bash scripts/ha-gate.sh --chart <name>   # scoped: exits 0/1 based on this chart only
 
 # Scripts
 shellcheck -S error <script>

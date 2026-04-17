@@ -45,6 +45,7 @@ helm lint platform/charts/<name>/
 helm template platform/charts/<name>/ | grep PodDisruptionBudget
 helm template platform/charts/<name>/ | grep podAntiAffinity
 grep -q "replicaCount:" platform/charts/<name>/values.yaml  # must be >= 2
+bash scripts/ha-gate.sh --chart <name>   # scoped: exits 0/1 based on this chart only
 ```
 
 ## Autarky Gate
