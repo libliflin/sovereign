@@ -6,8 +6,13 @@ global:
   domain: "sovereign-autarky.dev"
   storageClass: "standard"
 
+# Top-level replicaCount satisfies the sovereign HA gate.
+# The upstream perses subchart uses `replicas` (see perses.replicas below).
+replicaCount: 2
+
 perses:
-  replicaCount: 2
+  # Upstream perses chart uses `replicas`, not `replicaCount`.
+  replicas: 2
 
   ## Perses stores dashboard definitions in its own database.
   ## Dashboards can also be managed as CRs via the perses-operator.
@@ -23,12 +28,18 @@ perses:
       file:
         folder: /data/perses
 
-  ## Keycloak OIDC
-  security:
-    oidc:
-      discovery_url: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
-      client_id: "sovereign-perses"
-      client_secret: "${PERSES_OIDC_SECRET}"
+    ## Keycloak OIDC — upstream schema path: config.security.authentication.providers.oidc
+    ## The top-level `security` key is not in the upstream schema.
+    security:
+      enable_auth: true
+      authentication:
+        providers:
+          oidc:
+            - slug_id: keycloak
+              name: Keycloak
+              client_id: "sovereign-perses"
+              client_secret: "${PERSES_OIDC_SECRET}"
+              discovery_url: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
 
   resources:
     requests:
@@ -38,22 +49,10 @@ perses:
       cpu: "500m"
       memory: "256Mi"
 
-  podDisruptionBudget:
-    enabled: true
-    minAvailable: 1
-
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                    - perses
-            topologyKey: kubernetes.io/hostname
-
   ingress:
     enabled: false
+
+## PodDisruptionBudget and podAntiAffinity are managed by wrapper templates
+## in templates/pdb.yaml and templates/affinity.yaml respectively.
+## They cannot be passed through to the subchart: the upstream values.schema.json
+## uses additionalProperties: false and does not include these keys.

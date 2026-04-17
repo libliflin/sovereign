@@ -1,0 +1,17 @@
+## PodDisruptionBudget for the perses StatefulSet.
+## Managed in the wrapper chart because the upstream perses subchart
+## (perses-0.8.0) does not include a PDB and its schema blocks passing
+## podDisruptionBudget through values.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-perses
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perses-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: perses
+      app.kubernetes.io/instance: {{ .Release.Name }}
