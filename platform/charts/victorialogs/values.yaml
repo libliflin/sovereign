@@ -12,7 +12,7 @@ victorialogs:
     ## Single-node mode — sufficient for most deployments.
     ## VictoriaLogs is dramatically more resource-efficient than Loki:
     ## up to 30x less RAM, 15x less disk at equivalent ingestion rates.
-    replicaCount: 1
+    replicaCount: 2
 
     ## Storage
     persistentVolume:
@@ -34,6 +34,21 @@ victorialogs:
     ## Ingress managed by our template
     ingress:
       enabled: false
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: server
+                  app.kubernetes.io/name: victorialogs
+              topologyKey: kubernetes.io/hostname
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
 
   ## Fluent Bit / Vector / Promtail can ship logs via:
   ##   HTTP: POST /insert/jsonline

@@ -300,11 +300,13 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
-    ha_compatible: yes
-    ha_notes: "stateless Go binary; bump replicas and add PDB — deferred"
+    ha_compatible: no
+    ha_notes: "file-based database is single-node; multiple replicas would conflict on shared PVC. HA requires external storage backend — not yet available in perses 0.8.0 Helm chart."
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Perses 0.8.0 uses a file-based database that cannot be safely shared across pod replicas. PDB is present to prevent accidental eviction; replicas is set to 1 per the ha_exception pattern."
 
   # ── Developer Experience ─────────────────────────────────────────────────
   - name: backstage
@@ -394,6 +396,38 @@ vendors:
     alternative: ""
     ha_exception: true
     ha_exception_reason: "Mailpit is a single-instance SMTP testing tool with no horizontal scaling support. PDB is present to prevent accidental eviction; replicaCount is set to 1 per the ha_exception pattern."
+
+  - name: mailhog
+    upstream_url: https://github.com/mailhog/MailHog
+    license_spdx: MIT
+    license_allows_vendor: true
+    version_pinned: "v1.0.1"
+    fetch_method: git_tag
+    distroless_compatible: partial
+    distroless_base: gcr.io/distroless/static
+    ha_compatible: no
+    ha_notes: "in-memory mail store; no replication or shared storage — multiple instances would not share inbox"
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+    ha_exception: true
+    ha_exception_reason: "MailHog stores mail in memory. Multiple replicas would not share state. Single-instance SMTP testing tool; PDB prevents accidental eviction."
+
+  - name: zot
+    upstream_url: https://github.com/project-zot/zot
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.1.2"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    ha_compatible: no
+    ha_notes: "local-path PVC is ReadWriteOnce; HA requires S3 or ceph-filesystem backend — deferred until storage tier is stable"
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Zot during bootstrap uses a ReadWriteOnce local-path PVC. Multiple replicas require an S3 or RWX backend. replicaCount is set to 1 until storage backend is upgraded."
 
   - name: chaos-mesh
     upstream_url: https://github.com/chaos-mesh/chaos-mesh
