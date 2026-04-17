@@ -49,6 +49,7 @@ kube-prometheus-stack:
                 topologyKey: kubernetes.io/hostname
 
     podDisruptionBudget:
+      enabled: true
       minAvailable: 1
 
   # ----- AlertManager -----
@@ -75,6 +76,7 @@ kube-prometheus-stack:
                 topologyKey: kubernetes.io/hostname
 
     podDisruptionBudget:
+      enabled: true
       minAvailable: 1
 
     # AlertManager stub config — replace receivers with real integrations

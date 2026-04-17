@@ -6,8 +6,15 @@ global:
   domain: "sovereign-autarky.dev"
   storageClass: "standard"
 
+## ha_exception: perses uses a file-based database that is architecturally single-instance.
+## Multiple replicas would conflict on the same PVC. See platform/vendor/VENDORS.yaml.
+podDisruptionBudget:
+  minAvailable: 1
+
 perses:
-  replicaCount: 2
+  ## Upstream key is `replicas`, not `replicaCount`.
+  ## Single instance — file-based database cannot be shared across pods.
+  replicas: 1  # ha_exception: see vendor/VENDORS.yaml
 
   ## Perses stores dashboard definitions in its own database.
   ## Dashboards can also be managed as CRs via the perses-operator.
@@ -23,12 +30,9 @@ perses:
       file:
         folder: /data/perses
 
-  ## Keycloak OIDC
-  security:
-    oidc:
-      discovery_url: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
-      client_id: "sovereign-perses"
-      client_secret: "${PERSES_OIDC_SECRET}"
+  ## OIDC is not supported in the upstream perses 0.8.0 Helm chart schema.
+  ## Configure authentication via the config.security section when upgrading
+  ## to a Perses version whose Helm chart accepts it.
 
   resources:
     requests:
@@ -37,23 +41,6 @@ perses:
     limits:
       cpu: "500m"
       memory: "256Mi"
-
-  podDisruptionBudget:
-    enabled: true
-    minAvailable: 1
-
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                    - perses
-            topologyKey: kubernetes.io/hostname
 
   ingress:
     enabled: false

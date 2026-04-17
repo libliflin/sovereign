@@ -1,0 +1,33 @@
+{{- if .Values.jaeger.collector.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "jaeger-sovereign.fullname" . }}-collector-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jaeger-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.jaeger.collector.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jaeger
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: collector
+{{- end }}
+---
+{{- if .Values.jaeger.query.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "jaeger-sovereign.fullname" . }}-query-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jaeger-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.jaeger.query.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jaeger
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: query
+{{- end }}
