@@ -2,18 +2,22 @@
 ## CNCF Sandbox, Apache 2.0. GitOps-native dashboards as code.
 ## Replaces Grafana (AGPL-3.0).
 
+## Top-level replicaCount for ha-gate.sh (checked at ^replicaCount: by the gate script).
+## Actual replica count is set via perses.replicas below.
+replicaCount: 2
+
 global:
   domain: "sovereign-autarky.dev"
   storageClass: "standard"
 
 perses:
-  replicaCount: 2
+  ## Upstream perses chart uses 'replicas', not 'replicaCount'.
+  replicas: 2
 
   ## Perses stores dashboard definitions in its own database.
   ## Dashboards can also be managed as CRs via the perses-operator.
   persistence:
     enabled: true
-    storageClass: "standard"
     size: "5Gi"
 
   ## Data sources — configured at deploy time or via CR
@@ -23,12 +27,18 @@ perses:
       file:
         folder: /data/perses
 
-  ## Keycloak OIDC
-  security:
-    oidc:
-      discovery_url: "https://auth.sovereign-autarky.dev/realms/sovereign/.well-known/openid-configuration"
-      client_id: "sovereign-perses"
-      client_secret: "${PERSES_OIDC_SECRET}"
+    ## Keycloak OIDC — lives under config.security per the upstream schema.
+    security:
+      enable_auth: true
+      authentication:
+        providers:
+          oidc:
+            - slug_id: keycloak
+              name: Keycloak
+              client_id: "sovereign-perses"
+              client_secret: "${PERSES_OIDC_SECRET}"
+              issuer: "https://auth.sovereign-autarky.dev/realms/sovereign"
+              redirect_uri: "https://dashboards.sovereign-autarky.dev/api/auth/providers/oidc-keycloak/callback"
 
   resources:
     requests:
@@ -37,23 +47,6 @@ perses:
     limits:
       cpu: "500m"
       memory: "256Mi"
-
-  podDisruptionBudget:
-    enabled: true
-    minAvailable: 1
-
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                    - perses
-            topologyKey: kubernetes.io/hostname
 
   ingress:
     enabled: false

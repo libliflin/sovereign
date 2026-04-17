@@ -1,0 +1,22 @@
+## Wrapper-level scheduling policy for the perses StatefulSet.
+## The upstream perses chart (v0.8.0) has additionalProperties: false in its
+## values.schema.json and does not expose an affinity key — affinity cannot be
+## injected via subchart values. This ConfigMap documents the desired constraint
+## so operators can apply it manually or via an admission webhook.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "perses-sovereign.fullname" . }}-scheduling-policy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perses-sovereign.labels" . | nindent 4 }}
+data:
+  podAntiAffinity: |
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: perses
+              app.kubernetes.io/instance: {{ .Release.Name }}
