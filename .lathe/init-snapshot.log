@@ -1,0 +1,9 @@
+1,079 chars — well within budget with room for future growth. The snapshot runs clean and surfaces the one real issue (perses helm lint failure). Written to `.lathe/snapshot.sh`.
+
+**Sections:**
+- **Git Status / Recent Commits** — standard `git status --short` + `git log --oneline`
+- **Sprint State** — parses `prd/manifest.json` + active sprint file; shows pass/reviewed counts and story IDs needing attention
+- **Constitutional Gates** — G1 (ceremony compile + import smoke), G6 (autarky), G7 (contract validator), each one-line PASS/FAIL
+- **Helm Lint** — scans all 34 charts, summarizes as `Pass: N | Fail: N`; expands error details on failure only
+- **Shellcheck** — runs on all `.sh` files across `cluster/platform/scripts`, one-line summary
+- **CI** — lists `.github/workflows/` files

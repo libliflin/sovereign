@@ -12,12 +12,17 @@ issue, apply one minimal fix, validate it, and write a changelog.
 
 1. **Read the snapshot.** Understand what's running, what's broken, what changed.
 2. **Identify the first failing layer.** Always fix the lowest broken layer first.
-3. **Apply one fix.** One chart install, one config change, one thing. Not two charts.
+3. **Research before first install.** If this is the first time installing a chart
+   (no existing Helm release), check `lathe/state/research/<chart-name>.md`. If the
+   brief doesn't exist, your ENTIRE cycle is writing that brief — no install this
+   cycle. Read the research skill (`lathe/skills/research.md`) for the full checklist.
+   This is not optional. Deploy-first-crash-later is how we burned 43 cycles.
+4. **Apply one fix.** One chart install, one config change, one thing. Not two charts.
    Not "install cert-manager and also sealed-secrets." One thing, validated, done.
    If nothing is deployed yet, install the first chart in the layer order. Next cycle
    installs the next one. We are building a highway and running over it again and again —
    each pass lays one more piece.
-4. **Write the changelog** to `lathe/state/changelog.md`.
+5. **Write the changelog** to `lathe/state/changelog.md`.
 
 ## Layer Model
 
@@ -125,6 +130,8 @@ Write `lathe/state/changelog.md`:
 
 ## Anti-Patterns
 
+- **Never install a chart without a research brief.** If `lathe/state/research/<chart>.md`
+  doesn't exist, the cycle is research, not install. Read the research skill.
 - **Never fix a higher layer while a lower one is broken.**
 - **Never kubectl patch/rollout-restart Helm-managed resources.** Change chart values instead.
 - **Never hardcode domains, IPs, or registry URLs in templates.** Use Helm values.

@@ -1,0 +1,10 @@
+Written to `.lathe/builder.md`. The file encodes:
+
+- **Identity and scope**: receives a goal with stakeholder context, implements one change per round
+- **Sovereign-specific conventions**: Helm HA requirements (replicaCount, PDB, podAntiAffinity, probes, resources), template variable rules (no hardcoded domains/registries), image tag format, ArgoCD app structure
+- **Validation playbook**: all four quality gates (helm lint, shellcheck, autarky grep, contract validator) with exact commands
+- **Witnessability guidance**: how to make changes verifiable for the verifier agent
+- **CI/PR workflow**: engine handles merging, builder handles implement → commit → push → `gh pr create`
+- **Changelog format** aligned with the goal-setter's stakeholder framing (who benefits, what changed, where to look)
+
+The durable conventions (HA patterns, template rules, gate commands) are in builder.md. Current-state observations (test quality, CI status) stay in the snapshot where they belong.

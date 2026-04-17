@@ -1,0 +1,11 @@
+`.lathe/verifier.md` written.
+
+The verifier is shaped around this project's actual verification surfaces — no app server, no preview URL. The playbook has five tiers:
+
+1. **Static analysis** — `helm lint`, `helm template | check-limits.py`, `shellcheck`, autarky grep, contract validator, ceremony compile. Runs every round.
+2. **Broad sweep** — `ha-gate.sh` across all charts, `revisionHistoryLimit` assertion. Runs when shared infra is touched.
+3. **Kind integration** — local bootstrap + chart install into `sovereign-test`. Runs when a chart is new or bootstrap order changes. Has an explicit fallback when Docker isn't available.
+4. **Contract end-to-end** — positive + negative fixture runs for every contract rule change, including any new `invalid-*.yaml` the builder should have added.
+5. **Ceremony invocation** — `ceremonies.py orient` to confirm G1 passes at runtime, not just at compile time.
+
+The verification themes flag the gaps builders most commonly leave: `check-limits.py` after `helm lint`, missing negative contract fixtures, stdlib-only constraint on `validate.py`, and the difference between a patch and a structural fix.

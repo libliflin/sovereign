@@ -44,3 +44,6 @@ scripts/ralph/archive/
 
 # supervisord runtime files (logs, socket, PID)
 logs/
+
+# Lathe session state (ephemeral, engine-managed)
+.lathe/session/

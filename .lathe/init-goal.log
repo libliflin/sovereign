@@ -1,0 +1,15 @@
+Done. Here's what was written:
+
+**`.lathe/goal.md`** — The customer champion's behavioral doc. Identity section establishes the courage posture explicitly. Five stakeholders identified from what's actually in the code (not templates): Self-Hoster, Platform Developer, Contributor, Security Operator, Delivery Machine Maintainer. Per-stakeholder emotional signals derived from what the project is. Four tensions with concrete signals for resolving them. Two-source ranking (floor then lived experience) with explicit rejection of the layer-ladder pattern. The full job loop with the "use the project as them" step as the central act.
+
+**`.lathe/skills/journeys.md`** — Six concrete journeys to walk: kind quickstart, VPS provisioning, platform developer first day, contributor first PR, security operator autarky audit, delivery machine sprint review. Each has step-by-step commands and friction watch points grounded in the actual scripts and service URLs.
+
+**`.lathe/skills/architecture.md`** — Key decisions: App-of-Apps, domain as variable, autarky chain, distroless, HA everywhere, cluster contract, constitutional gates, service map, delivery machine structure.
+
+**`.lathe/skills/testing.md`** — The three CI workflows with their exact jobs, local quality gate commands, what `check-limits.py` does and why grep isn't a substitute, known test gaps (no kind-based CI, ceremony behavior untested).
+
+**`.lathe/skills/build.md`** — Non-obvious build things: Helm dependency update before lint, vendor pipeline five-stage flow, image tag format, kind vs. VPS bootstrap, common gotchas.
+
+**`.lathe/skills/domains.md`** — Eight domain authorities (Kubernetes/Helm, Container/OCI, Networking/Cilium/Istio, Security/PKI, GitOps/ArgoCD, Observability, Delivery Machine, Provider Infrastructure) with a cross-domain confusion map table.
+
+**`.lathe/alignment-summary.md`** — Human-readable summary of stakeholders, emotional signals, tensions, security assessment (no `pull_request_target` triggers found — low prompt injection risk), and six things that could be wrong.

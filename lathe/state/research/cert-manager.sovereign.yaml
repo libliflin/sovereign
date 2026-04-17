@@ -1,0 +1,242 @@
+# sovereign.yaml — Machine-readable package declaration
+#
+# This is the structured output of research. A human writes the research brief
+# (cert-manager.md) after reading docs. This file is the computable artifact
+# that a package manager could consume.
+#
+# Vision: `sovereign install cert-manager` reads this file, probes the target
+# environment, checks every constraint, and either installs cleanly or explains
+# exactly why it can't — before touching the cluster.
+
+apiVersion: sovereign.dev/v1alpha1
+kind: Package
+metadata:
+  name: cert-manager
+  version: "v1.14.0"
+  layer: 1
+  description: "X.509 certificate management for Kubernetes"
+
+# ── Source of truth ──────────────────────────────────────────────────────────
+
+upstream:
+  project: cert-manager
+  url: https://github.com/cert-manager/cert-manager
+  docs: https://cert-manager.io/docs/
+  license: Apache-2.0
+  governance: CNCF Graduated
+  build_tool: ko
+
+# ── Architecture constraints ─────────────────────────────────────────────────
+# A package manager reads this + probes `uname -m` on each node to decide
+# if the install is viable before pulling anything.
+
+architectures:
+  - os: linux
+    arch: amd64
+    status: supported
+  - os: linux
+    arch: arm64
+    status: supported
+  - os: linux
+    arch: arm
+    status: supported
+  - os: linux
+    arch: s390x
+    status: supported
+  - os: linux
+    arch: ppc64le
+    status: supported
+
+# ── Images ───────────────────────────────────────────────────────────────────
+# Every OCI image the package needs. The package manager uses this to:
+# 1. Pre-pull and cache images before install
+# 2. Verify architecture support per image
+# 3. Mirror to internal registry (Zot) for autarky
+
+images:
+  - ref: quay.io/jetstack/cert-manager-controller:v1.14.0
+    multiarch: true
+    base: distroless/static
+    purpose: main controller — watches Certificate CRs, issues certs
+  - ref: quay.io/jetstack/cert-manager-webhook:v1.14.0
+    multiarch: true
+    base: distroless/static
+    purpose: validating/mutating admission webhook for cert-manager CRDs
+  - ref: quay.io/jetstack/cert-manager-cainjector:v1.14.0
+    multiarch: true
+    base: distroless/static
+    purpose: injects CA bundles into webhook configurations
+  - ref: quay.io/jetstack/cert-manager-startupapicheck:v1.14.0
+    multiarch: true
+    base: distroless/static
+    purpose: post-install Job to verify API server connectivity
+
+# ── Resource requirements ────────────────────────────────────────────────────
+# A package manager compares these against `kubectl top nodes` / `free -m` to
+# decide if the cluster has capacity.
+
+resources:
+  components:
+    - name: controller
+      replicas: 2  # for HA
+      per_replica:
+        cpu_request: 10m
+        cpu_limit: 200m
+        memory_request: 32Mi
+        memory_limit: 256Mi
+    - name: webhook
+      replicas: 1
+      per_replica:
+        cpu_request: 10m
+        cpu_limit: 100m
+        memory_request: 32Mi
+        memory_limit: 128Mi
+    - name: cainjector
+      replicas: 1
+      per_replica:
+        cpu_request: 10m
+        cpu_limit: 100m
+        memory_request: 32Mi
+        memory_limit: 128Mi
+  storage:
+    pvcs: []  # cert-manager is stateless
+  total_baseline:
+    cpu: 40m
+    memory: 128Mi
+
+# ── Dependencies ─────────────────────────────────────────────────────────────
+# Layer-aware dependency graph. The package manager walks this tree and
+# refuses to install if any required dependency is missing.
+
+dependencies:
+  required:
+    - name: kubernetes
+      kind: platform
+      min_version: "1.25"
+      check: "kubectl version --short"
+  optional:
+    - name: openbao
+      kind: package
+      layer: 1
+      purpose: "Vault/OpenBao issuer for production CA"
+      without: "Only self-signed ClusterIssuer available"
+
+# ── CRDs ─────────────────────────────────────────────────────────────────────
+
+crds:
+  installs_own: true
+  method: helm  # CRDs bundled in chart, managed by Helm lifecycle
+  names:
+    - certificates.cert-manager.io
+    - certificaterequests.cert-manager.io
+    - challenges.acme.cert-manager.io
+    - clusterissuers.cert-manager.io
+    - issuers.cert-manager.io
+    - orders.acme.cert-manager.io
+  warning: "helm uninstall removes these CRDs and all Certificate CRs cluster-wide"
+
+# ── HA model ─────────────────────────────────────────────────────────────────
+
+ha:
+  strategy: leader-election
+  mechanism: kubernetes-lease
+  failover_time: ~15s
+  notes: |
+    Controller and cainjector use leader election — one active, rest standby.
+    Webhook is active-active (all replicas serve admission requests).
+    No external coordination needed. No shared storage needed.
+  minimum_replicas: 2
+  recommended_replicas: 2  # more than 2 adds no benefit for leader-election
+
+# ── Environment fitness ──────────────────────────────────────────────────────
+# Constraints the package manager evaluates against the target environment.
+
+constraints:
+  - type: network
+    description: "Needs outbound HTTPS for ACME/Let's Encrypt"
+    required: false  # only if using ACME issuers, self-signed works offline
+  - type: storageclass
+    description: "No PVCs needed — stateless"
+    required: false
+  - type: loadbalancer
+    description: "No LoadBalancer needed"
+    required: false
+  - type: ingress
+    description: "No ingress needed for core functionality"
+    required: false
+
+# ── Install configuration ───────────────────────────────────────────────────
+# What a package manager sets in values.yaml, and why.
+
+config:
+  # Values that MUST be set for any environment
+  required: {}
+
+  # Values that should be adapted to the environment
+  environment_specific:
+    global.storageClass:
+      description: "Not used by cert-manager but inherited from global values"
+      local_k3s: "local-path"
+      production: "ceph-block"
+    cert-manager.installCRDs:
+      description: "Install CRDs via Helm"
+      default: true
+      note: "For production, consider managing CRDs separately"
+
+  # Sovereign platform standard values (always applied)
+  sovereign_defaults:
+    cert-manager.replicaCount: 2
+    selfSigned.enabled: true
+    vault.enabled: false
+
+# ── Known issues ─────────────────────────────────────────────────────────────
+
+known_issues:
+  - id: crd-lifecycle
+    severity: low
+    description: "installCRDs=true ties CRD lifecycle to Helm release"
+    mitigation: "Don't helm uninstall; use helm upgrade for changes"
+  - id: webhook-ordering
+    severity: low
+    description: "Webhook must be ready before creating Certificate resources"
+    mitigation: "startupapicheck Job handles this automatically"
+
+# ── Verification ─────────────────────────────────────────────────────────────
+# How the package manager confirms the install succeeded.
+
+verify:
+  pods:
+    - label: app.kubernetes.io/name=cert-manager
+      namespace: cert-manager
+      expected_status: Running
+      count: 2  # replicaCount
+    - label: app.kubernetes.io/name=webhook
+      namespace: cert-manager
+      expected_status: Running
+      count: 1
+    - label: app.kubernetes.io/name=cainjector
+      namespace: cert-manager
+      expected_status: Running
+      count: 1
+  crds:
+    - certificates.cert-manager.io
+    - clusterissuers.cert-manager.io
+  smoke_test: |
+    # Create a self-signed certificate and verify it's issued
+    kubectl apply -f - <<'EOF'
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: smoke-test
+      namespace: cert-manager
+    spec:
+      secretName: smoke-test-tls
+      issuerRef:
+        name: selfsigned
+        kind: ClusterIssuer
+      commonName: smoke-test.local
+      dnsNames:
+        - smoke-test.local
+    EOF
+    kubectl wait --for=condition=Ready certificate/smoke-test -n cert-manager --timeout=60s
+    kubectl delete certificate/smoke-test -n cert-manager
