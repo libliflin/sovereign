@@ -106,7 +106,10 @@ See subdirectory CLAUDE.md files for implementation details:
 Run before marking any story `passes: true`:
 
 ```bash
-# Helm charts
+# Helm charts — scope to your chart only; pre-existing failures elsewhere don't affect you
+bash scripts/ha-gate.sh --chart <name>
+
+# Or run checks individually:
 helm lint platform/charts/<name>/
 helm template platform/charts/<name>/ | grep PodDisruptionBudget
 helm template platform/charts/<name>/ | grep podAntiAffinity
