@@ -1,65 +1,63 @@
 # Alignment Summary
 
-For the human. This is not read by the runtime agents.
+Plain-English summary for the human reviewing this init. This file is not read by the runtime agent.
 
 ---
 
-## Who This Serves
+## Who this serves
 
-**The Self-Hoster** — Someone paying $200+/mo for cloud-managed services (GitLab, Vault, a container registry) who wants to own their stack. Technical, not necessarily a K8s expert. First encounter is the kind quickstart. Success is ArgoCD, Forgejo, Grafana running at their domain on hardware they control.
-
-**The Platform Developer** — A developer whose organization runs Sovereign as internal platform. They use Forgejo, Backstage, code-server, ArgoCD. They don't operate Kubernetes. Success is "I pushed code and it deployed" without filing a ticket.
-
-**The Contributor** — Someone submitting a Helm chart fix, a new service chart, or a ceremony script improvement. Success is a PR that passes CI on first try and gets actionable review feedback.
-
-**The Security Operator** — Someone in a production environment who needs to prove zero-trust compliance, audit CVEs, and verify autarky. Success is machine-checkable proof for every security claim.
-
-**The Delivery Machine Maintainer** — The repo author (or autonomous agent) operating the ralph ceremony system. Success is "the delivery machine runs itself, I steer." Red flag: more than 2 remediation sprints in the last 10 increments.
+- **S1 — The Self-Hoster:** A technical person trying to own their infrastructure on Hetzner/VPS. First encounter is `clone → configure → bootstrap`. Success = cluster up, nothing phoning home.
+- **S2 — The Platform Developer:** A developer on a team whose infrastructure runs on Sovereign. Uses Forgejo, ArgoCD, Grafana daily. Success = push code, watch it deploy, see what happened.
+- **S3 — The Chart Author / Contributor:** A developer adding a new service chart or fixing an existing one. Success = PR passes CI on the first try; rules are discoverable.
+- **S4 — The Security Auditor:** A security engineer certifying the platform satisfies zero trust, autarky, and licensing requirements. Success = every claim is machine-verifiable with a command.
+- **S5 — The Delivery Machine (Ralph):** The autonomous ceremony loop. Reads `agent.md` and sprint files to implement stories. Success = stories pass first review; G1 stays green; no archaeology required.
 
 ---
 
-## Emotional Signal Per Stakeholder
+## Emotional signal per stakeholder
 
-| Stakeholder | Signal | One-line check |
-|---|---|---|
-| Self-Hoster | Confidence and momentum | Each step tells me it succeeded before I take the next |
-| Platform Developer | Transparent ease | Does any of this feel like Kubernetes? (bad if yes) |
-| Contributor | Certainty | Do I know CI will pass before I push? |
-| Security Operator | Verifiable trust | For every security claim, is there a machine check that falsifies it? |
-| Delivery Machine Maintainer | Low-friction continuity | Is the machine running, or am I debugging it? |
+- **S1:** Confidence. *This will work when I need it.* Track unease at each bootstrap step.
+- **S2:** Momentum. *I can see it moving.* Track stalls, especially silent ones.
+- **S3:** Respect. *The rules make sense and I can find them.* Track hazing — rules that only exist as tribal knowledge.
+- **S4:** Certainty. *I can prove this is compliant.* Track unverifiable claims.
+- **S5:** Orientation. *I know where I am and what to do next.* Track archaeology.
 
 ---
 
-## Key Tensions
+## Key tensions
 
-**First-encounter simplicity vs. autarky depth.** The kind quickstart must not require understanding Harbor or the vendor build system. Full autarky is for production. Signal: if kind quickstart requires vendor setup, autarky is blocking evaluation — fix the quickstart first.
+**Autarky vs. Bootstrap simplicity.** The vendor system (fetch, patch, build from source into distroless) is the sovereign ideal. The bootstrap experience needs to work in under 30 minutes. Signal for tie-breaking: if the kind path hits a wall before any service is running, simplify bootstrap; if kind works cleanly, advance autarky.
 
-**HA rigor vs. contributor friction.** The HA gate is non-negotiable. What's negotiable is whether contributors can discover it before CI fails them. Signal: walk the contributor's journey to PR open; if the first CI failure is something not in CONTRIBUTING.md, that's the gap to fix.
+**Gate strictness vs. Discoverability for contributors.** The HA gate, autarky gate, check-limits.py, and shellcheck together create a high bar. Each is protecting a real value. Each failure message that doesn't explain the fix is hazing S3. Signal: does ha-gate.sh output tell you the exact chart and exact rule that failed?
 
-**Delivery machine investment vs. platform feature work.** Count remediation sprints in `prd/manifest.json`. > 2 in the last 10 increments = delivery machine needs attention. ≤ 2 = platform feature work takes precedence.
-
-**Security claims vs. verifiability.** Every security claim should have a machine-checkable gate. Documentation without a gate is no trust at all. Signal: README claim → find the CI step that falsifies it. When one doesn't exist, that's the goal.
+**Sovereignty vs. Upstream convenience.** The `ha_exception` and upstream wrapper chart patterns represent pragmatic compromises. Signal: if constitutional gates are green and the platform works for S1/S2, tighten toward full autarky; if gates are failing or bootstrap is broken, pragmatic wrappers are the right call.
 
 ---
 
-## Repository Security Assessment
+## Repository security assessment (for autonomous operation)
 
-- **Default branch protection**: Unknown — verify in GitHub repo settings. Should have: require PR review before merging, require status checks (validate.yml, ha-gate.yml).
-- **Workflow trigger audit**: `validate.yml` uses `pull_request` and `push`. `ha-gate.yml` uses `pull_request`. Neither uses `pull_request_target` or `issue_comment`. **No prompt injection surface from PR metadata or comments in CI.** Low risk.
-- **Repo visibility**: Public (`github.com/libliflin/sovereign`). Goal files committed to the repo are publicly readable. The customer champion's goal.md, skills files, and alignment summary will be publicly visible. No credentials or private operational details should go in `.lathe/`.
+The `.github/workflows/` directory contains three workflows:
+
+- `validate.yml` — triggers on `pull_request` (branches: main) and `push` (branches: main). Uses `pull_request` (not `pull_request_target`). **Safe.** PRs from forks run in a restricted context without access to secrets.
+- `ha-gate.yml` — triggers on `pull_request` with path filter on `platform/charts/**`. Uses `pull_request`. **Safe.**
+- `release.yml` — not fully read; check for `pull_request_target` or `issue_comment` triggers if adding automation.
+
+The repo is public (visible at `https://github.com/libliflin/sovereign`). The lathe reads CI status and PR metadata from GitHub into the agent prompt — this is a prompt injection surface. The current workflow design mitigates this by using `pull_request` (not `pull_request_target`), but PR titles and descriptions from external contributors could still contain adversarial text. The agent should treat snapshot data from CI as potentially untrusted.
+
+**Default branch protection:** Unknown from code inspection alone. Check GitHub → Settings → Branches → Protection rules. Given the ceremony loop's "proof of work" norm (push branch, open PR, wait for CI, merge), branch protection should require at least: PR required, CI must pass.
 
 ---
 
-## What Could Be Wrong
+## What could be wrong
 
-1. **Missing stakeholder: downstream API consumers.** The `contract/v1/` layer suggests there might be tooling or teams that consume `cluster-values.yaml` files and validate them against the contract. If such consumers exist (e.g., an org deploying Sovereign across multiple clusters), they're a stakeholder this init didn't identify because there's no evidence of them in the current codebase. If they exist, add them to `goal.md`.
+**Missing stakeholders?** The S2 journey (Platform Developer) assumes a running cluster, which the champion can't walk locally for most steps. The champion will need to either work with a running kind cluster or treat "can I walk this journey?" as the gate — a broken kind path means S2's experience is completely opaque. This is a genuine constraint, not a design error, but it means S2 may be under-served relative to S1 and S3.
 
-2. **The delivery machine maintainer may be the same person as the self-hoster.** For a solo maintainer, these aren't separate people — they're the same person wearing different hats on different days. The champion should still rotate between these identities, because the needs are genuinely different.
+**S5 as a stakeholder?** Calling the delivery machine a "stakeholder" is a deliberate choice — the agent loop has real needs (accurate state, self-explanatory ACs, working gates) and degrades visibly when those needs aren't met. But the champion can't *inhabit* S5 the way it can inhabit S1; it can only read the `agent.md` and try to implement a story from it. This is a structural limit.
 
-3. **kind path ≠ production path.** The kind cluster is explicitly not HA (single-node). Several HA-gate checks are enforced in CI but can't be fully validated on kind without the 3-node setup. The self-hoster's first experience is necessarily incomplete — they can't validate production HA behavior on kind. This is a known and accepted gap, but it means the self-hoster's trust at the end of the kind journey is partial trust.
+**Governance docs not read:** `docs/governance/license-policy.md`, `docs/governance/sovereignty.md`, `docs/governance/cluster-contract.md`, `docs/governance/scope.md` were not read during this init. The architecture skill captures what's visible in the code; the governance docs may contain additional constraints or nuance.
 
-4. **G2 staleness check doesn't verify accuracy.** `docs/state/agent.md` can be touched without updating its content to pass G2. If several sprints pass without a genuine sync ceremony updating this file, the "live briefing" may be misleading. The champion should check whether `docs/state/agent.md` accurately reflects current state, not just whether it was recently modified.
+**Bootstrap scripts not found:** The README references `bootstrap/bootstrap.sh`, `bootstrap/config.yaml.example`, and `bootstrap/verify.sh`. These were not found in the directory listing (only `cluster/kind/bootstrap.sh` was confirmed present). The VPS path in the S1 journey may reference files that don't exist yet. The champion should verify before walking that journey.
 
-5. **Remediation sprint pattern.** ~10% of increments have been remediation sprints (4 out of 41 at init time). This is within tolerance but bears watching. If the next 5 increments include 2+ remediation sprints, the delivery machine needs a cycle dedicated to improving ceremony reliability and gate signal quality.
+**G9 status:** constitution.json shows G9 was added with a note that it "currently fails 20 charts." The snapshot will show G9's current state each cycle. If G9 is failing, the champion should treat it as floor-level work.
 
-6. **Autarky gap in values.yaml.** The G6 gate checks `platform/charts/*/templates/` for external registry refs, but not `values.yaml`. A chart with `image.repository: docker.io/myimage` in values.yaml bypasses G6. The CI `helm-validate` job has a separate check for this, but it's heuristic (looks for obvious external registry prefixes). A carefully crafted values.yaml might slip through. This is a known gap — if the security operator journey surfaces it, the goal should be closing it structurally.
+**Brand.md absent:** `.lathe/brand.md` doesn't exist. goal.md instructs the champion to fall back to stakeholder emotional signal when brand.md is absent or emergent. This is correct behavior for a project at this stage.

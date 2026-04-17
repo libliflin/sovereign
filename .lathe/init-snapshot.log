@@ -1,9 +1,10 @@
-1,079 chars — well within budget with room for future growth. The snapshot runs clean and surfaces the one real issue (perses helm lint failure). Written to `.lathe/snapshot.sh`.
+1,343 characters — well within the 6,000 cap and the 4,000 target. The script works correctly, showing real signals from this project:
 
-**Sections:**
-- **Git Status / Recent Commits** — standard `git status --short` + `git log --oneline`
-- **Sprint State** — parses `prd/manifest.json` + active sprint file; shows pass/reviewed counts and story IDs needing attention
-- **Constitutional Gates** — G1 (ceremony compile + import smoke), G6 (autarky), G7 (contract validator), each one-line PASS/FAIL
-- **Helm Lint** — scans all 34 charts, summarizes as `Pass: N | Fail: N`; expands error details on failure only
-- **Shellcheck** — runs on all `.sh` files across `cluster/platform/scripts`, one-line summary
-- **CI** — lists `.github/workflows/` files
+- **Active Sprint**: Increment 41 — 12/12 stories passing
+- **Constitutional Gates**: G1, G6, G7 all PASS
+- **Helm Lint**: 1/33 charts failing (`platform/charts/perses`) — a real actionable signal
+- **Shellcheck**: all clean
+- **Autarky**: no external registry refs
+- **CI**: 3 workflow files listed
+
+The script covers exactly what evolves between cycles in this infrastructure repo: gate health, chart validity, script cleanliness, and sprint progress — while skipping static things like file listings that agents can fetch on demand.

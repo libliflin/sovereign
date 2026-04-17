@@ -1,10 +1,13 @@
-Written to `.lathe/builder.md`. The file encodes:
+`.lathe/builder.md` written. Here's what it encodes:
 
-- **Identity and scope**: receives a goal with stakeholder context, implements one change per round
-- **Sovereign-specific conventions**: Helm HA requirements (replicaCount, PDB, podAntiAffinity, probes, resources), template variable rules (no hardcoded domains/registries), image tag format, ArgoCD app structure
-- **Validation playbook**: all four quality gates (helm lint, shellcheck, autarky grep, contract validator) with exact commands
-- **Witnessability guidance**: how to make changes verifiable for the verifier agent
-- **CI/PR workflow**: engine handles merging, builder handles implement → commit → push → `gh pr create`
-- **Changelog format** aligned with the goal-setter's stakeholder framing (who benefits, what changed, where to look)
+**Identity** — the builder receives goals framed around stakeholders (S1–S5) and their emotional signals. It carries that framing through the implementation to verify the fix actually lands for the person it's meant to help.
 
-The durable conventions (HA patterns, template rules, gate commands) are in builder.md. Current-state observations (test quality, CI status) stay in the snapshot where they belong.
+**Project conventions** — Helm chart HA gates, autarky checks, shellcheck, contract validator, ArgoCD app requirements, image tag format, values variable conventions. These are durable; snapshot carries current-state health.
+
+**Constitutional gates** — G1/G6/G7/G8/G9 with exact commands. Builder must run all before pushing.
+
+**Brand** — aligned with `brand.md`: SCREAMING_SNAKE verdicts, `will refuse` not `may fail`, one-line success, lowercase action-first commit messages.
+
+**CI model** — builder owns implement/commit/push/PR; engine owns merge. CI failures preempt the goal.
+
+**Changelog format** — includes the "Adjacent work noticed" field so the builder can surface things it saw without grabbing scope that belongs to the goal-setter.

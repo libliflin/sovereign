@@ -1,0 +1,14 @@
+`.lathe/brand.md` is written. Here's what the evidence showed:
+
+**Identity**: Workbench-grade precision — names violation classes, states invariants, closes the door. A vocabulary the project insists on (autarky, sovereignty, zero trust) used without apology.
+
+**Five edge cases grounded in real strings:**
+- *Say no*: `"will refuse to proceed"` / `"is not viable"` — declarative, not hedged (README)
+- *Fail*: `FAIL:${chart_name}:replicaCount missing` — colon-delimited, no prose (ha-gate.sh)
+- *Enforce an invariant*: `AUTARKY VIOLATION: ... This is not configurable — it is an invariant` (contract/validate.py)
+- *Explain a decision*: one-sentence inline comments on the *why*, not the *what* (deploy.sh)
+- *Succeed*: `CONTRACT VALID: {path}` — one line, no ceremony (contract/validate.py)
+
+**The thing it'd never do**: retire a gate quietly. Every removed gate gets a named post-mortem in `constitution.json` (`_retired`). Visibility into the reasoning is load-bearing.
+
+**Three signals to preserve**: lowercase action-first commits; SCREAMING_SNAKE verdicts (`G6 FAIL`, `CONTRACT VALID`); `will refuse` not `may fail`.

@@ -1,11 +1,11 @@
-`.lathe/verifier.md` written.
+`.lathe/verifier.md` is written.
 
-The verifier is shaped around this project's actual verification surfaces — no app server, no preview URL. The playbook has five tiers:
+**Shape detected: infrastructure-as-code / pre-deployment.** There's no running service — changes are witnessed through gate execution, static analysis, and dry-run commands. The playbook reflects that: run `snapshot.sh` first, then the five constitutional gates in sequence, then exercise the specific surface the goal named.
 
-1. **Static analysis** — `helm lint`, `helm template | check-limits.py`, `shellcheck`, autarky grep, contract validator, ceremony compile. Runs every round.
-2. **Broad sweep** — `ha-gate.sh` across all charts, `revisionHistoryLimit` assertion. Runs when shared infra is touched.
-3. **Kind integration** — local bootstrap + chart install into `sovereign-test`. Runs when a chart is new or bootstrap order changes. Has an explicit fallback when Docker isn't available.
-4. **Contract end-to-end** — positive + negative fixture runs for every contract rule change, including any new `invalid-*.yaml` the builder should have added.
-5. **Ceremony invocation** — `ceremonies.py orient` to confirm G1 passes at runtime, not just at compile time.
+Key decisions baked in:
 
-The verification themes flag the gaps builders most commonly leave: `check-limits.py` after `helm lint`, missing negative contract fixtures, stdlib-only constraint on `validate.py`, and the difference between a patch and a structural fix.
+- **Gate-as-witness pattern** — for this project, "watching a change work" means watching all gates return the verdict they claim to return, including the *failing* case (a gate that only passes is no gate)
+- **Adversarial fixture coverage** — the builder can add a gate; the verifier adds the fixture that proves it rejects violations
+- **Builder changelog is not proof** — the verifier runs the commands itself, doesn't accept the builder's "Validated" section
+- **Stakeholder-specific witnessing** — after the gate sequence, quote the actual output line that the named stakeholder would read
+- **Structural vs. patch flag** — when a fix could be eliminated by a type or invariant, flag it in findings as a lead, not a blocker

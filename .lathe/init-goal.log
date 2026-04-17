@@ -1,15 +1,15 @@
-Done. Here's what was written:
+All five files are written. Here's what was produced:
 
-**`.lathe/goal.md`** — The customer champion's behavioral doc. Identity section establishes the courage posture explicitly. Five stakeholders identified from what's actually in the code (not templates): Self-Hoster, Platform Developer, Contributor, Security Operator, Delivery Machine Maintainer. Per-stakeholder emotional signals derived from what the project is. Four tensions with concrete signals for resolving them. Two-source ranking (floor then lived experience) with explicit rejection of the layer-ladder pattern. The full job loop with the "use the project as them" step as the central act.
+---
 
-**`.lathe/skills/journeys.md`** — Six concrete journeys to walk: kind quickstart, VPS provisioning, platform developer first day, contributor first PR, security operator autarky audit, delivery machine sprint review. Each has step-by-step commands and friction watch points grounded in the actual scripts and service URLs.
+**`.lathe/goal.md`** — The customer champion's behavioral doc. Five richly-described stakeholders (Self-Hoster, Platform Developer, Chart Author, Security Auditor, Delivery Machine), each with concrete first-encounter journeys the champion walks each cycle, an emotional signal to track, and success/failure conditions. Tensions are grounded in real code (the `ha_exception` pattern, the bootstrap seam, the `contract/validate.py` vs. claimed autarky gap). The two-source ranking model: floor (constitutional gates) first, lived experience second. No layer ladder.
 
-**`.lathe/skills/architecture.md`** — Key decisions: App-of-Apps, domain as variable, autarky chain, distroless, HA everywhere, cluster contract, constitutional gates, service map, delivery machine structure.
+**`.lathe/skills/journeys.md`** — Concrete command-by-command first-encounter journeys for all five stakeholders, with annotations of where friction shows up. The champion runs these each cycle.
 
-**`.lathe/skills/testing.md`** — The three CI workflows with their exact jobs, local quality gate commands, what `check-limits.py` does and why grep isn't a substitute, known test gaps (no kind-based CI, ceremony behavior untested).
+**`.lathe/skills/architecture.md`** — Key decisions: App-of-Apps, chart locations, HA invariants, autarky enforcement points, cluster contract, delivery machine structure.
 
-**`.lathe/skills/build.md`** — Non-obvious build things: Helm dependency update before lint, vendor pipeline five-stage flow, image tag format, kind vs. VPS bootstrap, common gotchas.
+**`.lathe/skills/testing.md`** — How this project tests: constitutional gates, Helm chart gates, shell gates, CI workflows, kind integration tests, YAML validation.
 
-**`.lathe/skills/domains.md`** — Eight domain authorities (Kubernetes/Helm, Container/OCI, Networking/Cilium/Istio, Security/PKI, GitOps/ArgoCD, Observability, Delivery Machine, Provider Infrastructure) with a cross-domain confusion map table.
+**`.lathe/skills/domains.md`** — Domain boundary map: Kubernetes/Helm, GitOps/ArgoCD, Zero Trust/Istio, Sovereignty/Autarky, Constitutional Gates, Sprint/Ceremony System, Shell Scripting, Observability. Includes a boundary confusion matrix for the most common misattributions.
 
-**`.lathe/alignment-summary.md`** — Human-readable summary of stakeholders, emotional signals, tensions, security assessment (no `pull_request_target` triggers found — low prompt injection risk), and six things that could be wrong.
+**`.lathe/alignment-summary.md`** — Human-readable summary: who each stakeholder is (one line), emotional signal per stakeholder, three real tensions with tie-breaking signals, security assessment (workflows use `pull_request`, not `pull_request_target` — safe; repo is public; branch protection unverified from code), and uncertainties (bootstrap VPS scripts not confirmed present, G9 may be failing 20 charts, S2 journey requires a running cluster to walk fully).

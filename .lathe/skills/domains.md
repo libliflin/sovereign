@@ -1,151 +1,111 @@
-# Domain Boundaries
+# Domains
 
-The Sovereign platform spans multiple authority domains. A bug that looks like "a Helm chart problem" might actually be "a Kubernetes API version issue" or "an upstream chart behavior we didn't account for." This map tells you who to ask about what — and where boundary confusion tends to generate wrong fixes.
-
----
-
-## Domain 1: Kubernetes / Helm
-
-**What it covers:** Pod scheduling, workload types (Deployment, StatefulSet, DaemonSet), Services, Ingress, NetworkPolicy, PodDisruptionBudget, resource limits, RBAC, namespaces, Helm chart templating and lifecycle (install/upgrade/rollback), Helm dependency resolution.
-
-**Authoritative sources:**
-- Kubernetes API docs (`kubernetes.io/docs/reference/`)
-- Helm docs (`helm.sh/docs/`)
-- `kubectl explain <resource>` for field-level documentation
-- The rendered output of `helm template` — this is the ground truth of what will be applied
-
-**Where boundary confusion happens:**
-- `podAntiAffinity` in `values.yaml` vs. in the rendered template: setting `affinity:` in values doesn't guarantee the chart propagates it. Always verify with `helm template | grep podAntiAffinity`.
-- Upstream charts (Bitnami, etc.) have their own `affinity`, `resources`, `replicaCount` keys that may differ from our conventions. Check the upstream values.yaml before assuming our naming works.
-- `helm lint` passes with warnings that are actually fatal in older K8s versions. `helm lint --strict` is stricter.
-- API version deprecations: a chart templating `extensions/v1beta1/Ingress` will pass lint but fail apply on K8s 1.22+.
+The knowledge domains this project spans, their authoritative sources, and where boundaries create confusion.
 
 ---
 
-## Domain 2: Container Images / Distroless / OCI
+## Domain Map
 
-**What it covers:** OCI image format, base image selection (distroless vs. standard), multi-stage builds, image tagging conventions, Harbor registry (push, pull, tag), image vulnerability scanning (Trivy).
+### Kubernetes / Helm
 
-**Authoritative sources:**
-- Google Distroless project (`github.com/GoogleContainerTools/distroless`)
-- OCI Image Spec (`opencontainers.org`)
-- Harbor docs for registry operations
-- `platform/vendor/DISTROLESS.md` for project-specific distroless guidance
+**What it covers:** Pod scheduling, resource management, networking primitives, CRD management, HA patterns (PDB, podAntiAffinity, replicaCount), storage classes, namespace isolation.
 
-**Where boundary confusion happens:**
-- "The service doesn't start" is often "the distroless image has no shell, so the entrypoint is wrong." Debug by running with `-it --entrypoint sh` on the debug variant, not by switching to a non-distroless image.
-- Trivy findings on a distroless image may reference the base image CVEs, not the application code CVEs. The remediation paths are different.
-- Harbor's internal registry URL includes the domain: `harbor.{{ .Values.global.domain }}/sovereign`. Hardcoding `harbor.sovereign-autarky.dev` in a chart template violates the domain-as-variable principle.
+**Authoritative source:** Kubernetes docs, upstream chart values.yaml for wrapper charts.
 
----
+**Where it creates confusion:**
+- `kubectl apply --dry-run=client` silently fails for CRD-backed resources (ArgoCD Applications, Crossplane XRs) — use YAML-only validation instead
+- Upstream wrapper charts (bitnami, etc.) may have PDB/affinity support under non-obvious keys — always check the upstream values.yaml before writing templates
+- `helm template` renders Go template expressions; ACs that grep for `{{ .Values.* }}` will never match rendered output
 
-## Domain 3: Kubernetes Networking / Cilium / Istio
+### GitOps / ArgoCD
 
-**What it covers:** CNI (Cilium handles pod networking and NetworkPolicy enforcement), service mesh (Istio handles mTLS, traffic management, observability), Ingress and front door design.
+**What it covers:** App-of-Apps pattern, ApplicationSet, sync policies, revision history, health checks.
 
-**Authoritative sources:**
-- Cilium docs (`docs.cilium.io`) — especially NetworkPolicy syntax
-- Istio docs (`istio.io/docs/`) — PeerAuthentication (mTLS mode), AuthorizationPolicy, ServiceEntry
-- The cluster contract (`contract/v1/`) — `network.networkPolicyEnforced` and `autarky.externalEgressBlocked` are constants enforced here
+**Authoritative source:** ArgoCD docs, the Application CRD spec.
 
-**Where boundary confusion happens:**
-- Cilium and Istio both implement NetworkPolicy — but Istio's `AuthorizationPolicy` operates at L7 (HTTP) while Cilium's `NetworkPolicy` operates at L3/L4. A deny-all NetworkPolicy blocks TCP; an Istio `DENY` AuthorizationPolicy blocks HTTP paths. They're complementary, not competing.
-- Istio STRICT mTLS mode means every pod-to-pod connection must have a client certificate. A pod without an Istio sidecar injected can't communicate with a mesh service. If a new service can't reach another, check sidecar injection before checking NetworkPolicy.
-- `externalEgressBlocked: true` in the cluster contract means no pod can call `docker.io`. The Cilium NetworkPolicy enforces this. If a pod needs external access (e.g., a vendor fetch job), it needs an explicit egress allow rule — this is an intentional exception, not a bug to work around.
+**Where it creates confusion:**
+- ArgoCD CRDs are not installed in the kind cluster — `kubectl apply --dry-run` fails for Application manifests; use Python YAML parse only
+- `revisionHistoryLimit: 3` is a sovereign invariant, not an ArgoCD default — omitting it passes `helm lint` but fails CI
+- Domain injection is via `spec.source.helm.parameters`, not `valueFiles` — these look equivalent but behave differently at runtime
 
----
+### Service Mesh / Zero Trust (Istio)
 
-## Domain 4: Security / PKI / Secrets
+**What it covers:** mTLS via PeerAuthentication, traffic policies, Envoy sidecars, Kiali topology.
 
-**What it covers:** Certificate management (cert-manager, cluster CA), secrets management (OpenBao, Sealed Secrets), SSO/OIDC (Keycloak), OPA/Gatekeeper policy, Falco runtime rules.
+**Authoritative source:** Istio docs, the PeerAuthentication CRD spec.
 
-**Authoritative sources:**
-- cert-manager docs (`cert-manager.io/docs/`)
-- OpenBao docs (Apache 2.0 fork of Vault — `openbao.org/docs/`) — use OpenBao, not Vault, per T1 Sovereignty
-- Sealed Secrets docs for GitOps-safe encrypted secrets
-- Keycloak docs for OIDC/SSO configuration
-- OPA/Rego language reference for Gatekeeper policies
+**Where it creates confusion:**
+- G8 checks the default namespace policy in istio-system but does NOT check per-namespace overrides in service charts — a service chart that disables mTLS for its namespace is not caught by G8
+- `PERMISSIVE` mode looks like it works (traffic flows) but breaks the zero-trust invariant silently
 
-**Where boundary confusion happens:**
-- OpenBao is a drop-in API-compatible Vault fork, but configuration syntax and operator behavior may diverge from Vault in newer versions. If Vault docs say one thing and OpenBao behaves differently, OpenBao wins — it's the authoritative implementation in this project.
-- Sealed Secrets encrypt secrets for a specific cluster's controller key. A secret sealed for production can't be unsealed in a kind development cluster. If `kubectl get secret` shows the sealed secret controller erroring, it's a key mismatch, not a Helm chart bug.
-- cert-manager ClusterIssuers vs. Issuers: ClusterIssuers work across namespaces; Issuers are namespace-scoped. The `pki.clusterIssuer` field in the cluster contract must refer to a ClusterIssuer.
+### Sovereignty / Autarky
 
----
+**What it covers:** License policy (Apache 2.0/MIT/BSD approved, BSL blocked), external registry prohibition, distroless images, vendor build pipeline.
 
-## Domain 5: GitOps / ArgoCD
+**Authoritative source:** `docs/governance/license-policy.md`, `docs/governance/sovereignty.md`, `platform/vendor/VENDORS.yaml`, `contract/v1/cluster.schema.yaml`.
 
-**What it covers:** ArgoCD Application manifests, App-of-Apps pattern, sync policies, resource health checks, ArgoCD Image Updater.
+**Where it creates confusion:**
+- G6 checks `platform/charts/*/templates/` — it does NOT check `cluster/kind/charts/*/templates/` or ArgoCD app manifests
+- The autarky grep in `validate.yml` checks `values.yaml` image.repository for hardcoded external registries, but only for top-level image keys — subchart images may not be checked
+- During bootstrap, `imageRegistry.internal: ""` is intentional — the contract validator allows an empty string for this field
+- BSL (Business Source License) is blocked; SSPL is blocked; AGPL needs case-by-case review
 
-**Authoritative sources:**
-- ArgoCD docs (`argo-cd.readthedocs.io`)
-- The `argocd-apps/` directory for this project's Application manifests
+### Constitutional Gates
 
-**Where boundary confusion happens:**
-- "The chart is correct but ArgoCD shows OutOfSync": This is usually either (a) the Application manifest's `targetRevision` is pinned to a branch and there's a drift, or (b) ArgoCD's resource tracking excludes something. Not a chart bug.
-- `revisionHistoryLimit: 3` is required on all Application manifests. Missing it fails the `argocd-validate` CI job. This is separate from Kubernetes Deployment revision history.
-- ArgoCD owns the deployed state after bootstrap. Manual `kubectl apply` of a chart that ArgoCD manages will be reverted by ArgoCD on its next sync. Use `kubectl patch` or go through Git for intentional changes.
+**What it covers:** Machine-checkable invariants that protect themes. Stop-the-line enforcement.
 
----
+**Authoritative source:** `prd/constitution.json`. Indicators are the authoritative test commands — not CLAUDE.md descriptions.
 
-## Domain 6: Observability Stack
+**Where it creates confusion:**
+- A gate that always passes provides no signal — see the `_retired` section in constitution.json for examples of gates that were removed for this reason
+- G9 reports non-compliant charts but requires `ha-gate.sh` to exit 0 — a single failing chart blocks everything
+- Gates check structure, not runtime behavior: G8 verifies the chart renders STRICT, but doesn't verify a running cluster enforces it
 
-**What it covers:** Prometheus (metrics collection, alerting), Grafana (dashboards), Loki (logs), Tempo (distributed traces), Thanos (long-term metrics retention).
+### Sprint / Ceremony System (Ralph)
 
-**Authoritative sources:**
-- Prometheus docs and PromQL reference
-- Grafana docs for dashboard provisioning (JSON model, datasource configuration)
-- Loki LogQL reference
-- Tempo TraceQL reference
+**What it covers:** Increment lifecycle, story schema, ceremony sequencing, SMART scoring, gate evaluation.
 
-**Where boundary confusion happens:**
-- Loki Simple Scalable mode vs. single binary: the project uses Simple Scalable for HA. This means multiple deployments (ingester, distributor, querier) and multiple PDBs. A single PDB for the whole Loki installation fails the HA gate.
-- Thanos is for long-term retention only — it doesn't replace Prometheus, it extends it. Prometheus handles recent metrics; Thanos handles historical queries and deduplication across replicas.
-- Grafana dashboard provisioning via ConfigMap is the GitOps path. Dashboards created in the UI are lost on redeploy. If a dashboard needs to survive upgrades, it must be in a `platform/charts/prometheus-stack/` ConfigMap.
+**Authoritative source:** `prd/manifest.json` (active sprint), `prd/constitution.json` (gates), `scripts/ralph/ceremonies/` (ceremony behavior), `docs/state/agent.md` (current state).
 
----
+**Where it creates confusion:**
+- "Phase" is the old vocabulary — use "increment" in all new code and documents
+- `passes: true` means the implementer ran the ACs and saw them pass — not that the review ceremony accepted the story
+- `reviewed: true` is set only by the review ceremony, never by the implementer
+- Pre-accepted stories (`passes: true, reviewed: true`) consume sprint capacity without requiring implementation — if they exceed 50% of capacity, the sprint won't reach implementation stories
+- Stories with `smart.achievable < 4` must be split before entering a sprint
 
-## Domain 7: Delivery Machine (ralph ceremonies / sprint mechanics)
+### Shell Scripting
 
-**What it covers:** The ralph ceremony system, sprint files, constitutional gates, story lifecycle, the `prd/` JSON schema.
+**What it covers:** Bootstrap scripts, ha-gate.sh, kind smoke tests, vendor scripts.
 
-**Authoritative sources:**
-- `scripts/ralph/ceremonies.py` and `scripts/ralph/lib/` — the implementation
-- `prd/constitution.json` — the constitutional gate definitions
-- `CLAUDE.md` (root) — the team norms and story lifecycle documentation
+**Authoritative source:** shellcheck 0.10.0 (CI version), bash 3.2 compatibility (macOS target).
 
-**Where boundary confusion happens:**
-- G2 checks staleness (file modification date), not correctness. `docs/state/agent.md` can be trivially touched to pass G2 without actually updating the briefing.
-- The `prd/manifest.json` → `activeSprint` pointer and the sprint file's `status: "active"` must agree. When they diverge (a sprint file is deleted but manifest still points to it), ceremonies fail silently.
-- "Ceremony output" vs. "CI output": ceremonies produce stdout. If a ceremony exits 0 but produces nothing, it ran successfully (from gate perspective) but gave no useful information. This is a delivery machine issue, not a constitutional violation — G1 only checks compile.
+**Where it creates confusion:**
+- `set -euo pipefail` + grep on an optional YAML field = silent failure when the field is absent — always add `|| true` to optional greps
+- `local x=$(cmd)` triggers SC2155 — split into `local x; x=$(cmd)`
+- Empty array with `set -u`: use `"${ARRAY[@]+"${ARRAY[@]}"}"`
+- `pipefail` subshell behavior differs between bash 3.2 (macOS) and GNU bash 5.x
+- Scripts that iterate `platform/charts/` must handle `_globals` (underscore-prefixed, not a real chart)
+
+### Observability Stack (Prometheus/Grafana/Loki/Tempo/Thanos)
+
+**What it covers:** Metrics, logs, traces, Grafana datasources, Falco events, long-term retention via Thanos.
+
+**Authoritative source:** Upstream chart values.yaml for each component, Grafana datasource ConfigMap format.
+
+**Where it creates confusion:**
+- Observability charts must include a Grafana datasource ConfigMap in templates/ for auto-registration — `helm template | grep -i datasource` is the gate
+- Loki Simple Scalable and Tempo distributed are multi-component charts — their PDB count is > 1; the count check must use `>= N`, not `== 1`
 
 ---
 
-## Domain 8: Provider Infrastructure (VPS / bare metal)
+## Boundary Confusion Matrix
 
-**What it covers:** Hetzner API, DigitalOcean API, DNS management (Cloudflare), Cloudflare Tunnel configuration, VPS provisioning scripts in `bootstrap/`.
-
-**Authoritative sources:**
-- Provider-specific docs: `docs/providers/hetzner.md`, `docs/providers/digitalocean.md`, etc.
-- `.env.example` for the full list of required credentials and where to get them
-- Cloudflare Tunnel docs for the zero-open-ports front door design
-
-**Where boundary confusion happens:**
-- The kind path (`cluster/kind/`) and the VPS path (`bootstrap/`) are independent. Changes to kind scripts don't affect VPS scripts. They share `platform/charts/` but not bootstrap logic.
-- "The provider CLI fails" is usually a credential issue (`source .env` not run, or token expired), not a bug in the bootstrap script.
-- Node count must be odd and >= 3 for both etcd quorum and Ceph quorum. `bootstrap.sh` enforces this. The kind path uses a single-node cluster for development (explicitly not HA — the kind path is for testing charts, not for testing HA).
-
----
-
-## Cross-Domain Confusion Map
-
-| Symptom | Wrong domain to look | Right domain to look |
-|---|---|---|
-| "Pod can't reach service X" | Chart values | Cilium NetworkPolicy / Istio AuthorizationPolicy |
-| "ArgoCD shows OutOfSync after helm upgrade" | Helm chart | ArgoCD Application manifest / sync policy |
-| "Sealed secret controller error" | Chart template | Cert/key mismatch — wrong cluster's controller key |
-| "Image pull fails on kind" | Chart templates | kind doesn't have Harbor; uses direct pull from upstream (autarky exception for kind) |
-| "Service starts but can't connect to Vault/OpenBao" | OpenBao config | Istio sidecar injection / mTLS mode |
-| "Helm lint passes but apply fails" | Chart values | K8s API version — check `kubectl api-versions` |
-| "Grafana dashboard missing after upgrade" | Prometheus config | Dashboard must be provisioned via ConfigMap, not created in UI |
-| "Ceremony runs but produces nothing" | Constitutional gates | Delivery machine — ceremony's own output logic |
+| Symptom | Might look like... | Actually is... |
+|---------|-------------------|----------------|
+| `kubectl apply --dry-run` fails for ArgoCD app | Helm template error | CRDs not in kind cluster — use YAML parse |
+| G6 passes but image pulls fail at runtime | False gate | G6 only checks chart templates, not values.yaml or subchart images |
+| `shellcheck` passes locally, fails in CI | Environment difference | CI uses shellcheck 0.10.0; local may be different version |
+| A gate never fires | Good health | May be vacuous — check the rationale, consider retiring |
+| story passes implement, fails review | Implementation error | AC was wrong at authoring time — AC authoring is a first-class concern |
+| `helm template` grep returns nothing | Pattern not in chart | Pattern uses Go template syntax; grep for the resolved value or key name instead |
