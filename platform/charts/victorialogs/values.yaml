@@ -8,6 +8,10 @@ global:
   storageClass: "local-path"
 
 victorialogs:
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
   server:
     ## Single-node mode — sufficient for most deployments.
     ## VictoriaLogs is dramatically more resource-efficient than Loki:
@@ -30,6 +34,19 @@ victorialogs:
 
     ## Retention
     retentionPeriod: "30d"
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - victoria-logs-single
+              topologyKey: kubernetes.io/hostname
 
     ## Ingress managed by our template
     ingress:

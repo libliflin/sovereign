@@ -1,0 +1,15 @@
+## Wrapper PDB — upstream perses schema rejects podDisruptionBudget via subchart values.
+## Applied at the wrapper layer to protect against accidental eviction.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "perses-sovereign.fullname" . }}-perses
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perses-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: perses
+      app.kubernetes.io/instance: {{ .Release.Name }}

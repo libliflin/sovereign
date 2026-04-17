@@ -300,11 +300,13 @@ vendors:
     fetch_method: git_tag
     distroless_compatible: yes
     distroless_base: gcr.io/distroless/static
-    ha_compatible: yes
-    ha_notes: "stateless Go binary; bump replicas and add PDB — deferred"
+    ha_compatible: no
+    ha_notes: "file-based database on a single ReadWriteOnce PVC; multiple replicas would race on writes — requires upstream storage backend (PostgreSQL/etcd) for HA"
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Perses v0.52.0 uses a file-based database on a single RWO PVC. Multiple replicas conflict on writes. HA requires switching to an external storage backend (not yet implemented)."
 
   # ── Developer Experience ─────────────────────────────────────────────────
   - name: backstage
@@ -394,6 +396,38 @@ vendors:
     alternative: ""
     ha_exception: true
     ha_exception_reason: "Mailpit is a single-instance SMTP testing tool with no horizontal scaling support. PDB is present to prevent accidental eviction; replicaCount is set to 1 per the ha_exception pattern."
+
+  - name: mailhog
+    upstream_url: https://github.com/mailhog/MailHog
+    license_spdx: MIT
+    license_allows_vendor: true
+    version_pinned: "v1.0.1"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    ha_compatible: no
+    ha_notes: "single-instance SMTP testing tool; HA not applicable — inbox is ephemeral by design"
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+    ha_exception: true
+    ha_exception_reason: "MailHog is a dev-only SMTP capture tool. Multiple replicas would split message delivery across instances with no shared inbox. replicaCount: 1 is correct."
+
+  - name: zot
+    upstream_url: https://github.com/project-zot/zot
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "v2.0.4"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: gcr.io/distroless/static
+    ha_compatible: partial
+    ha_notes: "zot supports clustering with shared S3/object storage; local-path PVC is ReadWriteOnce, limiting to single replica during kind bootstrap"
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+    ha_exception: true
+    ha_exception_reason: "kind cluster uses local-path provisioner (ReadWriteOnce only). zot clustering requires shared object storage. replicaCount: 1 for kind; production deploy should use S3-backed zot cluster."
 
   - name: chaos-mesh
     upstream_url: https://github.com/chaos-mesh/chaos-mesh

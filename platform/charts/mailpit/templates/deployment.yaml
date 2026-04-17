@@ -20,6 +20,15 @@ spec:
       labels:
         {{- include "mailpit.selectorLabels" . | nindent 8 }}
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "mailpit.selectorLabels" . | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: mailpit
           image: {{ include "mailpit.image" . }}

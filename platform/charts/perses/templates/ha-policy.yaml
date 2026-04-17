@@ -1,0 +1,25 @@
+## Wrapper HA policy ConfigMap.
+## The upstream perses chart uses additionalProperties: false — affinity cannot be
+## injected via subchart values. The desired podAntiAffinity constraint is documented
+## here and applied manually or via an admission webhook when the chart is forked.
+## ha_exception: true (single-instance file-based database, see VENDORS.yaml)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "perses-sovereign.fullname" . }}-ha-policy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perses-sovereign.labels" . | nindent 4 }}
+data:
+  ha-exception: "true"
+  podAntiAffinity: |
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - perses
+          topologyKey: kubernetes.io/hostname

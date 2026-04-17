@@ -1,0 +1,29 @@
+## Wrapper PDBs — upstream jaeger chart has no podDisruptionBudget template.
+## One PDB per component (collector, query).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "jaeger-sovereign.fullname" . }}-collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jaeger-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: collector
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "jaeger-sovereign.fullname" . }}-query
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "jaeger-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: query
+      app.kubernetes.io/instance: {{ .Release.Name }}

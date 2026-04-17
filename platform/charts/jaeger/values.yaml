@@ -68,6 +68,15 @@ jaeger:
     ingress:
       enabled: false
 
+    ## Disable legacy v1 agent sidecar — not needed for v2 OTLP flow
+    agentSidecar:
+      enabled: false
+
+  ## Jaeger v1 agent DaemonSet is deprecated in v2 — OTLP is received directly by the collector.
+  ## Disable to avoid legacy containers with no resource limit configuration path.
+  agent:
+    enabled: false
+
   ## Disable Cassandra — storage.type: badger uses embedded Badger, no Cassandra needed.
   ## Default provisionDataStore.cassandra: true deploys 3 Cassandra pods which OOM-kill
   ## 4GB nodes. Explicitly disable it.
