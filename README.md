@@ -2,7 +2,7 @@
 
 **A fully self-hosted, zero-trust, high-availability Kubernetes development platform. Clone, configure, run.**
 
-Get a complete production-grade development environment — GitLab, ArgoCD, Grafana, OpenBao,
+Get a complete production-grade development environment — Forgejo, ArgoCD, Grafana, OpenBao,
 Keycloak, Harbor, Backstage, and more — on any cluster of VPS or bare-metal servers.
 
 > **Autarky** /ˈɔːtɑːki/ — *complete economic self-sufficiency*. No SaaS. No vendor lock-in.
@@ -14,7 +14,7 @@ Keycloak, Harbor, Backstage, and more — on any cluster of VPS or bare-metal se
 ├─────────────────────────────────────────────────────────────────────┤
 │  Developer Experience                                               │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐             │
-│  │ GitLab   │ │Backstage │ │  VS Code │ │SonarQube │             │
+│  │ Forgejo  │ │Backstage │ │  VS Code │ │SonarQube │             │
 │  │ (SCM/CI) │ │ (Portal) │ │(Browser) │ │ (Quality)│             │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘             │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -235,7 +235,7 @@ Once deployed, services are at:
 | Service | URL | Notes |
 |---|---|---|
 | ArgoCD | `https://argocd.<domain>` | GitOps dashboard |
-| GitLab | `https://gitlab.<domain>` | SCM + CI + vendor mirrors |
+| Forgejo | `https://forgejo.<domain>` | SCM + CI + vendor mirrors |
 | Grafana | `https://grafana.<domain>` | Metrics + logs + traces |
 | Keycloak | `https://auth.<domain>` | SSO for all services |
 | OpenBao | `https://vault.<domain>` | Secrets (Apache 2.0 Vault fork) |
@@ -258,15 +258,15 @@ No manual `kubectl apply` after bootstrap. All changes go through Git.
 
 **Build pipeline** (`vendor/`):
 
-1. `vendor/fetch.sh` — SHA-verified mirror of upstream source into internal GitLab
+1. `vendor/fetch.sh` — SHA-verified mirror of upstream source into internal Forgejo
 2. `vendor/build.sh` — builds distroless OCI images from patched source
 3. `vendor/deploy.sh` — stages, smoke tests, promotes to production
 4. `vendor/rollback.sh` — reverts to last-known-good image SHA
 5. `vendor/backup.sh` — mirrors repos + images to secondary storage (runs as CronJob)
 
-**Security scanning** runs continuously against all mirrored source in GitLab CI:
+**Security scanning** runs continuously against all mirrored source in Forgejo Actions:
 SAST (Semgrep), SCA (Trivy), license audit, secret detection.
-CVE findings create GitLab issues. Patches land in `vendor/recipes/<name>/patches/`.
+CVE findings create Forgejo issues. Patches land in `vendor/recipes/<name>/patches/`.
 
 ---
 

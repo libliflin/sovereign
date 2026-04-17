@@ -22,7 +22,7 @@ The `validate.yml` CI job runs `helm dependency update` before `helm lint`. The 
 The autarky build pipeline operates in five stages. Each stage is a standalone script that can be run independently:
 
 ```bash
-# 1. Fetch: SHA-verified source mirror into internal GitLab
+# 1. Fetch: SHA-verified source mirror into internal Forgejo
 platform/vendor/fetch.sh [--dry-run] [--backup]
 
 # 2. Build: compile distroless OCI images from patched source

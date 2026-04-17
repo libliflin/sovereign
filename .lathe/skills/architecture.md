@@ -49,7 +49,7 @@ global:
 
 ### Autarky
 After bootstrap, the cluster never pulls from docker.io, quay.io, ghcr.io, gcr.io, or registry.k8s.io. The autarky chain:
-1. `platform/vendor/fetch.sh` — SHA-verified mirror of upstream source into internal GitLab
+1. `platform/vendor/fetch.sh` — SHA-verified mirror of upstream source into internal Forgejo
 2. `platform/vendor/build.sh` — builds distroless OCI images from patched source
 3. `platform/vendor/deploy.sh` — stages → smoke test → promotes to production
 4. `platform/vendor/rollback.sh` — reverts to last-known-good image SHA
@@ -100,7 +100,7 @@ ArgoCD manages all of these after bootstrap.
 | Service | Chart | Purpose |
 |---|---|---|
 | ArgoCD | `argocd` | GitOps controller — the root of everything |
-| GitLab | `forgejo` (replacement) | SCM, CI, internal git mirrors |
+| Forgejo | `forgejo` | SCM, CI, internal git mirrors |
 | Harbor | `harbor` | Internal OCI registry (autarky anchor) |
 | Keycloak | `keycloak` | SSO/OIDC for all services |
 | OpenBao | `openbao` | Secrets management (Apache 2.0 Vault fork) |
@@ -116,9 +116,6 @@ ArgoCD manages all of these after bootstrap.
 | Tempo | `tempo` | Distributed tracing |
 | Thanos | `thanos` | Long-term metrics retention |
 | Crossplane | `crossplane` | Infrastructure compositions (namespaces, RBAC) |
-| Sealed Secrets | `sealed-secrets` | GitOps-safe encrypted secrets |
-| cert-manager | `cert-manager` | TLS certificate management |
-| Cilium | `cilium` | CNI + NetworkPolicy enforcement |
 | Rook/Ceph | (not in platform/charts yet) | Block, file, object storage |
 | Chaos Mesh | `chaos-mesh` | Chaos engineering |
 | k6 | `k6`, `k6-operator` | Load testing |

@@ -6,9 +6,9 @@ For the human. This is not read by the runtime agents.
 
 ## Who This Serves
 
-**The Self-Hoster** — Someone paying $200+/mo for cloud-managed services (GitLab, Vault, a container registry) who wants to own their stack. Technical, not necessarily a K8s expert. First encounter is the kind quickstart. Success is ArgoCD, GitLab, Grafana running at their domain on hardware they control.
+**The Self-Hoster** — Someone paying $200+/mo for cloud-managed services (GitLab, Vault, a container registry) who wants to own their stack. Technical, not necessarily a K8s expert. First encounter is the kind quickstart. Success is ArgoCD, Forgejo, Grafana running at their domain on hardware they control.
 
-**The Platform Developer** — A developer whose organization runs Sovereign as internal platform. They use GitLab, Backstage, code-server, ArgoCD. They don't operate Kubernetes. Success is "I pushed code and it deployed" without filing a ticket.
+**The Platform Developer** — A developer whose organization runs Sovereign as internal platform. They use Forgejo, Backstage, code-server, ArgoCD. They don't operate Kubernetes. Success is "I pushed code and it deployed" without filing a ticket.
 
 **The Contributor** — Someone submitting a Helm chart fix, a new service chart, or a ceremony script improvement. Success is a PR that passes CI on first try and gets actionable review feedback.
 

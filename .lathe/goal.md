@@ -54,27 +54,27 @@ Then they read the provider cost table, pick a Hetzner plan, follow the VPS path
 
 ### 2. The Platform Developer
 
-**Who they are.** A developer whose organization runs Sovereign as their internal platform. They build services, push code, configure deployments — they don't operate Kubernetes. They interact with Sovereign through its service URLs: `gitlab.domain`, `backstage.domain`, `code.domain`. They SSO in via Keycloak.
+**Who they are.** A developer whose organization runs Sovereign as their internal platform. They build services, push code, configure deployments — they don't operate Kubernetes. They interact with Sovereign through its service URLs: `forgejo.domain`, `backstage.domain`, `code.domain`. They SSO in via Keycloak.
 
 **First encounter.** Someone on their team ran the bootstrap. They get a Backstage URL and a temporary password. They:
 1. Log into Backstage with SSO
 2. Try to register their service in the catalog (add a `catalog-info.yaml` to their repo)
 3. Open code-server and try to run their app locally
-4. Push code to GitLab and watch CI build a container
+4. Push code to Forgejo and watch Actions build a container
 5. Look at ArgoCD to see their service deployed
 
 **What success feels like.** They never touch `kubectl`. The platform is invisible. They push code and it deploys. The Backstage catalog shows their service's health, docs, and runbooks in one place. The moment of "yes, this works" is when their CI pipeline builds an image and ArgoCD deploys it without them filing a ticket to the platform team.
 
-**What builds trust.** Backstage shows real-time health for their service, not just "registered." Code-server has their tools pre-installed. GitLab CI templates exist that do the right thing. ArgoCD shows exactly what version is deployed and why.
+**What builds trust.** Backstage shows real-time health for their service, not just "registered." Code-server has their tools pre-installed. Forgejo Actions templates exist that do the right thing. ArgoCD shows exactly what version is deployed and why.
 
-**What makes them leave.** SSO is broken (Keycloak misconfigured). Backstage loads but the service catalog is empty and adding a service requires reading three docs. code-server is slow or missing tools. GitLab CI fails with a registry pull error that has nothing to do with their code.
+**What makes them leave.** SSO is broken (Keycloak misconfigured). Backstage loads but the service catalog is empty and adding a service requires reading three docs. code-server is slow or missing tools. Forgejo Actions fails with a registry pull error that has nothing to do with their code.
 
 **Emotional signal: transparent ease.** The platform is invisible; only their work is visible. The signal: *does any of this feel like Kubernetes?* When they're configuring a Helm value or SSHing into a node, the platform has failed them. When they're running `git push` and watching their service deploy, it has succeeded.
 
 **What to try when inhabiting them:**
 - Navigate to `backstage.sovereign-autarky.dev` (or kind-equivalent) and try to register a service
 - Open code-server and check what tools are pre-installed
-- Find the GitLab CI template for a new service; try to use it
+- Find the Forgejo Actions template for a new service; try to use it
 - Open ArgoCD and navigate to a running service
 - Try to find the Grafana dashboard for a specific service
 
@@ -119,9 +119,9 @@ Then they read the provider cost table, pick a Hetzner plan, follow the VPS path
 4. Looks at Trivy Operator findings in the cluster
 5. Checks `platform/vendor/VENDORS.yaml` for any BSL-licensed components
 
-**What success feels like.** Every claim the platform makes about itself is verifiable. "No image pulls from external registries" isn't just a policy — it's enforced by `autarky.externalEgressBlocked: true` in the cluster contract and verified by `contract/validate.py`. Falco alerts include enough context to triage. CVE findings in GitLab issues have a remediation status. The moment of "yes, I trust this" is when an audit produces a clear pass/fail with evidence, not a manual checklist.
+**What success feels like.** Every claim the platform makes about itself is verifiable. "No image pulls from external registries" isn't just a policy — it's enforced by `autarky.externalEgressBlocked: true` in the cluster contract and verified by `contract/validate.py`. Falco alerts include enough context to triage. CVE findings in Forgejo issues have a remediation status. The moment of "yes, I trust this" is when an audit produces a clear pass/fail with evidence, not a manual checklist.
 
-**What builds trust.** The contract validator gives a pass/fail with specific field-level errors. The autarky gate fails loudly when a chart template references docker.io. Trivy findings appear as GitLab issues with the affected image and CVE ID. License violations are blocked at CI, not discovered in production.
+**What builds trust.** The contract validator gives a pass/fail with specific field-level errors. The autarky gate fails loudly when a chart template references docker.io. Trivy findings appear as Forgejo issues with the affected image and CVE ID. License violations are blocked at CI, not discovered in production.
 
 **What makes them leave.** A Falco alert with no context — just a syscall name and a pod. A contract validation that passes but doesn't actually verify egress blocking. External registry references silently tolerated. BSL-licensed components that got in because nobody checked `VENDORS.yaml`.
 

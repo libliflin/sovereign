@@ -98,7 +98,7 @@ Concrete step-by-step journeys for the customer champion to walk each cycle. Eac
 
 3. Open `code.<domain>`. Log in. Does code-server open a workspace? What tools are pre-installed (check: `git`, `kubectl`, `helm`, `node`, `python3`)? What's missing that you'd expect to use while developing on this platform?
 
-4. Navigate to `gitlab.<domain>`. Create a new project. Try to push a simple commit. Does GitLab's CI pipeline run? What does the default pipeline do?
+4. Navigate to `forgejo.<domain>`. Create a new project. Try to push a simple commit. Does Forgejo Actions run? What does the default pipeline do?
 
 5. Navigate to `argocd.<domain>`. Find a running service. Can you tell from the ArgoCD UI what image version is deployed? Can you see the last sync time?
 
@@ -108,7 +108,7 @@ Concrete step-by-step journeys for the customer champion to walk each cycle. Eac
 - SSO login fails or requires configuration steps the platform developer shouldn't know about
 - Backstage catalog is empty with no obvious "add my service" path
 - code-server loads but feels like a blank VM — missing the tools a developer would expect
-- GitLab CI fails with an error unrelated to the developer's code (e.g., registry pull error, autarky violation)
+- Forgejo Actions fails with an error unrelated to the developer's code (e.g., registry pull error, autarky violation)
 - ArgoCD shows applications but it's not obvious which one is "mine"
 
 ---
