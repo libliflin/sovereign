@@ -19,7 +19,7 @@ cd sovereign
 brew install kind kubectl helm gh shellcheck   # if not already installed
 ./cluster/kind/bootstrap.sh
 # wait ~4 minutes
-helm install test-release platform/charts/sealed-secrets/ \
+helm install test-release cluster/kind/charts/sealed-secrets/ \
   --namespace sealed-secrets --create-namespace \
   --kube-context kind-sovereign-test --wait
 kubectl --context kind-sovereign-test get pods -n sealed-secrets
