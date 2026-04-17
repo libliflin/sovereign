@@ -28,7 +28,7 @@ kind get clusters                   # should show sovereign-test
 kubectl --context kind-sovereign-test get nodes   # should show 3 nodes Ready
 
 # Smoke test a chart
-helm install test-release platform/charts/sealed-secrets/ \
+helm install test-release cluster/kind/charts/sealed-secrets/ \
   --namespace sealed-secrets --create-namespace \
   --kube-context kind-sovereign-test --wait
 kubectl --context kind-sovereign-test get pods -n sealed-secrets
@@ -131,9 +131,9 @@ kubectl get pods    # should work with cluster context
 ```bash
 # Start from an existing chart as reference
 ls platform/charts/                   # browse existing charts
-cat platform/charts/sealed-secrets/Chart.yaml
-cat platform/charts/sealed-secrets/values.yaml
-cat platform/charts/sealed-secrets/templates/deployment.yaml
+cat platform/charts/backstage/Chart.yaml
+cat platform/charts/backstage/values.yaml
+cat platform/charts/backstage/templates/deployment.yaml
 
 # Create a new chart
 mkdir -p platform/charts/my-new-service/templates
