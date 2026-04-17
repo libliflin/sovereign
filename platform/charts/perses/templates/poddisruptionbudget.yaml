@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "perses-sovereign.fullname" . }}-pdb
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perses-sovereign.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: perses
+      app.kubernetes.io/instance: {{ .Release.Name }}

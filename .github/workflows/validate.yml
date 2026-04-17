@@ -96,6 +96,25 @@ jobs:
 
       - name: Assert podAntiAffinity present
         run: |
+          # ha_exception charts are architecturally single-instance — podAntiAffinity not required
+          HA_EXCEPTION=$(python3 -c "
+          import yaml, sys, os
+          chart = os.path.basename('${{ matrix.chart }}')
+          try:
+              with open('platform/vendor/VENDORS.yaml') as f:
+                  data = yaml.safe_load(f)
+              for v in data.get('vendors', []):
+                  if v.get('name') == chart and v.get('ha_exception') is True:
+                      print('true')
+                      sys.exit(0)
+          except Exception:
+              pass
+          print('false')
+          " 2>/dev/null || echo "false")
+          if [ "$HA_EXCEPTION" = "true" ]; then
+            echo "INFO: ha_exception=true for ${{ matrix.chart }} — podAntiAffinity check skipped"
+            exit 0
+          fi
           if grep -q "kind: Deployment\|kind: StatefulSet" "/tmp/rendered-${CHART_SAFE}.yaml"; then
             if ! grep -q "podAntiAffinity" "/tmp/rendered-${CHART_SAFE}.yaml"; then
               echo "ERROR: ${{ matrix.chart }} has a Deployment/StatefulSet but no podAntiAffinity"
