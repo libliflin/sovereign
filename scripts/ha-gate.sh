@@ -5,28 +5,84 @@
 #   3. helm template output contains podAntiAffinity
 #
 # Usage:
-#   scripts/ha-gate.sh            # run full validation
-#   scripts/ha-gate.sh --dry-run  # list charts that will be checked, then exit
+#   scripts/ha-gate.sh                 # run full validation
+#   scripts/ha-gate.sh --dry-run       # list charts that will be checked, then exit
+#   scripts/ha-gate.sh --chart <name>  # validate a single chart in isolation
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLATFORM_CHARTS_DIR="${REPO_ROOT}/platform/charts"
 KIND_CHARTS_DIR="${REPO_ROOT}/cluster/kind/charts"
+VENDORS_YAML="${REPO_ROOT}/platform/vendor/VENDORS.yaml"
 
 DRY_RUN=false
-if [[ "${1:-}" == "--dry-run" ]]; then
-    DRY_RUN=true
-fi
+CHART_FILTER=""
+
+while [[ $# -gt 0 ]]; do
+    case "${1}" in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --chart)
+            CHART_FILTER="${2:-}"
+            shift 2
+            ;;
+        *)
+            echo "ERROR: unknown argument: ${1}"
+            exit 1
+            ;;
+    esac
+done
+
+# ha_exception_for <chart_name> — returns "true" if chart has ha_exception in VENDORS.yaml
+ha_exception_for() {
+    local chart_name="${1}"
+    if [[ ! -f "${VENDORS_YAML}" ]]; then
+        echo "false"
+        return
+    fi
+    python3 -c "
+import yaml, sys
+chart = sys.argv[1]
+try:
+    with open('${VENDORS_YAML}') as f:
+        data = yaml.safe_load(f)
+    for v in data.get('vendors', []):
+        if v.get('name') == chart and v.get('ha_exception') is True:
+            print('true')
+            sys.exit(0)
+except Exception:
+    pass
+print('false')
+" "${chart_name}" 2>/dev/null || echo "false"
+}
 
 # Collect all chart directories (must contain Chart.yaml)
-CHART_DIRS=()
+ALL_CHART_DIRS=()
 for dir in "${PLATFORM_CHARTS_DIR}"/*/; do
-    [[ -f "${dir}Chart.yaml" ]] && CHART_DIRS+=("${dir%/}")
+    [[ -f "${dir}Chart.yaml" ]] && ALL_CHART_DIRS+=("${dir%/}")
 done
 for dir in "${KIND_CHARTS_DIR}"/*/; do
-    [[ -f "${dir}Chart.yaml" ]] && CHART_DIRS+=("${dir%/}")
+    [[ -f "${dir}Chart.yaml" ]] && ALL_CHART_DIRS+=("${dir%/}")
 done
+
+# Filter to a single chart if --chart was specified
+CHART_DIRS=()
+if [[ -n "${CHART_FILTER}" ]]; then
+    for dir in "${ALL_CHART_DIRS[@]}"; do
+        if [[ "$(basename "${dir}")" == "${CHART_FILTER}" ]]; then
+            CHART_DIRS+=("${dir}")
+        fi
+    done
+    if [[ "${#CHART_DIRS[@]}" -eq 0 ]]; then
+        echo "FAIL:${CHART_FILTER}:chart not found in platform/charts/ or cluster/kind/charts/"
+        exit 1
+    fi
+else
+    CHART_DIRS=("${ALL_CHART_DIRS[@]}")
+fi
 
 if [[ "${#CHART_DIRS[@]}" -eq 0 ]]; then
     echo "ERROR: no chart directories found"
@@ -48,7 +104,10 @@ for chart_dir in "${CHART_DIRS[@]}"; do
     chart_name="$(basename "${chart_dir}")"
     chart_fail=false
 
-    # Check 1: replicaCount >= 2 in values.yaml
+    # Determine whether this chart has an ha_exception in VENDORS.yaml
+    local_ha_exception="$(ha_exception_for "${chart_name}")"
+
+    # Check 1: replicaCount >= 2 in values.yaml (skipped for ha_exception charts)
     values_file="${chart_dir}/values.yaml"
     if [[ ! -f "${values_file}" ]]; then
         echo "FAIL:${chart_name}:values.yaml missing"
@@ -56,13 +115,15 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         continue
     fi
 
-    replica_count="$(grep -E '^replicaCount:' "${values_file}" | awk '{print $2}' | tr -d '[:space:]' || true)"
-    if [[ -z "${replica_count}" ]]; then
-        echo "FAIL:${chart_name}:replicaCount missing from values.yaml"
-        chart_fail=true
-    elif [[ "${replica_count}" -lt 2 ]] 2>/dev/null; then
-        echo "FAIL:${chart_name}:replicaCount < 2"
-        chart_fail=true
+    if [[ "${local_ha_exception}" != "true" ]]; then
+        replica_count="$(grep -E '^replicaCount:' "${values_file}" | awk '{print $2}' | tr -d '[:space:]' || true)"
+        if [[ -z "${replica_count}" ]]; then
+            echo "FAIL:${chart_name}:replicaCount missing from values.yaml"
+            chart_fail=true
+        elif [[ "${replica_count}" -lt 2 ]] 2>/dev/null; then
+            echo "FAIL:${chart_name}:replicaCount < 2"
+            chart_fail=true
+        fi
     fi
 
     # Check 2 & 3: PodDisruptionBudget and podAntiAffinity in rendered templates
@@ -81,9 +142,12 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         chart_fail=true
     fi
 
-    if ! echo "${rendered}" | grep "podAntiAffinity" > /dev/null; then
-        echo "FAIL:${chart_name}:no podAntiAffinity in rendered templates"
-        chart_fail=true
+    # podAntiAffinity not required for ha_exception charts (architecturally single-instance)
+    if [[ "${local_ha_exception}" != "true" ]]; then
+        if ! echo "${rendered}" | grep "podAntiAffinity" > /dev/null; then
+            echo "FAIL:${chart_name}:no podAntiAffinity in rendered templates"
+            chart_fail=true
+        fi
     fi
 
     # Check 4: all containers have resource requests and limits
