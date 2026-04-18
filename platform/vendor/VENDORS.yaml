@@ -366,6 +366,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "RBAC-only chart — renders ServiceAccount, Role, RoleBinding with no pod workloads. k6 test runners are ephemeral Jobs; replicaCount, PDB, and podAntiAffinity are not applicable."
 
   - name: wiremock
     upstream_url: https://github.com/wiremock/wiremock
@@ -428,6 +430,23 @@ vendors:
     alternative: ""
     ha_exception: true
     ha_exception_reason: "Zot during bootstrap uses a ReadWriteOnce local-path PVC. Multiple replicas require an S3 or RWX backend. replicaCount is set to 1 until storage backend is upgraded."
+
+  # ── First-Party Library Charts ──────────────────────────────────────────
+  - name: _globals
+    upstream_url: "https://github.com/libliflin/sovereign"
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "internal"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: none
+    ha_compatible: yes
+    ha_notes: "Library chart — contains only Helm helper templates (_ha-helpers.tpl). Renders no Kubernetes resources."
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Library chart — renders no Kubernetes resources (only helper .tpl files). replicaCount, PDB, and podAntiAffinity are not applicable. The ha_exception declares this explicitly so the HA gate skips pod-level checks."
 
   # ── Network Enforcement ─────────────────────────────────────────────────
   - name: network-policies
