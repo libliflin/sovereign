@@ -123,7 +123,7 @@ Once ArgoCD is running and synced, access your services:
 |---|---|
 | ArgoCD | `https://argocd.example.com` |
 | Grafana | `https://grafana.example.com` |
-| GitLab | `https://gitlab.example.com` |
+| Forgejo | `https://forgejo.example.com` |
 | Keycloak | `https://auth.example.com` |
 
 Default admin credentials are printed by the bootstrap script and stored in Sealed Secrets.
@@ -144,4 +144,3 @@ Default admin credentials are printed by the bootstrap script and stored in Seal
 ## Next Steps
 
 - Read [Architecture](architecture.md) to understand the platform
-- Read [Day-2 Operations](day-2-operations.md) for upgrades, backups, and scaling
