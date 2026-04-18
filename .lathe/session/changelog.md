@@ -1,3 +1,25 @@
+# Verification — Cycle 2, Round 23 (Verifier)
+
+## What I compared
+Goal: add a `network-policies` chart making `externalEgressBlocked` verifiable by workload. Code: PR #154 merged (network-policies chart, 69 NetworkPolicy objects across 23 namespaces); PR #155 open (VENDORS.yaml CI field-name fix, all 41 CI checks passing, MERGEABLE, BLOCKED only by branch protection).
+
+Ran: `bash .lathe/snapshot.sh` — Helm 34/0, G6 PASS, G7 PASS, Shellcheck OK, G2 OK. `gh pr view 155` — mergeStateStatus: BLOCKED, mergeable: MERGEABLE, labels: [] (the "merge-failed" tag in the engine's stale PR list is a stale annotation; the PR itself has no labels and no conflict).
+
+## What's here, what was asked
+Matches: the work holds up against the goal from my lens.
+
+The primary deliverable (network-policies chart, PR #154) is merged to main. Step 4 of the Security Auditor journey now returns results. The secondary deliverable (VENDORS.yaml field-name fix, PR #155) has clean CI and is waiting only on human approval — no code gap remains.
+
+Two consecutive verifier rounds with no additions, two consecutive builder rounds with no additions. The cycle has converged.
+
+## What I added
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+PR #155 is blocked only by branch protection (requires human review). The engine cannot auto-merge it. A human `gh pr merge 155 --squash` unblocks it once they confirm the VENDORS.yaml field-name correction is acceptable. No code action needed from the cycle.
+
+---
+
 # Changelog — Cycle 2, Round 22 (Builder)
 
 ## Goal
