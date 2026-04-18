@@ -104,4 +104,7 @@ python3 "${SCRIPT_DIR}/../../contract/validate.py" "${OUTPUT}"
 
 log ""
 log "Kind cluster ready: ${CLUSTER_NAME}"
-log "Next step: platform/deploy.sh --cluster-values ${OUTPUT}"
+log "Smoke test:  helm install test-release cluster/kind/charts/sealed-secrets/ \\"
+log "               --namespace sealed-secrets --create-namespace \\"
+log "               --kube-context kind-${CLUSTER_NAME} --wait"
+log "Tear down:   kind delete cluster --name ${CLUSTER_NAME}"
