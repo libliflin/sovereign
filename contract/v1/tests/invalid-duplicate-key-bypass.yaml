@@ -1,0 +1,34 @@
+##############################################################################
+# Test fixture: invalid — duplicate key bypass attempt
+# A contract writer who puts externalEgressBlocked: false first, then true,
+# would pass a naive last-value-wins parser. The validator must reject it.
+# Must FAIL contract validation with a DUPLICATE KEY error.
+##############################################################################
+apiVersion: sovereign.dev/cluster/v1
+kind: ClusterValues
+
+runtime:
+  domain: sovereign.local
+  imageRegistry:
+    internal: harbor.sovereign.local/sovereign
+
+storage:
+  block:
+    storageClassName: standard
+  file:
+    storageClassName: standard
+  object:
+    endpoint: http://minio.minio.svc:9000
+    credentialsSecret: minio-credentials
+
+network:
+  ingressClass: nginx
+  networkPolicyEnforced: true
+
+pki:
+  clusterIssuer: selfsigned-cluster-issuer
+
+autarky:
+  externalEgressBlocked: false   # actual intent: egress NOT blocked
+  externalEgressBlocked: true    # appended to bypass last-value-wins validator
+  imagesFromInternalRegistryOnly: true
