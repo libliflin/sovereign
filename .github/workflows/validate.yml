@@ -426,3 +426,37 @@ jobs:
           done
           [ $FAIL -eq 0 ] && echo "✓ No hardcoded IP addresses in cluster scripts"
           exit $FAIL
+
+  # ── Job 6: README chart path validation ───────────────────────────────────
+  readme-validate:
+    name: README Path Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert chart paths in README exist in repo
+        run: |
+          python3 - <<'PYEOF'
+          import re, sys, os
+
+          with open("README.md") as f:
+              content = f.read()
+
+          # Extract helm install / helm template paths that look like chart dirs
+          pattern = re.compile(r'(?:helm install|helm template)\s+\S+\s+((?:platform|cluster)/[^\s/]+/[^\s/]+/?)')
+          paths = pattern.findall(content)
+
+          errors = []
+          for path in paths:
+              path = path.rstrip('/')
+              if not os.path.isdir(path):
+                  errors.append(f"  x README references chart path that does not exist: {path}/")
+
+          if errors:
+              print("README CHART PATH VALIDATION FAILED: README.md")
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print(f"✓ README chart paths verified: {len(paths)} path(s) exist")
+          PYEOF
