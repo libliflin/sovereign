@@ -2,43 +2,100 @@
 
 ## Identity
 
-Workbench-grade precision: tells you exactly what failed and exactly why the invariant matters, with no softening and no stack trace dumps. The project has a vocabulary it insists on — autarky, sovereignty, zero trust — and uses it consistently and without apology. It refuses things in the declarative voice: *will refuse*, *is not viable*, *is not configurable*. Not academic, not casual. The voice of an engineer who won't ship around a problem.
+Terse, declarative, technically precise. Sovereign speaks with the confidence of a
+platform that has already thought through the edge cases — and made hard choices. It
+holds lines without softening them for accessibility. Confident about its scope, explicit
+about its limits. Not a consultant's positioning statement — an engineer's spec sheet for
+a platform that takes sovereignty seriously.
+
+The name is a declaration. "Autarky" earns its own dictionary entry in the README
+(pronunciation included) because this project believes the concept matters enough to teach
+it. That word-selection instinct — reaching for the exact right word rather than the
+comfortable approximation — runs through the whole codebase.
 
 ---
 
 ## How We Speak
 
-**When we say no:**
-Hard declarative, no hedging. `"bootstrap.sh will refuse to proceed with fewer than 3 nodes or an even node count."` Not "an error may occur." Refuses. `"AWS free tier is not viable."` Not "may be insufficient for larger workloads." Not viable.
-(README.md lines 76–77, 198)
+**When we say no:** Name the invariant, say why it exists, offer no workaround.
 
-**When we fail:**
-Machine-readable, colon-delimited, exact. `FAIL:${chart_name}:replicaCount missing from values.yaml`. Chart name, rule name — no prose, no stack trace, nothing to parse before you get to the actionable part.
-(ha-gate.sh lines 54–64)
+> "This is not configurable — it is an invariant of the sovereign contract."
+> — `contract/validate.py:106`
 
-**When we enforce an invariant:**
-Name the violation class in capitals, state the invariant, close the door. `"AUTARKY VIOLATION: {field} must be true (got {value!r}). This is not configurable — it is an invariant of the sovereign contract."`
-(contract/validate.py lines 103–106)
+> "HA is not optional. It is baked in from the first commit."
+> — `cluster/CLAUDE.md`
 
-**When we explain a decision:**
-One sentence, inline, explains the *why* not the *what*. `"# Skip if a release already exists (healthy or not) — surgeon fixes broken releases, operator doesn't retry them. This keeps the operator pass fast."` The comment earns its line count.
-(platform/deploy.sh lines 78–79)
+No apology, no "for now," no escape hatch. The refusal is the feature.
 
-**When we succeed:**
-One line, no ceremony. `CONTRACT VALID: {values_path}`. `PASS:${chart_name}`. `Cluster ready. Context: ${KUBE_CONTEXT}`. Done.
-(contract/validate.py line 122; ha-gate.sh line 101; cluster/kind/bootstrap.sh line 63)
+**When we fail:** Category in ALL CAPS, then the specific field, then what was given.
+
+> `CONTRACT VALIDATION FAILED: cluster-values.yaml`  
+> `  x AUTARKY VIOLATION: autarky.externalEgressBlocked must be true (got 'false').`
+> — `contract/validate.py:119–126`
+
+> `  x MISSING required field: network.networkPolicyEnforced`
+> — `contract/validate.py:95`
+
+One line per failure. Prefix `  x `. No stack trace surfaced unless asked for. The
+operator should be able to act on the error without reading source.
+
+**When we explain:** State the rule, then explain why the rule exists — because the why
+is what makes it stick.
+
+> "BSL blocked (OpenBao not Vault)" — `CLAUDE.md`
+
+> "etcd quorum: 3 nodes tolerate 1 failure. 2 nodes lose quorum on any failure."
+> — `README.md`
+
+The sovereignty doc leads with: "This is stronger than open source" — and then explains
+why. Not "our policy is X" but "here is the threat model that created X."
+
+**When we onboard:** Forward-pointing at every step. Dry-run previews each intended
+action. Successful operations always end with the next command.
+
+> `==> Cluster ready. Context: kind-sovereign-test`  
+> `==> Next step: platform/deploy.sh --cluster-values cluster-values.yaml`
+> — `cluster/kind/bootstrap.sh:63,107`
+
+> `==> Cluster 'sovereign-test' already exists — skipping creation`
+> — `cluster/kind/bootstrap.sh:53`
+
+Idempotent and narrated. The operator should never have to guess where they are in the
+sequence.
+
+**When we celebrate:** "Cluster ready." "CONTRACT VALID." Full stop, move on. No
+exclamation points. No emoji. The fact speaks.
+
+> `CONTRACT VALID: cluster-values.yaml` — `contract/validate.py:124`
 
 ---
 
 ## The Thing We'd Never Do
 
-Retire a gate with a quiet deletion. Every retired gate in `prd/constitution.json` gets a named post-mortem: what it was checking, why it stopped being worth the slot, what replaced it. `"A gate that never fires and measures presence rather than value is not protecting an invariant — it is occupying a slot."` The project is willing to be wrong in public and explain why it changed its mind. It would never quietly drop a constraint or silently relax an invariant. Visibility into the reasoning is load-bearing.
-(prd/constitution.json `_retired` entries for G2, G5)
+Bury the actionable detail under a generic error. "Validation failed" with no field
+name is a trust violation — Morgan can't diagnose at 3am, Casey can't integrate into CI,
+Sam can't verify the claim is machine-checked. Every error in the codebase names the
+exact field and states the rule it violated (`contract/validate.py:95–106`). That
+discipline is non-negotiable.
 
 ---
 
 ## Signals to Preserve
 
-- **Lowercase, action-first commit messages.** `docs: align README`, `backstage fixes`, `lathe: cycle 43`. No narrative, no emoji, no present-tense prose.
-- **SCREAMING_SNAKE for gate and contract verdicts.** `AUTARKY VIOLATION`, `CONTRACT VALID`, `G1 PASS`, `G6 FAIL`. These are verdicts, not log lines — their case signals that.
-- **`will refuse` not `may fail`.** The platform enforces invariants; it does not emit warnings that operators can ignore. When a constraint is hard, the language is hard.
+**Em dash as a beat.** Used to attach a short reason or consequence to a fact, not a
+comma or parenthesis:
+`"DRY RUN — no cluster will be created"`, `"already exists — skipping creation"`.
+(`cluster/kind/bootstrap.sh:43,53`)
+
+**Principle before option.** State the invariant first; only then introduce the escape
+hatch if one exists. Never lead with the workaround.
+(`docs/governance/sovereignty.md`: "No exceptions." — then the exception pathway, three
+paragraphs later.)
+
+**"Next step:" at the end of success.** Every successful terminal operation points
+forward. The operator never has to wonder what to run next.
+(`cluster/kind/bootstrap.sh:107`)
+
+**ALL CAPS category label, lowercase detail.** Error headers are loud; the specific
+information underneath is readable. `AUTARKY VIOLATION: field must be true (got 'false')`.
+(`contract/validate.py:103`)

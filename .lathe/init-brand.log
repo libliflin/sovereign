@@ -1,14 +1,15 @@
-`.lathe/brand.md` is written. Here's what the evidence showed:
+`.lathe/brand.md` is written. Here's what I found and why it landed this way:
 
-**Identity**: Workbench-grade precision — names violation classes, states invariants, closes the door. A vocabulary the project insists on (autarky, sovereignty, zero trust) used without apology.
+**Identity:** The project holds lines without softening them. "This is not configurable — it is an invariant of the sovereign contract" (`validate.py:106`) and "HA is not optional. It is baked in from the first commit" (`cluster/CLAUDE.md`) are the clearest brand signal in the repo — confident refusals with no apology and no escape hatch offered.
 
-**Five edge cases grounded in real strings:**
-- *Say no*: `"will refuse to proceed"` / `"is not viable"` — declarative, not hedged (README)
-- *Fail*: `FAIL:${chart_name}:replicaCount missing` — colon-delimited, no prose (ha-gate.sh)
-- *Enforce an invariant*: `AUTARKY VIOLATION: ... This is not configurable — it is an invariant` (contract/validate.py)
-- *Explain a decision*: one-sentence inline comments on the *why*, not the *what* (deploy.sh)
-- *Succeed*: `CONTRACT VALID: {path}` — one line, no ceremony (contract/validate.py)
+**Four strongest evidence threads:**
 
-**The thing it'd never do**: retire a gate quietly. Every removed gate gets a named post-mortem in `constitution.json` (`_retired`). Visibility into the reasoning is load-bearing.
+1. **Error messages** (`validate.py:95–126`) — ALL CAPS category label, then the specific field, then what was given. One line per failure. This is the highest-signal surface, and it's disciplined.
 
-**Three signals to preserve**: lowercase action-first commits; SCREAMING_SNAKE verdicts (`G6 FAIL`, `CONTRACT VALID`); `will refuse` not `may fail`.
+2. **Bootstrap narration** (`bootstrap.sh:43,53,63,107`) — idempotent, forward-pointing, em-dash-separated reasons. Every successful step ends with the next command.
+
+3. **The em dash pattern** — used consistently as a beat to attach a short reason to a fact. "DRY RUN — no cluster will be created." Not a comma, not a parenthetical. A breath.
+
+4. **Principle before option** — the sovereignty doc leads with "this is stronger than open source" before defining policy. The README explains *why* 3 nodes before it states the rule.
+
+**What it never does:** "Validation failed" with no field name. Every error in the codebase names the field and the rule. That's the anti-pattern the brand explicitly refuses.

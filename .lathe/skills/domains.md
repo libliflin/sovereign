@@ -1,111 +1,183 @@
-# Domains
+# Domain Map — Who to Ask About What
 
-The knowledge domains this project spans, their authoritative sources, and where boundaries create confusion.
-
----
-
-## Domain Map
-
-### Kubernetes / Helm
-
-**What it covers:** Pod scheduling, resource management, networking primitives, CRD management, HA patterns (PDB, podAntiAffinity, replicaCount), storage classes, namespace isolation.
-
-**Authoritative source:** Kubernetes docs, upstream chart values.yaml for wrapper charts.
-
-**Where it creates confusion:**
-- `kubectl apply --dry-run=client` silently fails for CRD-backed resources (ArgoCD Applications, Crossplane XRs) — use YAML-only validation instead
-- Upstream wrapper charts (bitnami, etc.) may have PDB/affinity support under non-obvious keys — always check the upstream values.yaml before writing templates
-- `helm template` renders Go template expressions; ACs that grep for `{{ .Values.* }}` will never match rendered output
-
-### GitOps / ArgoCD
-
-**What it covers:** App-of-Apps pattern, ApplicationSet, sync policies, revision history, health checks.
-
-**Authoritative source:** ArgoCD docs, the Application CRD spec.
-
-**Where it creates confusion:**
-- ArgoCD CRDs are not installed in the kind cluster — `kubectl apply --dry-run` fails for Application manifests; use Python YAML parse only
-- `revisionHistoryLimit: 3` is a sovereign invariant, not an ArgoCD default — omitting it passes `helm lint` but fails CI
-- Domain injection is via `spec.source.helm.parameters`, not `valueFiles` — these look equivalent but behave differently at runtime
-
-### Service Mesh / Zero Trust (Istio)
-
-**What it covers:** mTLS via PeerAuthentication, traffic policies, Envoy sidecars, Kiali topology.
-
-**Authoritative source:** Istio docs, the PeerAuthentication CRD spec.
-
-**Where it creates confusion:**
-- G8 checks the default namespace policy in istio-system but does NOT check per-namespace overrides in service charts — a service chart that disables mTLS for its namespace is not caught by G8
-- `PERMISSIVE` mode looks like it works (traffic flows) but breaks the zero-trust invariant silently
-
-### Sovereignty / Autarky
-
-**What it covers:** License policy (Apache 2.0/MIT/BSD approved, BSL blocked), external registry prohibition, distroless images, vendor build pipeline.
-
-**Authoritative source:** `docs/governance/license-policy.md`, `docs/governance/sovereignty.md`, `platform/vendor/VENDORS.yaml`, `contract/v1/cluster.schema.yaml`.
-
-**Where it creates confusion:**
-- G6 checks `platform/charts/*/templates/` — it does NOT check `cluster/kind/charts/*/templates/` or ArgoCD app manifests
-- The autarky grep in `validate.yml` checks `values.yaml` image.repository for hardcoded external registries, but only for top-level image keys — subchart images may not be checked
-- During bootstrap, `imageRegistry.internal: ""` is intentional — the contract validator allows an empty string for this field
-- BSL (Business Source License) is blocked; SSPL is blocked; AGPL needs case-by-case review
-
-### Constitutional Gates
-
-**What it covers:** Machine-checkable invariants that protect themes. Stop-the-line enforcement.
-
-**Authoritative source:** `prd/constitution.json`. Indicators are the authoritative test commands — not CLAUDE.md descriptions.
-
-**Where it creates confusion:**
-- A gate that always passes provides no signal — see the `_retired` section in constitution.json for examples of gates that were removed for this reason
-- G9 reports non-compliant charts but requires `ha-gate.sh` to exit 0 — a single failing chart blocks everything
-- Gates check structure, not runtime behavior: G8 verifies the chart renders STRICT, but doesn't verify a running cluster enforces it
-
-### Sprint / Ceremony System (Ralph)
-
-**What it covers:** Increment lifecycle, story schema, ceremony sequencing, SMART scoring, gate evaluation.
-
-**Authoritative source:** `prd/manifest.json` (active sprint), `prd/constitution.json` (gates), `scripts/ralph/ceremonies/` (ceremony behavior), `docs/state/agent.md` (current state).
-
-**Where it creates confusion:**
-- "Phase" is the old vocabulary — use "increment" in all new code and documents
-- `passes: true` means the implementer ran the ACs and saw them pass — not that the review ceremony accepted the story
-- `reviewed: true` is set only by the review ceremony, never by the implementer
-- Pre-accepted stories (`passes: true, reviewed: true`) consume sprint capacity without requiring implementation — if they exceed 50% of capacity, the sprint won't reach implementation stories
-- Stories with `smart.achievable < 4` must be split before entering a sprint
-
-### Shell Scripting
-
-**What it covers:** Bootstrap scripts, ha-gate.sh, kind smoke tests, vendor scripts.
-
-**Authoritative source:** shellcheck 0.10.0 (CI version), bash 3.2 compatibility (macOS target).
-
-**Where it creates confusion:**
-- `set -euo pipefail` + grep on an optional YAML field = silent failure when the field is absent — always add `|| true` to optional greps
-- `local x=$(cmd)` triggers SC2155 — split into `local x; x=$(cmd)`
-- Empty array with `set -u`: use `"${ARRAY[@]+"${ARRAY[@]}"}"`
-- `pipefail` subshell behavior differs between bash 3.2 (macOS) and GNU bash 5.x
-- Scripts that iterate `platform/charts/` must handle `_globals` (underscore-prefixed, not a real chart)
-
-### Observability Stack (Prometheus/Grafana/Loki/Tempo/Thanos)
-
-**What it covers:** Metrics, logs, traces, Grafana datasources, Falco events, long-term retention via Thanos.
-
-**Authoritative source:** Upstream chart values.yaml for each component, Grafana datasource ConfigMap format.
-
-**Where it creates confusion:**
-- Observability charts must include a Grafana datasource ConfigMap in templates/ for auto-registration — `helm template | grep -i datasource` is the gate
-- Loki Simple Scalable and Tempo distributed are multi-component charts — their PDB count is > 1; the count check must use `>= N`, not `== 1`
+Sovereign spans multiple domains of knowledge, each with its own authority. A bug that looks like a Helm problem might be a Kubernetes API version issue. A "zero-trust" gap that looks like an Istio config problem might be a NetworkPolicy gap. This map prevents the champion and builder from going to the wrong authority.
 
 ---
 
-## Boundary Confusion Matrix
+## Kubernetes / k3s
 
-| Symptom | Might look like... | Actually is... |
-|---------|-------------------|----------------|
-| `kubectl apply --dry-run` fails for ArgoCD app | Helm template error | CRDs not in kind cluster — use YAML parse |
-| G6 passes but image pulls fail at runtime | False gate | G6 only checks chart templates, not values.yaml or subchart images |
-| `shellcheck` passes locally, fails in CI | Environment difference | CI uses shellcheck 0.10.0; local may be different version |
-| A gate never fires | Good health | May be vacuous — check the rationale, consider retiring |
-| story passes implement, fails review | Implementation error | AC was wrong at authoring time — AC authoring is a first-class concern |
-| `helm template` grep returns nothing | Pattern not in chart | Pattern uses Go template syntax; grep for the resolved value or key name instead |
+**Covers:** Cluster orchestration, etcd quorum, RBAC, CRDs, API server, kubelet, resource scheduling, PodDisruptionBudget mechanics, NetworkPolicy enforcement.
+
+**Authoritative sources:** kubernetes.io/docs, k3s.io/docs
+
+**Where confusion happens:**
+- `kubectl apply --dry-run=client` doesn't validate CRDs — it only checks syntax. For ArgoCD Application manifests, use `yq e '.'` instead.
+- etcd quorum: 3 nodes tolerate 1 failure. 2 nodes lose quorum on any failure. The bootstrap.sh refusal to proceed with < 3 nodes enforces this.
+- k3s embeds etcd by default in HA mode. No external etcd required.
+- kube-vip provides the floating API server VIP — not a cloud load balancer.
+
+---
+
+## Helm
+
+**Covers:** Chart templating, values inheritance, dependency management (Chart.lock), chart packaging, OCI push.
+
+**Authoritative sources:** helm.sh/docs
+
+**Where confusion happens:**
+- `helm dependency update` is required before `helm lint` on charts with dependencies — otherwise lint fails on missing chart deps.
+- Values from parent charts override child chart values. When a service chart wraps an upstream subchart, check the upstream's values.yaml for its HA keys first.
+- `helm template` renders locally without a cluster — required for the HA gate checks.
+- `helm install --wait` blocks until pods are ready; useful for kind smoke tests.
+
+---
+
+## ArgoCD
+
+**Covers:** GitOps sync, Application CRDs, App-of-Apps pattern, sync waves, health checks, resource hooks.
+
+**Authoritative sources:** argo-cd.readthedocs.io
+
+**Where confusion happens:**
+- `spec.revisionHistoryLimit: 3` is required on every Application manifest. CI enforces this.
+- Domain-aware charts receive `global.domain` via `spec.source.helm.parameters`, not via valueFiles — the latter requires a file to exist in the chart.
+- ArgoCD Application CRDs are not installed locally; validate manifests with `yq e '.'` not `kubectl apply --dry-run`.
+- App-of-Apps: the root app watches `argocd-apps/` and creates all child Applications. Tier structure is a convention, not enforced by ArgoCD itself.
+
+---
+
+## Istio
+
+**Covers:** Service mesh, mTLS (STRICT/PERMISSIVE), traffic management, telemetry (metrics, traces, access logs), PeerAuthentication, DestinationRule, VirtualService.
+
+**Authoritative sources:** istio.io/docs
+
+**Where confusion happens:**
+- `PeerAuthentication` with `mtls.mode: STRICT` enforces mTLS at the pod level — but only for pods in the mesh. Pods without sidecars bypass it.
+- `PERMISSIVE` mode accepts both plaintext and mTLS. Sovereign requires `STRICT` everywhere. Check that the PeerAuthentication resource is namespace-scoped (or mesh-wide), not just deployment-scoped.
+- Istio telemetry feeds Prometheus, Grafana, Jaeger/Tempo — it's both a security and observability component.
+- Kiali visualizes the mesh. If mTLS shows gaps in Kiali, trace back to which namespace has PERMISSIVE mode.
+
+---
+
+## Rook/Ceph
+
+**Covers:** Distributed block storage (RBD), filesystem storage (CephFS), object storage (S3-compatible), OSD quorum.
+
+**Authoritative sources:** rook.io/docs, docs.ceph.io
+
+**Where confusion happens:**
+- Ceph quorum requires 3 OSDs (monitors). Fewer than 3 nodes means no Ceph — this is why bootstrap.sh refuses < 3 nodes.
+- Block storage (`ceph-block`) for single-writer volumes. Filesystem storage (`ceph-filesystem`) for ReadWriteMany. Object storage (`rook-ceph-object-store`) for S3-compatible workloads.
+- StorageClass references must use `{{ .Values.global.storageClass }}` in templates — never hardcode `ceph-block`.
+- Ceph recovery is slow after a node loss. PodDisruptionBudgets are critical to prevent multi-node loss from voluntary disruptions.
+
+---
+
+## Crossplane
+
+**Covers:** Infrastructure compositions, XRDs (CompositeResourceDefinitions), Claims, Providers (Kubernetes, Helm, cloud providers).
+
+**Authoritative sources:** docs.crossplane.io
+
+**Where confusion happens:**
+- Crossplane creates Kubernetes resources from XRD Claims — it's for infrastructure (namespaces, RBAC, cloud resources), not application deployment (that's ArgoCD).
+- Providers are Crossplane-specific controllers. The Kubernetes and Helm providers are used for in-cluster compositions. Cloud providers (Hetzner, DigitalOcean) are used for VPS management.
+- XRD schema changes can break existing Claims. Plan schema evolution carefully.
+
+---
+
+## OpenBao (Runtime Secrets)
+
+**Covers:** Dynamic secrets, PKI, secret injection (Agent Sidecar / Vault Secrets Operator), leases, auth backends (Kubernetes JWT, AppRole).
+
+**Authoritative sources:** openbao.org/docs (OpenBao is the Apache 2.0 fork of HashiCorp Vault; Vault docs apply where OpenBao hasn't diverged)
+
+**Where confusion happens:**
+- OpenBao replaced Vault due to Vault's BSL license change. API is compatible; the binary name changed.
+- Sealed Secrets is for *GitOps-safe at-rest encryption* (static secrets in repos). OpenBao is for *runtime secret injection* (dynamic secrets, short-lived credentials).
+- If a pod needs a database password, it gets it from OpenBao at runtime. If ArgoCD needs a registry credential, it gets it from Sealed Secrets at sync time.
+
+---
+
+## OPA / Gatekeeper
+
+**Covers:** Admission control policies, Rego language, ConstraintTemplates, Constraints, audit mode.
+
+**Authoritative sources:** openpolicyagent.org/docs, open-policy-agent.github.io/gatekeeper
+
+**Where confusion happens:**
+- Gatekeeper enforces at admission (prevent). OPA's audit mode runs against existing resources (detect after-the-fact).
+- ConstraintTemplates define the policy logic (Rego). Constraints instantiate a template with specific parameters.
+- A policy violation blocks `kubectl apply` — contributor experience is affected when policies are too strict or have false positives.
+- Sovereign uses Gatekeeper to enforce autarky (no external registries), HA (PDB required), and naming conventions.
+
+---
+
+## Observability Stack (Prometheus / Grafana / Loki / Tempo / Thanos)
+
+**Covers:** Metrics (Prometheus), dashboards (Grafana), logs (Loki), traces (Tempo), long-term storage (Thanos).
+
+**Authoritative sources:** prometheus.io/docs, grafana.com/docs, grafana.com/docs/loki, grafana.com/docs/tempo, thanos.io/docs
+
+**Where confusion happens:**
+- **Prometheus scrapes metrics** from targets. Grafana *reads* from Prometheus. Thanos provides long-term retention and cross-cluster queries.
+- **Loki is not Elasticsearch.** It indexes log *labels* (pod name, namespace, container) not log content. LogQL filters by label first, then regex the content.
+- **Tempo requires trace context propagation** in the application. Istio can inject trace headers automatically; applications must not strip them.
+- The Prometheus Operator manages Prometheus instances via ServiceMonitor and PodMonitor CRDs — not raw prometheus.yml config files.
+- Thanos requires object storage (MinIO or S3-compatible) for block persistence. Without it, Thanos runs but doesn't retain historical data.
+
+---
+
+## Cloudflare (Front Door)
+
+**Covers:** Tunnel (zero-open-ports ingress), Zero Trust Access (identity-aware proxy), DNS management, IP range lists.
+
+**Authoritative sources:** developers.cloudflare.com/cloudflare-one
+
+**Where confusion happens:**
+- Cloudflare Tunnel is *outbound-only* from the cluster — the VPS firewall can drop all inbound traffic except Cloudflare's published IP ranges.
+- Zero Trust Access enforces identity *before* traffic reaches the cluster. mTLS (Istio) enforces identity *inside* the cluster. Both are required for end-to-end zero trust.
+- Sovereign's front door is pluggable — the 5-hook interface in `bootstrap/frontdoor/` allows swapping Cloudflare for a different solution. The Cloudflare dependency is on the front-door component, not the platform core.
+- SSH access goes through `cloudflare access ssh` — port 22 is never open.
+
+---
+
+## Cloud Providers (Hetzner / DigitalOcean / Vultr / Bare Metal)
+
+**Covers:** VPS provisioning, block volumes, firewalls, networking, API credentials.
+
+**Authoritative sources:** Provider-specific docs. See `docs/providers/` for provider-specific notes.
+
+**Where confusion happens:**
+- Provider choice affects node specs, networking, and cost — but not the Kubernetes stack. The platform is provider-agnostic above the VPS layer.
+- Hetzner Volumes are block storage from the provider, not Ceph. They're used for bootstrap storage before Ceph is running.
+- Firewall rules that block Cloudflare's IP ranges will break the front door entirely. Always configure the firewall from `.env` credentials, not manually.
+
+---
+
+## Shell / Bash
+
+**Covers:** Bootstrap scripts, ceremony scripts, deployment scripts.
+
+**Authoritative sources:** shellcheck.net (static analysis), bash manual
+
+**Where confusion happens:**
+- All scripts are validated with `shellcheck -S error`. Warnings treated as errors.
+- Vendor scripts (`platform/vendor/*.sh`) must implement `--dry-run` and `--backup` flags. CI checks for these.
+- `bootstrap.sh --dry-run` previews intended actions without executing them. This is tested in CI (`bootstrap-validate` job).
+- macOS uses `gtimeout` (from coreutils) instead of `timeout`. `snapshot.sh` handles this portably.
+
+---
+
+## Boundary Confusion Guide
+
+| Symptom | Likely domain | Not likely |
+|---|---|---|
+| Pod can't reach another pod | NetworkPolicy (Cilium) or Istio PeerAuthentication | DNS, application code |
+| ArgoCD shows "OutOfSync" but manifest looks right | Helm template drift, chart value propagation | ArgoCD itself |
+| `helm lint` passes but CI fails | CI checks a superset of what lint checks (PDB, replicaCount, limits) | Helm |
+| Secret visible in git history | Sealed Secrets wasn't used — plaintext was committed | OpenBao |
+| Ceph degraded after node reboot | OSD count < 3 or PDB prevented pod restart | k3s, ArgoCD |
+| Validator rejects a valid config | parse_yaml_flat in validate.py doesn't handle all YAML | The config itself |
+| mTLS not enforced despite PeerAuthentication | Pod not in Istio mesh (missing sidecar injection label) | Istio policy config |

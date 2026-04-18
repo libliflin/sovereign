@@ -1,105 +1,115 @@
-# Architecture
+# Architecture — Decisions in Force
 
-Key decisions visible in the code that every cycle needs to understand.
+Read `docs/state/architecture.md` for the full current architecture document (rewritten each sprint). This file captures the decisions most relevant to the champion's cycle-to-cycle work.
 
 ---
 
-## GitOps Engine: ArgoCD App-of-Apps
+## What Sovereign Is
 
-After bootstrap, everything is managed by ArgoCD. The root app (`argocd-apps/root-app.yaml`) deploys all service apps. No manual `kubectl apply` after bootstrap. Every change goes through Git.
+A fully self-hosted, zero-trust, HA Kubernetes platform deployable from a single `bootstrap.sh` invocation. The domain is a runtime variable. Every service is installed by ArgoCD from this repository. Nothing is clicked into existence.
 
-**ArgoCD Application invariants:**
-- Every Application manifest must have `spec.revisionHistoryLimit: 3` (enforced by `argocd-validate` job in CI)
-- Domain injection uses `spec.source.helm.parameters`, not `valueFiles`
-- ArgoCD CRDs are not in the kind cluster — validate Application manifests with `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"`, not `kubectl apply --dry-run`
+Dogfood domain: `sovereign-autarky.dev`
 
-## Chart Locations
+---
 
-- `platform/charts/<service>/` — platform service charts (Istio, OpenBao, Harbor, Backstage, etc.)
-- `cluster/kind/charts/<service>/` — kind bootstrap charts (cert-manager, cilium, sealed-secrets)
-- Root `charts/` is empty and retired — do not create charts there
+## Core Invariants
 
-## HA: Non-Negotiable
+These are non-negotiable. Any story that violates them is stopped.
 
-Every chart must render with:
-- `replicaCount >= 2` in values.yaml (or `ha_exception: true` in `platform/vendor/VENDORS.yaml`)
-- `PodDisruptionBudget` (minAvailable: 1)
-- `podAntiAffinity` in rendered output (values-level alone is insufficient)
-- `resources.requests` and `resources.limits` on every container and initContainer
+| Invariant | Rule |
+|---|---|
+| **Autarky** | After bootstrap, the cluster never pulls from docker.io, quay.io, ghcr.io, gcr.io, or registry.k8s.io. All images come from internal Harbor. |
+| **HA mandatory** | Minimum 3 nodes (odd), replicaCount ≥ 2, PodDisruptionBudget, podAntiAffinity on every chart. `bootstrap.sh` refuses < 3 nodes. |
+| **Distroless mandatory** | All container images use distroless bases. Exceptions require a VENDORS.yaml deprecation entry with a migration path. |
+| **Domain is a variable** | `{{ .Values.global.domain }}` everywhere in templates. Never hardcoded. |
+| **Zero open ports** | Default front door is Cloudflare Tunnel. VPS firewall drops everything except Cloudflare's published IP ranges. SSH via `cloudflare access ssh`. |
+| **No plain-text secrets** | Sealed Secrets for GitOps. OpenBao for runtime injection. Never committed. |
 
-Enforced by:
-- `scripts/ha-gate.sh` — local check across all charts
-- `scripts/check-limits.py` — verifies resource limits exhaustively
-- `.github/workflows/validate.yml` — runs on every PR
-- `.github/workflows/ha-gate.yml` — runs when `platform/charts/**` changes
+---
 
-HA exceptions (single-instance upstreams) require both:
-1. `ha_exception: true` in `platform/vendor/VENDORS.yaml`
-2. `replicaCount: 1` with a comment `# ha_exception: see vendor/VENDORS.yaml` in values.yaml
+## Architecture Layers
 
-## Autarky: Zero External Registry References
+```
+ArgoCD (App-of-Apps)           ← manages everything after bootstrap
+  └─ argocd-apps/<tier>/*.yaml ← one Application per service
 
-After bootstrap, the cluster never pulls from docker.io, quay.io, ghcr.io, gcr.io, or registry.k8s.io.
+Platform services              ← platform/charts/<service>/
+Kind bootstrap charts          ← cluster/kind/charts/<service>/
 
-**In chart templates:** All image references must use `{{ .Values.global.imageRegistry }}/` — never a hardcoded registry.
+Infrastructure                 ← Crossplane compositions (XRDs, not scripts)
+Secrets                        ← Sealed Secrets (at-rest) + OpenBao (runtime)
+Storage                        ← Rook/Ceph (block, file, object)
+Networking                     ← Cilium CNI, kube-vip VIP, Istio mTLS STRICT
+```
 
-**In values.yaml:** `global.imageRegistry: "harbor.{{ .Values.global.domain }}/sovereign"` is the convention.
+---
 
-**Image tag format:** `<upstream-version>-<source-sha>-p<patch-count>` (e.g., `v1.16.0-a3f8c2d-p3`). Never `:latest`.
+## Key Components
 
-Enforced by:
-- G6 constitutional gate (checks `platform/charts/*/templates/`)
-- `autarky-validate` job in `validate.yml`
-- `grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/`
+| Component | Role | Source |
+|---|---|---|
+| ArgoCD | GitOps engine, App-of-Apps | argocd-apps/ |
+| Forgejo | SCM + CI (replacing GitHub) | platform/charts/forgejo/ |
+| Harbor | Internal OCI registry (autarky) | platform/charts/harbor/ |
+| OpenBao | Secrets management (Vault fork, Apache 2.0) | platform/charts/openbao/ |
+| Keycloak | SSO / identity | platform/charts/keycloak/ |
+| Istio | Service mesh, mTLS STRICT | platform/charts/istio/ |
+| OPA/Gatekeeper | Policy enforcement | platform/charts/opa-gatekeeper/ |
+| Falco | Runtime threat detection | platform/charts/falco/ |
+| Prometheus + Grafana | Metrics + dashboards | platform/charts/prometheus-stack/ |
+| Loki | Log aggregation | platform/charts/loki/ |
+| Tempo | Distributed tracing | platform/charts/tempo/ |
+| Thanos | Long-term metrics retention | platform/charts/thanos/ |
+| Backstage | Service catalog + developer portal | platform/charts/backstage/ |
+| Crossplane | Infrastructure compositions | platform/charts/crossplane/ |
+| Rook/Ceph | Distributed storage | (via cluster bootstrap) |
+| Cilium | CNI + NetworkPolicy enforcement | cluster/kind/charts/cilium/ |
+| cert-manager | TLS certificate automation | cluster/kind/charts/cert-manager/ |
+| Sealed Secrets | GitOps-safe secret encryption | platform/charts/sealed-secrets/ |
 
-The build pipeline (`platform/vendor/`) handles the vendor lifecycle: fetch → patch → build distroless → push to Harbor → deploy via ArgoCD.
+---
 
-## Zero Trust: mTLS Everywhere
+## Contract System
 
-Istio operates in STRICT PeerAuthentication mode (enforced by G8). All service-to-service traffic is authenticated and encrypted. deny-all NetworkPolicy with explicit allows. OPA/Gatekeeper for policy enforcement. Falco for runtime detection.
+`contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces:
+- Required fields are present (runtime.domain, imageRegistry, storageClass, etc.)
+- `autarky.externalEgressBlocked: true` — egress is blocked
+- `autarky.imagesFromInternalRegistryOnly: true` — no external image pulls
+- `network.networkPolicyEnforced: true` — NetworkPolicies active
+- apiVersion matches `sovereign.dev/cluster/v1`
 
-## Domain Variability
+The contract is the machine-verifiable form of the autarky and zero-trust claims. When in doubt about whether a config is valid, run the validator.
 
-Domain is always a variable: `{{ .Values.global.domain }}` in templates. `values.yaml` defaults may use `sovereign-autarky.dev`. Never hardcode a domain in `templates/`.
+---
 
-Same pattern: `{{ .Values.global.storageClass }}` for storage class, `{{ .Values.global.imageRegistry }}` for registry.
+## Sprint/Delivery Model
 
-## Cluster Contract
+```
+prd/manifest.json              ← source of truth: active sprint, increments
+prd/increment-N-<name>.json   ← sprint stories
+prd/backlog.json               ← all future stories
+prd/constitution.json          ← themes + constitutional gates
+```
 
-`contract/validate.py` enforces sovereignty invariants on `cluster-values.yaml` before any cluster is provisioned. Three invariants are non-negotiable (`const: true`):
-- `network.networkPolicyEnforced: true`
-- `autarky.externalEgressBlocked: true`
-- `autarky.imagesFromInternalRegistryOnly: true`
+Stories: `passes: false, reviewed: false` → needs implementation. `passes: true, reviewed: false` → awaiting review. `passes: true, reviewed: true` → accepted.
 
-Contract schema: `contract/v1/`. Test suite: `contract/v1/tests/` (valid.yaml must pass, invalid-egress-not-blocked.yaml must fail). Enforced by G7.
+Ceremonies run in order: orient → constitution-review → epic-breakdown → backlog-groom → plan → preflight → smart → execute → smoke → proof → review → retro → sync → advance.
 
-## Bootstrap Paths
+---
 
-**Kind (local, no cloud account):**
-- `cluster/kind/bootstrap.sh` — creates 3-node kind cluster named `sovereign-test`
-- Installs: Cilium CNI, cert-manager, sealed-secrets, local-path-provisioner, MinIO
-- `cluster/kind/ha-bootstrap.sh` — 3 control-plane nodes HA variant
+## Sovereignty Tiers
 
-**VPS:**
-- `bootstrap/config.yaml` — domain, provider, node count (must be odd, >= 3)
-- `.env` — provider credentials
-- `bootstrap/bootstrap.sh --estimated-cost` / `--confirm-charges`
+- **Tier 1** (CNI, storage, PKI, GitOps, service mesh, policy, observability): must be CNCF/ASF/LF governed
+- **Tier 2** (Forgejo, Keycloak, Harbor, Backstage): must be Apache 2.0 / MIT / BSD
 
-## Delivery Machine: Ralph Ceremony Loop
+OpenBao replaces Vault — the reference precedent for replacing a component that changed license terms (BSL).
 
-`scripts/ralph/ceremonies.py` runs the full sprint cycle: orient → constitution-review → epic-breakdown → backlog-groom → plan → preflight → smart → execute → smoke → proof → review → retro → sync → advance.
+---
 
-Sprint state: `prd/manifest.json` (active sprint pointer), `prd/increment-N-<name>.json` (stories), `prd/backlog.json` (future work), `prd/constitution.json` (themes + gates).
+## Notes for the Champion
 
-Story lifecycle: `passes: false, reviewed: false` → implement → `passes: true, reviewed: false` → review ceremony → `passes: true, reviewed: true`.
-
-## Security Scanning Pipeline
-
-Runs continuously against all mirrored source in Forgejo Actions: SAST (Semgrep), SCA (Trivy), license audit, secret detection. CVE findings create Forgejo issues. Patches land in `platform/vendor/recipes/<name>/patches/`.
-
-## Vendor Lifecycle
-
-`platform/vendor/VENDORS.yaml` — catalog of all vendored services with license, distroless status, ha_exception.
-`platform/vendor/recipes/<name>/` — build recipe per service.
-
-Scripts: `fetch.sh`, `build.sh`, `deploy.sh`, `rollback.sh`, `backup.sh`. All vendor scripts must support `--dry-run` and `--backup` (enforced by CI).
+- **`docs/state/agent.md`** is the live briefing rewritten each sprint. Read it before any implementation work.
+- **`docs/state/architecture.md`** is the current architecture document (also rewritten each sprint).
+- **The root `charts/` directory is empty and retired.** Never create charts there.
+- **`ha_exception: true` in VENDORS.yaml** marks architecturally single-instance components that are exempt from the podAntiAffinity and replicaCount checks. Use sparingly.
+- **kube-vip** provides the floating API server VIP — no external load balancer required for HA.

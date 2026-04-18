@@ -140,7 +140,7 @@ cd sovereign
 ./cluster/kind/bootstrap.sh --dry-run    # preview intended actions
 
 # 3. Smoke test a chart
-helm install test-release platform/charts/sealed-secrets/ \
+helm install test-release cluster/kind/charts/sealed-secrets/ \
   --namespace sealed-secrets --create-namespace \
   --kube-context kind-sovereign-test --wait
 kubectl --context kind-sovereign-test get pods -n sealed-secrets

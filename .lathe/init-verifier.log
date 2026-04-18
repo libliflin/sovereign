@@ -1,11 +1,12 @@
-`.lathe/verifier.md` is written.
+`.lathe/verifier.md` written. Here's what it encodes:
 
-**Shape detected: infrastructure-as-code / pre-deployment.** There's no running service — changes are witnessed through gate execution, static analysis, and dry-run commands. The playbook reflects that: run `snapshot.sh` first, then the five constitutional gates in sequence, then exercise the specific surface the goal named.
+**Shape detected: Infrastructure-as-Code / Static-Analysis-First.** This project's primary witness is `helm lint` + `helm template` + `shellcheck` + `python3 contract/validate.py` + unittest — not a running server or deployed binary. CI confirms this; every workflow job runs these and nothing else.
 
-Key decisions baked in:
+**Verification Playbook** covers all five surfaces the builder touches:
+- Helm charts → lint, template, HA gates, autarky gate, resource limits, no `:latest`
+- Shell scripts → `shellcheck -S error`, dry-run/backup flag assertions
+- Contract validator → all `invalid-*.yaml` fixtures must exit non-zero, `valid.yaml` must exit 0
+- Ceremony scripts → `python3 scripts/ralph/tests/test_*.py`
+- ArgoCD manifests → `revisionHistoryLimit: 3` check
 
-- **Gate-as-witness pattern** — for this project, "watching a change work" means watching all gates return the verdict they claim to return, including the *failing* case (a gate that only passes is no gate)
-- **Adversarial fixture coverage** — the builder can add a gate; the verifier adds the fixture that proves it rejects violations
-- **Builder changelog is not proof** — the verifier runs the commands itself, doesn't accept the builder's "Validated" section
-- **Stakeholder-specific witnessing** — after the gate sequence, quote the actual output line that the named stakeholder would read
-- **Structural vs. patch flag** — when a fix could be eliminated by a type or invariant, flag it in findings as a lead, not a blocker
+**What the verifier commits:** contract fixtures (`invalid-<rule-name>.yaml` for every new rule), ceremony unittest cases, chart template assertions. These are the concrete outputs that make the verifier more than a reviewer.

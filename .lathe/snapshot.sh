@@ -1,150 +1,165 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Portable timeout: use gtimeout on macOS if available, else timeout, else none
-_timeout() {
-  if command -v gtimeout &>/dev/null; then
-    gtimeout "$@"
-  elif command -v timeout &>/dev/null; then
-    timeout "$@"
-  else
-    shift; "$@"
-  fi
+# Portable timeout helper (macOS uses gtimeout from coreutils)
+_t() {
+  local secs="$1"; shift
+  if command -v gtimeout &>/dev/null; then gtimeout "$secs" "$@"
+  elif command -v timeout &>/dev/null; then timeout "$secs" "$@"
+  else "$@"; fi
 }
 
+# ── Header ────────────────────────────────────────────────────────────────────
 echo "# Project Snapshot"
-echo "Generated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-echo ""
+echo "Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+echo
 
-# ── Git Status ─────────────────────────────────────────────────────────────
+# ── Git Status ────────────────────────────────────────────────────────────────
 echo "## Git Status"
-git status --short | head -20
-echo ""
+git status --short | head -30
+echo
 
-# ── Recent Commits ─────────────────────────────────────────────────────────
+# ── Recent Commits ────────────────────────────────────────────────────────────
 echo "## Recent Commits"
 git log --oneline -10
-echo ""
+echo
 
-# ── Active Sprint ──────────────────────────────────────────────────────────
-echo "## Active Sprint"
-python3 - <<'PYEOF' 2>/dev/null || echo "  (could not read manifest)"
-import json, glob, os
-
-manifest = json.load(open("prd/manifest.json"))
-active = [i for i in manifest["increments"] if i.get("status") == "active"]
-if not active:
-    print("  No active increment")
+# ── Sprint State ──────────────────────────────────────────────────────────────
+echo "## Sprint State"
+ACTIVE_INCREMENT=$(python3 - <<'PYEOF'
+import json, sys
+with open("prd/manifest.json") as f:
+    m = json.load(f)
+active = [i for i in m["increments"] if i["status"] == "active"]
+if active:
+    a = active[0]
+    print(f"Increment {a['id']} — {a['name']} (active)")
 else:
-    inc = active[0]
-    print(f"  Increment {inc['id']}: {inc['name']}")
-    f = inc.get("file")
-    if f and os.path.exists(f):
-        data = json.load(open(f))
-        stories = data.get("stories", [])
-        passing = sum(1 for s in stories if s.get("passes"))
-        reviewed = sum(1 for s in stories if s.get("reviewed"))
-        print(f"  Stories: {len(stories)} | Passing: {passing} | Reviewed: {reviewed} | Pending: {len(stories)-passing}")
-        failing = [s for s in stories if not s.get("passes")]
-        for s in failing[:3]:
-            print(f"    - [{s.get('id','?')}] {s.get('title','?')[:60]}")
+    pending = [i for i in m["increments"] if i["status"] == "pending"]
+    print(f"No active increment. Next pending: {pending[0]['id'] if pending else 'none'}")
 PYEOF
-echo ""
+)
+echo "$ACTIVE_INCREMENT"
 
-# ── Constitutional Gates ───────────────────────────────────────────────────
-echo "## Constitutional Gates"
+# Parse active sprint file for story counts
+SPRINT_STATS=$(python3 - <<'PYEOF' 2>/dev/null || echo "  (no active sprint file)"
+import json, glob
+with open("prd/manifest.json") as f:
+    m = json.load(f)
+active = [i for i in m["increments"] if i["status"] == "active"]
+if not active:
+    print("  (no active increment)")
+    exit()
+a = active[0]
+pattern = f"prd/increment-{a['id']}-*.json"
+files = glob.glob(pattern)
+if not files:
+    print(f"  (sprint file not found: {pattern})")
+    exit()
+with open(files[0]) as f:
+    sprint = json.load(f)
+stories = sprint.get("stories", [])
+total = len(stories)
+done   = sum(1 for s in stories if s.get("passes") and s.get("reviewed"))
+limbo  = sum(1 for s in stories if s.get("passes") and not s.get("reviewed"))
+todo   = sum(1 for s in stories if not s.get("passes"))
+print(f"Stories: {total} total | Done(pass+reviewed): {done} | Awaiting review: {limbo} | Todo: {todo}")
+if limbo:
+    print("  Awaiting review:")
+    for s in stories:
+        if s.get("passes") and not s.get("reviewed"):
+            print(f"    - {s.get('id','?')}: {s.get('title','?')[:60]}")
+if todo:
+    print("  Todo:")
+    for s in stories:
+        if not s.get("passes"):
+            print(f"    - {s.get('id','?')}: {s.get('title','?')[:60]}")
+PYEOF
+)
+echo "$SPRINT_STATS"
+echo
 
-# G1: ceremonies.py compiles + imports resolve
-g1_out=$(bash -c 'python3 -m py_compile scripts/ralph/ceremonies.py 2>&1 && python3 -m py_compile scripts/ralph/lib/orient.py 2>&1 && python3 -m py_compile scripts/ralph/lib/gates.py 2>&1 && PYTHONPATH=. python3 -c "from scripts.ralph.lib import orient, gates" 2>&1' || true)
-if [ -z "$g1_out" ]; then
-  echo "  G1 PASS — ceremonies.py compiles, imports resolve"
-else
-  echo "  G1 FAIL — $g1_out" | head -3
-fi
-
-# G6: no external registry refs in chart templates
-g6_out=$(grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/ 2>/dev/null || true)
-if [ -z "$g6_out" ]; then
-  echo "  G6 PASS — no external registries in chart templates"
-else
-  echo "  G6 FAIL — external registry refs found:"
-  echo "$g6_out" | head -5
-fi
-
-# G7: contract validator test suite
-g7_valid=$( python3 contract/validate.py contract/v1/tests/valid.yaml > /dev/null 2>&1 && echo "ok" || echo "fail")
-g7_invalid=$(python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml > /dev/null 2>&1 && echo "accepted" || echo "rejected")
-if [ "$g7_valid" = "ok" ] && [ "$g7_invalid" = "rejected" ]; then
-  echo "  G7 PASS — contract validator enforces sovereignty invariants"
-else
-  [ "$g7_valid" != "ok" ]      && echo "  G7 FAIL — valid.yaml rejected by validator"
-  [ "$g7_invalid" = "accepted" ] && echo "  G7 FAIL — invalid contract accepted (autarky invariant unenforced)"
-fi
-
-echo ""
-
-# ── Helm Lint ──────────────────────────────────────────────────────────────
+# ── Helm Lint ─────────────────────────────────────────────────────────────────
 echo "## Helm Lint"
-if ! command -v helm &>/dev/null; then
-  echo "  helm not found — skipping"
-else
-  charts=()
-  while IFS= read -r f; do charts+=("$(dirname "$f")"); done < <(find platform/charts cluster/kind/charts -name "Chart.yaml" 2>/dev/null | sort)
-  total=0; passed=0; failed=0; failures=()
-  for chart in "${charts[@]}"; do
-    total=$((total+1))
-    out=$(_timeout 30 helm lint "$chart/" 2>&1 || true)
-    if echo "$out" | grep -q "^Error\|error\|FAILED"; then
-      failed=$((failed+1))
-      failures+=("$chart")
-    else
-      passed=$((passed+1))
-    fi
-  done
-  if [ "$failed" -eq 0 ]; then
-    echo "  PASS — $passed/$total charts lint clean"
+lint_pass=0; lint_fail=0; lint_errors=""
+for chart in platform/charts/*/; do
+  if _t 30 helm lint "$chart" &>/dev/null 2>&1; then
+    ((lint_pass++)) || true
   else
-    echo "  FAIL — $failed/$total charts failed:"
-    for f in "${failures[@]}"; do echo "    - $f"; done
+    ((lint_fail++)) || true
+    lint_errors+="  FAIL: $chart\n"
   fi
-fi
-echo ""
-
-# ── Shellcheck ─────────────────────────────────────────────────────────────
-echo "## Shellcheck"
-if ! command -v shellcheck &>/dev/null; then
-  echo "  shellcheck not found — skipping"
+done
+total_charts=$((lint_pass + lint_fail))
+if [[ $lint_fail -eq 0 ]]; then
+  echo "Pass: $lint_pass / $total_charts — all charts clean"
 else
-  sc_out=$(find scripts/ralph cluster platform -name "*.sh" -not -path "*/node_modules/*" -print0 2>/dev/null \
-    | xargs -0 shellcheck -S error 2>&1 || true)
-  if [ -z "$sc_out" ]; then
-    echo "  PASS — all scripts clean"
+  echo "Pass: $lint_pass | Fail: $lint_fail (of $total_charts)"
+  printf "%b" "$lint_errors" | head -10
+fi
+echo
+
+# ── Tests — scripts/ralph/tests/ ─────────────────────────────────────────────
+echo "## Tests — scripts/ralph/tests/"
+TEST_FILES=(scripts/ralph/tests/test_*.py)
+test_pass=0; test_fail=0; test_errors=""
+for tf in "${TEST_FILES[@]}"; do
+  [[ -f "$tf" ]] || continue
+  out=$(_t 30 python3 "$tf" 2>&1) && {
+    ((test_pass++)) || true
+  } || {
+    ((test_fail++)) || true
+    test_errors+="  FAIL: $tf\n$(echo "$out" | grep -E "AssertionError|Error" | head -3 | sed 's/^/    /')\n"
+  }
+done
+total_tests=$((test_pass + test_fail))
+if [[ $total_tests -eq 0 ]]; then
+  echo "No test files found"
+elif [[ $test_fail -eq 0 ]]; then
+  echo "Pass: $test_pass / $total_tests — all test files passed"
+else
+  echo "Pass: $test_pass | Fail: $test_fail (of $total_tests)"
+  printf "%b" "$test_errors" | head -15
+fi
+echo
+
+# ── Contract Validator (G7) ───────────────────────────────────────────────────
+echo "## Contract Validator (G7)"
+# valid.yaml must pass (exit 0)
+if _t 15 python3 contract/validate.py contract/v1/tests/valid.yaml &>/dev/null 2>&1; then
+  echo "  valid.yaml:                       PASS"
+else
+  echo "  valid.yaml:                       FAIL (should be valid)"
+fi
+# invalid*.yaml must fail (exit non-zero)
+contract_invalid_ok=0; contract_invalid_bad=0
+for inv in contract/v1/tests/invalid-*.yaml; do
+  name=$(basename "$inv")
+  if _t 15 python3 contract/validate.py "$inv" &>/dev/null 2>&1; then
+    echo "  $name: FAIL (validator should have rejected this)"
+    ((contract_invalid_bad++)) || true
   else
-    err_count=$(echo "$sc_out" | grep -c "^In " || true)
-    echo "  FAIL — $err_count script(s) with errors"
-    echo "$sc_out" | head -8
+    ((contract_invalid_ok++)) || true
   fi
-fi
-echo ""
+done
+echo "  Invalid fixtures rejected correctly: $contract_invalid_ok / $((contract_invalid_ok + contract_invalid_bad))"
+echo
 
-# ── Autarky Check ──────────────────────────────────────────────────────────
-echo "## Autarky (external registry refs in templates)"
-ext_refs=$(grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  platform/charts/*/templates/ cluster/kind/charts/*/templates/ 2>/dev/null || true)
-if [ -z "$ext_refs" ]; then
-  echo "  PASS — no external registry references"
+# ── Autarky Gate (G6) ─────────────────────────────────────────────────────────
+echo "## Autarky Gate (G6) — No external registry refs in chart templates"
+AUTARKY=$(grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
+  platform/charts/*/templates/ 2>/dev/null | head -10) || true
+if [[ -z "$AUTARKY" ]]; then
+  echo "PASS — no external registry refs"
 else
-  echo "  FAIL — external refs found:"
-  echo "$ext_refs" | head -5
+  echo "FAIL — external registry refs found:"
+  echo "$AUTARKY"
 fi
-echo ""
+echo
 
-# ── CI Config ─────────────────────────────────────────────────────────────
-echo "## CI"
-ci_files=$(find .github/workflows -name "*.yml" -o -name "*.yaml" 2>/dev/null | sort)
-if [ -n "$ci_files" ]; then
-  echo "$ci_files" | while read -r f; do echo "  $f"; done
-else
-  echo "  No CI workflows found"
-fi
-echo ""
+# ── CI Workflows ──────────────────────────────────────────────────────────────
+echo "## CI Workflows"
+for f in .github/workflows/*.yml .forgejo/workflows/*.yml; do
+  [[ -f "$f" ]] && echo "  $f"
+done
+echo
