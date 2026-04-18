@@ -8,6 +8,9 @@ Covers:
   3. Dry-run produces one DRY-RUN line per extension (reads values.yaml)
   4. Script exits 0 in dry-run mode
   5. Output directory is not created in dry-run mode
+  6. --backup URL is accepted alongside --dry-run (flag combination valid)
+  7. --help exits 0 (usage function wired to flag)
+  8. Unknown flags exit non-zero with an error message
 
 Plain Python — no pytest. Runs with: python3 test_fetch_vsix.py
 Output format: PASS: <description> lines, ending with "All tests passed."
@@ -121,6 +124,39 @@ if first_ext:
     print(f"PASS: dry-run output names extensions from values.yaml (confirmed: {first_ext})")
 else:
     print("PASS: no extensions in values.yaml (vacuously true)")
+
+# ── Test 8: --backup URL --dry-run exits 0 ───────────────────────────────────
+# The vendor CLAUDE.md requires every vendor script to support --backup.
+# CI only greps platform/vendor/*.sh (non-recursive), so recipe scripts like
+# fetch-vsix.sh escape that check. This test is the only gate for this script.
+
+with tempfile.TemporaryDirectory() as tmpdir:
+    out_dir = os.path.join(tmpdir, "vsix-cache")
+    result = run([SCRIPT, "--dry-run", "--backup", "http://backup.example.com", "--output-dir", out_dir])
+
+assert result.returncode == 0, (
+    f"--backup URL --dry-run exited {result.returncode}:\n{result.stderr}"
+)
+print("PASS: --backup URL --dry-run exits 0 (flag combination valid)")
+
+# ── Test 9: --help exits 0 ───────────────────────────────────────────────────
+
+result = run([SCRIPT, "--help"])
+assert result.returncode == 0, (
+    f"--help exited {result.returncode}:\n{result.stderr}"
+)
+assert "Usage:" in result.stdout, (
+    f"--help did not print Usage: line:\n{result.stdout}"
+)
+print("PASS: --help exits 0 and prints Usage:")
+
+# ── Test 10: unknown flag exits non-zero ──────────────────────────────────────
+
+result = run([SCRIPT, "--unknown-flag"])
+assert result.returncode != 0, (
+    f"Expected non-zero exit for unknown flag, got 0:\n{result.stdout}"
+)
+print("PASS: unknown flag exits non-zero")
 
 print("")
 print("All tests passed.")
