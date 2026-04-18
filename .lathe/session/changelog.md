@@ -1,3 +1,22 @@
+# Verification — Cycle 2, Round 21 (Verifier)
+
+## What I compared
+- Goal: add `network-policies` chart making `externalEgressBlocked` verifiable by workload, not just contract field.
+- Code: PR #154 (merged to main) — network-policies chart. PR #155 (open, all CI green) — VENDORS.yaml CI field-name fix.
+- Gates run: snapshot, G7 contract validator, G6 autarky, ha-gate.sh --chart network-policies, helm template render.
+
+## What's here, what was asked
+Matches. `helm template sovereign platform/charts/network-policies/` renders exactly 69 `kind: NetworkPolicy` objects. `ha-gate.sh --chart network-policies` exits 0. Snapshot: Helm 34/0, G6 PASS, G7 5/5 (valid passes, all 4 invalid-*.yaml correctly rejected), Shellcheck OK, G2 OK. PR #155 CI: all 41 checks pass, state MERGEABLE — blocked only on branch protection (human review required, not a code defect).
+
+## What I added
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+- PR #155 is MERGEABLE with all CI green. The BLOCKED state is branch protection (requires human approval), not a code issue. Merging it closes the VENDORS.yaml field-name fix.
+- The network-policies chart enforces egress deny-all at the Kubernetes API layer. The next structural gap in the auditor's journey (noted in the domain map) is per-namespace `PeerAuthentication` for Istio STRICT mTLS — the chart enforces deny-all egress NetworkPolicy but does not yet emit Istio objects. That's a separate cycle.
+
+---
+
 # Changelog — Cycle 2, Round 20 (Builder)
 
 ## Goal
