@@ -38,6 +38,7 @@ def parse_yaml_flat(text: str) -> dict:
     Handles: nested key: value pairs via indentation.
     Does not handle: lists, multiline strings, anchors, tags.
     Returns a flat dict of dot-separated paths → string values.
+    Raises ValueError on duplicate keys — ambiguity in a contract is a violation.
     """
     result = {}
     path_stack = []   # (indent_level, key)
@@ -66,6 +67,12 @@ def parse_yaml_flat(text: str) -> dict:
         dotpath = ".".join(k for _, k in path_stack)
 
         if value is not None:
+            if dotpath in result:
+                raise ValueError(
+                    f"DUPLICATE KEY: {dotpath!r} appears more than once. "
+                    f"Ambiguity in a sovereign contract is a violation — "
+                    f"remove the duplicate and set a single unambiguous value."
+                )
             result[dotpath] = value
 
     return result
@@ -77,7 +84,11 @@ def validate(values_path: str) -> list:
     with open(values_path) as f:
         text = f.read()
 
-    flat = parse_yaml_flat(text)
+    try:
+        flat = parse_yaml_flat(text)
+    except ValueError as exc:
+        errors.append(str(exc))
+        return errors
 
     # Check apiVersion
     api_version = flat.get("apiVersion", "")
