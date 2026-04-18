@@ -16,13 +16,12 @@ image:
   tag: "4.22.1"
   pullPolicy: IfNotPresent
 
-# VS Code extension registry — set to a Harbor or HTTP endpoint that serves VSIX files.
+# VS Code extension registry — in-cluster nginx serving vendored VSIX files.
 # When empty, extension install is skipped on pod start (zero-trust safe: no external calls).
 # Expected VSIX URL format served at this base URL:
 #   <extensionRegistry>/vsix/<publisher>/<name>/latest.vsix
-# Example: extensionRegistry: "https://harbor.sovereign-autarky.dev/sovereign"
-# Leave empty until VSIX files are hosted inside the cluster.
-extensionRegistry: ""
+# Served by platform/charts/vscode-extension-registry; populate with fetch-vsix.sh first.
+extensionRegistry: "http://vscode-extension-registry.vscode-extension-registry.svc.cluster.local"
 
 # VS Code extensions to pre-install on first startup
 # Format: publisher.extension-id

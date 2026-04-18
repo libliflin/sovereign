@@ -37,6 +37,7 @@ namespaces:
   # Devex tier
   - backstage
   - code-server
+  - vscode-extension-registry
   - reportportal
   - sonarqube
   - sovereign-pm
