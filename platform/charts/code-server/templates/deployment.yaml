@@ -43,7 +43,7 @@ spec:
             - |
               set -e
               mkdir -p {{ .Values.toolchainInit.workspaceBinPath }}
-              for bin in kubectl helm k9s; do
+              for bin in kubectl helm k9s shellcheck; do
                 if command -v "${bin}" >/dev/null 2>&1; then
                   cp "$(command -v "${bin}")" {{ .Values.toolchainInit.workspaceBinPath }}/
                   chmod +x {{ .Values.toolchainInit.workspaceBinPath }}/"${bin}"
@@ -99,6 +99,8 @@ spec:
               value: /home/coder
             - name: SHELL
               value: /bin/bash
+            - name: PATH
+              value: {{ .Values.toolchainInit.workspaceBinPath }}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
             # In-cluster kubeconfig is provided automatically via the mounted ServiceAccount token.
             # kubectl and helm will use the in-cluster config without any extra configuration.
           ports:
