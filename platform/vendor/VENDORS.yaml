@@ -3,7 +3,7 @@
 #   name:                  string  — package identifier (matches vendor/recipes/<name>/)
 #   upstream_url:          string  — canonical upstream source URL
 #   license_spdx:          string  — SPDX license identifier
-#   license_allows_vendor: bool    — false for BSL/SSPL/AGPL (blocked)
+#   license_allows_vendor: bool    — false for BSL/SSPL (blocked); AGPL requires explicit review — see docs/governance/license-policy.md
 #   version_pinned:        string  — pinned release version
 #   fetch_method:          enum    — git_tag | tarball | git_commit
 #   distroless_compatible: enum    — yes | partial | no
@@ -357,6 +357,7 @@ vendors:
     upstream_url: https://github.com/grafana/k6
     license_spdx: AGPL-3.0-only
     license_allows_vendor: true
+    license_review_note: "AGPL-3.0 permitted under the Deployment Platform Exception — k6 runs as an ephemeral Job, not a long-running network service. No source publication obligation arises for test-runner workloads that do not expose the service to end users. Reviewed against docs/governance/license-policy.md AGPL note."
     version_pinned: "v0.54.0"
     fetch_method: git_tag
     distroless_compatible: yes
