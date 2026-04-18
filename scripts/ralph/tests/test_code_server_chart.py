@@ -152,6 +152,59 @@ def tests():
     )
     print("PASS: global.storageClass override does not bleed into workspace PVC storageClass")
 
+    # Extension install logic (round 2 changes)
+
+    # 11. extensionRegistry defaults to empty — zero-trust safe, no external calls on pod start
+    install_ext_ic = get_init_container(pod_spec, "install-extensions")
+    assert install_ext_ic is not None, "FAIL: install-extensions initContainer not found"
+    ext_registry_env = get_env(install_ext_ic, "EXTENSION_REGISTRY")
+    assert ext_registry_env is not None, "FAIL: EXTENSION_REGISTRY env var missing from install-extensions"
+    assert ext_registry_env == "", (
+        f"FAIL: EXTENSION_REGISTRY defaults to {ext_registry_env!r}, expected ''. "
+        "Non-empty default means the initContainer will attempt external registry calls "
+        "on every pod start — breaks zero-trust egress."
+    )
+    print("PASS: EXTENSION_REGISTRY defaults to empty — zero-trust safe by default")
+
+    # 12. install-extensions script uses --install-extension not --vsix
+    # code-server does not have a --vsix flag; the VSIX path goes to --install-extension.
+    ext_script = " ".join(install_ext_ic.get("command", []) + install_ext_ic.get("args", []))
+    assert "--install-extension" in ext_script, (
+        "FAIL: install-extensions script does not use --install-extension. "
+        "code-server has no --vsix flag; VSIX path must be passed to --install-extension."
+    )
+    assert "--vsix" not in ext_script, (
+        "FAIL: install-extensions script uses --vsix. "
+        "code-server does not support --vsix — use --install-extension <path> instead."
+    )
+    print("PASS: install-extensions uses --install-extension (not --vsix) for VSIX files")
+
+    # 13. Adversarial: setting extensionRegistry propagates to EXTENSION_REGISTRY env var
+    docs_with_reg = helm_template(["--set", "extensionRegistry=https://harbor.test/sovereign"])
+    deploy_with_reg = get_deployment(docs_with_reg)
+    spec_with_reg = deploy_with_reg["spec"]["template"]["spec"]
+    ic_with_reg = get_init_container(spec_with_reg, "install-extensions")
+    env_with_reg = get_env(ic_with_reg, "EXTENSION_REGISTRY")
+    assert env_with_reg == "https://harbor.test/sovereign", (
+        f"FAIL: EXTENSION_REGISTRY is {env_with_reg!r} when extensionRegistry is set, "
+        "expected 'https://harbor.test/sovereign'. Setting extensionRegistry has no effect."
+    )
+    print("PASS: extensionRegistry value propagates to EXTENSION_REGISTRY env var")
+
+    # 14. install-extensions script skips marker write when extensionRegistry is empty
+    # The skip path (empty registry) must exit 0 WITHOUT touching $MARKER.
+    # Verifiable from script content: the "touch $MARKER" must not appear before the registry check.
+    skip_check = 'if [ -z "$EXTENSION_REGISTRY" ]'
+    marker_write = "touch"
+    skip_pos = ext_script.find(skip_check)
+    marker_pos = ext_script.find(marker_write)
+    assert skip_pos != -1, "FAIL: empty-registry skip check not found in install-extensions script"
+    assert marker_pos > skip_pos, (
+        "FAIL: marker 'touch' appears before empty-registry skip check — "
+        "marker would be written even when registry is empty."
+    )
+    print("PASS: marker write occurs after empty-registry skip check (no marker written on skip)")
+
 
 if __name__ == "__main__":
     try:

@@ -85,7 +85,7 @@ spec:
               VSIX_FILE="/tmp/${PUBLISHER}.${NAME}.vsix"
               echo "Downloading: ${EXT}"
               if curl -sf -o "${VSIX_FILE}" "${EXTENSION_REGISTRY}/vsix/${PUBLISHER}/${NAME}/latest.vsix"; then
-                if code-server --vsix "${VSIX_FILE}" --extensions-dir /home/coder/.local/share/code-server/extensions; then
+                if code-server --install-extension "${VSIX_FILE}" --extensions-dir /home/coder/.local/share/code-server/extensions; then
                   echo "Installed: ${EXT}"
                 else
                   echo "FAIL: install ${EXT}"
