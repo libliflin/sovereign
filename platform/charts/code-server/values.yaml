@@ -30,8 +30,8 @@ extensions:
   - ms-python.python
   - dbaeumer.vscode-eslint
 
-# PVC for /home/coder — workspace persistence across pod restarts
-# storageClass is taken from global.storageClass
+# Unused — size is now controlled by workspace.storageSize. Kept to avoid breaking
+# any overrides that may reference this key; remove after one release cycle.
 persistence:
   size: 5Gi
 

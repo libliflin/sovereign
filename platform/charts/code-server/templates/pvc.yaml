@@ -11,4 +11,4 @@ spec:
     {{- toYaml .Values.workspace.accessModes | nindent 4 }}
   resources:
     requests:
-      storage: {{ .Values.persistence.size }}
+      storage: {{ .Values.workspace.storageSize }}
