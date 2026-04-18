@@ -18,7 +18,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/vault
+    path: platform/charts/openbao
     helm:
       valueFiles:
         - values.yaml

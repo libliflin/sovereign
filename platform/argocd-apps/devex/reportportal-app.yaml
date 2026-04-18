@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/reportportal
+    path: platform/charts/reportportal
     helm:
       valueFiles:
         - values.yaml

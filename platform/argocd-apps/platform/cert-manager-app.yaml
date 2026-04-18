@@ -18,7 +18,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/cert-manager
+    path: platform/charts/cert-manager
     helm:
       valueFiles:
         - values.yaml

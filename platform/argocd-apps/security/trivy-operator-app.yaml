@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/trivy-operator
+    path: platform/charts/trivy-operator
     helm:
       valueFiles:
         - values.yaml

@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/kiali
+    path: platform/charts/kiali
     helm:
       valueFiles:
         - values.yaml

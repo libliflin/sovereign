@@ -21,7 +21,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/cilium
+    path: platform/charts/cilium
     helm:
       valueFiles:
         - values.yaml

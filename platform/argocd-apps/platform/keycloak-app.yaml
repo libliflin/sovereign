@@ -18,7 +18,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/keycloak
+    path: platform/charts/keycloak
     helm:
       valueFiles:
         - values.yaml

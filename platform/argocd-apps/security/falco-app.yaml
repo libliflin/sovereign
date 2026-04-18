@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/falco
+    path: platform/charts/falco
     helm:
       valueFiles:
         - values.yaml

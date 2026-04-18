@@ -17,7 +17,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/gitlab
+    path: platform/charts/forgejo
     helm:
       valueFiles:
         - values.yaml

@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/code-server
+    path: platform/charts/code-server
     helm:
       valueFiles:
         - values.yaml
