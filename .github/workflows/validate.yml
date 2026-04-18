@@ -359,7 +359,7 @@ jobs:
           errors = []
           checked = 0
 
-          for root, dirs, files in os.walk('argocd-apps'):
+          for root, dirs, files in os.walk('platform/argocd-apps'):
               for fname in files:
                   if not fname.endswith('.yaml') and not fname.endswith('.yml'):
                       continue
@@ -381,7 +381,8 @@ jobs:
                   print(f"  {e}")
               sys.exit(1)
           if checked == 0:
-              print("No ArgoCD Application manifests found — skipping")
+              print("FAIL:argocd-validate:no Application manifests found in platform/argocd-apps")
+              sys.exit(1)
           else:
               print(f"✓ {checked} Application manifests validated (revisionHistoryLimit=3)")
           PYEOF
