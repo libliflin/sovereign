@@ -101,6 +101,8 @@ single-node Elasticsearch) architecturally cannot scale horizontally. For these:
 2. Set a top-level `replicaCount: 1` in `values.yaml` with a comment: `# ha_exception: see vendor/VENDORS.yaml`
 3. HA gate #5 passes only when BOTH conditions are met. Missing the VENDORS.yaml entry always fails.
 
+**Resource limits exception for non-configurable upstream containers**: when an upstream chart renders an init container with no resources block that cannot be set via `values.yaml`, add `limits_exception: true` and `limits_exception_reason: "<reason>"` to the service's VENDORS.yaml entry. The HA gate skips the resource limits check for that chart entirely. All containers that *can* be configured via values must still have limits set — the exception is not a blanket skip.
+
 **HA replicaCount AC must use a binary-exit grep**: acceptance criteria that check `replicaCount` with "shows a value >= 2" (visual inspection) cap the SMART measurable score at 4 and create ambiguity at review. Always write the AC as a self-verifying command:
 ```bash
 grep -E 'replicaCount:[[:space:]]+[2-9]' platform/charts/<name>/values.yaml

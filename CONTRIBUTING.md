@@ -72,6 +72,8 @@ Every chart with a Deployment or StatefulSet must have:
 
 Without both, CI fails. Do not try to add a PDB to a service that architecturally cannot have multiple replicas — add the VENDORS.yaml exception entry instead.
 
+**Resource limits exception:** Some upstream charts have init containers whose resource limits are not configurable via `values.yaml`. When a non-configurable container prevents full limits coverage, add `limits_exception: true` and `limits_exception_reason: "<reason>"` to the service's VENDORS.yaml entry. The HA gate skips the resource limits check for that chart. All configurable containers must still have limits set.
+
 ---
 
 ## Autarky Invariant
