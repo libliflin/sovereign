@@ -1,10 +1,9 @@
-1,343 characters — well within the 6,000 cap and the 4,000 target. The script works correctly, showing real signals from this project:
+Clean output, 2185 chars — well within the 6K cap with room to expand on failures. The script is executable and working. Here's what each section covers:
 
-- **Active Sprint**: Increment 41 — 12/12 stories passing
-- **Constitutional Gates**: G1, G6, G7 all PASS
-- **Helm Lint**: 1/33 charts failing (`platform/charts/perses`) — a real actionable signal
-- **Shellcheck**: all clean
-- **Autarky**: no external registry refs
-- **CI**: 3 workflow files listed
-
-The script covers exactly what evolves between cycles in this infrastructure repo: gate health, chart validity, script cleanliness, and sprint progress — while skipping static things like file listings that agents can fetch on demand.
+- **Git Status / Recent Commits** — dynamic per-cycle change signals
+- **Sprint State** — which stories are todo, awaiting review, or done; builder knows where to focus
+- **Helm Lint** — all 30 charts linted, one-liner on pass; expands to failures on fail
+- **Tests** — runs `scripts/ralph/tests/test_*.py` directly (no pytest dependency)
+- **Contract Validator (G7)** — valid fixture passes, all 4 invalid fixtures rejected
+- **Autarky Gate (G6)** — grep for external registry refs in chart templates
+- **CI Workflows** — lists what's in `.github/workflows/`

@@ -1,15 +1,15 @@
-All five files are written. Here's what was produced:
+Done. Here's what was written:
 
----
+**`.lathe/goal.md`** — The customer champion's behavioral doc. Five stakeholders (Alex the self-hosting developer, Morgan the production operator, Jordan the contributor, Sam the security evaluator, Casey the contract consumer), each with a first-encounter journey, an emotional signal, what builds trust, and what makes them leave. Three tensions with concrete resolution signals. Ranking via two sources: CI floor first, then lived experience. The job as a 6-step loop. No layer ladder.
 
-**`.lathe/goal.md`** — The customer champion's behavioral doc. Five richly-described stakeholders (Self-Hoster, Platform Developer, Chart Author, Security Auditor, Delivery Machine), each with concrete first-encounter journeys the champion walks each cycle, an emotional signal to track, and success/failure conditions. Tensions are grounded in real code (the `ha_exception` pattern, the bootstrap seam, the `contract/validate.py` vs. claimed autarky gap). The two-source ranking model: floor (constitutional gates) first, lived experience second. No layer ladder.
+**`.lathe/skills/journeys.md`** — Concrete shell commands for each stakeholder's journey that the champion runs each cycle, plus what to watch for at each step.
 
-**`.lathe/skills/journeys.md`** — Concrete command-by-command first-encounter journeys for all five stakeholders, with annotations of where friction shows up. The champion runs these each cycle.
+**`.lathe/skills/testing.md`** — The full testing picture: CI gates (validate.yml, ha-gate.yml), local quality gates that match CI exactly, contract validator fixtures, Python unit tests, shellcheck, and the constitutional gates.
 
-**`.lathe/skills/architecture.md`** — Key decisions: App-of-Apps, chart locations, HA invariants, autarky enforcement points, cluster contract, delivery machine structure.
+**`.lathe/skills/build.md`** — How the project builds (kind cluster, Helm chart development, the vendor image pipeline, ArgoCD manifests, the ceremony system).
 
-**`.lathe/skills/testing.md`** — How this project tests: constitutional gates, Helm chart gates, shell gates, CI workflows, kind integration tests, YAML validation.
+**`.lathe/skills/architecture.md`** — Key decisions in force: core invariants, component map, contract system, sprint model, sovereignty tiers.
 
-**`.lathe/skills/domains.md`** — Domain boundary map: Kubernetes/Helm, GitOps/ArgoCD, Zero Trust/Istio, Sovereignty/Autarky, Constitutional Gates, Sprint/Ceremony System, Shell Scripting, Observability. Includes a boundary confusion matrix for the most common misattributions.
+**`.lathe/skills/domains.md`** — Domain knowledge map across Kubernetes/k3s, Helm, ArgoCD, Istio, Rook/Ceph, Crossplane, OpenBao, OPA/Gatekeeper, the observability stack, Cloudflare, cloud providers, and shell/Bash — including a boundary confusion guide for the cases where a symptom points to the wrong domain.
 
-**`.lathe/alignment-summary.md`** — Human-readable summary: who each stakeholder is (one line), emotional signal per stakeholder, three real tensions with tie-breaking signals, security assessment (workflows use `pull_request`, not `pull_request_target` — safe; repo is public; branch protection unverified from code), and uncertainties (bootstrap VPS scripts not confirmed present, G9 may be failing 20 charts, S2 journey requires a running cluster to walk fully).
+**`.lathe/alignment-summary.md`** — For you. Stakeholder one-liners, emotional signals, tension resolution signals, and what could be wrong (unverified branch protection, Istio STRICT vs. PERMISSIVE default, Forgejo vs. GitHub CI question).

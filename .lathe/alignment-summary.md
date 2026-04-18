@@ -1,63 +1,60 @@
 # Alignment Summary
 
-Plain-English summary for the human reviewing this init. This file is not read by the runtime agent.
+For the user — plain-English summary of the decisions made during init.
 
 ---
 
-## Who this serves
+## Who This Serves
 
-- **S1 — The Self-Hoster:** A technical person trying to own their infrastructure on Hetzner/VPS. First encounter is `clone → configure → bootstrap`. Success = cluster up, nothing phoning home.
-- **S2 — The Platform Developer:** A developer on a team whose infrastructure runs on Sovereign. Uses Forgejo, ArgoCD, Grafana daily. Success = push code, watch it deploy, see what happened.
-- **S3 — The Chart Author / Contributor:** A developer adding a new service chart or fixing an existing one. Success = PR passes CI on the first try; rules are discoverable.
-- **S4 — The Security Auditor:** A security engineer certifying the platform satisfies zero trust, autarky, and licensing requirements. Success = every claim is machine-verifiable with a command.
-- **S5 — The Delivery Machine (Ralph):** The autonomous ceremony loop. Reads `agent.md` and sprint files to implement stories. Success = stories pass first review; G1 stays green; no archaeology required.
-
----
-
-## Emotional signal per stakeholder
-
-- **S1:** Confidence. *This will work when I need it.* Track unease at each bootstrap step.
-- **S2:** Momentum. *I can see it moving.* Track stalls, especially silent ones.
-- **S3:** Respect. *The rules make sense and I can find them.* Track hazing — rules that only exist as tribal knowledge.
-- **S4:** Certainty. *I can prove this is compliant.* Track unverifiable claims.
-- **S5:** Orientation. *I know where I am and what to do next.* Track archaeology.
+| Stakeholder | One line |
+|---|---|
+| **Alex** (Self-Hosting Developer) | The developer who wants to escape SaaS lock-in and run their own stack. Cares about the 30-minute promise. Arrives via README. |
+| **Morgan** (Production Operator) | The person responsible for a live deployment. Gets paged at 3am. Needs observability and honest rollouts. |
+| **Jordan** (Platform Contributor) | The developer adding a new chart or fixing a ceremony script. Cares about the rules being clear and locally verifiable. |
+| **Sam** (Security Evaluator) | The person auditing Sovereign for a regulated environment. Needs every zero-trust and autarky claim to be machine-verifiable. |
+| **Casey** (Contract Consumer) | The team building automation on top of Sovereign's cluster-contract schema. Needs the validator to be stable, versioned, and to produce actionable errors. |
 
 ---
 
-## Key tensions
+## Emotional Signal Per Stakeholder
 
-**Autarky vs. Bootstrap simplicity.** The vendor system (fetch, patch, build from source into distroless) is the sovereign ideal. The bootstrap experience needs to work in under 30 minutes. Signal for tie-breaking: if the kind path hits a wall before any service is running, simplify bootstrap; if kind works cleanly, advance autarky.
-
-**Gate strictness vs. Discoverability for contributors.** The HA gate, autarky gate, check-limits.py, and shellcheck together create a high bar. Each is protecting a real value. Each failure message that doesn't explain the fix is hazing S3. Signal: does ha-gate.sh output tell you the exact chart and exact rule that failed?
-
-**Sovereignty vs. Upstream convenience.** The `ha_exception` and upstream wrapper chart patterns represent pragmatic compromises. Signal: if constitutional gates are green and the platform works for S1/S2, tighten toward full autarky; if gates are failing or bootstrap is broken, pragmatic wrappers are the right call.
-
----
-
-## Repository security assessment (for autonomous operation)
-
-The `.github/workflows/` directory contains three workflows:
-
-- `validate.yml` — triggers on `pull_request` (branches: main) and `push` (branches: main). Uses `pull_request` (not `pull_request_target`). **Safe.** PRs from forks run in a restricted context without access to secrets.
-- `ha-gate.yml` — triggers on `pull_request` with path filter on `platform/charts/**`. Uses `pull_request`. **Safe.**
-- `release.yml` — not fully read; check for `pull_request_target` or `issue_comment` triggers if adding automation.
-
-The repo is public (visible at `https://github.com/libliflin/sovereign`). The lathe reads CI status and PR metadata from GitHub into the agent prompt — this is a prompt injection surface. The current workflow design mitigates this by using `pull_request` (not `pull_request_target`), but PR titles and descriptions from external contributors could still contain adversarial text. The agent should treat snapshot data from CI as potentially untrusted.
-
-**Default branch protection:** Unknown from code inspection alone. Check GitHub → Settings → Branches → Protection rules. Given the ceremony loop's "proof of work" norm (push branch, open PR, wait for CI, merge), branch protection should require at least: PR required, CI must pass.
+| Stakeholder | Signal |
+|---|---|
+| Alex | **Excitement** — "I want to tell someone this exists." |
+| Morgan | **Trust and transparency** — "I know what it did and why." |
+| Jordan | **Clarity and confidence** — "The rules are stated, I know what passing looks like." |
+| Sam | **Paranoia satisfied** — "I verified it myself. I don't have to take it on faith." |
+| Casey | **Confidence and predictability** — "The contract is a stable API I can depend on." |
 
 ---
 
-## What could be wrong
+## Key Tensions
 
-**Missing stakeholders?** The S2 journey (Platform Developer) assumes a running cluster, which the champion can't walk locally for most steps. The champion will need to either work with a running kind cluster or treat "can I walk this journey?" as the gate — a broken kind path means S2's experience is completely opaque. This is a genuine constraint, not a design error, but it means S2 may be under-served relative to S1 and S3.
+| Tension | The conflict | Resolution signal |
+|---|---|---|
+| Sovereignty vs. Accessibility | Autarky strictness is right for T1 but creates friction for Alex before they've seen anything work. | If Sam or regulated-env users are in the room → sovereignty wins. If Alex's kind quick start stalls → accessibility matters now. |
+| HA Requirements vs. Contributor Speed | PDB/anti-affinity/replicaCount are non-negotiable for Morgan, but add overhead for Jordan. | If CI gate failures are catching real violations → HA holds. If CI has false positives or local/CI gap → contributor friction needs attention. |
+| Observability Depth vs. Operator Simplicity | Deep observability serves Morgan's 3am. But setup complexity competes with Morgan's time. | If Morgan can't diagnose a failure → depth matters. If Morgan can't reach observability tools at all → simplicity wins first. |
 
-**S5 as a stakeholder?** Calling the delivery machine a "stakeholder" is a deliberate choice — the agent loop has real needs (accurate state, self-explanatory ACs, working gates) and degrades visibly when those needs aren't met. But the champion can't *inhabit* S5 the way it can inhabit S1; it can only read the `agent.md` and try to implement a story from it. This is a structural limit.
+---
 
-**Governance docs not read:** `docs/governance/license-policy.md`, `docs/governance/sovereignty.md`, `docs/governance/cluster-contract.md`, `docs/governance/scope.md` were not read during this init. The architecture skill captures what's visible in the code; the governance docs may contain additional constraints or nuance.
+## What Could Be Wrong
 
-**Bootstrap scripts not found:** The README references `bootstrap/bootstrap.sh`, `bootstrap/config.yaml.example`, and `bootstrap/verify.sh`. These were not found in the directory listing (only `cluster/kind/bootstrap.sh` was confirmed present). The VPS path in the S1 journey may reference files that don't exist yet. The champion should verify before walking that journey.
+### Missing stakeholders
 
-**G9 status:** constitution.json shows G9 was added with a note that it "currently fails 20 charts." The snapshot will show G9's current state each cycle. If G9 is failing, the champion should treat it as floor-level work.
+- **Downstream team** — a team that has integrated Sovereign's API contract into their own CI, distinct from Casey's single-consumer framing. If Sovereign becomes a platform-of-platforms for multiple internal teams, this stakeholder emerges. Currently Casey covers this.
+- **Security researcher / penetration tester** — someone trying to break Sovereign's zero-trust posture, not just evaluate it. Sam is modeled as evaluative. An adversarial role might find gaps Sam's journey misses. Not modeled here.
 
-**Brand.md absent:** `.lathe/brand.md` doesn't exist. goal.md instructs the champion to fall back to stakeholder emotional signal when brand.md is absent or emergent. This is correct behavior for a project at this stage.
+### Unverified assumptions
+
+- **Default branch protection:** Could not verify whether the `main` branch has GitHub branch protection rules enabled (required PR reviews, status checks required before merge). This is important for autonomous operation — without branch protection, a compromised PR could merge without CI passing. **Recommend verifying in GitHub repository Settings → Branches.** Flag in goal.md was intentionally omitted (it's a current-state fact, not a journey pattern), but the risk is real.
+- **Repository visibility:** The repo appears to be public (github.com/libliflin/sovereign). This is consistent with the project's sovereignty mission (open source). CI workflows use `pull_request` (not `pull_request_target`) triggers — this is the safer choice. No `issue_comment` triggers found. Prompt injection risk is low but non-zero for public PRs.
+- **Forgejo workflows:** The snapshot.sh checks for `.forgejo/workflows/*.yml` in addition to `.github/workflows/*.yml`. If Sovereign is dogfooding its own Forgejo as the primary CI (self-hosted), the GitHub Actions workflows may be secondary. The champion should check the snapshot for active CI provider and whether both are being maintained.
+- **The vendor recipe system's completeness:** VENDORS.yaml was referenced in CI but not fully inspected. If entries are missing or licenses are wrong, the vendor-audit CI job will catch it — but only if the job runs (it's path-filtered to `platform/vendor/**` changes). Sam's journey would surface this.
+- **Istio mTLS STRICT enforcement:** The architecture states STRICT mTLS everywhere. The `platform/charts/istio/` chart was not deeply inspected. It's possible the default values configure PERMISSIVE mode for easier adoption, with STRICT requiring manual configuration. This would be a gap between the zero-trust claim and the default deployment.
+
+### Structural note
+
+The champion is modeled as reading from `skills/journeys.md` each cycle. These journeys describe steps to walk, not a fixed state of the project. Current-state observations ("CI is currently passing") deliberately live in the snapshot, not in goal.md or journeys.md — they'd be stale by cycle 2.
+
+Brand is currently absent (`brand.md` deleted). The champion's goal.md instructs falling back to stakeholder emotional signal when brand.md is in emergent mode. No action required until brand.md is written.

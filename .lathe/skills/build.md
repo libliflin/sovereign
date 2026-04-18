@@ -1,116 +1,128 @@
-# Build
+# Build — How This Project Builds
 
-Non-obvious build processes in this project.
+Sovereign is not a compiled binary. The "build" is Helm chart rendering, script execution, and the vendor image pipeline. No `make`, no `cargo build`, no `go build` at the project root.
 
 ---
 
-## Kind Cluster Bootstrap (~4 minutes)
+## Local Development: kind Cluster
+
+The primary local development target is a 3-node kind cluster.
 
 ```bash
-./cluster/kind/bootstrap.sh              # creates sovereign-test cluster
-./cluster/kind/bootstrap.sh --dry-run   # preview only
+# Standard kind bootstrap (creates sovereign-test cluster)
+./cluster/kind/bootstrap.sh
+
+# Preview without creating anything
+./cluster/kind/bootstrap.sh --dry-run
+
+# HA variant (3 control plane + 2 worker nodes)
+./cluster/kind/ha-bootstrap.sh
 ```
 
-Installs in order: 3-node kind cluster → Cilium CNI → cert-manager → sealed-secrets → local-path-provisioner → MinIO. These are the platform foundation components that other charts depend on.
+After bootstrap, the kind cluster has: Cilium CNI, cert-manager, sealed-secrets, local-path-provisioner (default StorageClass), and MinIO.
 
-**Kind context:** `kind-sovereign-test`
-
-**Kind storage:** local-path (RWO only — no RWX). This is acceptable for local testing. Production uses Rook/Ceph.
-
-**Kind HA variant:** `cluster/kind/ha-bootstrap.sh` + `cluster/kind/kind-ha-config.yaml` (3 control-plane nodes).
-
-After bootstrap, `cluster-values.yaml` is the contract file for this cluster. Validate it:
+**Tear down:**
 ```bash
-python3 contract/validate.py cluster-values.yaml
+kind delete cluster --name sovereign-test
 ```
 
-## Helm Chart Dependency Update
+---
 
-When `Chart.yaml` has `dependencies:`, run before lint:
+## Helm Chart Development
+
+Charts live in `platform/charts/<service>/`. Bootstrap charts (kind-specific) live in `cluster/kind/charts/<service>/`.
+
 ```bash
+# Update dependencies (required before lint if Chart.yaml has dependencies)
 helm dependency update platform/charts/<name>/
-```
 
-Then lint:
-```bash
+# Lint
 helm lint platform/charts/<name>/
+
+# Render (required for HA gate checks)
+helm template sovereign platform/charts/<name>/ \
+  --set global.domain=sovereign-autarky.dev \
+  > /tmp/rendered.yaml
 ```
 
-## Autarky Build Pipeline (vendor system)
+**Required values in every chart:**
+- `global.domain`: always `{{ .Values.global.domain }}` in templates, never hardcoded
+- `global.storageClass`: always `{{ .Values.global.storageClass }}`
+- `global.imageRegistry`: always `{{ .Values.global.imageRegistry }}/` prefix on images
+- `replicaCount`: must be ≥ 2 in values.yaml defaults
 
-The full vendor lifecycle — only partially implemented, but the structure is present:
+---
 
-```
-platform/vendor/
-├── fetch.sh        # SHA-verified mirror upstream source into internal Forgejo
-├── build.sh        # build distroless OCI images from patched source
-├── deploy.sh       # stage → smoke test → promote to production
-├── rollback.sh     # revert to last-known-good image SHA
-├── backup.sh       # mirror repos + images to secondary storage (runs as CronJob)
-├── audit.sh        # audit vendor catalog
-├── VENDORS.yaml    # catalog: name, upstream, version, license, distroless, ha_exception
-└── recipes/
-    └── <name>/
-        ├── recipe.yaml          # rollout.strategy, rollout.max_unavailable, backup.priority
-        └── patches/             # security patches applied during build
-```
+## Vendor Image Pipeline
 
-All vendor scripts must support `--dry-run` and `--backup` (CI-checked).
+Sovereign never pulls from external registries after bootstrap. All images go through the vendor system:
 
-**Image tag format:** `<upstream-version>-<source-sha>-p<patch-count>` (e.g., `v1.16.0-a3f8c2d-p3`). Never `:latest`.
+1. `platform/vendor/VENDORS.yaml` — registry of all vendored components (name, upstream repo, git SHA, license, distroless status)
+2. `platform/vendor/recipes/<name>/recipe.yaml` — rollout strategy, backup config
+3. `platform/vendor/recipes/<name>/patches/` — any source patches applied before build
+4. Images are built from source into distroless OCI images and pushed to the internal Harbor registry
 
-## VENDORS.yaml Schema
+**Image tag format:** `<upstream-version>-<source-sha>-p<patch-count>` (e.g., `v1.16.0-a3f8c2d-p3`). Never `:latest`, never bare `:<version>`.
 
-Required fields per entry: `name`, `upstream`, `version`, `license`, `distroless`.
-
-Blocked licenses: BSL, SSPL. If present, entry must be `deprecated: true`.
-
-HA exception (single-instance upstreams):
-```yaml
-- name: sonarqube
-  ha_exception: true
-  ha_exception_reason: "SonarQube CE is architecturally single-instance"
-```
-
-## ArgoCD Application Build
-
-Applications in `argocd-apps/<tier>/<service>-app.yaml`. Validate YAML:
+**Rollback:**
 ```bash
-python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())"
-yq '.spec.revisionHistoryLimit' argocd-apps/<tier>/<name>-app.yaml   # must be 3
+platform/vendor/rollback.sh <service-name>  # reverts to last-known-good SHA
 ```
 
-Domain injection pattern:
+---
+
+## Contract Validator
+
+The cluster configuration contract is validated before any cluster is provisioned:
+
+```bash
+python3 contract/validate.py <cluster-values.yaml>
+# Exit 0: valid. Exit 1: validation error with field and rule.
+```
+
+Uses Python stdlib only — no dependencies to install.
+
+---
+
+## ArgoCD Application Manifests
+
+ArgoCD apps live in `argocd-apps/<tier>/<service>-app.yaml`. The root App-of-Apps watches `argocd-apps/`.
+
+**Validation:** Use `yq e '.'` to validate YAML — not `kubectl apply --dry-run` (CRDs not installed locally).
+
+Every Application manifest must have:
 ```yaml
 spec:
-  source:
-    helm:
-      parameters:
-        - name: global.domain
-          value: sovereign-autarky.dev
+  revisionHistoryLimit: 3
 ```
 
-## VPS Provisioning (bootstrap)
+Domain-aware charts receive `global.domain` via `spec.source.helm.parameters`, not via valueFiles.
+
+---
+
+## Sprint/Ceremony System
+
+The delivery pipeline is Python-based, not a build tool:
 
 ```bash
-cp bootstrap/config.yaml.example bootstrap/config.yaml
-# Edit: domain (Cloudflare-managed), provider (hetzner/do/vultr), nodes.count (odd >= 3)
-cp .env.example .env
-# Edit: HETZNER_TOKEN, CLOUDFLARE_API_TOKEN, etc.
-source .env
-./bootstrap/bootstrap.sh --estimated-cost    # no charges
-./bootstrap/bootstrap.sh --confirm-charges   # provisions real servers
-./bootstrap/verify.sh                        # post-provision check
+scripts/ralph/ceremonies.py    # ceremony runner
+prd/manifest.json              # sprint state (source of truth)
+prd/increment-N-<name>.json    # active sprint stories
+prd/constitution.json          # constitutional gates
 ```
 
-## Sovereign PM Webapp Build (Node.js + React)
-
-Multi-stage Dockerfile: `vite build` (React frontend) → `tsc` (Express/Node backend) → combined into distroless production image. Located in `platform/charts/sovereign-pm/`.
-
-## Ceremony Loop
-
+To check ceremony script health:
 ```bash
-python3 scripts/ralph/ceremonies.py   # run the full sprint ceremony
+python3 scripts/ralph/ceremonies.py --help  # must not error (G1 gate)
+for tf in scripts/ralph/tests/test_*.py; do python3 "$tf"; done
 ```
 
-The loop reads `prd/manifest.json` → finds active sprint → runs ceremonies in order. G1 gate catches syntax errors AND broken imports before the loop attempts to run.
+---
+
+## Notes for the Champion
+
+- **No root-level Makefile or build script.** Everything is either a helm command or a bash script.
+- **`charts/` (root level) is empty and retired.** Do not create charts there.
+- **The `platform/deploy.sh` script** is the production deployment path. It has shellcheck enforced in CI.
+- **`scripts/check-limits.py`** validates that every container in a rendered chart has resource requests and limits. Run it via stdin: `helm template ... | python3 scripts/check-limits.py`.
+- **`scripts/ha-gate.sh`** runs PDB, podAntiAffinity, and replicaCount checks across all charts in one pass. Use `--dry-run` to list charts without running helm.
