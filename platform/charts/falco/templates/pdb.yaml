@@ -1,0 +1,21 @@
+{{- /*
+PodDisruptionBudget for the Falco DaemonSet.
+Falco is a DaemonSet (one pod per node). A PDB here prevents cluster operations
+from evicting all Falco pods simultaneously, ensuring at least one node retains
+runtime threat detection during rolling maintenance or node drains.
+*/ -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-falco
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: falco
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: falco
+      app.kubernetes.io/instance: {{ .Release.Name }}

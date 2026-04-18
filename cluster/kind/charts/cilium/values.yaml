@@ -15,11 +15,18 @@ cilium:
     enabled: true
     type: wireguard
 
-  # Hubble observability
+  # Hubble observability — relay, ui, and per-container resource limits
   hubble:
     enabled: true
     relay:
       enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
     ui:
       enabled: true
       ingress:
@@ -33,6 +40,22 @@ cilium:
           - secretName: hubble-tls
             hosts:
               - hubble.sovereign-autarky.dev
+      backend:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      frontend:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
 
   # IPAM configuration
   ipam:
@@ -41,7 +64,7 @@ cilium:
   # Enable network policy enforcement
   policyEnforcementMode: "default"
 
-  # Resource limits for the Cilium agent DaemonSet
+  # Resource limits for the Cilium agent DaemonSet main container
   resources:
     requests:
       cpu: 100m
@@ -50,7 +73,8 @@ cilium:
       cpu: 4000m
       memory: 4Gi
 
-  # Resource limits for initContainers
+  # Resource limits for initContainers that use .Values.initResources
+  # (apply-sysctl-overwrites and similar bootstrap init containers)
   initResources:
     requests:
       cpu: 100m
@@ -58,6 +82,37 @@ cilium:
     limits:
       cpu: 200m
       memory: 64Mi
+
+  # mount-cgroup init container — uses cgroup.autoMount.resources (separate from initResources)
+  cgroup:
+    autoMount:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
+
+  # install-cni-binaries init container — uses cni.resources
+  cni:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 10Mi
+      limits:
+        cpu: 200m
+        memory: 64Mi
+
+  # cilium-envoy standalone DaemonSet container
+  envoy:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
 
   # Operator settings
   operator:

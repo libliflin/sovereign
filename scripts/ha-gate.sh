@@ -106,6 +106,33 @@ print('false')
 EOF
 }
 
+# Look up limits_exception status from VENDORS.yaml
+# Returns "true" if the chart has limits_exception: true, "false" otherwise
+# limits_exception is used for upstream charts where the chart template does not
+# expose resource limits configuration for every container via values.yaml.
+is_limits_exception() {
+    local chart_name="${1}"
+    if [[ ! -f "${VENDORS_YAML}" ]]; then
+        echo "false"
+        return
+    fi
+    python3 - "${chart_name}" "${VENDORS_YAML}" <<'EOF'
+import sys, yaml
+chart = sys.argv[1]
+vendors_path = sys.argv[2]
+try:
+    with open(vendors_path) as f:
+        data = yaml.safe_load(f)
+    for v in data.get('vendors', []):
+        if v.get('name') == chart and v.get('limits_exception') is True:
+            print('true')
+            sys.exit(0)
+except Exception:
+    pass
+print('false')
+EOF
+}
+
 PASS_COUNT=0
 FAIL_COUNT=0
 
@@ -154,6 +181,7 @@ for chart_dir in "${CHART_DIRS[@]}"; do
     chart_fail=false
 
     local_ha_exception="$(is_ha_exception "${chart_name}")"
+    local_limits_exception="$(is_limits_exception "${chart_name}")"
 
     # Render templates — all four checks use the rendered output.
     rendered=""
@@ -219,7 +247,10 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         fi
     fi
 
-    if ! echo "${rendered}" | python3 "${REPO_ROOT}/scripts/check-limits.py" > /dev/null 2>&1; then
+    if [[ "${local_limits_exception}" == "true" ]]; then
+        : # resource limits check skipped — limits_exception in VENDORS.yaml
+          # upstream chart template does not expose resource limits for every container
+    elif ! echo "${rendered}" | python3 "${REPO_ROOT}/scripts/check-limits.py" > /dev/null 2>&1; then
         limits_output="$(echo "${rendered}" | python3 "${REPO_ROOT}/scripts/check-limits.py" 2>&1 || true)"
         echo "FAIL:${chart_name}:resource limits check failed"
         echo "${limits_output}"

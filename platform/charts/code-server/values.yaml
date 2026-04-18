@@ -105,6 +105,15 @@ toolchainInit:
       cpu: "200m"
       memory: "128Mi"
 
+installExtensions:
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
 podDisruptionBudget:
   minAvailable: 1
 

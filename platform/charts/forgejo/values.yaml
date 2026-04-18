@@ -123,6 +123,18 @@ forgejo:
       cpu: "500m"
       memory: "512Mi"
 
+  ## ── Init containers — config and directory setup ─────────────────────────
+  ## The upstream chart exposes a single resource block shared by all init
+  ## containers (init-directories, init-app-ini, configure-gitea).
+  initContainers:
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+
   ## ── Ingress — managed by our own template (see templates/ingress.yaml) ──
   ingress:
     enabled: false

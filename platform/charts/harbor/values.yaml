@@ -140,13 +140,23 @@ harbor:
 
   registry:
     replicaCount: 2
-    resources:
-      requests:
-        cpu: "100m"
-        memory: "128Mi"
-      limits:
-        cpu: "500m"
-        memory: "1Gi"
+    ## Per-container resources — upstream keys for registry and registryctl containers
+    registry:
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "1Gi"
+    controller:
+      resources:
+        requests:
+          cpu: "50m"
+          memory: "64Mi"
+        limits:
+          cpu: "200m"
+          memory: "256Mi"
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -194,6 +204,16 @@ harbor:
   secretKey: "not-a-secure-key"  # 16-char AES key — use Sealed Secret in prod
   harborAdminPassword: "Harbor12345"           # placeholder — use Sealed Secret in prod
 
+  ## ── nginx reverse proxy ─────────────────────────────────────────────────
+  nginx:
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "16Mi"
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+
   ## ── Database (built-in PostgreSQL) ──────────────────────────────────────
   database:
     type: internal
@@ -205,6 +225,23 @@ harbor:
         timeoutSeconds: 10
       livenessProbe:
         timeoutSeconds: 10
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      ## data-permissions-ensurer init container
+      initContainer:
+        permissions:
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
 
   ## ── Redis (built-in) ────────────────────────────────────────────────────
   ## ARM64/QEMU workaround: after deploy, patch the StatefulSet to add:
@@ -220,6 +257,14 @@ harbor:
   ##           "value":["/etc/redis.conf","--stop-writes-on-bgsave-error","no"]}]'
   redis:
     type: internal
+    internal:
+      resources:
+        requests:
+          cpu: "10m"
+          memory: "64Mi"
+        limits:
+          cpu: "100m"
+          memory: "128Mi"
 
   ## ── Notary — disabled (deprecated in Harbor 2.6+) ──────────────────────
   notary:

@@ -30,6 +30,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    limits_exception: true
+    limits_exception_reason: "cilium 1.16.0: the 'config' init container template (cilium-agent/daemonset.yaml) does not expose a resource limits value. All other containers (mount-cgroup, install-cni-binaries, cilium-envoy, hubble-relay, hubble-ui) have limits set via values.yaml. Upgrade to a cilium release that supports config init container resource limits when available."
 
   # ── Infrastructure Composition ──────────────────────────────────────────
   - name: crossplane
@@ -75,6 +77,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Sealed Secrets controller holds the private key used to decrypt SealedSecrets. A second replica would have a different key and could not decrypt existing secrets. True HA requires --key-prefix + a shared Kubernetes Secret, which is non-trivial to set up safely. Single-instance is the correct default; PDB is present to prevent accidental eviction."
 
   # ── Secrets Engine ───────────────────────────────────────────────────────
   - name: vault
@@ -119,6 +123,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Keycloak HA requires an external database and Infinispan or Redis for session clustering. The upstream Bitnami chart defaults to a single-replica embedded database. Running two replicas without session clustering splits login state across instances. Single-instance is the safe default until the external DB + cluster config story is complete."
 
   # ── Storage ──────────────────────────────────────────────────────────────
   - name: rook-ceph
@@ -149,6 +155,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "ArgoCD HA mode requires a dedicated HA Helm chart (argo-cd-ha) with separate redis-ha subchart and multiple replicas per component. The standard argo-cd chart defaults to single-replica components. HA is architecturally supported but requires upstream chart restructuring — deferred until the HA chart is adopted."
 
   - name: forgejo
     upstream_url: https://code.forgejo.org/forgejo/forgejo
@@ -163,6 +171,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Forgejo requires a ReadWriteMany storage class for multi-replica deploys (git repository data). The current chart uses ReadWriteOnce local-path PVC. A second replica would fail to mount the same volume. Single-instance is correct until the Ceph RWX storage tier is stable and the chart is switched to ceph-filesystem."
 
   - name: harbor
     upstream_url: https://github.com/goharbor/harbor
@@ -177,6 +187,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Harbor HA requires external PostgreSQL and Redis; the current chart uses internal single-instance postgres and redis StatefulSets. The nginx and registry components use replicaCount 1 (internal DB constraint). Full HA is deferred until the external DB/Redis tier is wired in."
 
   # ── Service Mesh & Security ──────────────────────────────────────────────
   - name: istio
@@ -220,6 +232,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Trivy Operator is a Kubernetes controller with leader election. Running two replicas is safe (one leads, one standby) but the upstream chart defaults to a single replica. Multi-replica mode is architecturally supported; bumping replicas is deferred until the operator upgrade path is validated."
 
   - name: falco
     upstream_url: https://github.com/falcosecurity/falco
@@ -234,6 +248,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Falco is a DaemonSet — one pod per node by design. podAntiAffinity is meaningless for DaemonSets (the scheduler already guarantees one-per-node). PDB is present to prevent concurrent node drains from evicting all Falco instances simultaneously."
 
   # ── Observability ────────────────────────────────────────────────────────
   - name: prometheus-stack
@@ -249,6 +265,8 @@ vendors:
     deprecated: false
     deprecated_reason: ""
     alternative: ""
+    ha_exception: true
+    ha_exception_reason: "kube-prometheus-stack deploys Prometheus via a Prometheus CR (Operator pattern). The chart renders no Deployment or StatefulSet directly — the operator creates StatefulSets at runtime from the CR spec. helm template cannot see operator-created resources. Prometheus and Alertmanager are configured with replicas:2 in the CR; the HA gate simply cannot verify operator-managed replicas statically."
 
   - name: victorialogs
     upstream_url: https://github.com/VictoriaMetrics/VictoriaMetrics

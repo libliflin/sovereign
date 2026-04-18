@@ -118,3 +118,23 @@ loki:
       enabled: false
     lokiCanary:
       enabled: false
+
+  # Gateway nginx reverse proxy
+  gateway:
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "16Mi"
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+
+  # Sidecar (loki-sc-rules) — watches ConfigMaps and syncs rules into Loki backend pods
+  sidecar:
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "16Mi"
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
