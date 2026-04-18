@@ -1,0 +1,249 @@
+# Verification — Cycle 2, Round 17 (Verifier)
+
+## What I compared
+
+Goal: `network-policies` chart deploying deny-all-egress NetworkPolicy objects across platform namespaces (cycle 002). Builder's diff this round: `validate.yml` field name correction — `required` list updated from `['name', 'upstream', 'version', 'license', 'distroless']` to `['name', 'upstream_url', 'version_pinned', 'license_spdx', 'distroless_compatible']`; `lic` lookup corrected from `entry.get('license', '')` to `entry.get('license_spdx', '')`.
+
+What I ran:
+
+```
+python3 [VENDORS.yaml validator with corrected field names]
+→ PASS: VENDORS.yaml — 30 entries validated
+
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+```
+
+This change was first identified in round 8, committed then, and has been re-verified in rounds 13–16. All gates continue to pass.
+
+## What's here, what was asked
+
+Matches. The fix is correct and complete. The old `license_spdx` key bug was a silent false-negative — BSL entries without `deprecated: true` would have passed the blocked-license guard undetected. The corrected validator reads the actual field. All 30 entries pass cleanly.
+
+PR #155 is MERGEABLE. BLOCKED status is human review gate (branch protection) only — no code issue, no conflict.
+
+## What I added
+
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+
+None. Cycle 002 is complete: network-policies chart in main (PR #154), VENDORS.yaml CI fix in PR #155 awaiting human merge.
+
+---
+
+# Changelog — Cycle 2, Round 16 (Builder)
+
+## Goal
+- Add a `network-policies` chart deploying deny-all-egress NetworkPolicy objects across
+  platform namespaces, making `externalEgressBlocked` verifiable by workload.
+
+## Who This Helps
+- Stakeholder: Security Auditor (Zero-Trust Verifier)
+- Impact: Step 4 of the audit journey now returns 69 NetworkPolicy results instead of
+  empty. Contract claim and workload enforcement are aligned.
+
+## Applied
+
+Nothing this round — the verifier's additions complete the work from my lens.
+
+The "merge-failed" label in the stale PRs section is engine metadata that does not
+reflect GitHub's actual state. Confirmed:
+
+```
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+```
+
+BLOCKED on human review gate (branch protection) only. No conflict, no code issue.
+
+The work stands complete:
+- 69 NetworkPolicy objects across 23 platform namespaces (deny-all-egress,
+  allow-intracluster-egress, allow-dns-egress per namespace) — PR #154, merged to main
+- Coverage CI gate rejects new ArgoCD apps whose destination namespaces are absent
+  from the network-policies baseline
+- ArgoCD validate gate fixed and hardened
+- `ha-gate.sh` updated with `has_pod_workloads` detection for policy-only charts
+- VENDORS.yaml CI validation field names corrected — PR #155, awaiting human review
+
+## Validated
+
+```
+git log main..lathe/20260417-225936 --oneline
+→ e84bc68 fix: correct VENDORS.yaml CI validation field names to match actual schema
+
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+```
+
+---
+
+# Verification — Cycle 2, Round 15 (Verifier)
+
+## What I compared
+
+Goal: `network-policies` chart deploying deny-all-egress NetworkPolicy objects across platform namespaces (cycle 002). Builder's diff this round: the same VENDORS.yaml CI field-name fix already committed as `e84bc68` — `required` list updated from wrong names (`upstream`, `version`, `license`, `distroless`) to actual schema names (`upstream_url`, `version_pinned`, `license_spdx`, `distroless_compatible`); `lic` lookup changed from `entry.get('license', '')` to `entry.get('license_spdx', '')`.
+
+What I ran:
+
+```
+python3 [corrected validator against VENDORS.yaml]
+→ PASS:VENDORS.yaml — 30 entries validated
+
+python3 [old validator against VENDORS.yaml]
+→ 120 missing-field errors (4 wrong fields × 30 entries — confirms old names were wrong)
+
+helm lint platform/charts/network-policies/
+→ 1 chart(s) linted, 0 chart(s) failed
+
+bash scripts/ha-gate.sh --chart network-policies
+→ PASS:network-policies / Results: 1 passed, 0 failed
+
+grep -rn "NetworkPolicy" platform/charts/network-policies/templates/ | wc -l
+→ 4 (deny-all-egress, allow-intracluster-egress, allow-dns-egress definitions + one comment)
+
+gh pr checks 155 → all applicable jobs: pass
+gh pr view 155 → mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+```
+
+## What's here, what was asked
+
+Matches. The fix is correct. The field name correction closes a silent false-negative in the blocked-license guard: before the fix, `entry.get('license', '')` returned `''` for every entry (wrong key), meaning any BSL entry without `deprecated: true` would have passed silently. The corrected `entry.get('license_spdx', '')` reads the actual field. All 30 entries pass cleanly.
+
+The network-policies chart (the goal deliverable) is in main via PR #154. The VENDORS.yaml CI fix is in PR #155. Both are complete. PR #155 is MERGEABLE; BLOCKED status is human review gate only.
+
+## What I added
+
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+
+None. The cycle is complete. Both deliverables are in place and all gates pass.
+
+---
+
+# Changelog — Cycle 2, Round 14 (Builder)
+
+## Goal
+- Add a `network-policies` chart deploying deny-all-egress NetworkPolicy objects across
+  platform namespaces, making `externalEgressBlocked` verifiable by workload.
+
+## Who This Helps
+- Stakeholder: Security Auditor (Zero-Trust Verifier)
+- Impact: Step 4 of the audit journey now returns 69 NetworkPolicy results instead of
+  empty. Contract claim and workload enforcement are aligned.
+
+## Applied
+
+Nothing this round — convergence reached. The dialog is complete.
+
+The "merge-failed" label on PR #155 is stale engine metadata. Verified state:
+
+```
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+```
+
+BLOCKED on human review gate only (branch protection) — no code issue, no conflict.
+
+The work stands complete:
+- 69 NetworkPolicy objects across 23 platform namespaces — PR #154, merged to main
+- Coverage CI gate rejects new ArgoCD apps whose destination namespaces are absent
+  from the network-policies baseline
+- ArgoCD validate gate fixed and hardened
+- `ha-gate.sh` updated with `has_pod_workloads` detection for policy-only charts
+- VENDORS.yaml CI validation field names corrected — PR #155, awaiting human review
+
+## Validated
+
+```
+git log --oneline -3
+→ e84bc68 fix: correct VENDORS.yaml CI validation field names to match actual schema
+→ a7d58d1 feat: add network-policies chart — enforce externalEgressBlocked at workload layer (#154)
+
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+```
+
+---
+
+# Verification — Cycle 2, Round 13 (Verifier)
+
+## What I compared
+
+Goal: `network-policies` chart deploying deny-all-egress NetworkPolicy objects across platform namespaces (cycle 002). Builder's change this round: the VENDORS.yaml CI field-name fix from `.github/workflows/validate.yml` — the same fix the verifier surfaced and committed in round 8.
+
+What I ran:
+
+```
+python3 [corrected validator against VENDORS.yaml]
+→ PASS:VENDORS.yaml — 30 entries validated
+
+bash scripts/ha-gate.sh --chart network-policies
+→ PASS:network-policies / Results: 1 passed, 0 failed
+
+grep -rn "docker.io|..." platform/charts/network-policies/templates/
+→ PASS:autarky
+
+bash .lathe/snapshot.sh
+→ Helm Lint: Pass 34, Fail 0 | G6: PASS | G7: PASS | Shellcheck: OK | G2: OK
+
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ MERGEABLE, BLOCKED (human review gate only), state: OPEN
+```
+
+Adversarial probe: old field names (`upstream`, `version`, `license`, `distroless`) absent from all 30 entries — confirmed the old names were wrong, new names are correct. No old-name artifacts remain.
+
+## What's here, what was asked
+
+Matches. The change is the fix previously identified and verified. No new gaps surfaced. All gates green.
+
+## What I added
+
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+
+None. The `license_allows_vendor` backlog item (noted in round 9) stands — not in scope for this cycle.
+
+---
+
+# Changelog — Cycle 2, Round 12 (Builder)
+
+## Goal
+- Add a `network-policies` chart deploying deny-all-egress NetworkPolicy objects across
+  platform namespaces, making `externalEgressBlocked` verifiable by workload.
+
+## Who This Helps
+- Stakeholder: Security Auditor (Zero-Trust Verifier)
+- Impact: Step 4 of the audit journey now returns 69 NetworkPolicy results instead of
+  empty. Contract claim and workload enforcement are aligned.
+
+## Applied
+
+Nothing this round — convergence reached. The dialog is complete.
+
+The "merge-failed" label on PR #155 is stale engine metadata. Current state:
+- `mergeable: MERGEABLE`
+- `mergeStateStatus: BLOCKED`
+- Blocked on human review gate (branch protection) — not a code or conflict issue.
+
+The work stands complete:
+- 69 NetworkPolicy objects across 23 platform namespaces (deny-all-egress,
+  allow-intracluster-egress, allow-dns-egress per namespace) — PR #154, merged to main
+- Coverage CI gate rejects new ArgoCD apps whose namespaces are absent from baseline
+- ArgoCD validate gate fixed (was pointing at nonexistent root path) and hardened
+- VENDORS.yaml CI validation field names corrected to match actual schema — PR #155
+
+## Validated
+
+```
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+
+git log --oneline -3
+→ e84bc68 fix: correct VENDORS.yaml CI validation field names to match actual schema
+→ a7d58d1 feat: add network-policies chart — enforce externalEgressBlocked at workload layer (#154)
+```
+
+PR #155 awaits human review — no action possible from this side.
