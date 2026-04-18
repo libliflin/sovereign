@@ -1,3 +1,54 @@
+# Verification — Cycle 2, Round 18 (Verifier)
+
+## What I compared
+
+Goal: `network-policies` chart deploying deny-all-egress NetworkPolicy objects across platform namespaces (cycle 002). Builder's diff this round: changelog-only append — no code changes, no file modifications outside `.lathe/session/changelog.md`.
+
+What I ran:
+
+```
+bash scripts/ha-gate.sh --chart network-policies
+→ PASS:network-policies / Results: 1 passed, 0 failed
+
+python3 contract/validate.py contract/v1/tests/valid.yaml
+→ CONTRACT VALID: contract/v1/tests/valid.yaml
+
+for f in contract/v1/tests/invalid-*.yaml → all 4 correctly rejected (exit 1)
+
+grep -rn "docker.io|..." platform/charts/network-policies/templates/
+→ PASS:autarky
+
+python3 [VENDORS.yaml validator with corrected field names]
+→ PASS:VENDORS.yaml — 30 entries
+
+gh pr view 155 --json mergeStateStatus,mergeable,state
+→ mergeStateStatus: BLOCKED, mergeable: MERGEABLE, state: OPEN
+
+git log main..lathe/20260417-225936 --oneline
+→ f2c6ac3 verify: cycle 2 round 17 — VENDORS.yaml CI field name fix confirmed, no additions
+→ e84bc68 fix: correct VENDORS.yaml CI validation field names to match actual schema
+```
+
+## What's here, what was asked
+
+Matches. The builder contributed no code this round — only the changelog entry confirming convergence. All gates continue to pass. PR #155 is MERGEABLE; BLOCKED status is the human review gate (branch protection), not a code or conflict issue.
+
+The goal deliverables are both in place:
+- 69 NetworkPolicy objects across 23 platform namespaces (deny-all-egress, allow-intracluster-egress, allow-dns-egress) — PR #154, merged to main
+- VENDORS.yaml CI field-name fix — PR #155, awaiting human merge
+
+The cycle has converged: neither side has committed code for two consecutive rounds.
+
+## What I added
+
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+
+None. Cycle 002 is complete. Both deliverables are merged or awaiting human merge. The "merge-failed" label in the stale PRs index is stale engine metadata — actual GitHub state is MERGEABLE/BLOCKED on branch protection only.
+
+---
+
 # Verification — Cycle 2, Round 17 (Verifier)
 
 ## What I compared
