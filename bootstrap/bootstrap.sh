@@ -8,7 +8,8 @@
 
 set -euo pipefail
 
-CONFIG_FILE="bootstrap/config.yaml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/config.yaml"
 
 usage() {
   echo "Usage: $0 --estimated-cost | --confirm-charges | --dry-run"
@@ -24,7 +25,7 @@ estimated_cost() {
     echo "CONFIG NOT FOUND: ${CONFIG_FILE} does not exist."
     echo ""
     echo "Copy the example and fill in your values:"
-    echo "  cp bootstrap/config.yaml.example bootstrap/config.yaml"
+    echo "  cp ${SCRIPT_DIR}/config.yaml.example ${CONFIG_FILE}"
     exit 1
   fi
 
