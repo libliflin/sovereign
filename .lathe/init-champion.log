@@ -1,0 +1,15 @@
+Done. Here's what was written:
+
+**`.lathe/agents/champion.md`** — The playbook. Four stakeholders with concrete first-encounter journeys, per-stakeholder emotional signals (momentum, confidence, flow, clarity), four tensions with resolution signals, the two-source ranking model (CI floor + lived experience), and the verbatim output template for `journey.md`. The "think in classes" and "brand as tint" sections are included. No layer ladder.
+
+**`.lathe/skills/journeys.md`** — Concrete step-by-step journeys for all four stakeholders, written to actually execute each cycle. Each journey names the specific commands to run and where walls typically appear.
+
+**`.lathe/skills/architecture.md`** — Champion-relevant architectural decisions: App-of-Apps, chart locations, autarky invariant, HA gates, resource limits, domain injection, contract layer, network policies, current DX service state, ceremony loop.
+
+**`.lathe/skills/build.md`** — Build process: kind bootstrap, Helm validation gates, shellcheck conventions, contract validation, vendor pipeline, Sovereign PM, CI coverage.
+
+**`.lathe/skills/testing.md`** — Test locations and runners, HA gate, resource limits gate, contract validator, ceremony unit tests, kind integration tests, Jest for sovereign-pm, and the AC writing conventions (runnable commands, "at least N" counts, version-pinned vendor constants).
+
+**`.lathe/skills/domains.md`** — Seven domain boundaries with their authorities and where cross-domain confusion shows up as wrong-layer fixes.
+
+**`.lathe/alignment-summary.md`** — For you: stakeholder roster, emotional signals, four tensions, repository security assessment (no privileged workflow triggers found; branch protection unverifiable locally), and five "what could be wrong" entries including the empty Backstage catalog, the operator journey's Grafana assumption, and the VPS journey gap.

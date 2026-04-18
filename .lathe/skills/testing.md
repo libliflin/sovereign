@@ -1,57 +1,131 @@
-# Testing — Sovereign Platform
+# Testing Conventions
 
-## What Passes as "CI Green"
+How this project tests — test runner, conventions, fixture locations.
 
-Sovereign has no unit test suite in the traditional sense. "Tests passing" means all CI jobs pass:
+---
 
-1. **Helm validate** — `helm lint` + `helm template` + assertions: PDB, podAntiAffinity, replicaCount >= 2, no :latest tags, no external registry in values.yaml. Runs on every chart discovered via `ls platform/charts/*/Chart.yaml` and `ls cluster/kind/charts/*/Chart.yaml`.
+## Test Types and Locations
 
-2. **Shell validate** — `shellcheck -S error` on all `.sh` files in `cluster/`, `platform/`, `scripts/`. Also asserts vendor scripts handle `--dry-run` and `--backup`.
+| What | Where | How |
+|---|---|---|
+| Helm chart validation | CI (`validate.yml`) | helm lint + template + PDB/antiAffinity/limits checks |
+| HA gate script | `scripts/ha-gate.sh` | PDB, podAntiAffinity, replicaCount across all charts |
+| Contract validator | `contract/validate.py` + `contract/v1/tests/` | Python, validates YAML against schema |
+| Ceremony unit tests | `scripts/ralph/tests/` | Python unittest |
+| Chaos/PDB test fixtures | `test/chaos/` | YAML fixtures for kubectl drain simulation |
+| Kind smoke test | `kind/smoke-test/rolling-update.sh` | Verifies zero-pod-unavailability during helm upgrade |
+| Kind HA fixtures | `kind/fixtures/` | PDB drain validation fixture |
+| Sovereign PM | `platform/sovereign-pm/` | Jest (npm test) |
 
-3. **Contract validator** — `python3 contract/validate.py contract/v1/tests/valid.yaml` must exit 0; all `contract/v1/tests/invalid-*.yaml` must exit 1. This is G7.
+---
 
-4. **Autarky** — No external registry references (`docker.io`, `quay.io`, `ghcr.io`, `gcr.io`, `registry.k8s.io`) in `platform/charts/*/templates/`. This is G6.
-
-5. **ArgoCD validate** — All `Application` manifests have `revisionHistoryLimit: 3`.
-
-6. **Bootstrap validate** — `shellcheck` on `cluster/kind/bootstrap.sh` and `platform/deploy.sh`; `--dry-run` flag present; no hardcoded IPs.
-
-7. **README chart path validate** — Every `helm install/lint/template` path in README.md must exist as a directory.
-
-8. **Vendor audit** (conditional) — Runs only when `platform/vendor/` changes: `vendor/audit.sh`, VENDORS.yaml schema check, recipe.yaml rollout/backup validation.
-
-## Running Checks Locally
+## Contract Validator
 
 ```bash
-# Snapshot (all gates at once, summarized):
-bash .lathe/snapshot.sh
+# Must pass (exit 0) — valid config accepted
+python3 contract/validate.py contract/v1/tests/valid.yaml
 
-# Helm lint all charts:
-for chart in platform/charts/*/; do helm lint "$chart"; done
-
-# Scoped HA gate for one chart:
-bash scripts/ha-gate.sh --chart <name>
-
-# Contract validator:
-python3 contract/validate.py contract/v1/tests/valid.yaml     # must pass
-python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml  # must fail
-
-# Autarky:
-grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  platform/charts/*/templates/ cluster/kind/charts/*/templates/ && echo FAIL || echo PASS
-
-# Shellcheck:
-find cluster platform scripts -name "*.sh" | xargs shellcheck -S error
+# Must fail (exit 1) — invalid config rejected
+python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml
+echo "Exit: $?"  # expect 1
 ```
 
-## ha-gate.sh Scope
+The test corpus at `contract/v1/tests/` includes invariants for `externalEgressBlocked`, `imageRegistry`, and `storageClass`. These are the G7 constitutional gate tests.
 
-`bash scripts/ha-gate.sh --chart <name>` checks only the named chart and exits 0/1 based on that chart only. This prevents pre-existing failures in other charts from blocking a contributor's unrelated PR. The CI HA Gate workflow uses this scoped mode on changed charts.
+---
 
-## Integration Testing (kind)
+## HA Gate
 
-Bootstrap scripts are tested statically only (shellcheck + bash -n). Never run `bootstrap.sh` in full execution during a cycle — those are manual steps for real infrastructure. kind is the local integration environment, but kind cluster creation is a manual step, not automated in CI.
+```bash
+# All charts (including E13 testing charts)
+bash scripts/ha-gate.sh
 
-## What "No Test Suite" Means for the Champion
+# Scoped to one chart — exits 0/1 based only on that chart
+bash scripts/ha-gate.sh --chart <name>
 
-When the snapshot shows all green, the floor is clear. But "all green" does not mean stakeholder journeys work end-to-end — it means the static checks passed. The champion's job is to walk the actual journeys and find where the green checks miss real friction.
+# List what would be checked (no helm run)
+bash scripts/ha-gate.sh --dry-run
+```
+
+---
+
+## Resource Limits Gate
+
+```bash
+helm template platform/charts/<name>/ | python3 scripts/check-limits.py
+```
+
+Exhaustively checks every container and initContainer spec. **Do not use `grep -A5 resources:` as a substitute** — it misses individual containers that lack limits.
+
+---
+
+## Ceremony Unit Tests
+
+```bash
+cd scripts/ralph
+python3 -m pytest tests/
+# or individual test:
+python3 -m pytest tests/test_retro_guard.py
+```
+
+These tests run without a live cluster — they test ceremony Python logic with mock data.
+
+---
+
+## Kind Integration Tests
+
+The kind cluster must exist (`kind get clusters` shows `sovereign-test`) before running these.
+
+```bash
+# Kind smoke test: rolling update with zero unavailability
+./kind/smoke-test/rolling-update.sh
+
+# PDB drain validation: kubectl drain should be blocked when last pod would be evicted
+kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test
+# Then attempt drain per the fixture README
+```
+
+---
+
+## Sovereign PM Tests
+
+```bash
+cd platform/sovereign-pm
+npm test -- --forceExit     # Jest
+npm run typecheck            # TypeScript
+npm run lint                 # ESLint
+```
+
+---
+
+## CI Coverage
+
+What CI actually runs (from `validate.yml` + `ha-gate.yml`):
+
+- Helm lint on every chart
+- HA gate (PDB, podAntiAffinity, replicaCount) on every chart
+- Resource limits check (`check-limits.py`) on every chart
+- No `:latest` image tags in values.yaml
+- No hardcoded external registry in `image.repository`
+- Shellcheck on all `.sh` files under `cluster/`, `platform/`, `prd/`, `scripts/ralph/`, `platform/vendor/`
+- Vendor scripts have `--dry-run` and `--backup` flags
+- ArgoCD Applications have `revisionHistoryLimit: 3`
+- Network-policies egress baseline covers all deployed namespaces
+- Contract validator: valid.yaml passes, invalid-egress-not-blocked.yaml fails
+- README chart paths exist in repo
+- bootstrap.sh has `--dry-run` flag
+
+---
+
+## Test Writing Conventions
+
+**ACs must be runnable, not aspirational.** Write the exact command with the exact expected output. Never assert "shows a value >= 2" when you can write `grep -E 'replicaCount:[[:space:]]+[2-9]'` which exits 0/1.
+
+**Count assertions use "at least N"**, not "== N", for resources that scale with component count (PDBs per component in distributed charts like Loki, Tempo).
+
+**Vendor API field values must be version-pinned.** If an AC asserts a CRD phase name or status string, cite the upstream docs for that pinned chart version. Unverified constants fail review even when implementation is correct (e.g., chaos-mesh v2.6.3 uses `AllRecovered=True` not `Finished`).
+
+**CRD-backed resources use YAML-only validation**, not `kubectl apply --dry-run=client` (CRDs not installed in kind-sovereign-test):
+```bash
+python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())" <file>.yaml
+```

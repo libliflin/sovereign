@@ -1,102 +1,122 @@
-# Architecture — Sovereign Platform
+# Architecture: Key Decisions in Force
 
-## Core Pattern: ArgoCD App-of-Apps
+Stable decisions that shape every implementation choice. Read `docs/state/architecture.md` for the authoritative version — this file captures the champion-relevant subset with enough context to understand *why*.
 
-Everything after the initial bootstrap is managed by ArgoCD. The root app (`argocd-apps/root-app.yaml`) deploys all service apps. No manual `kubectl apply` after bootstrap — all changes go through Git. Each service app points at a Helm chart in `platform/charts/<service>/`.
+---
 
-## Chart Structure
+## The Core Pattern: ArgoCD App-of-Apps
 
-```
-platform/charts/<service>/
-  Chart.yaml
-  values.yaml        # defaults — domain, storageClass, imageRegistry all templated
-  templates/         # Kubernetes manifests, all values via .Values
-```
+After `bootstrap.sh` runs, the cluster is self-managing via ArgoCD. The root app (`platform/argocd-apps/`) watches this repo and deploys all service Applications. No manual `kubectl apply` after bootstrap. All changes go through Git → PR → CI → merge → ArgoCD sync.
 
-Every chart MUST have:
-- `replicaCount: 2` minimum
-- `podDisruptionBudget: { minAvailable: 1 }`
-- `podAntiAffinity` (preferredDuringScheduling minimum)
-- `readinessProbe` + `livenessProbe` on every container
-- `resources.requests` + `resources.limits`
+**Why this matters for the champion:** A service that's "deployed" but not wired into ArgoCD is a half-finished service. The operator can't trust it, and the developer can't trust its availability.
 
-HA exceptions (architecturally single-instance) are declared in `platform/vendor/VENDORS.yaml` with `ha_exception: true` — the CI checks skip PDB/antiAffinity for those.
+---
 
-## Autarky: The Build Pipeline
+## Chart Locations (non-obvious)
 
-After bootstrap, no external registry pulls. The vendor system (Gentoo-inspired):
+| Type | Location |
+|---|---|
+| Platform services (Grafana, Loki, Backstage, etc.) | `platform/charts/<service>/` |
+| Kind cluster bootstrap charts | `cluster/kind/charts/<service>/` |
+| Root `charts/` | **Empty and retired — never use** |
 
-1. `platform/vendor/fetch.sh` — SHA-verified mirror of upstream source into internal Forgejo
-2. `platform/vendor/build.sh` — builds distroless OCI images from patched source
-3. `platform/vendor/deploy.sh` — stages → smoke test → promote → production
-4. `platform/vendor/rollback.sh` — revert to last-known-good image SHA (must complete < 2 minutes)
-5. `platform/vendor/backup.sh` — CronJob that mirrors to secondary storage
+**ArgoCD apps** live in `platform/argocd-apps/<tier>/`. Every Application must have `spec.revisionHistoryLimit: 3`.
 
-Each vendored service has `platform/vendor/recipes/<name>/recipe.yaml` declaring rollout strategy and backup priority.
+---
 
-Image tag format: `<upstream-version>-<source-sha>-p<patch-count>` (e.g. `v1.16.0-a3f8c2d-p3`). Never `:latest`.
+## The Autarky Invariant (G6)
 
-## The Contract
+After bootstrap, the cluster never pulls from external registries (`docker.io`, `quay.io`, `ghcr.io`, `gcr.io`, `registry.k8s.io`). Chart templates must not reference external registries. The `imageRegistry` flows through `{{ .Values.global.imageRegistry }}`.
 
-`contract/validate.py` enforces the sovereign cluster contract. A `cluster-values.yaml` must:
-- Set `apiVersion: sovereign.dev/cluster/v1`
-- Include all required fields (domain, imageRegistry, storage classes, network, PKI)
-- Set `network.networkPolicyEnforced: true`, `autarky.externalEgressBlocked: true`, `autarky.imagesFromInternalRegistryOnly: true` — these are invariants, not configuration
+**Exception:** The kind path uses upstream images during kind bootstrap (before the internal Harbor registry exists). This is intentional and documented.
 
-The validator exits 0 for valid, exits 1 with specific violation messages for invalid. Test fixtures in `contract/v1/tests/`.
+**Gate:** `grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/` must return nothing.
 
-## Key Values Conventions
+---
 
-Never hardcode in templates:
-- Domain → `{{ .Values.global.domain }}`
-- Storage class → `{{ .Values.global.storageClass }}`
-- Image registry → `{{ .Values.global.imageRegistry }}/`
-- Passwords/secrets → Sealed Secrets or OpenBao refs
+## HA: Non-Negotiable (G-HA)
 
-`values.yaml` defaults may use `sovereign-autarky.dev` as the dogfood domain — that is correct. Never put a literal domain in `templates/`.
+Every chart with a Deployment or StatefulSet must have:
+- `replicaCount: >= 2` in `values.yaml`
+- `PodDisruptionBudget` in templates
+- `podAntiAffinity` in the Deployment spec
 
-## HA Architecture
+**Exception path:** Services that architecturally cannot scale (SonarQube CE, MailHog) must have `ha_exception: true` + `ha_exception_reason` in `platform/vendor/VENDORS.yaml`, AND `replicaCount: 1` with a comment in `values.yaml` pointing to the VENDORS.yaml entry.
 
-```
-etcd quorum:   requires odd node count, minimum 3 (1 failure tolerance)
-Ceph quorum:   requires 3 OSDs
-API server:    kube-vip floating VIP across all control plane nodes
-CNI:           Cilium DaemonSet (inherently HA)
-Storage:       Rook/Ceph replication factor 3
-```
+**Gate:** `bash scripts/ha-gate.sh` runs PDB + podAntiAffinity + replicaCount checks across all charts.
 
-`bootstrap.sh` refuses to proceed with fewer than 3 nodes or an even node count. This is not configurable.
+---
 
-## Kind (Local Development)
+## Resource Limits on Every Container (G6b)
 
-`cluster/kind/bootstrap.sh` creates a 3-node kind cluster (`sovereign-test`). It:
-- Accepts `--dry-run`, `--domain`, `--output`, `--cluster-name`
-- Creates a 3-node cluster (1 control-plane + 2 workers) via `cluster/kind/kind-config.yaml`
-- Emits `cluster-values.yaml` conforming to `contract/v1`
-- Validates the emitted values file against the contract
+Every container and initContainer must have `resources.requests` AND `resources.limits`. Use `helm template platform/charts/<name>/ | python3 scripts/check-limits.py` — grep is not sufficient (it misses individual containers).
 
-Kind is for static analysis and local evaluation. CI never runs bootstrap in full execution.
+---
 
-## Security Layers
+## Domain Injection
 
-- **Istio STRICT mTLS** — all service-to-service traffic encrypted and authenticated
-- **OPA/Gatekeeper** — policy enforcement at admission
-- **Falco** — runtime threat detection
-- **Trivy** — vulnerability scanning before admission
-- **NetworkPolicy** — deny-all with explicit allows
-- **Zero open ports** — Cloudflare Tunnel (default) or custom front door; no port 22
+- In templates: always `{{ .Values.global.domain }}` — never a hardcoded domain.
+- In `values.yaml` defaults: `sovereign-autarky.dev` is the dogfood domain — correct and expected.
+- ArgoCD apps inject domain via `spec.source.helm.parameters`, not `valueFiles`.
 
-## State Files
+---
 
-- `prd/manifest.json` — source of truth for active sprint and increments
-- `prd/backlog.json` — all future stories
-- `prd/constitution.json` — themes and constitutional gates (G1, G2, G6, G7)
-- `docs/state/agent.md` — live briefing, rewritten each sprint by sync ceremony
-- `docs/state/architecture.md` — architecture decisions currently in force
+## Secret Handling
 
-## Constitutional Gates
+- **GitOps secrets:** Sealed Secrets (encrypted YAML committed to repo).
+- **Runtime secrets:** OpenBao (Apache 2.0 Vault fork). Referenced via Helm values, never committed in plaintext.
+- Never commit a secret. Ever. Stop and use the blocker protocol if you're about to.
 
-- **G1** — Ceremony scripts compile without errors
-- **G2** — `docs/state/agent.md` and `docs/state/architecture.md` exist and are current
-- **G6** — Zero external registry references in chart templates
-- **G7** — Contract validator test suite passes (valid.yaml passes, all invalid-*.yaml fail)
+---
+
+## The Contract Layer (G7)
+
+`contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces:
+- `externalEgressBlocked: true`
+- `imageRegistry` present
+- `storageClass` present
+
+Before provisioning any cluster, `contract/validate.py <config>` must pass. The test fixtures are at `contract/v1/tests/valid.yaml` (must pass) and `contract/v1/tests/invalid-egress-not-blocked.yaml` (must fail with exit 1).
+
+---
+
+## Storage
+
+Rook/Ceph provides all storage (block, filesystem, object). StorageClass flows through `{{ .Values.global.storageClass }}` everywhere. Ceph is a *provider* — it creates StorageClasses and does not consume one itself.
+
+---
+
+## Network Policies
+
+The `network-policies` chart enforces per-namespace egress baselines. Every deployed namespace must be in `platform/charts/network-policies/values.yaml`. CI validates this via the `network-policies-coverage` job. Missing a namespace here means workloads are unprotected.
+
+---
+
+## Service Mesh (Istio)
+
+mTLS STRICT everywhere inside the cluster. OPA/Gatekeeper enforces admission policy. Falco for runtime detection. These three are the zero-trust enforcement stack — if any is missing from a namespace, that namespace is not zero-trust.
+
+---
+
+## Developer Experience Services (current state)
+
+| Service | State |
+|---|---|
+| code-server | Chart exists; toolchain initContainer copies kubectl/helm/k9s; workspace PVC at `/home/coder`; autarky G6 passes |
+| Backstage | Chart + ArgoCD app exist; autarky G6 passes; full Keycloak OIDC plugin config pending |
+| SonarQube | Chart deployed; ha_exception:true; ArgoCD app exists |
+| ReportPortal | Chart deployed; multi-component PDB; ArgoCD app exists |
+| Sovereign PM | Node.js/Express + React; multi-stage Dockerfile; deployed at `pm.<domain>` |
+
+---
+
+## The Ceremony Loop (Ralph)
+
+The delivery system lives in `scripts/ralph/`. Ceremonies are Markdown prompts that run in sequence: orient → constitution-review → epic-breakdown → backlog-groom → plan → preflight → smart → execute → smoke → proof → review → retro → sync → advance.
+
+The sprint state lives in:
+- `prd/manifest.json` — source of truth for active increment and sprint file path
+- `prd/increment-N-<name>.json` — the active sprint's stories
+- `prd/backlog.json` — all future work
+
+The word `phase` is retired from code and data. Use `increment`. Encountering `phase` in new code is a bug.

@@ -2,80 +2,36 @@
 
 ## Identity
 
-Technically precise, zero-compromise, working-engineer voice. The project speaks like a
-senior infrastructure engineer with strong opinions about correctness — terse in output,
-specific in error messages, willing to say "this is not configurable" without softening it.
-It names things deliberately (autarky, not self-hosted-mode; invariant, not setting; gate,
-not check; ceremony, not step) and trusts the reader to know what those words mean.
+Declarative, conviction-first, no softening language. The project states what is true and what is required — it does not suggest, recommend, or persuade. Precision serves the mission (sovereignty as a political guarantee, not a marketing claim). When the project has a principle, it names it, defines it exactly, and writes code that enforces it.
 
-The project has principles it will not trade away, and it says so plainly. But it doesn't
-moralize — it states the invariant and moves on.
+Evidence: README.md:3 opens with "Clone, configure, run." — promise, not feature list. `contract/validate.py:104-106` names violations explicitly: `"AUTARKY VIOLATION: {field} must be true... This is not configurable — it is an invariant of the sovereign contract."` `docs/governance/scope.md:101-103` does not say "we prefer self-hosted" — it says "You deploy it. You operate it. You are responsible for it."
 
 ---
 
 ## How We Speak
 
-**When we say no:**
-Hard stops with exact locations. `BLOCKER.` is a term of art, not a mood. The scope
-document doesn't hedge: "Cloud equivalents are not acceptable substitutes — they
-reintroduce vendor dependency." The contract validator doesn't offer a workaround:
-`"AUTARKY VIOLATION: {field} must be true (got {value!r}). This is not configurable —
-it is an invariant of the sovereign contract."` (from `contract/validate.py:104–106`).
-When the answer is no, the no is complete.
+**When we say no:** Short declarative sentence + technical reason. No apology. `README.md:198`: "**AWS free tier is not viable.** t2.micro/t3.micro (1 GB RAM) cannot run a k3s server node with embedded etcd." The refusal and the reason land in the same breath. `docs/governance/scope.md:91`: "This is a **BLOCKER**. Find the self-hosted alternative."
 
-**When we fail:**
-Machine-parseable output, always the same shape.
-`FAIL:{chart_name}:{specific_reason}` — colon-delimited, no prose wrapper
-(from `scripts/ha-gate.sh:119,129,134,149`).
-`CONTRACT VALIDATION FAILED: {values_path}` followed by `  x {error}`, one per line
-(from `contract/validate.py:120–126`).
-The structure is designed to be diffed, grepped, and scripted against — not read aloud.
+**When we fail:** Named violations, machine-readable format, no paragraph of context. `ha-gate.sh:129,132`: `FAIL:${chart_name}:replicaCount missing from values.yaml` and `FAIL:${chart_name}:replicaCount < 2`. `contract/validate.py:120,125`: `CONTRACT VALIDATION FAILED: {path}` / `x {error}` / `This cluster does not satisfy the sovereign contract.` Failure has a name and a specific location — not a vague failure.
 
-**When we explain:**
-Numbered criteria, falsifiable claims. "A component qualifies as foundation-neutral if
-ALL of the following are true" — then four specific, checkable conditions
-(from `docs/governance/sovereignty.md`). Not "we prefer" or "generally speaking."
-Past incidents are taught as lessons: "The lesson: do not wait for the official
-'community fork' announcement before acting." Present tense, assumes reader has agency
-(from `docs/governance/sovereignty.md:81–83`).
+**When we explain:** Define the term exactly, enumerate the failure modes, then stop. `docs/governance/sovereignty.md:3`: "Sovereign means the platform is free from any single vendor's ability to change terms, revoke access, alter the roadmap, or charge for continued use." Four specific failure modes. Not "free from vendor lock-in."
 
-**When we onboard a new user:**
-Reassurance through negation. Prerequisites for the kind path: "That's it. No cloud
-account, no domain, no credentials." (from `README.md:116`). The README closes the
-quick-start section with three verbs: "Clone, configure, run." — no feature list,
-no promise of magic (from `README.md:4`).
+**When we onboard a new user:** Hand them the next command inline, immediately after the current command succeeds. `cluster/kind/bootstrap.sh:107-111` — after bootstrap completes, the script prints `Smoke test: helm install ...` and `Tear down: kind delete cluster ...`. The happy-path journey is self-contained — no archaeology required for the next step.
 
-**When we succeed:**
-Equally terse. `PASS:{chart_name}` (from `scripts/ha-gate.sh:172`).
-`CONTRACT VALID: {values_path}` (from `contract/validate.py:128`).
-`Results: ${PASS_COUNT} passed, ${FAIL_COUNT} failed` — summary line, always printed,
-never omitted even on full success (from `scripts/ha-gate.sh:178`). No celebration,
-no congratulations. The output ends.
+**When we celebrate:** We don't. `contract/validate.py:128`: `CONTRACT VALID: {path}`. No exclamation mark, no "great job," no flourish. Success is a fact, not an event. `ha-gate.sh:184`: `PASS:${chart_name}`. Colon, name, done.
 
 ---
 
 ## The Thing We'd Never Do
 
-We'd never bury the actionable detail in prose. Every failure output has the same
-structure: `FAIL:{thing}:{reason}`. The reason is specific (not "validation failed" but
-`replicaCount < 2`, `no PodDisruptionBudget in rendered templates`,
-`chart not found in platform/charts/ or cluster/kind/charts/`). A reader should be able
-to fix the error in one read. Wall-of-explanation output that makes the user scan for
-what actually went wrong is not our voice.
+Hedge a hard rule. When something is required, the script refuses — it does not warn. `cluster/CLAUDE.md:1-2`: "bootstrap.sh MUST refuse to proceed with fewer than 3 nodes... HA is not optional. It is baked in from the first commit." The distinction between MUST and SHOULD is load-bearing here. We would never write: "we recommend at least 3 nodes." The code enforces it; the docs state it as fact. Softening a constitutional constraint would be the single most off-brand thing this project could do.
 
 ---
 
 ## Signals to Preserve
 
-**Colon-delimited status output.** `PASS:`/`FAIL:` then name, then reason. This shape
-appears in `ha-gate.sh` and `cost-gate.sh`. New scripts should match it — it's a pattern
-readers and scripts depend on.
+1. **Colon-delimited structured output for gates.** `FAIL:chart:reason`, `PASS:chart`, `CONTRACT VALID: path`, `CONTRACT VALIDATION FAILED: path`. Machine-readable, parseable, consistent. Do not change gate output to prose sentences.
 
-**Vocabulary with precise meaning.** Autarky (not "air-gap"), invariant (not "required
-setting"), gate (not "check"), sovereign contract (not "config spec"). These words carry
-specific governance meaning throughout the repo. Diluting them with synonyms blurs the
-concepts they name.
+2. **Em-dash for inline sub-clarification in commit messages and docs.** `feat: add network-policies chart — enforce externalEgressBlocked at workload layer`. The em-dash signals "the headline is complete; this is the why." Use it exactly that way — not for elaboration, for the enforcement target.
 
-**"Not configurable" as a complete sentence.** When something is a hard invariant, the
-project says so directly and stops. It does not offer a workaround, a flag, or an escape
-hatch. The absence of an escape hatch IS the guarantee.
+3. **Named violations, not generic errors.** `AUTARKY VIOLATION`, `CONTRACT VALIDATION FAILED`, `BLOCKER`. When a constraint is broken, name the constraint that was broken. Generic error messages dilute this signal — the project has constitutional categories; the output should reflect them.

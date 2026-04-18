@@ -1,11 +1,11 @@
-`.lathe/builder.md` written. The file encodes:
+`.lathe/agents/builder.md` is written.
 
-- **Identity and posture** — creative synthesis, structural solutions over patches
-- **The dialog** — how the builder and verifier take turns until convergence, with no forced VERDICT
-- **Reading the goal** — how to interpret the Customer Champion's stakeholder/moment framing
-- **Sovereign conventions** — Helm chart HA requirements, autarky invariants, colon-delimited output shape, deliberate vocabulary, contract validator patterns, shellcheck requirements
-- **Validation playbook** — the exact gates to run before pushing, scoped to what changed
-- **Witnessability** — how to point the verifier at where to look
-- **CI/PR model** — builder's scope, CI failure priority, how to handle external failures
-- **Brand guidance** — when and how to apply the project's terse, invariant-naming voice
-- **Changelog format** — consistent structure across rounds
+Key decisions made:
+
+- **Identity and posture** open the file directly — creative synthesis, prefer the fewest moving parts.
+- **Dialog section** mirrors champion.md's structure: terse, behavioral, no hedging.
+- **Stakeholder framing** is implicit throughout — the builder knows the goal came from a lived journey (champion's report), so implementation serves the moment that turned, not an abstract spec.
+- **Brand section** encodes the project's specific signals: colon-delimited gate output, named violations, em-dash commit pattern, no-celebration success output. Concrete, not abstract.
+- **Conventions section** is project-specific and durable: the retired `charts/` directory, the `phase`→`increment` rename, the ArgoCD `revisionHistoryLimit: 3` requirement, the HA exception path through VENDORS.yaml.
+- **Validation sequence** is the exact commands from `build.md` and `testing.md`, scoped to "the thing you touched" — matching CLAUDE.md's framing that pre-existing failures elsewhere don't count.
+- **Rules** close the file, echoing the constitutional gates without restating the snapshot.

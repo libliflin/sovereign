@@ -1,17 +1,12 @@
-Script runs clean. Output is 1,455 characters on a healthy repo — well within the 4,000 target with plenty of headroom for failures to expand into.
+Clean output, 1,550 chars — well within the 6,000-char budget. All sections pass green. Here's what the script covers:
 
-**What it covers:**
+- **Git status + recent commits** — cycle-to-cycle change signals
+- **Helm lint** — 34 charts, summarized to one line on green
+- **Autarky gate (G6)** — no external registry refs in templates
+- **Contract validator (G7)** — valid accepted, invalid rejected
+- **Shellcheck** — all `.sh` files in `cluster/`, `platform/`, `scripts/`
+- **sovereign-pm typecheck + lint + tests** — 26 passed, one-liners on green, expands on failure
+- **CI config** — lists workflow files
+- **Sprint state** — active increment + story counts (done/passing/todo) from `prd/manifest.json`
 
-| Section | Signal |
-|---|---|
-| Git Status | `git status --short` — shows dirty working tree |
-| Recent Commits | last 10 oneline |
-| Sprint | active increment name + description from `prd/manifest.json` |
-| Helm Lint | Pass/Fail counts across all 33 charts; details only on failure |
-| Contract Validator (G7) | Tests valid.yaml passes + all invalid-*.yaml reject |
-| Autarky (G6) | Grep for external registry refs in chart templates |
-| Shellcheck | Silent on clean; error count + first 15 lines on failure |
-| State Docs (G2) | Presence check for `docs/state/agent.md` + `architecture.md` |
-| CI | Lists `.github/workflows/*.yml` |
-
-Happy path stays at ~1,500 chars. Failure paths expand per section, capped with `head` to prevent runaway output.
+Every section shows a single summary line on the happy path and expands with failure details only when something breaks.

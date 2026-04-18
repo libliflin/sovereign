@@ -1,11 +1,17 @@
-`.lathe/verifier.md` is written.
+`.lathe/agents/verifier.md` is written.
 
-**Shape detected: service/CLI/infrastructure platform.** No frontend, no registry publish, no preview deploys. Changes are witnessed by running the local gate suite (ha-gate.sh, shellcheck, contract/validate.py, autarky grep) and confirming CI jobs pass on the PR.
+**What's in it:**
 
-Key choices in the playbook:
-- Every gate is scoped to what the builder changed — full snapshot only when multiple surfaces are touched
-- Contract validator: `valid.yaml` must pass + every `invalid-*.yaml` must fail — both sides confirmed each round
-- Witnessing = local gates passing AND `gh pr checks` green on the PR
-- Divergence between local pass and CI fail is itself a finding, not a "known issue"
+- **Posture** — comparative scrutiny: goal on one side, code on the other, find the gap.
 
-The verifier's contribution model follows the project's own conventions: `FAIL:{thing}:{reason}` output shape, `ha_exception` awareness, shellcheck at `-S error`, autarky grep across both `platform/charts/` and `cluster/kind/charts/`.
+- **6 verification themes** — did the builder do what was asked, does it work in practice, what could break, patch vs. structural fix, test strength, and witnessing.
+
+- **Verification Playbook** scoped to this project's shape — **infrastructure platform** (no UI, no running cluster in CI). Four concrete paths:
+  - Helm charts: `helm dependency update` → `helm lint` → `helm template` → HA gate → resource limits → autarky check → PDB/podAntiAffinity assertions
+  - ArgoCD app manifests: YAML validity + `revisionHistoryLimit: 3` + network-policies coverage
+  - Shell scripts: `shellcheck -S error` + flag presence + direct execution of changed code path
+  - Contract validator: each valid fixture exits 0, each invalid fixture exits 1; new constraints get a matching `invalid-<constraint>.yaml` fixture
+
+- **Constitutional invariants table** — the G-gates (G1, G6, G7) plus HA gate, RHL, and network-policies coverage — checked every round against the diff's touched surfaces.
+
+- **Adversarial inputs** — the specific cases (empty domain, replicaCount: 0, `:latest` tag, wrong `revisionHistoryLimit`, `phase` keyword, SC2155 shellcheck pattern, blocked contract field, missing network-policies namespace) that catch what static analysis misses.

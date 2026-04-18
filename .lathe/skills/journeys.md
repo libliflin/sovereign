@@ -1,119 +1,179 @@
 # Stakeholder Journeys
 
-Concrete step-by-step journeys the champion walks each cycle. One per stakeholder.
-Walk these paths. Run the commands. Notice where momentum lives and where it dies.
+Concrete first-encounter journeys the champion walks each cycle. One per stakeholder. These are the steps to actually execute — run the commands, read the output, notice what the stakeholder would feel.
+
+Update this file when the project state changes (new bootstrap path, new service URL, changed convention). Stale journeys mislead more than no journeys.
 
 ---
 
-## 1. Sovereignty Seeker — VPS Bootstrap Journey
+## Journey: The Self-Hoster (kind path)
 
-**Emotional signal:** "This is actually mine" — completeness, no hidden dependencies.
+**Emotional signal to track:** Momentum. Does one command lead cleanly to the next?
 
-**Prerequisites they have:** 3 Hetzner CX32 nodes running Ubuntu 22.04+, a domain on Cloudflare, `bash`, `kubectl`, `helm` v3+.
+**Prerequisites the stakeholder has:** Docker Desktop running, `kind`/`kubectl`/`helm`/`gh` installed.
 
-**Steps to walk:**
+### Steps to walk
 
-1. `git clone https://github.com/libliflin/sovereign && cd sovereign`
-2. `cat README.md` — does the intro immediately communicate what this is and who it's for?
-3. `ls bootstrap/` — does the layout match what the README says?
-4. `cp bootstrap/config.yaml.example bootstrap/config.yaml` — are the fields self-explanatory? What's ambiguous?
-5. `cp .env.example .env` — count how many tokens you need to find. Is each one's source documented?
-6. `./bootstrap/bootstrap.sh --estimated-cost` — does it give real numbers? Does it name the cloud resources it will create?
-7. `./bootstrap/bootstrap.sh --dry-run` — does the preview match the README's description?
-8. Read `docs/quickstart.md` — does it fill in the gaps the README left?
+1. Open the README. Read the Quick Start Option A section. Note: is the sequence clear? Are the commands copy-pasteable?
 
-**Watch for:**
-- Steps where you need to open a browser tab to find information the README should have given you
-- Error messages that say what failed but not how to fix it
-- The moment you realize you're still depending on something you don't control (Cloudflare during bootstrap, external images during deploy)
-- Whether `--dry-run` output matches the actual bootstrap behavior
+2. Run `./cluster/kind/bootstrap.sh --dry-run` from the repo root. Read the output. Does it explain what it would do?
 
----
+3. Run `./cluster/kind/bootstrap.sh`. Watch for errors. Time it. Does it give feedback while running or go silent for minutes?
 
-## 2. Kind Kicker — Local Evaluation Journey
+4. Once complete, run the smoke-test command from the README:
+   ```bash
+   helm install test-release cluster/kind/charts/sealed-secrets/ \
+     --namespace sealed-secrets --create-namespace \
+     --kube-context kind-sovereign-test --wait
+   ```
+   Does this work? Does the README give the right chart path?
 
-**Emotional signal:** Momentum — each step feels like forward progress, not debugging.
+5. Run `kubectl --context kind-sovereign-test get pods -n sealed-secrets`. Are pods Running?
 
-**Prerequisites they have:** Docker Desktop running, `kind`, `kubectl`, `helm`, `gh` installed via brew.
+6. Now ask: what do I do next? Is the README's "next steps" path clear, or does it dead-end?
 
-**Steps to walk:**
-
-1. Read "Option A — Local testing with kind" in the README
-2. `./cluster/kind/bootstrap.sh --dry-run` — does it print a useful preview?
-3. `./cluster/kind/bootstrap.sh` — watch the output. Is progress legible? Does the ~4 minute wait have output?
-4. Run the exact `helm install test-release` command from the README (copy-paste verbatim)
-5. `kubectl --context kind-sovereign-test get pods -n sealed-secrets` — do the pods start? How long?
-6. `kind delete cluster --name sovereign-test` — does teardown work cleanly?
-
-**Watch for:**
-- Any command in the README that fails because a path doesn't exist (README chart path validation is a CI check — but feel it yourself)
-- Whether the output during bootstrap is informative or a wall of text
-- The moment a pod fails to start and you have to figure out why
-- Whether you understand what you just deployed, or if it's a black box
+**Where the wall usually lives:** Step 4 (wrong chart path in README), step 3 (silent failure during bootstrap), step 6 (no clear next step after the smoke test).
 
 ---
 
-## 3. Platform Contributor — PR Journey
+## Journey: The Self-Hoster (VPS path)
 
-**Emotional signal:** Confidence and collaboration — CI feels like a knowledgeable reviewer.
+**Emotional signal to track:** Momentum and trust. Does the estimated cost output match reality? Does bootstrap give feedback while running?
 
-**Prerequisites they have:** A fork, a change (e.g., a new chart or a provider doc update).
+**Prerequisites the stakeholder has:** A domain with Cloudflare DNS, Hetzner + Cloudflare tokens, 3 VPS nodes already running Ubuntu 22.04+.
 
-**Steps to walk:**
+### Steps to walk
 
-1. Read `CONTRIBUTING.md` — are the requirements clear before starting?
-2. Read the relevant `CLAUDE.md` (root or `platform/charts/CLAUDE.md`)
-3. Make a change to a chart (or simulate one by running checks on an existing chart)
-4. `helm lint platform/charts/<chart-name>/`
-5. `bash scripts/ha-gate.sh --chart <chart-name>` — scoped to just this chart
-6. `helm template platform/charts/<chart-name>/ | grep PodDisruptionBudget` — present?
-7. `helm template platform/charts/<chart-name>/ | grep podAntiAffinity` — present?
-8. Push and open a PR; read the CI output on the HA Gate workflow
+1. Read `docs/quickstart.md`. Is it current? Does it reference correct file paths?
 
-**Watch for:**
-- Whether the ha-gate.sh output tells you *what to fix*, not just *that something failed*
-- Whether a failure in a pre-existing chart blocks the contributor's unrelated change
-- Whether the contributor can reproduce every CI check locally before pushing
-- The gap between what CONTRIBUTING.md says and what CI actually checks
+2. Copy and edit config:
+   ```bash
+   cp bootstrap/config.yaml.example bootstrap/config.yaml
+   # check: does config.yaml.example document all required fields?
+   ```
 
----
+3. Copy and edit credentials:
+   ```bash
+   cp .env.example .env
+   # check: does .env.example tell you where to get each token?
+   ```
 
-## 4. Security Auditor — Zero-Trust Verification Journey
+4. Run `./bootstrap/bootstrap.sh --estimated-cost`. Read the output. Is it useful?
 
-**Emotional signal:** Paranoia satisfied — every claim verifiable, not asserted.
+5. Read `docs/providers/hetzner.md`. Does it give real-world cost numbers and gotchas?
 
-**Steps to walk:**
+6. Review what `./bootstrap/bootstrap.sh --confirm-charges` would do. Is there a `--dry-run`? Is there a way to inspect the plan before spending money?
 
-1. Read the "Core Principles" section of the README — list every claim made
-2. `python3 contract/validate.py contract/v1/tests/valid.yaml` — does it exit 0?
-3. `python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml` — does it exit 1 with a specific message?
-4. `grep -rn "docker.io\|quay.io\|ghcr.io\|gcr.io\|registry.k8s.io" platform/charts/*/templates/` — any external registries in templates?
-5. Read `platform/vendor/VENDORS.yaml` — are BSL/SSPL licenses actually blocked?
-6. Check whether the `autarky.externalEgressBlocked: true` invariant is backed by a NetworkPolicy in any chart template
-7. Read `docs/governance/sovereignty.md` — does it match what the code actually does?
-
-**Watch for:**
-- Claims in the README that aren't falsifiable by a specific command
-- The contract validator accepting configs that violate a stated invariant
-- The gap between "autarky.externalEgressBlocked: true" in the contract schema and actual NetworkPolicy enforcement in chart templates
-- Any vendor entry in VENDORS.yaml with a blocked license that isn't marked deprecated
+**Where the wall usually lives:** Undocumented config fields, `.env.example` that's vague about where to get credentials, bootstrap that fails without a clear error message.
 
 ---
 
-## 5. Ceremony Observer — Pipeline Health Journey
+## Journey: The Platform Operator
 
-**Emotional signal:** Confidence in the machine — the loop is advancing real things.
+**Emotional signal to track:** Confidence. Does the observability tell me what I need to know?
 
-**Steps to walk:**
+**Prerequisites the stakeholder has:** A running cluster (kind or VPS). `kubectl` configured. Access to Grafana.
 
-1. `git log --oneline -10` — do commit messages communicate what changed and why?
-2. Read the snapshot output (run `bash .lathe/snapshot.sh`) — is it concise? Does it give health signals or raw dumps?
-3. Read the last 4 goals in `.lathe/session/goal-history/` — are different stakeholders getting attention?
-4. Check `prd/manifest.json` for the active increment
-5. Read `docs/state/agent.md` — is it current with what git log shows?
+### Steps to walk
 
-**Watch for:**
-- Whether the snapshot's output is scannable in 30 seconds or requires deep reading to extract health
-- Whether the goal history shows genuine rotation across stakeholders or fixation on one
-- Whether changelogs cite specific moments ("step 3 of the CLI install") or generic categories ("improved UX")
-- Whether `docs/state/agent.md` reflects what's actually happening vs. being stale
+1. Check the state of the cluster:
+   ```bash
+   kubectl --context kind-sovereign-test get pods -A | grep -v Running | grep -v Completed
+   ```
+   Are there any non-Running pods? What's the story?
+
+2. Look at what Helm charts are deployed and which have Grafana datasource ConfigMaps:
+   ```bash
+   helm template platform/charts/prometheus-stack/ | grep -i datasource
+   helm template platform/charts/loki/ | grep -i datasource
+   ```
+   Do the observability charts register themselves in Grafana automatically?
+
+3. Check HA posture across deployed charts:
+   ```bash
+   bash scripts/ha-gate.sh
+   ```
+   Read the output. Are there any failures? If so, which charts, and what's missing?
+
+4. Simulate a "what failed" investigation: pick a chart, look at its Helm values for resource limits, and verify `check-limits.py` would pass:
+   ```bash
+   helm template platform/charts/prometheus-stack/ | python3 scripts/check-limits.py
+   ```
+
+5. Read the network-policies chart values to understand what egress is being controlled:
+   ```bash
+   cat platform/charts/network-policies/values.yaml
+   ```
+   Does this list all deployed namespaces? Is anything missing?
+
+6. Ask: if I got paged right now because `argocd.<domain>` was unreachable, what would I look at first? Does the observability stack guide that investigation?
+
+**Where the wall usually lives:** A chart missing its Grafana datasource ConfigMap, the ha-gate showing a PDB missing, a namespace not in the network-policies egress baseline.
+
+---
+
+## Journey: The Developer on the Platform
+
+**Emotional signal to track:** Flow. Does the environment disappear, or do I keep hitting it?
+
+**Prerequisites the stakeholder has:** A URL for code-server, SSO credentials (Keycloak).
+
+### Steps to walk
+
+1. Open `code-server` at its configured URL. Authenticate through Keycloak SSO.
+
+2. Open a terminal in code-server. Run:
+   ```bash
+   kubectl version --client
+   helm version
+   k9s version
+   ```
+   Are these tools available? Are they on PATH without any setup?
+
+3. Check the workspace persistence: create a file, close and reopen code-server. Is the file there?
+
+4. Look at the code-server Helm values to understand the toolchain initContainer:
+   ```bash
+   grep -A 20 toolchainInit platform/charts/code-server/values.yaml
+   ```
+   Does the toolchain init container copy the right tools?
+
+5. Look at Backstage to find services: navigate to `backstage.<domain>`. Is the service catalog populated? Can you find the ArgoCD, Grafana, and Forgejo entries?
+
+6. Open Forgejo at `forgejo.<domain>`. Can you log in with Keycloak SSO? Create a test repo.
+
+**Where the wall usually lives:** code-server missing `kubectl`/`helm` in PATH (toolchain initContainer not working), Backstage showing empty catalog, SSO not wired to Forgejo or Backstage.
+
+---
+
+## Journey: The Contributor
+
+**Emotional signal to track:** Clarity. Do I know what's expected and does my work meet it?
+
+**Prerequisites the stakeholder has:** The repo forked and cloned. A change in mind — say, a new provider doc or a small Helm chart fix.
+
+### Steps to walk
+
+1. Read `CONTRIBUTING.md`. Does it tell you what gates to run before opening a PR?
+
+2. Read the root `CLAUDE.md` Quality Gates section. Can you run these locally?
+
+3. Try running the key gates against an existing chart:
+   ```bash
+   bash scripts/ha-gate.sh --chart platform/charts/prometheus-stack
+   helm lint platform/charts/prometheus-stack/
+   helm template platform/charts/prometheus-stack/ | python3 scripts/check-limits.py
+   ```
+   Do these work? Are the error messages clear when something fails?
+
+4. Try `shellcheck` on a script:
+   ```bash
+   shellcheck -S error scripts/ha-gate.sh
+   ```
+   Does it pass? Do errors give you enough information to fix them?
+
+5. Open `.github/workflows/validate.yml`. Compare what CI checks against what CONTRIBUTING.md documents. Are they aligned?
+
+6. Imagine CI failed on your PR with "Assert replicaCount >= 2" for a chart you modified. Would the CI message tell you which chart, which file, and what value to change?
+
+**Where the wall usually lives:** CONTRIBUTING.md that's outdated or references wrong paths, CI failure messages that name the check but not the specific fix, missing documentation of the `ha_exception` pattern for single-instance services.

@@ -1,66 +1,58 @@
 # Alignment Summary
 
-For the human reviewing lathe initialization. Plain English. This is not an agent-facing file.
+For the human. Not for the runtime agent.
 
 ---
 
-## Who This Serves
+## Who this serves
 
-- **Sovereignty Seeker** — self-hosted operators deploying to VPS who need the bootstrap to actually work and the "autarky" claim to be real at runtime
-- **Kind Kicker** — developers evaluating the platform locally, following Option A in the README, who need momentum and copy-pasteable commands that actually work
-- **Platform Contributor** — open source participants adding charts or provider docs, who need CI to catch what they missed and give clear, scoped feedback
-- **Security Auditor** — zero-trust verifiers checking whether the platform's claims (autarky.externalEgressBlocked, mTLS STRICT, distroless everywhere) are backed by actual enforcement, not just assertion
-- **Ceremony Observer** — the person (or agent) monitoring whether the autonomous delivery loop is making real progress or spinning on low-value work
-
----
-
-## Emotional Signal Per Stakeholder
-
-| Stakeholder | Signal |
-|---|---|
-| Sovereignty Seeker | "This is actually mine" — completeness, no hidden runtime dependencies |
-| Kind Kicker | Momentum — forward progress at each step, commands that work verbatim |
-| Platform Contributor | Confidence + collaboration — CI as a helpful reviewer, not a black box |
-| Security Auditor | Paranoia satisfied — every zero-trust claim falsifiable by a specific command |
-| Ceremony Observer | Confidence in the machine — the loop advances real things |
+- **The Self-Hoster** — a developer escaping SaaS/cloud lock-in, wants a working self-hosted stack from one command, on cheap VPS or bare metal.
+- **The Platform Operator** — an SRE or senior dev running the platform in production, on-call, needs observability and HA to actually work.
+- **The Developer on the Platform** — a developer using the running platform: code-server, Forgejo CI, Backstage, SSO. They want to forget the platform exists.
+- **The Contributor** — an open source developer who wants to contribute a chart fix, provider doc, or new feature; needs clear gates and CI that tells them what to fix.
 
 ---
 
-## Key Tensions
+## Emotional signal per stakeholder
 
-**Sovereignty vs. Usability (Seeker vs. Kicker)**
-The kind evaluation path may pull in external images during eval — fine for evaluation, confusing if autarky error messages assume a live Harbor registry. Signal: if kind failures reference Harbor before Harbor exists, the messaging is wrong.
-
-**HA Enforcement vs. Contributor Friction (Contributor)**
-The HA gate is non-negotiable, but a contributor's PR shouldn't fail on a pre-existing chart they didn't touch. The `--chart` flag on ha-gate.sh exists for exactly this reason. Signal: if CI blocks a contributor on an unrelated chart failure, the scoped gate isn't being used correctly.
-
-**Claim vs. Implementation (Auditor)**
-`autarky.externalEgressBlocked: true` is a contract invariant (declared) not an enforced constraint (NetworkPolicy). The enforcement layer requires per-namespace NetworkPolicy + Istio AuthorizationPolicy. The gap between the claim and enforcement is real and not fully closed. Signal: the auditor should be able to grep for NetworkPolicy manifests in chart templates and find coverage for every service.
-
-**Maturation vs. New Features (all)**
-Adding new charts while the kind evaluation journey is still rough means the Kind Kicker can't get through the door while the Sovereignty Seeker gets new capabilities. Signal: when the same first-encounter friction persists across multiple goal cycles, stop adding features and fix the wall.
+| Stakeholder | Signal | Meaning |
+|---|---|---|
+| Self-Hoster | Momentum | One command leads cleanly to the next |
+| Platform Operator | Confidence | "I know what it did and why" |
+| Developer on Platform | Flow | The environment disappears |
+| Contributor | Clarity | "I know what's expected and my work meets it" |
 
 ---
 
-## Repository Security for Autonomous Operation
+## Key tensions
 
-Checked during init (approximate — gh API not available in this session):
+**Autarky vs. first-run simplicity.** Full autarky (build all images from source) requires Harbor, Forgejo, and the vendor pipeline to exist — none of which exist on first bootstrap. Resolution: kind path uses upstream images; VPS path enforces autarky. Tension is live when the kind path pulls external images for platform charts and someone treats that as an autarky violation.
 
-- **Workflow triggers:** No `pull_request_target` or `issue_comment` triggers found in `.github/workflows/`. The three workflows (`ha-gate.yml`, `validate.yml`, `release.yml`) use `pull_request`, `push`, and tag triggers only. Prompt injection via PR metadata is not a vector with these triggers.
-- **External registry in CI:** CI uses `actions/checkout@v4`, `azure/setup-helm@v4`, `azure/setup-kubectl@v4`, `actions/cache@v4` — these are GitHub-hosted actions, not operator-controlled. This is standard for public repos but worth noting: the CI trusts GitHub's action marketplace for these specific pinned versions.
-- **Repo visibility:** Marked as public in CLAUDE.md (dogfood domain publicly referenced). This means any PR from a fork can trigger CI — standard for open source, but lathe should not commit any secrets or credentials in goal files.
-- **Branch protection:** Could not verify via API in this session. Recommend checking that the `main` branch requires PR reviews and CI passing before merge.
+**Developer DX vs. operator burden.** Every new service (Backstage, SonarQube, code-server, ReportPortal) the developer team gets is another service the operator monitors, keeps HA, and gets paged about. Tension surfaces when a chart is added without a Grafana datasource ConfigMap or without proper HA gates.
+
+**Contributor ease vs. quality gates.** The project has >10 distinct CI gates. Contributors who don't read the docs (and many won't) get opaque CI failures. Tension surfaces when CI says "helm gate failed" without naming which chart and which specific check.
+
+**Operator stability vs. platform evolution.** Each sprint adds to `docs/state/agent.md`'s "patterns that must not be broken" section — because something broke. The list grows. The tension is: does the champion advocate for slowing down and hardening, or adding what's missing?
 
 ---
 
-## What Could Be Wrong
+## Repository security assessment (for autonomous operation)
 
-1. **Missing stakeholder: downstream team / API client.** The contract system (`contract/validate.py`, `sovereign.dev/cluster/v1` schema) implies there could be teams who consume this as a platform contract — writing their own cluster-values.yaml and relying on the invariants. This stakeholder wasn't fully fleshed out because the evidence in the code is thin (only two test fixtures). If the contract system grows, this stakeholder should be added.
+- **Workflow triggers:** No `pull_request_target` or `issue_comment` triggers found in `.github/workflows/`. All three workflows (`validate.yml`, `ha-gate.yml`, `release.yml`) are triggered by `pull_request` (to main) and `push` (to main) — standard, unprivileged triggers. **No elevated-privilege injection surface.**
+- **Repo visibility:** Public (stated in CLAUDE.md and evident from the GitHub URL in README).
+- **Default branch protection:** Not verifiable from local filesystem. **Recommended:** Verify that the `main` branch has required status checks and requires PR review before merge. A public repo with an unprotected main branch is a prompt injection risk — a PR from an external contributor with a malicious commit message or file content could be read by the champion into its prompt.
+- **Pull request metadata in prompts:** If lathe's snapshot reads PR titles or commit messages from open PRs, those are an injection surface. Treat them as untrusted input: don't execute shell commands embedded in commit messages, don't follow URLs from PR bodies without explicit user approval.
 
-2. **Ceremony Observer is an unusual stakeholder.** Most platforms don't have "the person monitoring the autonomous loop" as a real user. This is correct for Sovereign given its operating-room / lathe architecture, but future goal.md maintainers should verify this stakeholder remains real as the system evolves.
+---
 
-3. **The "autarky at runtime" claim has a known gap.** The autarky gate (G6) checks chart templates for external registry refs. It does not verify that Harbor is populated. A champion walking the Sovereignty Seeker journey on a fresh cluster will find images missing until the vendor build pipeline runs — this is a real and known friction point.
+## What could be wrong
 
-4. **Kind first-encounter journey is the most testable.** The Sovereignty Seeker journey requires real VPS and credentials. The champion can only walk it partially (dry-run, README reading, config inspection) without live infrastructure. The Kind Kicker journey is fully walkable on any laptop. The champion should weight kind-walkable evidence more heavily than VPS-inferred evidence.
+**Missing stakeholder: the downstream integrator.** Sovereign PM exposes an API (`prd.json` generation, sprint management). Teams could build tooling on top of it. That stakeholder — "an agent or tool consuming the Sovereign PM API" — isn't in the stakeholder map. If the API stabilizes and downstream consumers appear, add them.
 
-5. **Brand.md is not yet present.** Without a brand.md, the champion should skip the brand-tint step described in goal.md and fall back to stakeholder emotional signals alone. Once enough cycles have run to establish the project's character from evidence, brand.md should be written.
+**The operator journey assumes Grafana is accessible.** The kind bootstrap doesn't install Grafana by default — it installs sealed-secrets, Cilium, cert-manager, local-path-provisioner, and MinIO. The observability stack requires deploying the prometheus-stack chart separately. The operator journey in `skills/journeys.md` uses `helm template` to check datasource ConfigMaps — it doesn't require a running Grafana — but if the champion walks a "running cluster" variant of the operator journey, Grafana may not be there.
+
+**Backstage catalog is empty without configuration.** The Backstage chart and ArgoCD app exist, but the Keycloak OIDC plugin and entity sources are pending (DEVEX story 027a). The developer-on-platform journey step "find services in Backstage" will fail until that story ships. The champion should flag this as a wall in the developer journey, not assume Backstage is working.
+
+**CI existence vs. CI greenness.** The snapshot checks CI config (`ls .github/workflows/*.yml`) but doesn't report whether the last CI run passed. The champion should check actual CI status each cycle — the snapshot shows the gates exist, not whether they're passing. If the snapshot doesn't pull live CI status, that's a gap to fix in `snapshot.sh`.
+
+**kind vs. VPS divergence.** Most champion journeys can be walked against the kind cluster, but the VPS path (bootstrap.sh, config.yaml, .env) cannot be walked without real cloud credentials and real VPS nodes. The self-hoster VPS journey in `skills/journeys.md` can only be partially walked locally — the champion can check doc accuracy, config file documentation, and `--dry-run` behavior, but can't validate the full bootstrap without infrastructure. This is a known gap.

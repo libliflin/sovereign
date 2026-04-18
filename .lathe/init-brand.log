@@ -1,11 +1,13 @@
-Done. `.lathe/brand.md` is written.
+`.lathe/brand.md` written. Here's what the evidence says:
 
-The brand reads from five surfaces with citations:
+**Identity:** Declarative, conviction-first. The project states what's true and enforces it in code — it doesn't suggest or soften. Sovereignty is defined as a political guarantee (four enumerated failure modes, `sovereignty.md:3`), not a marketing claim.
 
-- **README** — opening tagline ("Clone, configure, run"), the "No cloud account, no domain, no credentials" reassurance, and "bootstrap.sh will refuse"
-- **Error messages** — `ha-gate.sh`'s `FAIL:{chart}:{reason}` colon-delimited shape and `contract/validate.py`'s "AUTARKY VIOLATION... this is not configurable — it is an invariant"
-- **Governance docs** — `scope.md`'s hard BLOCKER language and `sovereignty.md`'s numbered falsifiable criteria plus the Vault Precedent narrative
-- **Naming conventions** — autarky, gate, ceremony, invariant, sovereign contract
-- **CLAUDE.md** — "Stop the line", "Never self-certify", the proof-of-work framing
+**Key brand signals found:**
 
-The through-line: technically precise, zero-compromise, working-engineer voice that names things deliberately, says no completely, and never buries the actionable detail under prose.
+- **Failure format** — `FAIL:chart:reason`, `CONTRACT VALIDATION FAILED`, `AUTARKY VIOLATION` — named violations, machine-readable, no prose padding (`ha-gate.sh:129`, `validate.py:104,120`)
+- **Saying no** — technical reason in the same sentence, no apology — `README.md:198` on AWS free tier
+- **Success** — flat declarative, no celebration — `CONTRACT VALID: {path}`, `PASS:${chart_name}`
+- **Onboarding** — next command printed inline after success, no archaeology (`bootstrap.sh:107-111`)
+- **Em-dash pattern** — `feat: add X — enforce Y` — headline complete, then the enforcement target
+
+**The anti-pattern:** hedging a hard rule. The project writes `MUST refuse` in docs and code that actually refuses. "We recommend 3 nodes" would be the single most off-brand thing it could produce.
