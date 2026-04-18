@@ -415,4 +415,9 @@ for ns in openbao harbor keycloak forgejo argocd monitoring \
 done
 
 log ""
-log "Deploy pass complete."
+log "Deploy pass complete: ${DOMAIN}"
+log "ArgoCD:    https://argocd.${DOMAIN}"
+log "Grafana:   https://grafana.${DOMAIN}"
+log "Keycloak:  https://auth.${DOMAIN}"
+log "Forgejo:   https://forgejo.${DOMAIN}"
+log "Backstage: https://backstage.${DOMAIN}"
