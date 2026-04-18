@@ -283,7 +283,7 @@ jobs:
           with open('platform/vendor/VENDORS.yaml') as f:
               vendors = yaml.safe_load(f)
 
-          required = ['name', 'upstream', 'version', 'license', 'distroless']
+          required = ['name', 'upstream_url', 'version_pinned', 'license_spdx', 'distroless_compatible']
           blocked_licenses = ['BSL', 'SSPL']
           errors = []
 
@@ -292,7 +292,7 @@ jobs:
               for field in required:
                   if field not in entry:
                       errors.append(f"{name}: missing required field '{field}'")
-              lic = entry.get('license', '')
+              lic = entry.get('license_spdx', '')
               if any(b in lic for b in blocked_licenses):
                   if not entry.get('deprecated'):
                       errors.append(f"{name}: blocked license '{lic}' but not marked deprecated")
