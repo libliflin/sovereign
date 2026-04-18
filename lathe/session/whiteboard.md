@@ -1,4 +1,41 @@
-# Builder round 1 notes
+# Verifier round 1 notes (code-server toolchain cycle)
+
+## What I compared
+
+Goal: AI Agent opens code-server terminal and can run `kubectl`, `helm`, `shellcheck` by name — no dead ends.
+
+Builder applied: PATH env var, PVC storageClass fix, shellcheck in toolchain loop.
+
+## Gap found: `workspace.storageSize` orphan
+
+The storageClass fix (pvc.yaml: `global.storageClass` → `workspace.storageClass`) was correct but left storage size pulling from the wrong key. The workspace section defines `storageSize: 10Gi` but pvc.yaml still used `persistence.size: 5Gi`. Now that workspace is the authoritative section for storageClass and accessModes, size should come from there too.
+
+## What I added (PR libliflin/sovereign#176)
+
+1. `pvc.yaml` — changed `{{ .Values.persistence.size }}` → `{{ .Values.workspace.storageSize }}`. workspace section is now the single authoritative source for all workspace PVC config.
+
+2. `values.yaml` — updated stale comment on `persistence.size` (formerly said "storageClass is taken from global.storageClass").
+
+3. `scripts/ralph/tests/test_code_server_chart.py` — 10 tests covering:
+   - PATH env var present and toolchain bin path first
+   - Standard system paths not lost
+   - PVC storageClass = ceph-filesystem
+   - PVC accessModes = ReadWriteMany
+   - PVC size = 10Gi (workspace.storageSize)
+   - shellcheck in toolchain loop
+   - kubectl/helm/k9s regression guard
+   - PodDisruptionBudget present
+   - Adversarial: global.storageClass override cannot bleed into workspace PVC
+
+All 10 pass. Lint, HA gate clean.
+
+## For the champion (next cycle)
+
+Extension install autarky (step 9 dead end) is not closed — see builder's whiteboard note. The `extensionRegistry` value exists but the install-extensions initContainer doesn't use it. That gap requires Harbor-hosted VSIX files and a `--vsix` install loop.
+
+---
+
+# Builder round 1 notes (previous cycle — GitLab→Forgejo)
 
 ## Applied this round
 
