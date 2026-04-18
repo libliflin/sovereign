@@ -146,7 +146,11 @@ helm install test-release cluster/kind/charts/sealed-secrets/ \
 kubectl --context kind-sovereign-test get pods -n sealed-secrets
 
 # 4. Deploy the platform (Grafana, ArgoCD, Keycloak, Forgejo, and the rest)
-./platform/deploy.sh --cluster-values cluster-values.yaml
+./platform/deploy.sh --cluster-values cluster-values.yaml          # ~10 minutes
+./platform/deploy.sh --cluster-values cluster-values.yaml --dry-run  # preview
+
+# When complete, services are at https://<service>.sovereign-autarky.dev
+# See the Service URLs table below for the full list.
 
 # 5. Tear down when done
 kind delete cluster --name sovereign-test
