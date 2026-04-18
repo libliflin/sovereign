@@ -184,8 +184,14 @@ for chart_dir in "${CHART_DIRS[@]}"; do
     local_limits_exception="$(is_limits_exception "${chart_name}")"
 
     # Render templates — all four checks use the rendered output.
+    # When a chart ships ci/ci-values.yaml, pass it to satisfy required fields.
+    ci_values_args=""
+    if [[ -f "${chart_dir}/ci/ci-values.yaml" ]]; then
+        ci_values_args="-f ${chart_dir}/ci/ci-values.yaml"
+    fi
     rendered=""
-    if ! rendered="$(helm template "${chart_dir}" 2>/dev/null)"; then
+    # shellcheck disable=SC2086
+    if ! rendered="$(helm template ${ci_values_args} "${chart_dir}" 2>/dev/null)"; then
         echo "FAIL:${chart_name}:helm template failed"
         FAIL_COUNT=$((FAIL_COUNT + 1))
         continue

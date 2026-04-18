@@ -69,7 +69,11 @@ jobs:
 
       - name: Helm lint
         run: |
-          helm lint "${{ matrix.chart }}/"
+          CI_VALUES=""
+          if [ -f "${{ matrix.chart }}/ci/ci-values.yaml" ]; then
+            CI_VALUES="-f ${{ matrix.chart }}/ci/ci-values.yaml"
+          fi
+          helm lint "${{ matrix.chart }}/" $CI_VALUES
 
       - name: Set safe chart name for filenames
         run: echo "CHART_SAFE=$(echo '${{ matrix.chart }}' | tr '/' '_')" >> "$GITHUB_ENV"
@@ -77,8 +81,13 @@ jobs:
       - name: Helm template (render)
         id: template
         run: |
+          CI_VALUES=""
+          if [ -f "${{ matrix.chart }}/ci/ci-values.yaml" ]; then
+            CI_VALUES="-f ${{ matrix.chart }}/ci/ci-values.yaml"
+          fi
           helm template sovereign "${{ matrix.chart }}/" \
             --set global.domain=sovereign-autarky.dev \
+            $CI_VALUES \
             > "/tmp/rendered-${CHART_SAFE}.yaml"
           echo "Rendered $(wc -l < "/tmp/rendered-${CHART_SAFE}.yaml") lines"
 
