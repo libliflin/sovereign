@@ -76,24 +76,45 @@ Open `bootstrap/config.yaml` and fill in:
 - Cloudflare credentials (`cloudflare.apiToken`, `accountId`, `zoneId`, `tunnelName`)
 - `platform.repoUrl` — your fork URL (ArgoCD will watch this)
 
-## Step 3: Bootstrap
+## Step 3: Check estimated cost
+
+Before spending anything, verify your config.yaml is valid and see the projected cost:
 
 ```bash
-./bootstrap/bootstrap.sh
+./bootstrap/bootstrap.sh --estimated-cost
 ```
 
-This will:
+This reads `bootstrap/config.yaml` and prints a cost table — no API calls, no credentials
+required, no charges incurred. Example output:
 
-1. Harden all nodes (unattended-upgrades, fail2ban, auditd, CIS sysctl)
-2. Provision a server (or connect to your existing one)
-3. Create a Cloudflare Tunnel and install `cloudflared` on every node
-4. Configure `*.<domain>` DNS via Cloudflare API (automatic — no manual step)
-5. Install K3s with HA (3-node etcd cluster, kube-vip floating VIP)
-6. Install cluster foundations (Cilium, Crossplane, cert-manager, Sealed Secrets)
-7. Print connection instructions
+```
+Estimated monthly cost for this configuration:
+  Provider:    hetzner
+  Node type:   cx32 (4 vCPU / 8 GB RAM)
+  Node count:  3
+  Cost/node:   ~€8.21/mo
+  Total:       ~€24.63/mo
 
-> **No open ports.**  The Cloudflare Tunnel is outbound-only.  UFW blocks all
-> inbound connections by default.
+Run with --confirm-charges to provision (real servers, real charges).
+```
+
+If the config is missing or a field is unrecognized, the command exits with a clear error.
+
+> **`--confirm-charges` is not yet implemented.** VPS provisioning is under development.
+> For the current working path, use Option A (kind local cluster) above, or deploy to an
+> existing cluster with `./platform/deploy.sh`.
+>
+> When `--confirm-charges` is implemented, it will:
+> 1. Harden all nodes (unattended-upgrades, fail2ban, auditd, CIS sysctl)
+> 2. Provision servers via your chosen provider
+> 3. Create a Cloudflare Tunnel and install `cloudflared` on every node
+> 4. Configure `*.<domain>` DNS via Cloudflare API (automatic — no manual step)
+> 5. Install K3s with HA (3-node etcd cluster, kube-vip floating VIP)
+> 6. Install cluster foundations (Cilium, Crossplane, cert-manager, Sealed Secrets)
+> 7. Print connection instructions
+>
+> **No open ports** — the Cloudflare Tunnel is outbound-only. UFW blocks all inbound
+> connections by default.
 
 ## Step 4: Verify the tunnel
 
