@@ -20,22 +20,30 @@ alternative: ""
 
 # How to use
 # ----------
-# 1. Run fetch-vsix.sh to download VSIX files into a local directory:
+# 1. Run fetch-vsix.sh to download VSIX files:
 #      bash platform/vendor/recipes/vscode-extensions/fetch-vsix.sh \
 #        --output-dir /tmp/vsix-cache
 #
-# 2. Serve the directory with any HTTP server reachable from the cluster.
-#    The directory layout matches the URL pattern the install-extensions
-#    initContainer expects:
-#      <output-dir>/vsix/<publisher>/<name>/latest.vsix
+# 2. Copy VSIX files into the vscode-extension-registry PVC:
+#      POD=$(kubectl -n vscode-extension-registry get pod \
+#              -l app.kubernetes.io/name=vscode-extension-registry \
+#              -o jsonpath='{.items[0].metadata.name}')
+#      kubectl -n vscode-extension-registry exec "$POD" -- \
+#        mkdir -p /usr/share/nginx/html/vsix
+#      kubectl -n vscode-extension-registry cp \
+#        /tmp/vsix-cache/vsix "$POD":/usr/share/nginx/html/vsix
 #
-# 3. Set extensionRegistry in the code-server ArgoCD app values:
-#      extensionRegistry: "https://<serving-host>"
-#    The initContainer constructs:
-#      <extensionRegistry>/vsix/<publisher>/<name>/latest.vsix
+# 3. Verify extensions are reachable:
+#      kubectl -n vscode-extension-registry exec "$POD" -- \
+#        find /usr/share/nginx/html/vsix -name "*.vsix"
+#
+# The vscode-extension-registry chart (platform/charts/vscode-extension-registry/) runs
+# nginx with replicaCount=2 on a ceph-filesystem (RWX) PVC. code-server's
+# extensionRegistry is pre-wired to the in-cluster service URL in
+# platform/charts/code-server/values.yaml — no additional config required.
 #
 # Extension list is read from platform/charts/code-server/values.yaml (.extensions[]).
-# Add or remove extensions there; re-run fetch-vsix.sh to refresh.
+# Add or remove extensions there; re-run fetch-vsix.sh and re-copy to refresh.
 
 rollout:
   strategy: skip          # static file content; no rolling update logic applies

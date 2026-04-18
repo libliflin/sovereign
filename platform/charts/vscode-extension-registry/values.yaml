@@ -1,0 +1,48 @@
+replicaCount: 2
+
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  imageRegistry: ""
+  keycloak:
+    url: "https://auth.sovereign-autarky.dev"
+    realm: "sovereign"
+
+image:
+  # nginx: serves static VSIX files from the vsix PVC
+  repository: "nginx"
+  name: "nginx"
+  tag: "1.27.0-alpine3.19-slim"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+podDisruptionBudget:
+  minAvailable: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+# PVC that stores VSIX files populated by fetch-vsix.sh.
+# ceph-filesystem (RWX) is required so both replicas can mount and serve simultaneously.
+vsix:
+  storageClass: "ceph-filesystem"
+  storageSize: "5Gi"
+  accessModes:
+    - ReadWriteMany
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: sovereign-ca-issuer
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  # Operator upload path: kubectl cp vsix-cache/vsix <pod>:/usr/share/nginx/html/vsix
+  # or kubectl exec into any pod and write to /usr/share/nginx/html/vsix
