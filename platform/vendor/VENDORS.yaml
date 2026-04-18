@@ -429,6 +429,23 @@ vendors:
     ha_exception: true
     ha_exception_reason: "Zot during bootstrap uses a ReadWriteOnce local-path PVC. Multiple replicas require an S3 or RWX backend. replicaCount is set to 1 until storage backend is upgraded."
 
+  # ── Network Enforcement ─────────────────────────────────────────────────
+  - name: network-policies
+    upstream_url: "https://kubernetes.io/docs/concepts/services-networking/network-policies/"
+    license_spdx: Apache-2.0
+    license_allows_vendor: true
+    version_pinned: "networking.k8s.io/v1"
+    fetch_method: git_tag
+    distroless_compatible: yes
+    distroless_base: none
+    ha_compatible: yes
+    ha_notes: "NetworkPolicy objects have no pods; HA enforcement is not applicable"
+    deprecated: false
+    deprecated_reason: ""
+    alternative: ""
+    ha_exception: true
+    ha_exception_reason: "Policy-only chart — deploys NetworkPolicy objects with no pod workloads. replicaCount, PDB, and podAntiAffinity are not applicable. The ha_exception declares this explicitly so the HA gate skips pod-level checks."
+
   - name: chaos-mesh
     upstream_url: https://github.com/chaos-mesh/chaos-mesh
     license_spdx: Apache-2.0

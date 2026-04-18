@@ -359,7 +359,7 @@ jobs:
           errors = []
           checked = 0
 
-          for root, dirs, files in os.walk('argocd-apps'):
+          for root, dirs, files in os.walk('platform/argocd-apps'):
               for fname in files:
                   if not fname.endswith('.yaml') and not fname.endswith('.yml'):
                       continue
@@ -381,9 +381,57 @@ jobs:
                   print(f"  {e}")
               sys.exit(1)
           if checked == 0:
-              print("No ArgoCD Application manifests found — skipping")
+              print("FAIL:argocd-validate:no Application manifests found in platform/argocd-apps")
+              sys.exit(1)
           else:
               print(f"✓ {checked} Application manifests validated (revisionHistoryLimit=3)")
+          PYEOF
+
+  # ── Job 4b: Network-policies coverage ────────────────────────────────────
+  network-policies-coverage:
+    name: Network Policies Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert every deployed namespace is in network-policies egress baseline
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, sys, os
+
+          # System namespaces exempt from the egress baseline requirement
+          EXEMPT = {'kube-system', 'kube-node-lease', 'kube-public', 'default', 'network-policies'}
+
+          # Collect destination namespaces from all ArgoCD Application manifests
+          deployed_ns = set()
+          for root, dirs, files in os.walk('platform/argocd-apps'):
+              for fname in files:
+                  if not fname.endswith('.yaml') and not fname.endswith('.yml'):
+                      continue
+                  path = os.path.join(root, fname)
+                  with open(path) as f:
+                      docs = list(yaml.safe_load_all(f))
+                  for doc in docs:
+                      if not doc or doc.get('kind') != 'Application':
+                          continue
+                      ns = doc.get('spec', {}).get('destination', {}).get('namespace', '')
+                      if ns and ns not in EXEMPT:
+                          deployed_ns.add(ns)
+
+          # Load the network-policies baseline
+          with open('platform/charts/network-policies/values.yaml') as f:
+              np_values = yaml.safe_load(f)
+          baseline_ns = set(np_values.get('namespaces', []))
+
+          missing = sorted(deployed_ns - baseline_ns)
+          if missing:
+              print("FAIL:network-policies-coverage: namespaces deployed but not in egress baseline:")
+              for ns in missing:
+                  print(f"  x {ns} — add to platform/charts/network-policies/values.yaml")
+              sys.exit(1)
+
+          print(f"PASS:network-policies-coverage — {len(deployed_ns)} deployed namespaces covered")
           PYEOF
 
   # ── Job 5: Bootstrap script validation ───────────────────────────────────

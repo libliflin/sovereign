@@ -1,0 +1,70 @@
+{{- range .Values.namespaces }}
+---
+# deny-all-egress: default-deny all outbound traffic from every pod in this
+# namespace. NetworkPolicy rules are additive — this policy establishes the
+# baseline; the allow-* policies below open only what is required.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-egress
+  namespace: {{ . }}
+  labels:
+    app.kubernetes.io/name: network-policies
+    app.kubernetes.io/part-of: sovereign-security
+    sovereign.dev/policy-class: egress-baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress: []
+---
+# allow-intracluster-egress: permit traffic to any pod in any namespace.
+# External IPs have no pod endpoint, so this rule cannot be used to reach
+# services outside the cluster — the deny-all-egress baseline handles those.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intracluster-egress
+  namespace: {{ . }}
+  labels:
+    app.kubernetes.io/name: network-policies
+    app.kubernetes.io/part-of: sovereign-security
+    sovereign.dev/policy-class: egress-allow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+---
+# allow-dns-egress: permit DNS resolution via kube-dns in kube-system.
+# kube-dns is not a normal cluster pod in all distributions, so this rule
+# names it explicitly by label rather than relying on the intracluster rule.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: {{ . }}
+  labels:
+    app.kubernetes.io/name: network-policies
+    app.kubernetes.io/part-of: sovereign-security
+    sovereign.dev/policy-class: egress-allow
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+{{- end }}

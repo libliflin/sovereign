@@ -145,7 +145,19 @@ for chart_dir in "${CHART_DIRS[@]}"; do
     # Use grep without -q: grep -q exits on first match and causes SIGPIPE on
     # the echo side of the pipe under set -o pipefail when rendered is large.
     # grep without -q reads all stdin before exiting, avoiding SIGPIPE.
-    if ! echo "${rendered}" | grep "PodDisruptionBudget" > /dev/null; then
+
+    # Detect whether the chart renders any pod-bearing workloads. Policy-only
+    # charts (NetworkPolicy, RBAC, CRDs) have no pods to protect and no PDB
+    # makes sense for them. When ha_exception is declared and no workloads are
+    # present, skip the PDB requirement.
+    has_pod_workloads="false"
+    if echo "${rendered}" | grep -E "^kind: (Deployment|StatefulSet|DaemonSet|Job|CronJob)" > /dev/null 2>&1; then
+        has_pod_workloads="true"
+    fi
+
+    if [[ "${local_ha_exception}" == "true" && "${has_pod_workloads}" == "false" ]]; then
+        : # PDB check skipped — ha_exception with no pod workloads (policy-only chart)
+    elif ! echo "${rendered}" | grep "PodDisruptionBudget" > /dev/null; then
         echo "FAIL:${chart_name}:no PodDisruptionBudget in rendered templates"
         chart_fail=true
     fi

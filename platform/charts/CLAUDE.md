@@ -65,6 +65,7 @@ grep -rn "^\s*image:" platform/charts/*/templates/ \
 When adding a new chart:
 1. Create `platform/charts/<service>/` with Chart.yaml, values.yaml, templates/
 2. Create `platform/argocd-apps/<tier>/<service>-app.yaml`
-3. ArgoCD auto-syncs from the root app
+3. Add the destination namespace to `platform/charts/network-policies/values.yaml` — every non-system namespace must appear in the egress baseline or external traffic is not blocked at the workload layer
+4. ArgoCD auto-syncs from the root app
 
 ArgoCD app manifests require `spec.revisionHistoryLimit: 3`.
