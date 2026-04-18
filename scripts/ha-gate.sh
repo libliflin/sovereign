@@ -119,6 +119,7 @@ try:
     docs = list(yaml.safe_load_all(content))
     max_r = 0
     has_ds = False
+    has_deploy_or_sts = False
     hpa_min = 0
     for doc in docs:
         if not doc:
@@ -134,10 +135,12 @@ try:
                 if min_r > hpa_min:
                     hpa_min = min_r
         elif kind in ('Deployment', 'StatefulSet'):
-            r = (doc.get('spec') or {}).get('replicas', 0)
+            has_deploy_or_sts = True
+            # replicas absent from spec means k8s defaults to 1
+            r = (doc.get('spec') or {}).get('replicas', 1)
             if isinstance(r, int) and r > max_r:
                 max_r = r
-    if has_ds and max_r == 0 and hpa_min == 0:
+    if has_ds and not has_deploy_or_sts and hpa_min == 0:
         print('daemonset-only')
     else:
         print(max(max_r, hpa_min))
