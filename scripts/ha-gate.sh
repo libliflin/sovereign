@@ -163,6 +163,14 @@ for chart_dir in "${CHART_DIRS[@]}"; do
         continue
     fi
 
+    # Skip stub charts — directories with Chart.yaml but no templates rendered.
+    # Stubs establish the GitOps path for ArgoCD without a full chart implementation.
+    # HA gates are deferred until the chart is implemented.
+    if [[ -z "$(echo "${rendered}" | tr -d '[:space:]')" ]]; then
+        echo "SKIP:${chart_name}:no templates rendered — stub chart, HA gates deferred"
+        continue
+    fi
+
     # Use grep without -q: grep -q exits on first match and causes SIGPIPE on
     # the echo side of the pipe under set -o pipefail when rendered is large.
     # grep without -q reads all stdin before exiting, avoiding SIGPIPE.
