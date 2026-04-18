@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # ha-gate.sh — Validates that platform charts satisfy HA requirements:
-#   1. values.yaml has replicaCount >= 2 (skipped for ha_exception charts)
+#   1. rendered templates contain a Deployment or StatefulSet with replicas >= 2,
+#      OR an HPA targeting one with minReplicas >= 2, OR a DaemonSet-only chart
+#      (skipped for ha_exception charts declared in platform/vendor/VENDORS.yaml)
 #   2. helm template output contains PodDisruptionBudget
 #   3. helm template output contains podAntiAffinity (skipped for ha_exception charts)
 #   4. all containers have resource requests and limits
