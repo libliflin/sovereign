@@ -1,0 +1,37 @@
+global:
+  domain: "sovereign-autarky.dev"
+  storageClass: "ceph-block"
+  imageRegistry: ""
+
+# Platform namespaces to protect with deny-all-egress NetworkPolicies.
+# Each namespace receives three NetworkPolicy objects:
+#   deny-all-egress         — default-deny all outbound traffic
+#   allow-intracluster-egress — permit pod-to-pod communication within the cluster
+#   allow-dns-egress        — permit DNS resolution via kube-dns
+#
+# Operators extending the platform should add namespaces here as new services
+# are deployed. The baseline covers all security, platform, and observability
+# namespaces shipped with Sovereign.
+namespaces:
+  # Security tier
+  - falco
+  - gatekeeper-system
+  - istio-system
+  - kiali
+  - trivy-system
+  # Platform tier
+  - argocd
+  - cert-manager
+  - crossplane-system
+  - harbor
+  - keycloak
+  - rook-ceph
+  - sealed-secrets
+  # Observability tier
+  - loki
+  - monitoring
+  - tempo
+  - thanos
+  # Devex tier
+  - backstage
+  - code-server

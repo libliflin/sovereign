@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: network-policies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "40"
+  labels:
+    app.kubernetes.io/name: network-policies
+    app.kubernetes.io/part-of: sovereign-security
+spec:
+  revisionHistoryLimit: 3
+  project: default
+  source:
+    repoURL: https://github.com/libliflin/sovereign
+    targetRevision: HEAD
+    path: platform/charts/network-policies
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: global.domain
+          value: sovereign-autarky.dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: network-policies
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

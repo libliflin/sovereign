@@ -1,0 +1,6 @@
+apiVersion: v2
+name: network-policies
+description: Deny-all-egress NetworkPolicy objects for platform namespaces — makes the externalEgressBlocked invariant real at the workload layer, not just in the contract
+type: application
+version: 0.1.0
+appVersion: "networking.k8s.io/v1"
