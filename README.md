@@ -149,7 +149,7 @@ kubectl --context kind-sovereign-test get pods -n sealed-secrets
 ./platform/deploy.sh --cluster-values cluster-values.yaml          # ~10 minutes
 ./platform/deploy.sh --cluster-values cluster-values.yaml --dry-run  # preview
 
-# When complete, services are at https://<service>.sovereign-autarky.dev
+# Service URLs are printed by platform/deploy.sh when deployment completes.
 # See the Service URLs table below for the full list.
 
 # 5. Tear down when done
