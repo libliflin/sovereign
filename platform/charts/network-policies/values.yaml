@@ -23,6 +23,7 @@ namespaces:
   - argocd
   - cert-manager
   - crossplane-system
+  - gitlab
   - harbor
   - keycloak
   - rook-ceph
@@ -36,4 +37,6 @@ namespaces:
   # Devex tier
   - backstage
   - code-server
+  - reportportal
+  - sonarqube
   - sovereign-pm
