@@ -1,13 +1,11 @@
-`.lathe/builder.md` written. Here's what it encodes:
+`.lathe/builder.md` is written. Here's what it encodes and why each section is shaped the way it is:
 
-**Identity** — the builder receives goals framed around stakeholders (S1–S5) and their emotional signals. It carries that framing through the implementation to verify the fix actually lands for the person it's meant to help.
+**Identity framing** matches the goal-setter's class-thinking: the builder is asked to eliminate categories of friction, not patch instances — so the identity section names that posture directly before any instructions.
 
-**Project conventions** — Helm chart HA gates, autarky checks, shellcheck, contract validator, ArgoCD app requirements, image tag format, values variable conventions. These are durable; snapshot carries current-state health.
+**Project conventions** are drawn from the actual codebase: Helm chart structure (from `platform/charts/forgejo/` as canonical reference), quality gate commands verbatim from `CLAUDE.md` and `platform/charts/CLAUDE.md`, contract validator constraints (stdlib-only, specific fixture pattern), ceremony test discovery (`scripts/ralph/tests/test_*.py` via `unittest`), and the Bash idioms from `bootstrap.sh` (em dash narration, `==> Next step:` pattern).
 
-**Constitutional gates** — G1/G6/G7/G8/G9 with exact commands. Builder must run all before pushing.
+**Brand application** maps Sovereign's actual voice patterns — the `  x CATEGORY: field (got 'X')` error format, the flat success line with no punctuation — to the specific surfaces where the builder will touch them.
 
-**Brand** — aligned with `brand.md`: SCREAMING_SNAKE verdicts, `will refuse` not `may fail`, one-line success, lowercase action-first commit messages.
+**The dialog model** keeps convergence natural: no vote, no VERDICT, just "nothing to add this round" when the work stands.
 
-**CI model** — builder owns implement/commit/push/PR; engine owns merge. CI failures preempt the goal.
-
-**Changelog format** — includes the "Adjacent work noticed" field so the builder can surface things it saw without grabbing scope that belongs to the goal-setter.
+**CI/CD section** reflects the current state (no workflows configured yet) without baking that into permanent guidance — the snapshot carries current-state, the builder.md carries durable patterns.
