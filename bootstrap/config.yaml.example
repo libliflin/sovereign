@@ -1,0 +1,133 @@
+# Sovereign Platform — Bootstrap Configuration
+# Copy this file to bootstrap/config.yaml and fill in your values.
+# bootstrap/config.yaml is in .gitignore and must NEVER be committed.
+#
+# Usage: cp bootstrap/config.yaml.example bootstrap/config.yaml
+
+# ── Core ─────────────────────────────────────────────────────────────────────
+
+# Your domain name. DNS must be managed by Cloudflare (when using the default
+# front door). All services will be accessible at <service>.<domain>.
+domain: "your-domain.com"
+
+# Cloud provider. Choose one:
+#   hetzner      — Hetzner Cloud (recommended, ~€15/month for 3-node HA)
+#   digitalocean — DigitalOcean Droplets (~$72/month for 3-node HA)
+#   aws-ec2      — AWS EC2 (~$90/month for 3-node HA, t3.medium recommended)
+#   generic      — Bare metal or any provider with existing Ubuntu 22.04 nodes
+provider: "hetzner"
+
+# Front door (how traffic reaches your cluster).
+# cloudflare — Cloudflare Tunnel, outbound-only, no open ports (recommended, free)
+# none       — no front door; you manage DNS and firewall rules yourself
+# wireguard  — custom WireGuard-based front door
+frontDoor: cloudflare
+
+# Path to your SSH private key. The corresponding public key must be uploaded
+# to your cloud provider before running bootstrap.
+sshKeyPath: "~/.ssh/id_ed25519"
+
+# ── Node Sizing ───────────────────────────────────────────────────────────────
+
+nodes:
+  # Number of nodes. Must be odd and >= 3 (etcd quorum + Ceph OSD minimum).
+  # bootstrap.sh will refuse to proceed with fewer than 3 or an even count.
+  count: 3
+
+  # Per-node server type. Provider-specific — see your provider block below.
+  #   hetzner:      cx22 (minimum), cx32 (recommended), cx42, cx52
+  #   digitalocean: s-2vcpu-4gb (minimum), s-4vcpu-8gb, s-8vcpu-16gb
+  #   aws-ec2:      t3.small (minimum), t3.medium (recommended), t3.large
+  serverType: "cx32"
+
+# Optional: kube-vip floating VIP for the Kubernetes API server.
+# If omitted, bootstrap auto-derives this as <node1-subnet>.100.
+# Uncomment and set only if that address is already in use on your subnet.
+# kubeVip:
+#   vip: "10.0.0.100"   # must be an unused IP on the same subnet as your nodes
+
+# ── Hetzner Cloud ─────────────────────────────────────────────────────────────
+# Used when provider: hetzner. Remove or ignore for other providers.
+# Guide: docs/providers/hetzner.md
+
+hetzner:
+  # Read+Write API token from: console.hetzner.cloud → <project> → Security → API Tokens
+  # Alternatively, set HETZNER_TOKEN in .env — the bootstrap reads either.
+  apiToken: ""
+
+  # Datacenter location. Options: nbg1 (Nuremberg), fsn1 (Falkenstein), hel1 (Helsinki),
+  # ash (Ashburn US), hil (Hillsboro US)
+  location: "nbg1"
+
+  # Base name for nodes. Nodes will be created as <serverName>-1, -2, -3.
+  serverName: "sovereign"
+
+  # Name of the SSH key as it appears in Hetzner console (Security → SSH Keys).
+  # Must match the public key at sshKeyPath exactly.
+  sshKeyName: "your-key-name"
+
+# ── DigitalOcean ─────────────────────────────────────────────────────────────
+# Used when provider: digitalocean. Remove or ignore for other providers.
+# Guide: docs/providers/digitalocean.md
+
+# digitalocean:
+#   # Region slug. Options: nyc3, sfo3, ams3, sgp1, lon1, fra1, tor1, blr1, syd1
+#   region: "nyc3"
+#
+#   # Base name for Droplets. Droplets will be <dropletName>-1, -2, -3.
+#   dropletName: "sovereign"
+
+# ── AWS EC2 ───────────────────────────────────────────────────────────────────
+# Used when provider: aws-ec2. Remove or ignore for other providers.
+# Guide: docs/providers/aws-ec2.md
+
+# aws:
+#   # AWS region. Must match where your IAM user has EC2 permissions.
+#   region: "us-east-1"
+#
+#   # Base name for EC2 instances. Instances will be <instanceName>-1, -2, -3.
+#   instanceName: "sovereign"
+#
+#   # Ubuntu 22.04 LTS AMI ID. Leave empty to auto-detect latest for your region.
+#   # amiId: ""
+
+# ── Generic / Bare Metal ──────────────────────────────────────────────────────
+# Used when provider: generic — for existing nodes or any provider without a
+# built-in Sovereign driver. bootstrap.sh will SSH to each node and install K3s.
+# Guide: docs/providers/bare-metal.md
+
+# generic:
+#   nodes:
+#     - host: "192.168.1.10"   # node 1 — becomes the initial etcd leader
+#     - host: "192.168.1.11"   # node 2
+#     - host: "192.168.1.12"   # node 3
+#   sshUser: "root"
+
+# ── Cloudflare ────────────────────────────────────────────────────────────────
+# Required when frontDoor: cloudflare (the default).
+# Guide: docs/providers/cloudflare-setup.md
+
+cloudflare:
+  # API token with: Zone/DNS/Edit + Account/Cloudflare Tunnel/Edit permissions.
+  # Get it: dash.cloudflare.com → My Profile → API Tokens → Create Token
+  # Alternatively, set CLOUDFLARE_API_TOKEN in .env — the bootstrap reads either.
+  apiToken: ""
+
+  # Your Cloudflare Account ID.
+  # Get it: dash.cloudflare.com → click your domain → right sidebar → Account ID
+  accountId: ""
+
+  # Zone ID for the domain above.
+  # Get it: dash.cloudflare.com → click your domain → right sidebar → Zone ID
+  zoneId: ""
+
+  # Short descriptive name for the tunnel, e.g. sovereign-example-com.
+  # Appears in the Cloudflare Zero Trust dashboard.
+  tunnelName: "sovereign-example-com"
+
+# ── Platform ──────────────────────────────────────────────────────────────────
+
+platform:
+  # URL of the Git repository ArgoCD will watch for platform manifests.
+  # Use your fork URL if you have one; otherwise use the upstream repo.
+  repoUrl: "https://github.com/libliflin/sovereign"
