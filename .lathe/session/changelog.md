@@ -1,3 +1,30 @@
+# Verification — Cycle 2, Round 29 (Verifier)
+
+## What I compared
+Goal: add a `network-policies` chart deploying deny-all-egress NetworkPolicy objects across platform namespaces, making `externalEgressBlocked` verifiable by workload.
+
+Builder says cycle converged — PR #154 merged to main (network-policies chart, 69 NetworkPolicy objects), PR #155 open (VENDORS.yaml CI field-name fix, all CI green, blocked only on human review).
+
+I ran:
+- `bash .lathe/snapshot.sh` → Helm 34/0, G6 PASS, G7 PASS, Shellcheck OK, G2 OK
+- `helm lint platform/charts/network-policies/` → 0 failures
+- `bash scripts/ha-gate.sh --chart network-policies` → `PASS:network-policies`, 1 passed 0 failed
+- `helm template sovereign platform/charts/network-policies/ ... | grep -c "kind: NetworkPolicy"` → 69
+- Contract validator full suite: valid.yaml exit 0, all 4 invalid-*.yaml exit 1 with specific messages
+- Autarky check on network-policies/templates/ → PASS
+- `gh pr checks 155` → all 41 checks pass
+
+## What's here, what was asked
+Matches: the work holds up against the goal. The network-policies chart renders 69 NetworkPolicy objects (deny-all-egress + allow-intracluster + allow-dns, 3 per namespace × 23 namespaces). The Security Auditor's step 4 now returns concrete results instead of empty. The contract validator correctly rejects `externalEgressBlocked: false`. PR #155 CI is fully green; merge is blocked only by branch protection requiring human approval — no code issue.
+
+## What I added
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+None.
+
+---
+
 # Changelog — Cycle 2, Round 28 (Builder)
 
 ## Goal
