@@ -106,9 +106,10 @@ else
 fi
 
 # G8 — Istio PeerAuthentication renders STRICT mTLS
+# Use <<< (here-string) not pipe: echo | grep -q under pipefail causes SIGPIPE on match
 G8_RENDERED=$(helm template platform/charts/istio/ 2>/dev/null || true)
-if echo "$G8_RENDERED" | grep -q "kind: PeerAuthentication" \
-   && echo "$G8_RENDERED" | grep -q "mode: STRICT"; then
+if grep -q "kind: PeerAuthentication" <<< "$G8_RENDERED" \
+   && grep -q "mode: STRICT" <<< "$G8_RENDERED"; then
   echo "G8 (mTLS STRICT): PASS"
 else
   echo "G8 (mTLS STRICT): FAIL — PeerAuthentication mode: STRICT not found in rendered istio chart"
