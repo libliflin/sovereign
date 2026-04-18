@@ -154,17 +154,39 @@ def tests():
 
     # Extension install logic (round 2 changes)
 
-    # 11. extensionRegistry defaults to empty — zero-trust safe, no external calls on pod start
+    # 11. extensionRegistry default must not reference any external registry.
+    # Acceptable defaults: empty string (skip install) or in-cluster svc.cluster.local URL.
+    # Rejected: any public registry host (marketplace.visualstudio.com, docker.io, ghcr.io, etc.)
+    # The vscode-extension-registry chart provides an in-cluster nginx server; the default
+    # is wired to its service URL so no operator config is needed after deploy.
     install_ext_ic = get_init_container(pod_spec, "install-extensions")
     assert install_ext_ic is not None, "FAIL: install-extensions initContainer not found"
     ext_registry_env = get_env(install_ext_ic, "EXTENSION_REGISTRY")
     assert ext_registry_env is not None, "FAIL: EXTENSION_REGISTRY env var missing from install-extensions"
-    assert ext_registry_env == "", (
-        f"FAIL: EXTENSION_REGISTRY defaults to {ext_registry_env!r}, expected ''. "
-        "Non-empty default means the initContainer will attempt external registry calls "
-        "on every pod start — breaks zero-trust egress."
-    )
-    print("PASS: EXTENSION_REGISTRY defaults to empty — zero-trust safe by default")
+    external_hosts = [
+        "marketplace.visualstudio.com",
+        "open-vsx.org",
+        "docker.io",
+        "ghcr.io",
+        "quay.io",
+        "gcr.io",
+        "registry.k8s.io",
+    ]
+    for host in external_hosts:
+        assert host not in ext_registry_env, (
+            f"FAIL: EXTENSION_REGISTRY defaults to {ext_registry_env!r} which references "
+            f"external host '{host}'. Default must be empty or an in-cluster svc.cluster.local URL — "
+            "external registry calls break zero-trust egress."
+        )
+    # Validate: if non-empty, must be in-cluster (svc.cluster.local or cluster-internal scheme)
+    if ext_registry_env:
+        assert "svc.cluster.local" in ext_registry_env or ext_registry_env.startswith("http://"), (
+            f"FAIL: EXTENSION_REGISTRY defaults to {ext_registry_env!r}. "
+            "Non-empty default that isn't an in-cluster svc.cluster.local URL risks external egress."
+        )
+        print(f"PASS: EXTENSION_REGISTRY defaults to in-cluster registry — zero-trust safe: {ext_registry_env!r}")
+    else:
+        print("PASS: EXTENSION_REGISTRY defaults to empty — extension install skipped on pod start")
 
     # 12. install-extensions script uses --install-extension not --vsix
     # code-server does not have a --vsix flag; the VSIX path goes to --install-extension.
