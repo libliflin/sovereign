@@ -75,6 +75,8 @@ spec:
               {{- end }}
               touch "$MARKER"
               echo "Extension installation complete."
+          resources:
+            {{- toYaml .Values.installExtensions.resources | nindent 12 }}
           volumeMounts:
             - name: workspace
               mountPath: /home/coder

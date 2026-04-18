@@ -28,6 +28,25 @@ gatekeeper:
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
+  ## Post-install Job: namespace labeling + webhook probe initContainer
+  ## Both kubectl-label and webhook-probe-post use .Values.postInstall.resources
+  postInstall:
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "16Mi"
+      limits:
+        cpu: "50m"
+        memory: "32Mi"
+  ## CRD upgrade hook Job
+  crds:
+    resources:
+      requests:
+        cpu: "10m"
+        memory: "32Mi"
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
 
 # Constraint enforcement action: deny | dryrun | warn
 constraintEnforcementAction: deny

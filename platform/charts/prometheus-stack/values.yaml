@@ -110,6 +110,26 @@ kube-prometheus-stack:
       templates:
         - "/etc/alertmanager/config/*.tmpl"
 
+  # ----- node-exporter DaemonSet -----
+  prometheus-node-exporter:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  # ----- kube-state-metrics Deployment -----
+  kube-state-metrics:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
   # ----- Prometheus Operator -----
   prometheusOperator:
     resources:
@@ -119,3 +139,12 @@ kube-prometheus-stack:
       limits:
         cpu: 200m
         memory: 256Mi
+    admissionWebhooks:
+      patch:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
