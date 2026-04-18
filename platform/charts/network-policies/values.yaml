@@ -27,6 +27,7 @@ namespaces:
   - keycloak
   - rook-ceph
   - sealed-secrets
+  - vault
   # Observability tier
   - loki
   - monitoring
@@ -35,3 +36,4 @@ namespaces:
   # Devex tier
   - backstage
   - code-server
+  - sovereign-pm
