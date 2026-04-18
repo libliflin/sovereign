@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/sovereign-pm
+    path: platform/charts/sovereign-pm
     helm:
       valueFiles:
         - values.yaml

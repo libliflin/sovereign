@@ -19,7 +19,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/crossplane
+    path: platform/charts/crossplane
     helm:
       valueFiles:
         - values.yaml

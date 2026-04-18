@@ -21,7 +21,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/rook-ceph
+    path: platform/charts/rook-ceph
     helm:
       valueFiles:
         - values.yaml

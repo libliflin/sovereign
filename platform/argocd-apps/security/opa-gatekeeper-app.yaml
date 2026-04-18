@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/opa-gatekeeper
+    path: platform/charts/opa-gatekeeper
     helm:
       valueFiles:
         - values.yaml

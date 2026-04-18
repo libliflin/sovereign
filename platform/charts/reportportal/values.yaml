@@ -1,0 +1,10 @@
+# Stub chart — full implementation pending.
+# This directory establishes the GitOps path referenced in platform/argocd-apps/.
+# Implement this chart before enabling the ArgoCD application.
+
+replicaCount: 2
+
+global:
+  domain: sovereign-autarky.dev
+  imageRegistry: ""
+  storageClass: ""

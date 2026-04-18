@@ -17,7 +17,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/harbor
+    path: platform/charts/harbor
     helm:
       valueFiles:
         - values.yaml

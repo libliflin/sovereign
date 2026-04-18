@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/loki
+    path: platform/charts/loki
     helm:
       valueFiles:
         - values.yaml

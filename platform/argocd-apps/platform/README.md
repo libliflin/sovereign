@@ -22,7 +22,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/<service>
+    path: platform/charts/<service>
   destination:
     server: https://kubernetes.default.svc
     namespace: <service>

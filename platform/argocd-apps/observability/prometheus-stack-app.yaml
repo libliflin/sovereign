@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://github.com/libliflin/sovereign
     targetRevision: HEAD
-    path: charts/prometheus-stack
+    path: platform/charts/prometheus-stack
     helm:
       valueFiles:
         - values.yaml

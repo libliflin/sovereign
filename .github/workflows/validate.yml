@@ -387,6 +387,46 @@ jobs:
               print(f"✓ {checked} Application manifests validated (revisionHistoryLimit=3)")
           PYEOF
 
+      - name: "Assert local-chart Application paths exist in repo"
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, sys, os
+
+          REPO_URL = "https://github.com/libliflin/sovereign"
+          errors = []
+          checked = 0
+
+          for root, dirs, files in os.walk('platform/argocd-apps'):
+              for fname in files:
+                  if not fname.endswith('.yaml') and not fname.endswith('.yml'):
+                      continue
+                  path = os.path.join(root, fname)
+                  with open(path) as f:
+                      docs = list(yaml.safe_load_all(f))
+                  for doc in docs:
+                      if not doc or doc.get('kind') != 'Application':
+                          continue
+                      source = doc.get('spec', {}).get('source', {})
+                      repo_url = source.get('repoURL', '')
+                      chart_path = source.get('path', '')
+                      # Only validate Applications that reference this repo (not upstream Helm repos)
+                      if repo_url != REPO_URL or not chart_path:
+                          continue
+                      checked += 1
+                      if not os.path.isdir(chart_path):
+                          errors.append(f"FAIL:argocd-path:{path}: path '{chart_path}' does not exist in repo")
+
+          if errors:
+              print("ARGOCD PATH VIOLATION: Application manifests reference paths that do not exist:")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+          if checked == 0:
+              print("FAIL:argocd-path:no local-chart Applications found to validate")
+              sys.exit(1)
+          print(f"PASS:argocd-path — {checked} local-chart Application paths verified")
+          PYEOF
+
   # ── Job 4b: Network-policies coverage ────────────────────────────────────
   network-policies-coverage:
     name: Network Policies Coverage

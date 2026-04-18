@@ -17,7 +17,7 @@ spec:
     targetRevision: HEAD
     # This directory contains all tier app manifests.
     # ArgoCD recurses into subdirectories to find all Application resources.
-    path: argocd-apps
+    path: platform/argocd-apps
     directory:
       recurse: true
       # Exclude this root-app.yaml itself to avoid infinite loop
