@@ -51,10 +51,10 @@ Ceph encryption at rest is required. Replication factor: 3.
 
 | Component | Purpose |
 |---|---|
-| GitLab | SCM + CI + vendor mirrors |
+| Forgejo | SCM + CI + vendor mirrors |
 | Harbor | Internal OCI image registry |
 | ArgoCD | App-of-Apps engine — manages all subsequent services |
-| GitLab CI Runners | Executes CI pipelines for vendor builds |
+| Forgejo Actions Runners | Executes CI pipelines for vendor builds |
 
 After Phase 4, ArgoCD takes over managing everything. No more manual `kubectl apply`.
 
@@ -134,7 +134,7 @@ Each service has its own namespace. No service deploys into `default`.
 | `openbao` | OpenBao secrets |
 | `keycloak` | Keycloak SSO |
 | `rook-ceph` | Rook/Ceph operator + cluster |
-| `gitlab` | GitLab |
+| `forgejo` | Forgejo |
 | `harbor` | Harbor registry |
 | `argocd` | ArgoCD |
 | `istio-system` | Istio control plane |
@@ -176,7 +176,7 @@ every Helm chart.
 | Service | URL | Notes |
 |---|---|---|
 | ArgoCD | `https://argocd.<domain>` | GitOps dashboard |
-| GitLab | `https://gitlab.<domain>` | SCM + CI + vendor mirrors |
+| Forgejo | `https://forgejo.<domain>` | SCM + CI + vendor mirrors |
 | Harbor | `https://harbor.<domain>` | Internal image registry |
 | Grafana | `https://grafana.<domain>` | Metrics + logs + traces |
 | Keycloak | `https://auth.<domain>` | SSO for all services |
@@ -194,7 +194,7 @@ every Helm chart.
 After bootstrap, the cluster never pulls from external registries.
 
 ```text
-vendor/fetch.sh     → mirrors upstream source into internal GitLab at pinned SHA
+vendor/fetch.sh     → mirrors upstream source into internal Forgejo at pinned SHA
 vendor/build.sh     → builds distroless OCI image, pushes to harbor.<domain>/sovereign/<name>
 vendor/deploy.sh    → stages → smoke test → promote to production ArgoCD app
 vendor/rollback.sh  → reverts to last-known-good image SHA (< 2 minutes)
