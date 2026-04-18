@@ -18,6 +18,8 @@ keycloak:
   url: "https://auth.sovereign-autarky.dev"
   realm: "sovereign"
   clientId: "backstage"
+  # clientSecret: set via sealed secret in production; override via cluster-values.yaml
+  clientSecret: ""
 
 service:
   type: ClusterIP

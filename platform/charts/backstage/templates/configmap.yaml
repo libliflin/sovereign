@@ -14,8 +14,15 @@ data:
     auth:
       environment: production
       providers:
-        guest:
-          dangerouslyAllowOutsideDevelopment: true
+        oidc:
+          production:
+            metadataUrl: "{{ .Values.keycloak.url }}/realms/{{ .Values.keycloak.realm }}/.well-known/openid-configuration"
+            clientId: "{{ .Values.keycloak.clientId }}"
+            clientSecret: "${BACKSTAGE_KEYCLOAK_CLIENT_SECRET}"
+            scope: "openid profile email"
+            signIn:
+              resolvers:
+                - resolver: emailMatchingUserEntityProfileEmail
     {{- with .Values.backstage.appConfig }}
     catalog:
       providers:
