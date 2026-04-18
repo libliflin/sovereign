@@ -1,0 +1,4 @@
+# ci-values.yaml — used by helm lint and ha-gate.sh to satisfy required fields
+# NOT for production. keycloak.clientSecret must be set via cluster-values.yaml or SealedSecret.
+keycloak:
+  clientSecret: "ci-placeholder-not-for-production"
