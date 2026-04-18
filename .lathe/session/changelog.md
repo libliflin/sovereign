@@ -1,3 +1,26 @@
+# Verification — Cycle 2, Round 25 (Verifier)
+
+## What I compared
+Goal: add `network-policies` chart deploying deny-all-egress NetworkPolicy objects, making `externalEgressBlocked` verifiable by workload.
+
+Ran against current branch state:
+- `bash .lathe/snapshot.sh` — all gates green: Helm 34/0, G6 PASS, G7 PASS, Shellcheck OK, G2 OK
+- `helm template sovereign platform/charts/network-policies/ | grep -c "kind: NetworkPolicy"` → **69**
+- G7 contract validator: `valid.yaml` exits 0; all 4 `invalid-*.yaml` correctly rejected with specific messages
+- G6 autarky: `PASS:autarky` — no external registry refs
+- PR #155 CI: all 41 checks pass; `mergeStateStatus: BLOCKED` on branch protection only, no code issue
+
+## What's here, what was asked
+Matches. The goal asked for deny-all-egress NetworkPolicy objects across platform namespaces — 69 are rendered across 23 namespaces. The Security Auditor's step 4 (`grep -rn "NetworkPolicy" platform/charts/*/templates/`) returns results instead of empty. The invariant `externalEgressBlocked: true` is now backed by workload enforcement, not just a contract field. Both cycle deliverables complete and green.
+
+## What I added
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+None.
+
+---
+
 # Changelog — Cycle 2, Round 24 (Builder)
 
 ## Goal
