@@ -55,26 +55,55 @@ spec:
           volumeMounts:
             - name: toolchain-bin
               mountPath: {{ .Values.toolchainInit.workspaceBinPath }}
-        # Install VS Code extensions into the persistent home directory
+        # Install VS Code extensions from Harbor VSIX endpoint into the persistent home directory.
+        # Skipped (no marker written) when extensionRegistry is empty — zero-trust safe.
+        # Only writes the marker on full success; retries on next pod start if any fail.
         - name: install-extensions
           image: {{ include "code-server.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: EXTENSION_REGISTRY
+              value: {{ .Values.extensionRegistry | quote }}
           command:
             - /bin/sh
             - -c
             - |
-              set -e
               MARKER="/home/coder/.extensions-installed"
               if [ -f "$MARKER" ]; then
                 echo "Extensions already installed, skipping."
                 exit 0
               fi
+              if [ -z "$EXTENSION_REGISTRY" ]; then
+                echo "EXTENSIONS SKIPPED: extensionRegistry not configured. Set .Values.extensionRegistry to a Harbor VSIX endpoint to enable offline extension install."
+                exit 0
+              fi
+              FAILED=0
               {{- range .Values.extensions }}
-              echo "Installing extension: {{ . }}"
-              code-server --install-extension "{{ . }}" --extensions-dir /home/coder/.local/share/code-server/extensions || true
+              EXT="{{ . }}"
+              PUBLISHER="${EXT%%.*}"
+              NAME="${EXT#*.}"
+              VSIX_FILE="/tmp/${PUBLISHER}.${NAME}.vsix"
+              echo "Downloading: ${EXT}"
+              if curl -sf -o "${VSIX_FILE}" "${EXTENSION_REGISTRY}/vsix/${PUBLISHER}/${NAME}/latest.vsix"; then
+                if code-server --vsix "${VSIX_FILE}" --extensions-dir /home/coder/.local/share/code-server/extensions; then
+                  echo "Installed: ${EXT}"
+                else
+                  echo "FAIL: install ${EXT}"
+                  FAILED=$((FAILED + 1))
+                fi
+                rm -f "${VSIX_FILE}"
+              else
+                echo "FAIL: download ${EXT} from ${EXTENSION_REGISTRY}/vsix/${PUBLISHER}/${NAME}/latest.vsix"
+                FAILED=$((FAILED + 1))
+              fi
               {{- end }}
-              touch "$MARKER"
-              echo "Extension installation complete."
+              if [ "$FAILED" -eq 0 ]; then
+                touch "$MARKER"
+                echo "Extension installation complete."
+              else
+                echo "EXTENSION INSTALL FAILED: ${FAILED} extension(s) failed. Pod will restart and retry."
+                exit 1
+              fi
           resources:
             {{- toYaml .Values.installExtensions.resources | nindent 12 }}
           volumeMounts:
