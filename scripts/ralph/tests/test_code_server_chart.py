@@ -205,6 +205,26 @@ def tests():
     )
     print("PASS: marker write occurs after empty-registry skip check (no marker written on skip)")
 
+    # 15. install-extensions --extensions-dir matches main container --extensions-dir
+    # If these diverge, extensions are installed to a directory code-server doesn't watch —
+    # they install silently and never appear in the browser IDE.
+    main_ext_dir = None
+    for arg in main.get("args", []):
+        if arg.startswith("--extensions-dir="):
+            main_ext_dir = arg.split("=", 1)[1]
+            break
+    assert main_ext_dir is not None, "FAIL: --extensions-dir not found in main container args"
+    import re
+    m = re.search(r"--extensions-dir\s+(\S+?)(?:[;\s]|$)", ext_script)
+    ic_ext_dir = m.group(1).rstrip(";") if m else None
+    assert ic_ext_dir is not None, "FAIL: --extensions-dir not found in install-extensions initContainer script"
+    assert main_ext_dir == ic_ext_dir, (
+        f"FAIL: extensions-dir mismatch — main container uses {main_ext_dir!r}, "
+        f"install-extensions initContainer uses {ic_ext_dir!r}. "
+        "Extensions will be installed to a directory code-server does not watch."
+    )
+    print("PASS: install-extensions --extensions-dir matches main container --extensions-dir")
+
 
 if __name__ == "__main__":
     try:
