@@ -107,34 +107,50 @@ EOF
 PASS_COUNT=0
 FAIL_COUNT=0
 
+# Write replica-check script to a temp file so it can receive rendered YAML
+# via pipe without conflicting with a heredoc (SC2259).
+_REPLICA_CHECK_PY="$(mktemp)"
+cat > "${_REPLICA_CHECK_PY}" << 'PYEOF'
+import sys, yaml
+content = sys.stdin.read()
+try:
+    docs = list(yaml.safe_load_all(content))
+    max_r = 0
+    has_ds = False
+    hpa_min = 0
+    for doc in docs:
+        if not doc:
+            continue
+        kind = doc.get('kind', '')
+        if kind == 'DaemonSet':
+            has_ds = True
+        elif kind == 'HorizontalPodAutoscaler':
+            spec = doc.get('spec') or {}
+            min_r = spec.get('minReplicas', 1)
+            ref = spec.get('scaleTargetRef', {})
+            if ref.get('kind') in ('Deployment', 'StatefulSet') and isinstance(min_r, int):
+                if min_r > hpa_min:
+                    hpa_min = min_r
+        elif kind in ('Deployment', 'StatefulSet'):
+            r = (doc.get('spec') or {}).get('replicas', 0)
+            if isinstance(r, int) and r > max_r:
+                max_r = r
+    if has_ds and max_r == 0 and hpa_min == 0:
+        print('daemonset-only')
+    else:
+        print(max(max_r, hpa_min))
+except Exception:
+    print('0')
+PYEOF
+trap 'rm -f "${_REPLICA_CHECK_PY}"' EXIT
+
 for chart_dir in "${CHART_DIRS[@]}"; do
     chart_name="$(basename "${chart_dir}")"
     chart_fail=false
 
     local_ha_exception="$(is_ha_exception "${chart_name}")"
 
-    # Check 1: replicaCount >= 2 in values.yaml (skip for ha_exception)
-    values_file="${chart_dir}/values.yaml"
-    if [[ ! -f "${values_file}" ]]; then
-        echo "FAIL:${chart_name}:values.yaml missing"
-        FAIL_COUNT=$((FAIL_COUNT + 1))
-        continue
-    fi
-
-    if [[ "${local_ha_exception}" == "true" ]]; then
-        : # replicaCount check skipped — ha_exception in VENDORS.yaml
-    else
-        replica_count="$(grep -E '^replicaCount:' "${values_file}" | awk '{print $2}' | tr -d '[:space:]' || true)"
-        if [[ -z "${replica_count}" ]]; then
-            echo "FAIL:${chart_name}:replicaCount missing from values.yaml"
-            chart_fail=true
-        elif [[ "${replica_count}" -lt 2 ]] 2>/dev/null; then
-            echo "FAIL:${chart_name}:replicaCount < 2"
-            chart_fail=true
-        fi
-    fi
-
-    # Check 2, 3, 4: render and inspect templates
+    # Render templates — all four checks use the rendered output.
     rendered=""
     if ! rendered="$(helm template "${chart_dir}" 2>/dev/null)"; then
         echo "FAIL:${chart_name}:helm template failed"
@@ -153,6 +169,25 @@ for chart_dir in "${CHART_DIRS[@]}"; do
     has_pod_workloads="false"
     if echo "${rendered}" | grep -E "^kind: (Deployment|StatefulSet|DaemonSet|Job|CronJob)" > /dev/null 2>&1; then
         has_pod_workloads="true"
+    fi
+
+    # Check 1: HA replica count — inspect rendered Deployment/StatefulSet specs.
+    # A chart passes when its rendered output contains at least one Deployment or
+    # StatefulSet with spec.replicas >= 2, or an HPA targeting one with
+    # minReplicas >= 2.  DaemonSet-only charts are inherently distributed and
+    # pass unconditionally.  Charts that render no pod workloads follow the
+    # ha_exception path: they pass only when ha_exception: true is declared in
+    # VENDORS.yaml (e.g. policy-only charts, library charts).
+    if [[ "${local_ha_exception}" == "true" ]]; then
+        : # replica check skipped — ha_exception in VENDORS.yaml
+    else
+        replica_result="$(echo "${rendered}" | python3 "${_REPLICA_CHECK_PY}")"
+        if [[ "${replica_result}" == "daemonset-only" ]]; then
+            : # DaemonSet-only chart — one pod per node by design, inherently HA
+        elif [[ -z "${replica_result}" ]] || ! [[ "${replica_result}" =~ ^[0-9]+$ ]] || [[ "${replica_result}" -lt 2 ]]; then
+            echo "FAIL:${chart_name}:no Deployment or StatefulSet with replicas >= 2 in rendered templates"
+            chart_fail=true
+        fi
     fi
 
     if [[ "${local_ha_exception}" == "true" && "${has_pod_workloads}" == "false" ]]; then
