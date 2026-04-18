@@ -47,7 +47,6 @@ whether each gate still serves the project.
 
 Current gates:
 - **G1** — Ceremony scripts compile without errors (T3: delivery machine health)
-- **G2** — Living state docs exist and are current (T3: orientation without archaeology)
 - **G6** — Zero external registry references in chart templates (T1: sovereignty)
 - **G7** — Contract validator test suite passes (T1: sovereignty enforcement)
 - **G8** — Istio chart renders PeerAuthentication mode: STRICT (T2: zero-trust mTLS floor)
