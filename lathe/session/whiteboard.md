@@ -1,3 +1,46 @@
+# Verifier round 2 notes
+
+## What I compared
+
+- Goal: Security Auditor journey — paranoia satisfied. Three fixes named by the champion.
+- Builder round 2 declared convergence; no new commits.
+- Verified: all three fixes are in main (merged PRs #169, #170).
+
+## What I ran
+
+- G1: `python3 -m py_compile` + import check → PASS
+- G6: grep external registries in templates → PASS (no matches)
+- G7 (all fixtures):
+  - `valid.yaml` → exit 0, CONTRACT VALID
+  - `invalid-egress-not-blocked.yaml` → exit 1, AUTARKY VIOLATION
+  - `invalid-duplicate-key-bypass.yaml` → exit 1, DUPLICATE KEY
+- Full test suite (`test_contract_validator.py`, `test_retro_guard.py`) → all PASS
+- `docs/architecture.md` — zero GitLab references, 5 correct Forgejo references
+- `platform/vendor/VENDORS.yaml` — k6 `license_review_note` in place, schema comment correct
+
+## Edge cases probed on `contract/validate.py`
+
+- `TRUE` (all caps) → accepted (case-insensitive `.lower()` comparison) — correct
+- `yes` → rejected (AUTARKY VIOLATION) — correct; YAML-truthy but not the literal `true`
+- empty value + same key again → ValueError DUPLICATE KEY — correct
+- wrong parent namespace (`security.autarky.externalEgressBlocked: false` + correct `autarky.externalEgressBlocked: true`) → validator correctly checks only the right dotpath
+
+No bypass vectors found. The validator is sound for the contract's narrow YAML subset.
+
+## Added: Nothing this round — the work holds up against the goal from my lens.
+
+All three champion-named fixes are confirmed in main and verified end-to-end. No gaps from this cycle remain open.
+
+## For the champion (next cycle)
+
+Carried forward from verifier round 1 (unchanged — these were deferred, not forgotten):
+
+1. **Governance docs still reference GitLab.** `docs/governance/scope.md` line 26 ("Source control (GitLab)"), lines 74 and 83 use "GitLab CI". `docs/state/architecture.md` line 55 lists "GitLab" in the Tier 2 table. Highest-priority: `scope.md` explicitly names GitLab as in-scope platform infrastructure — it should say Forgejo. An auditor who reads beyond architecture.md will find these.
+
+2. **No `deny-all-ingress` NetworkPolicy.** The "no implicit trust" claim is not fully machine-checkable from NetworkPolicy alone — depends on Istio STRICT mTLS for east-west ingress. A deny-all-ingress with explicit allows would make the claim independently verifiable.
+
+---
+
 # Builder round 1 notes
 
 ## Applied this round
