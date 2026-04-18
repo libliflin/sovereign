@@ -1,0 +1,47 @@
+name: vscode-extensions
+upstream_url: https://open-vsx.org
+# Individual extension versions are resolved at fetch time from the Open VSX API.
+# Re-run fetch-vsix.sh to pull the latest version of each extension.
+version: "dynamic"
+license_spdx: EPL-2.0
+# Open VSX registry itself is EPL-2.0. Each extension carries its own license —
+# run vendor/audit.sh to verify every extension against license-policy.md before
+# enabling in production.
+license_allows_vendor: true
+fetch_method: http_api
+# VSIX files are binary artifacts served via HTTP; no OCI image is built.
+distroless_compatible: yes
+distroless_base: none
+ha_compatible: yes
+ha_notes: "VSIX files are static content; serve with any HA HTTP server (Nginx replicaCount >= 2)"
+deprecated: false
+deprecated_reason: ""
+alternative: ""
+
+# How to use
+# ----------
+# 1. Run fetch-vsix.sh to download VSIX files into a local directory:
+#      bash platform/vendor/recipes/vscode-extensions/fetch-vsix.sh \
+#        --output-dir /tmp/vsix-cache
+#
+# 2. Serve the directory with any HTTP server reachable from the cluster.
+#    The directory layout matches the URL pattern the install-extensions
+#    initContainer expects:
+#      <output-dir>/vsix/<publisher>/<name>/latest.vsix
+#
+# 3. Set extensionRegistry in the code-server ArgoCD app values:
+#      extensionRegistry: "https://<serving-host>"
+#    The initContainer constructs:
+#      <extensionRegistry>/vsix/<publisher>/<name>/latest.vsix
+#
+# Extension list is read from platform/charts/code-server/values.yaml (.extensions[]).
+# Add or remove extensions there; re-run fetch-vsix.sh to refresh.
+
+rollout:
+  strategy: skip          # static file content; no rolling update logic applies
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: derived       # VSIX files can be re-fetched from Open VSX; no critical state
