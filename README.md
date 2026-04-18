@@ -284,8 +284,8 @@ CVE findings create Forgejo issues. Patches land in `vendor/recipes/<name>/patch
 
 1. Fork the repo
 2. Create a feature branch
-3. All charts must pass `helm lint` and `helm template | kubectl apply --dry-run=client`
-4. All shell scripts must pass `shellcheck`
+3. All charts must pass `helm lint` and `bash scripts/ha-gate.sh --chart <name>`
+4. All shell scripts must pass `shellcheck -S error`
 5. HA requirements: every chart must have `replicaCount`, `podDisruptionBudget`, and `podAntiAffinity`
 6. Submit a PR — CI validates everything automatically
 
