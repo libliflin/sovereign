@@ -1,115 +1,57 @@
-# Testing — How This Project Tests
+# Testing — Sovereign Platform
 
-Sovereign has no single test runner. Verification is multi-layer, and each layer catches a different class of failure.
+## What Passes as "CI Green"
 
----
+Sovereign has no unit test suite in the traditional sense. "Tests passing" means all CI jobs pass:
 
-## CI Gates (`.github/workflows/`)
+1. **Helm validate** — `helm lint` + `helm template` + assertions: PDB, podAntiAffinity, replicaCount >= 2, no :latest tags, no external registry in values.yaml. Runs on every chart discovered via `ls platform/charts/*/Chart.yaml` and `ls cluster/kind/charts/*/Chart.yaml`.
 
-### `validate.yml` — triggers on `pull_request` and `push` to main
+2. **Shell validate** — `shellcheck -S error` on all `.sh` files in `cluster/`, `platform/`, `scripts/`. Also asserts vendor scripts handle `--dry-run` and `--backup`.
 
-This is the primary CI gate. Jobs:
+3. **Contract validator** — `python3 contract/validate.py contract/v1/tests/valid.yaml` must exit 0; all `contract/v1/tests/invalid-*.yaml` must exit 1. This is G7.
 
-| Job | What it checks |
-|---|---|
-| `helm-validate` | Per-chart: lint, PDB present, podAntiAffinity present, replicaCount ≥ 2, no `:latest` tags, no hardcoded external registry in image.repository |
-| `shell-validate` | shellcheck -S error on all .sh files in cluster/, platform/, scripts/ralph/ |
-| `vendor-audit` | VENDORS.yaml schema, recipe.yaml rollout/backup sections (runs only when platform/vendor/ changes) |
-| `argocd-validate` | Every Application manifest has `spec.revisionHistoryLimit: 3` |
-| `bootstrap-validate` | shellcheck on bootstrap.sh, assert --dry-run flag exists, no hardcoded IP addresses |
+4. **Autarky** — No external registry references (`docker.io`, `quay.io`, `ghcr.io`, `gcr.io`, `registry.k8s.io`) in `platform/charts/*/templates/`. This is G6.
 
-### `ha-gate.yml` — triggers on `pull_request` touching `platform/charts/**`
+5. **ArgoCD validate** — All `Application` manifests have `revisionHistoryLimit: 3`.
 
-Runs the HA gate across all changed charts. Same checks as helm-validate but path-filtered.
+6. **Bootstrap validate** — `shellcheck` on `cluster/kind/bootstrap.sh` and `platform/deploy.sh`; `--dry-run` flag present; no hardcoded IPs.
 
----
+7. **README chart path validate** — Every `helm install/lint/template` path in README.md must exist as a directory.
 
-## Local Quality Gates (run before pushing)
+8. **Vendor audit** (conditional) — Runs only when `platform/vendor/` changes: `vendor/audit.sh`, VENDORS.yaml schema check, recipe.yaml rollout/backup validation.
 
-These match CI exactly. If they pass locally, CI should pass.
+## Running Checks Locally
 
 ```bash
-# Per-chart checks
-helm dependency update platform/charts/<name>/ 2>/dev/null || true
-helm lint platform/charts/<name>/
-helm template sovereign platform/charts/<name>/ --set global.domain=sovereign-autarky.dev > /tmp/rendered.yaml
+# Snapshot (all gates at once, summarized):
+bash .lathe/snapshot.sh
 
-grep "kind: PodDisruptionBudget" /tmp/rendered.yaml   # must exist
-grep "podAntiAffinity" /tmp/rendered.yaml              # must exist
-grep "replicaCount" platform/charts/<name>/values.yaml # must be >= 2
+# Helm lint all charts:
+for chart in platform/charts/*/; do helm lint "$chart"; done
 
-# Resource limits (use check-limits.py — grep is not sufficient)
-helm template platform/charts/<name>/ | python3 scripts/check-limits.py
+# Scoped HA gate for one chart:
+bash scripts/ha-gate.sh --chart <name>
 
-# No external registry refs in templates
+# Contract validator:
+python3 contract/validate.py contract/v1/tests/valid.yaml     # must pass
+python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml  # must fail
+
+# Autarky:
 grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  platform/charts/*/templates/ && echo "FAIL" || echo "PASS"
+  platform/charts/*/templates/ cluster/kind/charts/*/templates/ && echo FAIL || echo PASS
 
-# Convenience: run all charts at once
-bash scripts/ha-gate.sh
-bash scripts/ha-gate.sh --dry-run   # list charts without running helm
+# Shellcheck:
+find cluster platform scripts -name "*.sh" | xargs shellcheck -S error
 ```
 
----
+## ha-gate.sh Scope
 
-## Contract Validator Tests
+`bash scripts/ha-gate.sh --chart <name>` checks only the named chart and exits 0/1 based on that chart only. This prevents pre-existing failures in other charts from blocking a contributor's unrelated PR. The CI HA Gate workflow uses this scoped mode on changed charts.
 
-The contract validator uses fixture files in `contract/v1/tests/`:
+## Integration Testing (kind)
 
-```bash
-# valid.yaml must pass (exit 0)
-python3 contract/validate.py contract/v1/tests/valid.yaml
+Bootstrap scripts are tested statically only (shellcheck + bash -n). Never run `bootstrap.sh` in full execution during a cycle — those are manual steps for real infrastructure. kind is the local integration environment, but kind cluster creation is a manual step, not automated in CI.
 
-# invalid-*.yaml must fail (exit 1) — the validator rejects what it should
-for f in contract/v1/tests/invalid-*.yaml; do
-  python3 contract/validate.py "$f" && echo "FAIL (should have rejected): $f" || echo "PASS (correctly rejected): $f"
-done
-```
+## What "No Test Suite" Means for the Champion
 
-Key fixture: `invalid-egress-not-blocked.yaml` — tests that `autarky.externalEgressBlocked: false` is rejected. This is G7 (contract validator test suite passes).
-
----
-
-## Python Unit Tests
-
-Located in `scripts/ralph/tests/test_*.py`. Run individually (no test framework harness):
-
-```bash
-python3 scripts/ralph/tests/test_ceremonies.py
-python3 scripts/ralph/tests/test_<name>.py
-# Or run all:
-for tf in scripts/ralph/tests/test_*.py; do python3 "$tf" && echo "PASS: $tf" || echo "FAIL: $tf"; done
-```
-
----
-
-## Shell Script Validation
-
-```bash
-shellcheck -S error cluster/kind/bootstrap.sh
-shellcheck -S error platform/deploy.sh
-find scripts/ralph -name "*.sh" -print0 | xargs -0 shellcheck -S error
-```
-
----
-
-## Constitutional Gates (evaluated by orient.py)
-
-Defined in `prd/constitution.json`. Gates that must pass before new work begins:
-
-| Gate | Check |
-|---|---|
-| G1 | Ceremony scripts compile without errors |
-| G2 | Living state docs (`docs/state/`) exist and are current |
-| G6 | Zero external registry references in chart templates |
-| G7 | Contract validator test suite passes |
-
----
-
-## Notes for the Champion
-
-- **`check-limits.py` is authoritative for resource limits.** `grep -A5 resources:` misses initContainers. Always use the script.
-- **HA exceptions are tracked in `platform/vendor/VENDORS.yaml`** under `ha_exception: true`. CI respects these; local gates do too if you run `bash scripts/ha-gate.sh`.
-- **For distributed-mode charts** (Loki Simple Scalable, Tempo distributed), PDB count must equal the number of deployed components, not just ≥ 1. Use `grep -c PodDisruptionBudget`.
-- **The validator uses stdlib only.** No pip installs required to run `contract/validate.py`.
-- **CI snapshot in the snapshot.sh output** summarizes helm lint pass/fail, test pass/fail, contract pass/fail, and autarky gate — use these health signals, not raw output.
+When the snapshot shows all green, the floor is clear. But "all green" does not mean stakeholder journeys work end-to-end — it means the static checks passed. The champion's job is to walk the actual journeys and find where the green checks miss real friction.

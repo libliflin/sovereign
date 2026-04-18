@@ -1,15 +1,11 @@
-`.lathe/brand.md` is written. Here's what I found and why it landed this way:
+Done. `.lathe/brand.md` is written.
 
-**Identity:** The project holds lines without softening them. "This is not configurable — it is an invariant of the sovereign contract" (`validate.py:106`) and "HA is not optional. It is baked in from the first commit" (`cluster/CLAUDE.md`) are the clearest brand signal in the repo — confident refusals with no apology and no escape hatch offered.
+The brand reads from five surfaces with citations:
 
-**Four strongest evidence threads:**
+- **README** — opening tagline ("Clone, configure, run"), the "No cloud account, no domain, no credentials" reassurance, and "bootstrap.sh will refuse"
+- **Error messages** — `ha-gate.sh`'s `FAIL:{chart}:{reason}` colon-delimited shape and `contract/validate.py`'s "AUTARKY VIOLATION... this is not configurable — it is an invariant"
+- **Governance docs** — `scope.md`'s hard BLOCKER language and `sovereignty.md`'s numbered falsifiable criteria plus the Vault Precedent narrative
+- **Naming conventions** — autarky, gate, ceremony, invariant, sovereign contract
+- **CLAUDE.md** — "Stop the line", "Never self-certify", the proof-of-work framing
 
-1. **Error messages** (`validate.py:95–126`) — ALL CAPS category label, then the specific field, then what was given. One line per failure. This is the highest-signal surface, and it's disciplined.
-
-2. **Bootstrap narration** (`bootstrap.sh:43,53,63,107`) — idempotent, forward-pointing, em-dash-separated reasons. Every successful step ends with the next command.
-
-3. **The em dash pattern** — used consistently as a beat to attach a short reason to a fact. "DRY RUN — no cluster will be created." Not a comma, not a parenthetical. A breath.
-
-4. **Principle before option** — the sovereignty doc leads with "this is stronger than open source" before defining policy. The README explains *why* 3 nodes before it states the rule.
-
-**What it never does:** "Validation failed" with no field name. Every error in the codebase names the field and the rule. That's the anti-pattern the brand explicitly refuses.
+The through-line: technically precise, zero-compromise, working-engineer voice that names things deliberately, says no completely, and never buries the actionable detail under prose.

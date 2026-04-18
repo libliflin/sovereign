@@ -1,12 +1,11 @@
-`.lathe/verifier.md` written. Here's what it encodes:
+`.lathe/verifier.md` is written.
 
-**Shape detected: Infrastructure-as-Code / Static-Analysis-First.** This project's primary witness is `helm lint` + `helm template` + `shellcheck` + `python3 contract/validate.py` + unittest — not a running server or deployed binary. CI confirms this; every workflow job runs these and nothing else.
+**Shape detected: service/CLI/infrastructure platform.** No frontend, no registry publish, no preview deploys. Changes are witnessed by running the local gate suite (ha-gate.sh, shellcheck, contract/validate.py, autarky grep) and confirming CI jobs pass on the PR.
 
-**Verification Playbook** covers all five surfaces the builder touches:
-- Helm charts → lint, template, HA gates, autarky gate, resource limits, no `:latest`
-- Shell scripts → `shellcheck -S error`, dry-run/backup flag assertions
-- Contract validator → all `invalid-*.yaml` fixtures must exit non-zero, `valid.yaml` must exit 0
-- Ceremony scripts → `python3 scripts/ralph/tests/test_*.py`
-- ArgoCD manifests → `revisionHistoryLimit: 3` check
+Key choices in the playbook:
+- Every gate is scoped to what the builder changed — full snapshot only when multiple surfaces are touched
+- Contract validator: `valid.yaml` must pass + every `invalid-*.yaml` must fail — both sides confirmed each round
+- Witnessing = local gates passing AND `gh pr checks` green on the PR
+- Divergence between local pass and CI fail is itself a finding, not a "known issue"
 
-**What the verifier commits:** contract fixtures (`invalid-<rule-name>.yaml` for every new rule), ceremony unittest cases, chart template assertions. These are the concrete outputs that make the verifier more than a reviewer.
+The verifier's contribution model follows the project's own conventions: `FAIL:{thing}:{reason}` output shape, `ha_exception` awareness, shellcheck at `-S error`, autarky grep across both `platform/charts/` and `cluster/kind/charts/`.

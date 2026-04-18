@@ -1,9 +1,17 @@
-Clean output, 2185 chars — well within the 6K cap with room to expand on failures. The script is executable and working. Here's what each section covers:
+Script runs clean. Output is 1,455 characters on a healthy repo — well within the 4,000 target with plenty of headroom for failures to expand into.
 
-- **Git Status / Recent Commits** — dynamic per-cycle change signals
-- **Sprint State** — which stories are todo, awaiting review, or done; builder knows where to focus
-- **Helm Lint** — all 30 charts linted, one-liner on pass; expands to failures on fail
-- **Tests** — runs `scripts/ralph/tests/test_*.py` directly (no pytest dependency)
-- **Contract Validator (G7)** — valid fixture passes, all 4 invalid fixtures rejected
-- **Autarky Gate (G6)** — grep for external registry refs in chart templates
-- **CI Workflows** — lists what's in `.github/workflows/`
+**What it covers:**
+
+| Section | Signal |
+|---|---|
+| Git Status | `git status --short` — shows dirty working tree |
+| Recent Commits | last 10 oneline |
+| Sprint | active increment name + description from `prd/manifest.json` |
+| Helm Lint | Pass/Fail counts across all 33 charts; details only on failure |
+| Contract Validator (G7) | Tests valid.yaml passes + all invalid-*.yaml reject |
+| Autarky (G6) | Grep for external registry refs in chart templates |
+| Shellcheck | Silent on clean; error count + first 15 lines on failure |
+| State Docs (G2) | Presence check for `docs/state/agent.md` + `architecture.md` |
+| CI | Lists `.github/workflows/*.yml` |
+
+Happy path stays at ~1,500 chars. Failure paths expand per section, capped with `head` to prevent runaway output.

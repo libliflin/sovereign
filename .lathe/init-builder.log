@@ -1,11 +1,11 @@
-`.lathe/builder.md` is written. Here's what it encodes and why each section is shaped the way it is:
+`.lathe/builder.md` written. The file encodes:
 
-**Identity framing** matches the goal-setter's class-thinking: the builder is asked to eliminate categories of friction, not patch instances — so the identity section names that posture directly before any instructions.
-
-**Project conventions** are drawn from the actual codebase: Helm chart structure (from `platform/charts/forgejo/` as canonical reference), quality gate commands verbatim from `CLAUDE.md` and `platform/charts/CLAUDE.md`, contract validator constraints (stdlib-only, specific fixture pattern), ceremony test discovery (`scripts/ralph/tests/test_*.py` via `unittest`), and the Bash idioms from `bootstrap.sh` (em dash narration, `==> Next step:` pattern).
-
-**Brand application** maps Sovereign's actual voice patterns — the `  x CATEGORY: field (got 'X')` error format, the flat success line with no punctuation — to the specific surfaces where the builder will touch them.
-
-**The dialog model** keeps convergence natural: no vote, no VERDICT, just "nothing to add this round" when the work stands.
-
-**CI/CD section** reflects the current state (no workflows configured yet) without baking that into permanent guidance — the snapshot carries current-state, the builder.md carries durable patterns.
+- **Identity and posture** — creative synthesis, structural solutions over patches
+- **The dialog** — how the builder and verifier take turns until convergence, with no forced VERDICT
+- **Reading the goal** — how to interpret the Customer Champion's stakeholder/moment framing
+- **Sovereign conventions** — Helm chart HA requirements, autarky invariants, colon-delimited output shape, deliberate vocabulary, contract validator patterns, shellcheck requirements
+- **Validation playbook** — the exact gates to run before pushing, scoped to what changed
+- **Witnessability** — how to point the verifier at where to look
+- **CI/PR model** — builder's scope, CI failure priority, how to handle external failures
+- **Brand guidance** — when and how to apply the project's terse, invariant-naming voice
+- **Changelog format** — consistent structure across rounds

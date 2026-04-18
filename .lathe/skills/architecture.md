@@ -1,115 +1,102 @@
-# Architecture — Decisions in Force
+# Architecture — Sovereign Platform
 
-Read `docs/state/architecture.md` for the full current architecture document (rewritten each sprint). This file captures the decisions most relevant to the champion's cycle-to-cycle work.
+## Core Pattern: ArgoCD App-of-Apps
 
----
+Everything after the initial bootstrap is managed by ArgoCD. The root app (`argocd-apps/root-app.yaml`) deploys all service apps. No manual `kubectl apply` after bootstrap — all changes go through Git. Each service app points at a Helm chart in `platform/charts/<service>/`.
 
-## What Sovereign Is
-
-A fully self-hosted, zero-trust, HA Kubernetes platform deployable from a single `bootstrap.sh` invocation. The domain is a runtime variable. Every service is installed by ArgoCD from this repository. Nothing is clicked into existence.
-
-Dogfood domain: `sovereign-autarky.dev`
-
----
-
-## Core Invariants
-
-These are non-negotiable. Any story that violates them is stopped.
-
-| Invariant | Rule |
-|---|---|
-| **Autarky** | After bootstrap, the cluster never pulls from docker.io, quay.io, ghcr.io, gcr.io, or registry.k8s.io. All images come from internal Harbor. |
-| **HA mandatory** | Minimum 3 nodes (odd), replicaCount ≥ 2, PodDisruptionBudget, podAntiAffinity on every chart. `bootstrap.sh` refuses < 3 nodes. |
-| **Distroless mandatory** | All container images use distroless bases. Exceptions require a VENDORS.yaml deprecation entry with a migration path. |
-| **Domain is a variable** | `{{ .Values.global.domain }}` everywhere in templates. Never hardcoded. |
-| **Zero open ports** | Default front door is Cloudflare Tunnel. VPS firewall drops everything except Cloudflare's published IP ranges. SSH via `cloudflare access ssh`. |
-| **No plain-text secrets** | Sealed Secrets for GitOps. OpenBao for runtime injection. Never committed. |
-
----
-
-## Architecture Layers
+## Chart Structure
 
 ```
-ArgoCD (App-of-Apps)           ← manages everything after bootstrap
-  └─ argocd-apps/<tier>/*.yaml ← one Application per service
-
-Platform services              ← platform/charts/<service>/
-Kind bootstrap charts          ← cluster/kind/charts/<service>/
-
-Infrastructure                 ← Crossplane compositions (XRDs, not scripts)
-Secrets                        ← Sealed Secrets (at-rest) + OpenBao (runtime)
-Storage                        ← Rook/Ceph (block, file, object)
-Networking                     ← Cilium CNI, kube-vip VIP, Istio mTLS STRICT
+platform/charts/<service>/
+  Chart.yaml
+  values.yaml        # defaults — domain, storageClass, imageRegistry all templated
+  templates/         # Kubernetes manifests, all values via .Values
 ```
 
----
+Every chart MUST have:
+- `replicaCount: 2` minimum
+- `podDisruptionBudget: { minAvailable: 1 }`
+- `podAntiAffinity` (preferredDuringScheduling minimum)
+- `readinessProbe` + `livenessProbe` on every container
+- `resources.requests` + `resources.limits`
 
-## Key Components
+HA exceptions (architecturally single-instance) are declared in `platform/vendor/VENDORS.yaml` with `ha_exception: true` — the CI checks skip PDB/antiAffinity for those.
 
-| Component | Role | Source |
-|---|---|---|
-| ArgoCD | GitOps engine, App-of-Apps | argocd-apps/ |
-| Forgejo | SCM + CI (replacing GitHub) | platform/charts/forgejo/ |
-| Harbor | Internal OCI registry (autarky) | platform/charts/harbor/ |
-| OpenBao | Secrets management (Vault fork, Apache 2.0) | platform/charts/openbao/ |
-| Keycloak | SSO / identity | platform/charts/keycloak/ |
-| Istio | Service mesh, mTLS STRICT | platform/charts/istio/ |
-| OPA/Gatekeeper | Policy enforcement | platform/charts/opa-gatekeeper/ |
-| Falco | Runtime threat detection | platform/charts/falco/ |
-| Prometheus + Grafana | Metrics + dashboards | platform/charts/prometheus-stack/ |
-| Loki | Log aggregation | platform/charts/loki/ |
-| Tempo | Distributed tracing | platform/charts/tempo/ |
-| Thanos | Long-term metrics retention | platform/charts/thanos/ |
-| Backstage | Service catalog + developer portal | platform/charts/backstage/ |
-| Crossplane | Infrastructure compositions | platform/charts/crossplane/ |
-| Rook/Ceph | Distributed storage | (via cluster bootstrap) |
-| Cilium | CNI + NetworkPolicy enforcement | cluster/kind/charts/cilium/ |
-| cert-manager | TLS certificate automation | cluster/kind/charts/cert-manager/ |
-| Sealed Secrets | GitOps-safe secret encryption | platform/charts/sealed-secrets/ |
+## Autarky: The Build Pipeline
 
----
+After bootstrap, no external registry pulls. The vendor system (Gentoo-inspired):
 
-## Contract System
+1. `platform/vendor/fetch.sh` — SHA-verified mirror of upstream source into internal Forgejo
+2. `platform/vendor/build.sh` — builds distroless OCI images from patched source
+3. `platform/vendor/deploy.sh` — stages → smoke test → promote → production
+4. `platform/vendor/rollback.sh` — revert to last-known-good image SHA (must complete < 2 minutes)
+5. `platform/vendor/backup.sh` — CronJob that mirrors to secondary storage
 
-`contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces:
-- Required fields are present (runtime.domain, imageRegistry, storageClass, etc.)
-- `autarky.externalEgressBlocked: true` — egress is blocked
-- `autarky.imagesFromInternalRegistryOnly: true` — no external image pulls
-- `network.networkPolicyEnforced: true` — NetworkPolicies active
-- apiVersion matches `sovereign.dev/cluster/v1`
+Each vendored service has `platform/vendor/recipes/<name>/recipe.yaml` declaring rollout strategy and backup priority.
 
-The contract is the machine-verifiable form of the autarky and zero-trust claims. When in doubt about whether a config is valid, run the validator.
+Image tag format: `<upstream-version>-<source-sha>-p<patch-count>` (e.g. `v1.16.0-a3f8c2d-p3`). Never `:latest`.
 
----
+## The Contract
 
-## Sprint/Delivery Model
+`contract/validate.py` enforces the sovereign cluster contract. A `cluster-values.yaml` must:
+- Set `apiVersion: sovereign.dev/cluster/v1`
+- Include all required fields (domain, imageRegistry, storage classes, network, PKI)
+- Set `network.networkPolicyEnforced: true`, `autarky.externalEgressBlocked: true`, `autarky.imagesFromInternalRegistryOnly: true` — these are invariants, not configuration
+
+The validator exits 0 for valid, exits 1 with specific violation messages for invalid. Test fixtures in `contract/v1/tests/`.
+
+## Key Values Conventions
+
+Never hardcode in templates:
+- Domain → `{{ .Values.global.domain }}`
+- Storage class → `{{ .Values.global.storageClass }}`
+- Image registry → `{{ .Values.global.imageRegistry }}/`
+- Passwords/secrets → Sealed Secrets or OpenBao refs
+
+`values.yaml` defaults may use `sovereign-autarky.dev` as the dogfood domain — that is correct. Never put a literal domain in `templates/`.
+
+## HA Architecture
 
 ```
-prd/manifest.json              ← source of truth: active sprint, increments
-prd/increment-N-<name>.json   ← sprint stories
-prd/backlog.json               ← all future stories
-prd/constitution.json          ← themes + constitutional gates
+etcd quorum:   requires odd node count, minimum 3 (1 failure tolerance)
+Ceph quorum:   requires 3 OSDs
+API server:    kube-vip floating VIP across all control plane nodes
+CNI:           Cilium DaemonSet (inherently HA)
+Storage:       Rook/Ceph replication factor 3
 ```
 
-Stories: `passes: false, reviewed: false` → needs implementation. `passes: true, reviewed: false` → awaiting review. `passes: true, reviewed: true` → accepted.
+`bootstrap.sh` refuses to proceed with fewer than 3 nodes or an even node count. This is not configurable.
 
-Ceremonies run in order: orient → constitution-review → epic-breakdown → backlog-groom → plan → preflight → smart → execute → smoke → proof → review → retro → sync → advance.
+## Kind (Local Development)
 
----
+`cluster/kind/bootstrap.sh` creates a 3-node kind cluster (`sovereign-test`). It:
+- Accepts `--dry-run`, `--domain`, `--output`, `--cluster-name`
+- Creates a 3-node cluster (1 control-plane + 2 workers) via `cluster/kind/kind-config.yaml`
+- Emits `cluster-values.yaml` conforming to `contract/v1`
+- Validates the emitted values file against the contract
 
-## Sovereignty Tiers
+Kind is for static analysis and local evaluation. CI never runs bootstrap in full execution.
 
-- **Tier 1** (CNI, storage, PKI, GitOps, service mesh, policy, observability): must be CNCF/ASF/LF governed
-- **Tier 2** (Forgejo, Keycloak, Harbor, Backstage): must be Apache 2.0 / MIT / BSD
+## Security Layers
 
-OpenBao replaces Vault — the reference precedent for replacing a component that changed license terms (BSL).
+- **Istio STRICT mTLS** — all service-to-service traffic encrypted and authenticated
+- **OPA/Gatekeeper** — policy enforcement at admission
+- **Falco** — runtime threat detection
+- **Trivy** — vulnerability scanning before admission
+- **NetworkPolicy** — deny-all with explicit allows
+- **Zero open ports** — Cloudflare Tunnel (default) or custom front door; no port 22
 
----
+## State Files
 
-## Notes for the Champion
+- `prd/manifest.json` — source of truth for active sprint and increments
+- `prd/backlog.json` — all future stories
+- `prd/constitution.json` — themes and constitutional gates (G1, G2, G6, G7)
+- `docs/state/agent.md` — live briefing, rewritten each sprint by sync ceremony
+- `docs/state/architecture.md` — architecture decisions currently in force
 
-- **`docs/state/agent.md`** is the live briefing rewritten each sprint. Read it before any implementation work.
-- **`docs/state/architecture.md`** is the current architecture document (also rewritten each sprint).
-- **The root `charts/` directory is empty and retired.** Never create charts there.
-- **`ha_exception: true` in VENDORS.yaml** marks architecturally single-instance components that are exempt from the podAntiAffinity and replicaCount checks. Use sparingly.
-- **kube-vip** provides the floating API server VIP — no external load balancer required for HA.
+## Constitutional Gates
+
+- **G1** — Ceremony scripts compile without errors
+- **G2** — `docs/state/agent.md` and `docs/state/architecture.md` exist and are current
+- **G6** — Zero external registry references in chart templates
+- **G7** — Contract validator test suite passes (valid.yaml passes, all invalid-*.yaml fail)

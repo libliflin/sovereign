@@ -1,128 +1,65 @@
-# Build — How This Project Builds
+# Build — Sovereign Platform
 
-Sovereign is not a compiled binary. The "build" is Helm chart rendering, script execution, and the vendor image pipeline. No `make`, no `cargo build`, no `go build` at the project root.
+## Helm Charts
 
----
-
-## Local Development: kind Cluster
-
-The primary local development target is a 3-node kind cluster.
+Charts live in `platform/charts/<service>/` and `cluster/kind/charts/<service>/`. No charts in the root `charts/` (retired).
 
 ```bash
-# Standard kind bootstrap (creates sovereign-test cluster)
-./cluster/kind/bootstrap.sh
-
-# Preview without creating anything
-./cluster/kind/bootstrap.sh --dry-run
-
-# HA variant (3 control plane + 2 worker nodes)
-./cluster/kind/ha-bootstrap.sh
-```
-
-After bootstrap, the kind cluster has: Cilium CNI, cert-manager, sealed-secrets, local-path-provisioner (default StorageClass), and MinIO.
-
-**Tear down:**
-```bash
-kind delete cluster --name sovereign-test
-```
-
----
-
-## Helm Chart Development
-
-Charts live in `platform/charts/<service>/`. Bootstrap charts (kind-specific) live in `cluster/kind/charts/<service>/`.
-
-```bash
-# Update dependencies (required before lint if Chart.yaml has dependencies)
-helm dependency update platform/charts/<name>/
-
-# Lint
+# Lint a chart:
 helm lint platform/charts/<name>/
 
-# Render (required for HA gate checks)
-helm template sovereign platform/charts/<name>/ \
-  --set global.domain=sovereign-autarky.dev \
-  > /tmp/rendered.yaml
+# Render a chart (check output):
+helm template sovereign platform/charts/<name>/ --set global.domain=sovereign-autarky.dev
+
+# HA gate scoped to one chart:
+bash scripts/ha-gate.sh --chart <name>
+
+# Full HA gate (all charts):
+bash scripts/ha-gate.sh
 ```
 
-**Required values in every chart:**
-- `global.domain`: always `{{ .Values.global.domain }}` in templates, never hardcoded
-- `global.storageClass`: always `{{ .Values.global.storageClass }}`
-- `global.imageRegistry`: always `{{ .Values.global.imageRegistry }}/` prefix on images
-- `replicaCount`: must be ≥ 2 in values.yaml defaults
+## Shell Scripts
 
----
-
-## Vendor Image Pipeline
-
-Sovereign never pulls from external registries after bootstrap. All images go through the vendor system:
-
-1. `platform/vendor/VENDORS.yaml` — registry of all vendored components (name, upstream repo, git SHA, license, distroless status)
-2. `platform/vendor/recipes/<name>/recipe.yaml` — rollout strategy, backup config
-3. `platform/vendor/recipes/<name>/patches/` — any source patches applied before build
-4. Images are built from source into distroless OCI images and pushed to the internal Harbor registry
-
-**Image tag format:** `<upstream-version>-<source-sha>-p<patch-count>` (e.g., `v1.16.0-a3f8c2d-p3`). Never `:latest`, never bare `:<version>`.
-
-**Rollback:**
+All `.sh` files in `cluster/`, `platform/`, `scripts/` must pass:
 ```bash
-platform/vendor/rollback.sh <service-name>  # reverts to last-known-good SHA
+shellcheck -S error <script>
 ```
 
----
+Vendor scripts additionally must handle `--dry-run` and `--backup` flags.
 
 ## Contract Validator
 
-The cluster configuration contract is validated before any cluster is provisioned:
-
 ```bash
-python3 contract/validate.py <cluster-values.yaml>
-# Exit 0: valid. Exit 1: validation error with field and rule.
+python3 contract/validate.py contract/v1/tests/valid.yaml          # must exit 0
+python3 contract/validate.py contract/v1/tests/invalid-*.yaml      # each must exit 1
 ```
 
-Uses Python stdlib only — no dependencies to install.
+## Adding a New Chart
 
----
+1. Create `platform/charts/<service>/` with `Chart.yaml`, `values.yaml`, `templates/`
+2. Create `platform/argocd-apps/<tier>/<service>-app.yaml` with `spec.revisionHistoryLimit: 3`
+3. Register in `platform/vendor/VENDORS.yaml` (required fields: name, upstream, version, license, distroless)
+4. If the service is architecturally single-instance, add `ha_exception: true` to VENDORS.yaml entry — the HA gate checks this before requiring PDB/antiAffinity
 
-## ArgoCD Application Manifests
+## Vendor Recipes
 
-ArgoCD apps live in `argocd-apps/<tier>/<service>-app.yaml`. The root App-of-Apps watches `argocd-apps/`.
-
-**Validation:** Use `yq e '.'` to validate YAML — not `kubectl apply --dry-run` (CRDs not installed locally).
-
-Every Application manifest must have:
+`platform/vendor/recipes/<name>/recipe.yaml` must declare:
 ```yaml
-spec:
-  revisionHistoryLimit: 3
+rollout:
+  strategy: rolling        # rolling | node_by_node (CNI only) | skip (bootstrap tools)
+  max_unavailable: 0
+  max_surge: 1
+  staging_timeout: 5m
+  production_timeout: 10m
+backup:
+  priority: critical       # critical | standard | derived (can be rebuilt)
 ```
 
-Domain-aware charts receive `global.domain` via `spec.source.helm.parameters`, not via valueFiles.
+## Snapshot
 
----
-
-## Sprint/Ceremony System
-
-The delivery pipeline is Python-based, not a build tool:
-
+The snapshot summarizes project health. Run it to see what the agent will see:
 ```bash
-scripts/ralph/ceremonies.py    # ceremony runner
-prd/manifest.json              # sprint state (source of truth)
-prd/increment-N-<name>.json    # active sprint stories
-prd/constitution.json          # constitutional gates
+bash .lathe/snapshot.sh
 ```
 
-To check ceremony script health:
-```bash
-python3 scripts/ralph/ceremonies.py --help  # must not error (G1 gate)
-for tf in scripts/ralph/tests/test_*.py; do python3 "$tf"; done
-```
-
----
-
-## Notes for the Champion
-
-- **No root-level Makefile or build script.** Everything is either a helm command or a bash script.
-- **`charts/` (root level) is empty and retired.** Do not create charts there.
-- **The `platform/deploy.sh` script** is the production deployment path. It has shellcheck enforced in CI.
-- **`scripts/check-limits.py`** validates that every container in a rendered chart has resource requests and limits. Run it via stdin: `helm template ... | python3 scripts/check-limits.py`.
-- **`scripts/ha-gate.sh`** runs PDB, podAntiAffinity, and replicaCount checks across all charts in one pass. Use `--dry-run` to list charts without running helm.
+Sections: Git Status, Recent Commits, Sprint, Helm Lint, Contract Validator (G7), Autarky (G6), Shellcheck, State Docs (G2), CI config list.
