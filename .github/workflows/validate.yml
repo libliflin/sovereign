@@ -228,6 +228,10 @@ jobs:
         run: |
           find scripts/ralph -name "*.sh" -print0 | xargs -0 shellcheck -S error
 
+      - name: Shellcheck bootstrap scripts
+        run: |
+          find bootstrap -name "*.sh" -print0 | xargs -0 -r shellcheck -S error
+
       - name: Shellcheck vendor scripts (if any)
         run: |
           if ls platform/vendor/*.sh 2>/dev/null | head -1 | grep -q .; then
@@ -514,6 +518,44 @@ jobs:
           done
           [ $FAIL -eq 0 ] && echo "✓ No hardcoded IP addresses in cluster scripts"
           exit $FAIL
+
+      - name: Assert bootstrap/config.yaml.example is valid YAML
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, sys
+          path = 'bootstrap/config.yaml.example'
+          try:
+              with open(path) as f:
+                  doc = yaml.safe_load(f)
+              assert isinstance(doc, dict), f"FAIL: {path} did not parse as a YAML mapping"
+              print(f"PASS: {path} is valid YAML")
+          except FileNotFoundError:
+              print(f"FAIL: {path} does not exist — VPS self-hoster step 2 (cp bootstrap/config.yaml.example bootstrap/config.yaml) will fail")
+              sys.exit(1)
+          except yaml.YAMLError as e:
+              print(f"FAIL: {path} is not valid YAML: {e}")
+              sys.exit(1)
+          PYEOF
+
+      - name: Assert bootstrap/config.yaml.example has required fields
+        run: |
+          python3 - <<'PYEOF'
+          import yaml, sys
+          path = 'bootstrap/config.yaml.example'
+          with open(path) as f:
+              doc = yaml.safe_load(f)
+          required = ['domain', 'provider', 'frontDoor', 'sshKeyPath', 'nodes', 'cloudflare', 'platform']
+          errors = []
+          for field in required:
+              if field not in doc:
+                  errors.append(f"  x missing required field: {field}")
+          if errors:
+              print(f"FAIL: {path} is missing required fields:")
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print(f"PASS: {path} has all required fields ({', '.join(required)})")
+          PYEOF
 
   # ── Job 6: README chart path validation ──────────────────────────────────
   readme-validate:
