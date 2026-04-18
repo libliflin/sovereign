@@ -7,6 +7,9 @@ global:
   domain: "sovereign-autarky.dev"
   storageClass: "local-path"
 
+# HA gate: required by ha-gate.sh — mirrors victorialogs.server.replicaCount
+replicaCount: 2
+
 victorialogs:
   server:
     ## Single-node mode — sufficient for most deployments.
