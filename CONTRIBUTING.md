@@ -65,7 +65,7 @@ Every chart with a Deployment or StatefulSet must have:
 - A `PodDisruptionBudget` in `templates/pdb.yaml`
 - `podAntiAffinity` in the Deployment spec
 
-**Single-instance exception:** Some services cannot scale (SonarQube CE, MailHog). These require:
+**Single-instance exception:** Some services cannot scale (MailHog, Mailpit). These require:
 
 1. An entry in `platform/vendor/VENDORS.yaml` with `ha_exception: true` and `ha_exception_reason`.
 2. `replicaCount: 1` in `values.yaml` with a comment pointing to the VENDORS.yaml entry.
