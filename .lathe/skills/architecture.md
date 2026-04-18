@@ -1,122 +1,129 @@
-# Architecture: Key Decisions in Force
+# Architecture — Key Decisions in Force
 
-Stable decisions that shape every implementation choice. Read `docs/state/architecture.md` for the authoritative version — this file captures the champion-relevant subset with enough context to understand *why*.
-
----
-
-## The Core Pattern: ArgoCD App-of-Apps
-
-After `bootstrap.sh` runs, the cluster is self-managing via ArgoCD. The root app (`platform/argocd-apps/`) watches this repo and deploys all service Applications. No manual `kubectl apply` after bootstrap. All changes go through Git → PR → CI → merge → ArgoCD sync.
-
-**Why this matters for the champion:** A service that's "deployed" but not wired into ArgoCD is a half-finished service. The operator can't trust it, and the developer can't trust its availability.
+Architectural decisions visible in the code that the champion needs to understand before walking a stakeholder journey.
 
 ---
 
-## Chart Locations (non-obvious)
+## App-of-Apps GitOps Pattern
 
-| Type | Location |
-|---|---|
-| Platform services (Grafana, Loki, Backstage, etc.) | `platform/charts/<service>/` |
-| Kind cluster bootstrap charts | `cluster/kind/charts/<service>/` |
-| Root `charts/` | **Empty and retired — never use** |
+Everything after bootstrap is an ArgoCD Application. The root app watches `platform/argocd-apps/`. Adding a service means:
+1. Create `platform/charts/<service>/` — Helm chart.
+2. Create `platform/argocd-apps/<tier>/<service>-app.yaml` — ArgoCD Application manifest.
+3. ArgoCD auto-syncs. No `kubectl apply` after bootstrap.
 
-**ArgoCD apps** live in `platform/argocd-apps/<tier>/`. Every Application must have `spec.revisionHistoryLimit: 3`.
-
----
-
-## The Autarky Invariant (G6)
-
-After bootstrap, the cluster never pulls from external registries (`docker.io`, `quay.io`, `ghcr.io`, `gcr.io`, `registry.k8s.io`). Chart templates must not reference external registries. The `imageRegistry` flows through `{{ .Values.global.imageRegistry }}`.
-
-**Exception:** The kind path uses upstream images during kind bootstrap (before the internal Harbor registry exists). This is intentional and documented.
-
-**Gate:** `grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/` must return nothing.
+All ArgoCD app manifests require `spec.revisionHistoryLimit: 3`. CI rejects anything else.
 
 ---
 
-## HA: Non-Negotiable (G-HA)
+## Domain is a Variable
+
+`{{ .Values.global.domain }}` flows through every chart. Never hardcode a domain name, registry URL, or storage class. The three global values that must thread through every chart:
+
+```yaml
+global:
+  domain: "sovereign-autarky.dev"       # injected by parent
+  storageClass: "ceph-block"            # injected by parent
+  imageRegistry: "harbor.{{ .Values.global.domain }}/sovereign"
+```
+
+Ingress hostnames: `<service>.{{ .Values.global.domain }}` always.
+
+---
+
+## Autarky — No External Registries at Runtime
+
+After bootstrap, the cluster never pulls from `docker.io`, `quay.io`, `ghcr.io`, `gcr.io`, or `registry.k8s.io`. Images flow through Harbor (`harbor.<domain>/sovereign/<name>`). Constitutional gate G6 enforces this in CI. Every chart template image reference must use `{{ .Values.global.imageRegistry }}/`.
+
+The vendor pipeline that makes autarky possible:
+1. `vendor/fetch.sh` — SHA-verified mirror of upstream source into internal Forgejo.
+2. `vendor/build.sh` — builds distroless OCI image, pushes to Harbor.
+3. `vendor/deploy.sh` — stages → smoke test → promote.
+4. `vendor/rollback.sh` — reverts to last-known-good SHA.
+
+Image tag format: `<upstream-version>-<source-sha>-p<patch-count>` (e.g. `v1.16.0-a3f8c2d-p3`). Never `:latest`. Never just `:<version>`.
+
+---
+
+## HA — Mandatory, Not Optional
 
 Every chart with a Deployment or StatefulSet must have:
-- `replicaCount: >= 2` in `values.yaml`
-- `PodDisruptionBudget` in templates
+- `replicaCount: 2` minimum (default in `values.yaml`)
+- `PodDisruptionBudget` in `templates/pdb.yaml` with `minAvailable: 1`
 - `podAntiAffinity` in the Deployment spec
+- `readinessProbe` and `livenessProbe` on every container
+- `resources.requests` and `resources.limits` on every container
 
-**Exception path:** Services that architecturally cannot scale (SonarQube CE, MailHog) must have `ha_exception: true` + `ha_exception_reason` in `platform/vendor/VENDORS.yaml`, AND `replicaCount: 1` with a comment in `values.yaml` pointing to the VENDORS.yaml entry.
+Constitutional gate G9 enforces this across all charts. `scripts/ha-gate.sh --chart <name>` checks a single chart locally.
 
-**Gate:** `bash scripts/ha-gate.sh` runs PDB + podAntiAffinity + replicaCount checks across all charts.
+**Single-instance exception:** Services that architecturally cannot scale (MailHog, Mailpit) require a `ha_exception: true` entry in `platform/vendor/VENDORS.yaml`. Without this, CI fails.
 
----
-
-## Resource Limits on Every Container (G6b)
-
-Every container and initContainer must have `resources.requests` AND `resources.limits`. Use `helm template platform/charts/<name>/ | python3 scripts/check-limits.py` — grep is not sufficient (it misses individual containers).
+**kind vs. production:** `podAntiAffinity: requiredDuringScheduling` prevents pods from scheduling on a single-node kind cluster. Charts use `preferredDuringScheduling` for anti-affinity to remain testable on kind. The HA gate checks for the presence of anti-affinity, not the scheduling mode.
 
 ---
 
-## Domain Injection
+## Zero Trust — Istio STRICT mTLS
 
-- In templates: always `{{ .Values.global.domain }}` — never a hardcoded domain.
-- In `values.yaml` defaults: `sovereign-autarky.dev` is the dogfood domain — correct and expected.
-- ArgoCD apps inject domain via `spec.source.helm.parameters`, not `valueFiles`.
+Istio enforces mutual TLS between all in-cluster services (`PeerAuthentication` with `mode: STRICT`). The Istio chart's `values.yaml` has a `peerAuthentication.mode` field. Constitutional gate G8 verifies the rendered helm template — not just the values — to catch both mode drift and `enabled: false` bypass.
 
----
-
-## Secret Handling
-
-- **GitOps secrets:** Sealed Secrets (encrypted YAML committed to repo).
-- **Runtime secrets:** OpenBao (Apache 2.0 Vault fork). Referenced via Helm values, never committed in plaintext.
-- Never commit a secret. Ever. Stop and use the blocker protocol if you're about to.
+Known gap: G8 only checks the default namespace policy in `istio-system`. Per-namespace overrides in individual service charts are not checked by any gate.
 
 ---
 
-## The Contract Layer (G7)
+## Contract Validator
 
-`contract/v1/` defines the platform configuration schema. `contract/validate.py` enforces:
-- `externalEgressBlocked: true`
-- `imageRegistry` present
-- `storageClass` present
+`contract/validate.py` is the machine-enforced sovereignty gate. It reads a cluster contract YAML and enforces:
+- `autarky.externalEgressBlocked: true` is present and true.
+- `imageRegistry` field points to an internal registry.
+- `storageClass` field is set.
 
-Before provisioning any cluster, `contract/validate.py <config>` must pass. The test fixtures are at `contract/v1/tests/valid.yaml` (must pass) and `contract/v1/tests/invalid-egress-not-blocked.yaml` (must fail with exit 1).
-
----
-
-## Storage
-
-Rook/Ceph provides all storage (block, filesystem, object). StorageClass flows through `{{ .Values.global.storageClass }}` everywhere. Ceph is a *provider* — it creates StorageClasses and does not consume one itself.
+Constitutional gate G7 runs the test suite: `contract/v1/tests/valid.yaml` must pass; `contract/v1/tests/invalid-egress-not-blocked.yaml` must be rejected with exit 1.
 
 ---
 
-## Network Policies
+## Bootstrap Sequence
 
-The `network-policies` chart enforces per-namespace egress baselines. Every deployed namespace must be in `platform/charts/network-policies/values.yaml`. CI validates this via the `network-policies-coverage` job. Missing a namespace here means workloads are unprotected.
+Strict dependency order. Each phase must complete before the next:
+- **Phase 0** — VPS/bare-metal provisioned, K3s installed (3-node HA, kube-vip floating VIP).
+- **Phase 1** — Cluster foundations: Cilium, Crossplane, cert-manager, Sealed Secrets.
+- **Phase 2** — Identity and secrets: OpenBao, Keycloak.
+- **Phase 3** — Storage: Rook/Ceph (block, filesystem, object). Replication factor 3, encryption at rest required.
+- **Phase 4** — GitOps engine: Forgejo (note: README says GitLab in some places — Forgejo is the current SCM), Harbor, ArgoCD.
+- **Phase 5+** — Security (Istio, OPA/Gatekeeper, Trivy, Falco), Observability (Prometheus, Grafana, Loki, Thanos, Tempo), Developer Experience (Backstage, code-server).
 
----
-
-## Service Mesh (Istio)
-
-mTLS STRICT everywhere inside the cluster. OPA/Gatekeeper enforces admission policy. Falco for runtime detection. These three are the zero-trust enforcement stack — if any is missing from a namespace, that namespace is not zero-trust.
-
----
-
-## Developer Experience Services (current state)
-
-| Service | State |
-|---|---|
-| code-server | Chart exists; toolchain initContainer copies kubectl/helm/k9s; workspace PVC at `/home/coder`; autarky G6 passes |
-| Backstage | Chart + ArgoCD app exist; autarky G6 passes; full Keycloak OIDC plugin config pending |
-| SonarQube | Chart deployed; ha_exception:true; ArgoCD app exists |
-| ReportPortal | Chart deployed; multi-component PDB; ArgoCD app exists |
-| Sovereign PM | Node.js/Express + React; multi-stage Dockerfile; deployed at `pm.<domain>` |
+`bootstrap.sh` refuses to proceed with fewer than 3 nodes or an even node count.
 
 ---
 
-## The Ceremony Loop (Ralph)
+## Ceremony System (ralph)
 
-The delivery system lives in `scripts/ralph/`. Ceremonies are Markdown prompts that run in sequence: orient → constitution-review → epic-breakdown → backlog-groom → plan → preflight → smart → execute → smoke → proof → review → retro → sync → advance.
+The delivery loop is managed by `scripts/ralph/ceremonies.py`. Ceremonies in order:
+`orient → constitution-review → epic-breakdown → backlog-groom → plan → preflight → smart → execute → smoke → proof → review → retro → sync → advance`
 
-The sprint state lives in:
-- `prd/manifest.json` — source of truth for active increment and sprint file path
-- `prd/increment-N-<name>.json` — the active sprint's stories
-- `prd/backlog.json` — all future work
+Constitutional gate G1 verifies `ceremonies.py` compiles and its imports resolve. A broken import in `scripts/ralph/lib/orient.py` or `gates.py` stalls the loop.
 
-The word `phase` is retired from code and data. Use `increment`. Encountering `phase` in new code is a bug.
+Sprint state lives in `prd/manifest.json` (source of truth) and `prd/increment-<N>-<name>.json` (per-sprint stories). The active sprint is `manifest.json`.`activeSprint`.
+
+Story lifecycle:
+- `passes: false, reviewed: false` → needs implementation.
+- `passes: true, reviewed: false` → implemented, awaiting review ceremony.
+- `passes: true, reviewed: true` → accepted (done).
+
+The champion marks `passes: true`. Only the review ceremony marks `reviewed: true`.
+
+---
+
+## Namespace Layout
+
+Every service lives in its own namespace. Nothing deploys to `default`. Every non-system namespace must appear in `platform/charts/network-policies/values.yaml` for egress baseline enforcement.
+
+---
+
+## Distroless Mandatory
+
+All container images use distroless base images. No shell, no package manager in production. Exceptions require a `VENDORS.yaml` entry with a migration path.
+
+---
+
+## Front Door — Zero Open Ports
+
+Default: Cloudflare Tunnel (outbound-only). UFW blocks all inbound. SSH goes through `cloudflare access ssh`. Port 22 is never open. Alternative front doors implemented via a 5-hook interface in `bootstrap/frontdoor/`.

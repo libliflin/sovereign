@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Portable timeout: macOS ships gtimeout via coreutils, Linux has timeout
+# macOS compatibility: prefer gtimeout (coreutils), fall back to timeout, then no-op
 _timeout() {
   if command -v gtimeout &>/dev/null; then
     gtimeout "$@"
@@ -12,163 +12,169 @@ _timeout() {
   fi
 }
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
-
 echo "# Project Snapshot"
-echo "Generated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-echo ""
+echo "Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+echo
 
-# ── Git status ───────────────────────────────────────────────────────────────
+# ── Git Status ────────────────────────────────────────────────────────────────
 echo "## Git Status"
-git status --short | head -30
-echo ""
+git status --short
+echo
 
-# ── Recent commits ───────────────────────────────────────────────────────────
+# ── Recent Commits ────────────────────────────────────────────────────────────
 echo "## Recent Commits"
 git log --oneline -10
-echo ""
+echo
 
-# ── Helm lint (all charts) ───────────────────────────────────────────────────
-echo "## Helm Lint"
-CHART_DIRS=$(
-  { ls platform/charts/*/Chart.yaml 2>/dev/null; ls cluster/kind/charts/*/Chart.yaml 2>/dev/null; } \
-    | sed 's|/Chart.yaml||' | sort || true
-)
-HELM_PASS=0; HELM_FAIL=0; HELM_ERRORS=""
-for chart in $CHART_DIRS; do
-  result=$(_timeout 30 helm lint "$chart/" 2>&1 || true)
-  if echo "$result" | grep -q "^Error\|^\[ERROR\]"; then
-    HELM_FAIL=$((HELM_FAIL + 1))
-    HELM_ERRORS="${HELM_ERRORS}  FAIL: ${chart}\n"
-    HELM_ERRORS="${HELM_ERRORS}$(echo "$result" | grep -E "^Error|\[ERROR\]" | head -3 | sed 's/^/    /')\n"
+# ── Sprint State ──────────────────────────────────────────────────────────────
+echo "## Sprint State"
+python3 - <<'PYEOF'
+import json, glob, sys
+
+manifest = json.load(open('prd/manifest.json'))
+increments = manifest.get('increments', [])
+active = manifest.get('activeIncrement')
+
+if active is None:
+    # Prefer status=active, then any non-complete
+    for inc in reversed(increments):
+        if inc.get('status') == 'active':
+            active = inc['id']
+            break
+    if active is None:
+        for inc in reversed(increments):
+            if inc.get('status') not in ('complete', 'pending'):
+                active = inc['id']
+                break
+
+if active is None:
+    complete = sum(1 for i in increments if i.get('status') == 'complete')
+    print(f"No active increment. {complete}/{len(increments)} increments complete.")
+    sys.exit(0)
+
+inc_meta = next((i for i in increments if i['id'] == active), {})
+name = inc_meta.get('name', '?')
+
+files = glob.glob(f'prd/increment-{active}-*.json')
+if not files:
+    print(f"Increment {active} ({name}): no sprint file found")
+    sys.exit(0)
+
+sprint = json.load(open(files[0]))
+stories = sprint.get('stories', [])
+total = len(stories)
+passes = sum(1 for s in stories if s.get('passes'))
+reviewed = sum(1 for s in stories if s.get('reviewed'))
+limbo = [s for s in stories if s.get('passes') and not s.get('reviewed')]
+
+print(f"Increment {active} ({name}): {passes}/{total} pass | {reviewed} reviewed | {len(limbo)} limbo")
+for s in limbo[:3]:
+    print(f"  LIMBO {s.get('id','?')}: {s.get('title','?')}")
+PYEOF
+echo
+
+# ── Constitutional Gates ──────────────────────────────────────────────────────
+echo "## Constitutional Gates"
+
+# G1 — ceremony scripts compile + imports resolve
+if python3 -m py_compile scripts/ralph/ceremonies.py scripts/ralph/lib/orient.py scripts/ralph/lib/gates.py 2>/dev/null \
+   && PYTHONPATH=. python3 -c "from scripts.ralph.lib import orient, gates" 2>/dev/null; then
+  echo "G1 (delivery machine): PASS"
+else
+  echo "G1 (delivery machine): FAIL"
+  python3 -m py_compile scripts/ralph/ceremonies.py scripts/ralph/lib/orient.py scripts/ralph/lib/gates.py 2>&1 | head -5 || true
+fi
+
+# G6 — no external registry refs in chart templates
+G6_OUT=$(grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
+  platform/charts/*/templates/ 2>/dev/null || true)
+if [ -z "$G6_OUT" ]; then
+  echo "G6 (autarky): PASS"
+else
+  echo "G6 (autarky): FAIL"
+  echo "$G6_OUT" | head -5
+fi
+
+# G7 — contract validator enforces sovereignty invariants
+G7_VALID=0; G7_INVALID=0
+python3 contract/validate.py contract/v1/tests/valid.yaml >/dev/null 2>&1 || G7_VALID=1
+python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml >/dev/null 2>&1 && G7_INVALID=1 || true
+if [ "$G7_VALID" -eq 0 ] && [ "$G7_INVALID" -eq 0 ]; then
+  echo "G7 (contract): PASS"
+else
+  echo "G7 (contract): FAIL (valid_rejected=$G7_VALID invalid_accepted=$G7_INVALID)"
+fi
+echo
+
+# ── Python Tests ──────────────────────────────────────────────────────────────
+echo "## Python Tests"
+TEST_PASS=0; TEST_FAIL=0; TEST_ERRORS=""
+for f in scripts/ralph/tests/test_*.py; do
+  OUT=$(cd "$(dirname "$f")" && _timeout 30 python3 "$(basename "$f")" 2>&1) || true
+  if echo "$OUT" | grep -q "^All tests passed\." ; then
+    PASSES=$(echo "$OUT" | grep -c "^PASS:" || true)
+    TEST_PASS=$((TEST_PASS + PASSES))
   else
-    HELM_PASS=$((HELM_PASS + 1))
+    # Count PASS lines even on partial failure
+    PASSES=$(echo "$OUT" | grep -c "^PASS:" || true)
+    TEST_PASS=$((TEST_PASS + PASSES))
+    TEST_FAIL=$((TEST_FAIL + 1))
+    TEST_ERRORS="${TEST_ERRORS}$(echo "$OUT" | grep -v "^PASS:" | tail -5)\n"
   fi
 done
-HELM_TOTAL=$((HELM_PASS + HELM_FAIL))
-if [ "$HELM_FAIL" -eq 0 ]; then
-  echo "OK — ${HELM_TOTAL} charts lint clean"
-else
-  echo "FAIL — ${HELM_PASS}/${HELM_TOTAL} passed"
-  printf "%b" "$HELM_ERRORS"
+echo "Pass: $TEST_PASS | Fail: $TEST_FAIL"
+if [ "$TEST_FAIL" -gt 0 ]; then
+  echo "$TEST_ERRORS" | head -10
 fi
-echo ""
+echo
 
-# ── Autarky gate (no external registry refs) ─────────────────────────────────
-echo "## Autarky Gate (G6)"
-EXT_REFS=$(grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  platform/charts/*/templates/ 2>/dev/null | head -10 || true)
-if [ -z "$EXT_REFS" ]; then
-  echo "OK — no external registry references in chart templates"
-else
-  echo "FAIL — external registry references found:"
-  echo "$EXT_REFS"
-fi
-echo ""
-
-# ── Contract validator ───────────────────────────────────────────────────────
-echo "## Contract Validator (G7)"
-VALID_OUT=$(_timeout 15 python3 contract/validate.py contract/v1/tests/valid.yaml 2>&1 || true)
-INVALID_OUT=$(_timeout 15 python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml 2>&1; echo "exit:$?")
-VALID_OK=false; INVALID_OK=false
-echo "$VALID_OUT" | grep -qi "valid\|pass\|ok" && VALID_OK=true || true
-echo "$INVALID_OUT" | grep -q "exit:1" && INVALID_OK=true || true
-if $VALID_OK && $INVALID_OK; then
-  echo "OK — valid accepted, invalid rejected"
-else
-  echo "FAIL"
-  [ "$VALID_OK" = false ] && echo "  valid.yaml: $VALID_OUT"
-  [ "$INVALID_OK" = false ] && echo "  invalid-egress-not-blocked.yaml: should exit 1 but did not"
-fi
-echo ""
-
-# ── Shellcheck ───────────────────────────────────────────────────────────────
+# ── Shellcheck ────────────────────────────────────────────────────────────────
 echo "## Shellcheck"
 if command -v shellcheck &>/dev/null; then
-  SC_OUT=$(find cluster platform scripts -name "*.sh" -not -path "*/node_modules/*" \
-    -print0 2>/dev/null | xargs -0 shellcheck -S error 2>&1 || true)
+  SC_FILES=$(find scripts/ralph cluster/kind platform bootstrap -name "*.sh" 2>/dev/null | head -40)
+  SC_COUNT=$(echo "$SC_FILES" | wc -l | tr -d ' ')
+  SC_OUT=$(echo "$SC_FILES" | xargs shellcheck -S error 2>&1 || true)
   if [ -z "$SC_OUT" ]; then
-    echo "OK — no errors"
+    echo "OK — $SC_COUNT scripts clean"
   else
-    ERR_COUNT=$(echo "$SC_OUT" | grep -c "^In\|error:" || true)
-    echo "FAIL — ${ERR_COUNT} error(s)"
-    echo "$SC_OUT" | head -15
+    ERRORS=$(echo "$SC_OUT" | grep -c "^" || true)
+    echo "FAIL — $ERRORS lines of errors"
+    echo "$SC_OUT" | head -8
   fi
 else
-  echo "SKIP — shellcheck not installed"
+  echo "shellcheck not installed — skipped"
 fi
-echo ""
+echo
 
-# ── sovereign-pm: typecheck ──────────────────────────────────────────────────
-echo "## sovereign-pm Typecheck"
-cd platform/sovereign-pm
-TC_OUT=$(_timeout 60 npm run typecheck --silent 2>&1 || true)
-if echo "$TC_OUT" | grep -qE "error TS|Found [0-9]+ error"; then
-  ERR_COUNT=$(echo "$TC_OUT" | grep -cE "error TS" || true)
-  echo "FAIL — ${ERR_COUNT} TypeScript error(s)"
-  echo "$TC_OUT" | grep -E "error TS" | head -8
+# ── Helm Charts ───────────────────────────────────────────────────────────────
+echo "## Helm Charts"
+CHART_COUNT=$(find platform/charts cluster/kind/charts -name "Chart.yaml" 2>/dev/null | wc -l | tr -d ' ')
+echo "Charts: $CHART_COUNT total"
+
+# Lint the most recently touched chart (not _globals)
+RECENT=$(find platform/charts -name "Chart.yaml" ! -path "*/_globals/*" \
+  -newer platform/charts/_globals/Chart.yaml 2>/dev/null \
+  | head -5 | xargs -I{} dirname {} 2>/dev/null || true)
+if [ -n "$RECENT" ]; then
+  LINT_FAIL=0
+  for chart in $RECENT; do
+    LINT_OUT=$(_timeout 30 helm lint "$chart" 2>&1) || LINT_FAIL=1
+    if echo "$LINT_OUT" | grep -qE "^\[ERROR\]"; then
+      echo "FAIL lint: $chart"
+      echo "$LINT_OUT" | grep "\[ERROR\]" | head -3
+    fi
+  done
+  [ "$LINT_FAIL" -eq 0 ] && echo "OK — recently-modified charts lint clean"
 else
-  echo "OK — no type errors"
+  echo "No recently-modified charts to lint"
 fi
-echo ""
+echo
 
-# ── sovereign-pm: lint ───────────────────────────────────────────────────────
-echo "## sovereign-pm Lint"
-LINT_OUT=$(_timeout 60 npm run lint --silent 2>&1 || true)
-if echo "$LINT_OUT" | grep -qE "warning|error"; then
-  W=$(echo "$LINT_OUT" | grep -c "warning" || true)
-  E=$(echo "$LINT_OUT" | grep -c " error " || true)
-  echo "FAIL — ${E} error(s), ${W} warning(s)"
-  echo "$LINT_OUT" | head -10
+# ── CI ────────────────────────────────────────────────────────────────────────
+echo "## CI Workflows"
+CI_FILES=$(find .github/workflows -name "*.yml" -o -name "*.yaml" 2>/dev/null | sort || true)
+if [ -n "$CI_FILES" ]; then
+  echo "$CI_FILES" | xargs -I{} basename {} | sed 's/^/  /'
 else
-  echo "OK — no lint issues"
+  echo "  (none)"
 fi
-echo ""
-
-# ── sovereign-pm: tests ──────────────────────────────────────────────────────
-echo "## sovereign-pm Tests"
-TEST_OUT=$(_timeout 90 npm test --silent -- --forceExit 2>&1 || true)
-PASS=$(echo "$TEST_OUT" | grep -oE "[0-9]+ passed" | tail -1 || true)
-FAIL=$(echo "$TEST_OUT" | grep -oE "[0-9]+ failed" | tail -1 || true)
-SKIP=$(echo "$TEST_OUT" | grep -oE "[0-9]+ skipped" | tail -1 || true)
-if [ -z "$FAIL" ]; then
-  echo "OK — ${PASS:-0 passed}${SKIP:+ | $SKIP}"
-else
-  echo "FAIL — ${PASS:-0 passed} | ${FAIL}${SKIP:+ | $SKIP}"
-  echo "$TEST_OUT" | grep -E "FAIL|●" | head -10
-fi
-cd "$ROOT"
-echo ""
-
-# ── CI config ────────────────────────────────────────────────────────────────
-echo "## CI Config"
-ls .github/workflows/*.yml 2>/dev/null | sed 's|.github/workflows/||' | tr '\n' '  ' || echo "none"
-echo ""
-
-# ── Sprint state ─────────────────────────────────────────────────────────────
-echo "## Sprint State"
-if command -v python3 &>/dev/null && [ -f prd/manifest.json ]; then
-  python3 - <<'PYEOF'
-import json, sys
-with open('prd/manifest.json') as f:
-    m = json.load(f)
-inc = m.get('active_increment', 'unknown')
-sprint_file = f"prd/increment-{inc}.json" if isinstance(inc, int) else None
-print(f"Active increment: {inc}")
-if sprint_file:
-    try:
-        with open(sprint_file) as f:
-            sprint = json.load(f)
-        stories = sprint.get('stories', [])
-        done = sum(1 for s in stories if s.get('passes') and s.get('reviewed'))
-        passing = sum(1 for s in stories if s.get('passes') and not s.get('reviewed'))
-        todo = sum(1 for s in stories if not s.get('passes'))
-        print(f"Stories: {done} done | {passing} passing/unreviewed | {todo} todo — total {len(stories)}")
-    except FileNotFoundError:
-        print(f"Sprint file not found: {sprint_file}")
-PYEOF
-else
-  echo "prd/manifest.json not found"
-fi
-echo ""

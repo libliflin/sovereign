@@ -1,13 +1,13 @@
-`.lathe/brand.md` written. Here's what the evidence says:
+`.lathe/brand.md` is written. Here's what the evidence showed and how I read it:
 
-**Identity:** Declarative, conviction-first. The project states what's true and enforces it in code — it doesn't suggest or soften. Sovereignty is defined as a political guarantee (four enumerated failure modes, `sovereignty.md:3`), not a marketing claim.
+**Identity**: Terse, declarative, systems-engineer voice — backed by the README's one-sentence promise (`README.md:3`), the pronunciation guide for "autarky" (`README.md:7`), and the fact that CLAUDE.md, CONTRIBUTING.md, and the scripts all speak in the same register.
 
-**Key brand signals found:**
+**How we speak** — the four edge cases with citations:
+- *No*: `AUTARKY VIOLATION: ... This is not configurable — it is an invariant.` (`contract/validate.py:104–106`)
+- *Failure*: Label-first, reason-second, fix immediately after. `BOOTSTRAP NOT IMPLEMENTED` then two working alternatives (`bootstrap/bootstrap.sh:12–20`). `FAIL:chart:reason` in ha-gate.
+- *Explaining*: The em-dash enforcement clause in commit messages — `type: desc — enforcement target` — is the project's primary unit of meaning, per `CONTRIBUTING.md:87` and the git log.
+- *Institutional warning*: "When this happens again — and it will" from the Vault precedent (`sovereignty.md:85`). The project speaks from memory, not from caution.
 
-- **Failure format** — `FAIL:chart:reason`, `CONTRACT VALIDATION FAILED`, `AUTARKY VIOLATION` — named violations, machine-readable, no prose padding (`ha-gate.sh:129`, `validate.py:104,120`)
-- **Saying no** — technical reason in the same sentence, no apology — `README.md:198` on AWS free tier
-- **Success** — flat declarative, no celebration — `CONTRACT VALID: {path}`, `PASS:${chart_name}`
-- **Onboarding** — next command printed inline after success, no archaeology (`bootstrap.sh:107-111`)
-- **Em-dash pattern** — `feat: add X — enforce Y` — headline complete, then the enforcement target
+**The thing we'd never do**: soften a refusal. `CONTRACT VALIDATION FAILED`, `BOOTSTRAP NOT IMPLEMENTED`, "Sovereign Is Not" — no hedging, no "coming soon."
 
-**The anti-pattern:** hedging a hard rule. The project writes `MUST refuse` in docs and code that actually refuses. "We recommend 3 nodes" would be the single most off-brand thing it could produce.
+**Signals to preserve**: the em-dash commit pattern, the `LABEL:scope:reason` error format, and invariant language (`non-negotiable`, `no exceptions`) used consistently across scripts, docs, and CLAUDE.md.

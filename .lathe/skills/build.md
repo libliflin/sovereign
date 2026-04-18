@@ -1,140 +1,121 @@
-# Build Process
-
-How this project's components are built, validated, and deployed. Non-obvious parts only.
+# Build — Non-Obvious Build Process
 
 ---
 
-## Local Development: kind cluster
+## Helm Charts
 
-The primary local path. No cloud account needed.
+All platform charts live in `platform/charts/<name>/`. Kind bootstrap charts live in `cluster/kind/charts/<name>/`.
 
+Upstream wrapper charts (cilium, cert-manager, bitnami subcharts) need dependency resolution before lint:
 ```bash
-# Create 3-node kind cluster with Cilium CNI, cert-manager, sealed-secrets,
-# local-path-provisioner, and MinIO pre-installed
-./cluster/kind/bootstrap.sh
-
-# Preview without creating
-./cluster/kind/bootstrap.sh --dry-run
-
-# HA control-plane variant (3 control-plane + 2 workers)
-./cluster/kind/ha-bootstrap.sh
-
-# Tear down
-kind delete cluster --name sovereign-test
-```
-
-After bootstrap, the cluster has a working StorageClass (`local-path`), CNI, and certificate management. Platform charts can be installed against `kind-sovereign-test` context.
-
----
-
-## Helm Chart Validation (must pass before any push)
-
-Run these against the chart you touched — not the entire repo (pre-existing failures elsewhere don't count against you).
-
-```bash
-# 1. Lint
+helm dependency update platform/charts/<name>/
 helm lint platform/charts/<name>/
-
-# 2. HA gate (PDB, podAntiAffinity, replicaCount) — scoped to one chart
-bash scripts/ha-gate.sh --chart <name>
-
-# 3. Resource limits — every container and initContainer
-helm template platform/charts/<name>/ | python3 scripts/check-limits.py
-
-# 4. Autarky — no external registry refs in templates
-grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  platform/charts/<name>/templates/ && echo "FAIL" || echo "PASS"
-
-# 5. Datasource registration (observability charts only)
-helm template platform/charts/<name>/ | grep -i datasource
-
-# 6. ArgoCD apps — YAML validity (CRDs not in kind — no kubectl dry-run)
-python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())" \
-  platform/argocd-apps/<tier>/<name>-app.yaml
-# revisionHistoryLimit must be 3:
-yq '.spec.revisionHistoryLimit' platform/argocd-apps/<tier>/<name>-app.yaml
 ```
 
-**Critical:** For upstream wrapper charts (cilium, cert-manager, etc.), `helm dependency update <chart>/` must run before lint.
+New charts require both a Helm chart directory AND an ArgoCD Application manifest in `platform/argocd-apps/<tier>/<name>-app.yaml`.
+
+Every new namespace must be added to `platform/charts/network-policies/values.yaml` for egress baseline enforcement.
 
 ---
 
-## Shell Script Validation
+## Bootstrap Scripts
 
+`bootstrap/bootstrap.sh` — provisions real VPS nodes. Entry points:
+- `--estimated-cost` — prints cost estimate, no charges.
+- `--confirm-charges` — provisions real servers (requires this flag).
+- `--dry-run` — preview intended actions.
+
+`bootstrap/verify.sh` — verifies cluster health post-bootstrap.
+
+`cluster/kind/bootstrap.sh` — creates a local kind cluster named `sovereign-test`. Options:
+- `--cluster-name NAME` — override cluster name (default: `sovereign-test`).
+- `--dry-run` — preview.
+
+`platform/deploy.sh` — Helm deployment orchestrator for kind. Options:
+- `--chart-dir DIR` — chart to deploy.
+- `--namespace NS` — target namespace.
+- `--cluster-values cluster-values.yaml` — values override.
+
+---
+
+## Quality Gate Scripts
+
+`scripts/ha-gate.sh` — validates HA requirements across charts.
+- `--chart <name>` — scoped to one chart (exits 0/1 based only on that chart).
+- No `--chart` flag — runs across all charts.
+
+**Pitfall:** `ha-gate.sh` uses `set -euo pipefail`. A `grep` with no match exits 1, which kills the script silently. Use `|| true` on grep pipelines. `platform/charts/_globals/` has no `replicaCount` field and will cause bare greps to exit 1.
+
+`scripts/check-limits.py` — reads helm template output from stdin, validates every container has `resources.requests` and `resources.limits`. Exits 1 with failing containers listed. Wired into `ha-gate.sh`.
+
+---
+
+## Vendor Pipeline
+
+The vendor system produces distroless images from vetted source. Not invoked in normal development — only when adding a new vendored service or updating an existing one.
+
+```
+vendor/fetch.sh     → SHA-verified source mirror into Forgejo
+vendor/build.sh     → distroless OCI image → Harbor
+vendor/deploy.sh    → stage → smoke → promote
+vendor/rollback.sh  → revert to last-known-good SHA
+vendor/backup.sh    → CronJob: mirror repos + images to secondary storage
+```
+
+Image tag format: `<upstream-version>-<source-sha>-p<patch-count>` (e.g. `v1.16.0-a3f8c2d-p3`).
+
+Vendor recipes: `platform/vendor/recipes/<name>/` with `recipe.yaml` and optional `patches/`.
+Vendor manifest: `platform/vendor/VENDORS.yaml` — license, HA exception, distroless status.
+
+---
+
+## Ceremony System
+
+`scripts/ralph/ceremonies.py` — the delivery loop. Runs as a Python script.
+
+Validate it compiles and imports resolve:
 ```bash
-shellcheck -S error <script>.sh
+python3 -m py_compile scripts/ralph/ceremonies.py scripts/ralph/lib/orient.py scripts/ralph/lib/gates.py
+PYTHONPATH=. python3 -c "from scripts.ralph.lib import orient, gates"
 ```
 
-Common pitfalls that will fail shellcheck:
-- Unquoted variables: use `"$var"` not `$var`
-- `local x=$(cmd)` → split: `local x; x=$(cmd)` (SC2155)
-- `grep somepattern file` under `set -euo pipefail` without `|| true` when no match is expected
+Libraries live in `scripts/ralph/lib/`. Tests in `scripts/ralph/tests/test_*.py`.
+
+SMART guidance doc: `scripts/ralph/ceremonies/smart.md` — rules for writing story acceptance criteria.
 
 ---
 
-## Contract Validation
+## Commit Message Format
 
-```bash
-# Must pass
-python3 contract/validate.py contract/v1/tests/valid.yaml
+```
+type: description — enforcement target
+```
 
-# Must fail (exit 1) — invalid config should be rejected
-python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml
-echo "Exit code: $?"  # expect: 1
+Types: `feat`, `fix`, `docs`, `test`, `chore`, `refactor`. The em-dash names what the change enforces — use when it applies.
+
+Examples:
+```
+feat: add loki chart — enforce log aggregation at cluster layer
+fix: correct replicaCount in prometheus-stack values.yaml
+docs: add hetzner provider setup guide
 ```
 
 ---
 
-## Platform Deploy (VPS path)
+## PR Workflow
 
-```bash
-# Smoke test before deploy
-platform/deploy.sh --dry-run
+1. Feature branch from `main`.
+2. Implement + run quality gates locally.
+3. Open PR against `main`.
+4. CI runs `validate.yml` — helm lint, HA gate, autarky, shellcheck.
+5. CI green → squash merge.
 
-# Full deploy
-platform/deploy.sh
-```
-
-Deploy script supports both `--dry-run` and `--backup` flags (CI verifies both are present).
+Never push directly to main for feature work. Every story requires a PR with CI green before `passes: true`.
 
 ---
 
-## Autarky Build Pipeline (vendor/)
+## Known Build Quirks
 
-This is the pipeline that builds all images from source into Harbor. It's not needed for local kind development.
-
-```bash
-platform/vendor/fetch.sh    # SHA-verified mirror of upstream into Forgejo
-platform/vendor/build.sh    # builds distroless OCI images from patched source
-platform/vendor/deploy.sh   # stages, smoke tests, promotes to production
-platform/vendor/rollback.sh # reverts to last-known-good SHA
-platform/vendor/backup.sh   # mirrors repos + images to secondary storage
-```
-
-All vendor scripts must support `--dry-run` AND `--backup` flags. CI validates this.
-
----
-
-## Sovereign PM (Node.js/React)
-
-```bash
-cd platform/sovereign-pm
-npm run typecheck   # TypeScript validation
-npm run lint        # ESLint
-npm test            # Jest tests (--forceExit)
-npm run build       # Production build (vite + tsc)
-```
-
-Multi-stage Dockerfile: Vite builds the React frontend; tsc builds the Express backend; combined in a single distroless-style production image.
-
----
-
-## CI Gates (GitHub Actions)
-
-Three workflow files under `.github/workflows/`:
-
-- `validate.yml` — Helm lint, HA gate, PDB, podAntiAffinity, replicaCount, resource limits, autarky, ArgoCD revisionHistoryLimit, network-policies coverage, shellcheck, vendor script flags, bootstrap script dry-run. Runs on every PR and push to main.
-- `ha-gate.yml` — shellcheck + ha-gate.sh --dry-run on PRs touching `platform/charts/`.
-- `release.yml` — release automation.
-
-CI is the floor. Red CI means no stakeholder can have a good experience. Fix it before new work.
+- `platform/charts/_globals/` is a shared partials chart — not a deployable chart. It has no `replicaCount` field. Scripts that iterate `platform/charts/*/` must handle it specially (skip or `|| true` on grep).
+- ArgoCD CRDs are not installed in `kind-sovereign-test`. YAML-validate app manifests with Python `yaml.safe_load` instead of `kubectl apply --dry-run`.
+- `helm template` on charts with upstream dependencies requires `helm dependency update` first.

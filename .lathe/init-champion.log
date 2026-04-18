@@ -1,15 +1,28 @@
-Done. Here's what was written:
+All files are in place. Here's what was written and why each decision was made:
 
-**`.lathe/agents/champion.md`** — The playbook. Four stakeholders with concrete first-encounter journeys, per-stakeholder emotional signals (momentum, confidence, flow, clarity), four tensions with resolution signals, the two-source ranking model (CI floor + lived experience), and the verbatim output template for `journey.md`. The "think in classes" and "brand as tint" sections are included. No layer ladder.
+---
 
-**`.lathe/skills/journeys.md`** — Concrete step-by-step journeys for all four stakeholders, written to actually execute each cycle. Each journey names the specific commands to run and where walls typically appear.
+## Files Created
 
-**`.lathe/skills/architecture.md`** — Champion-relevant architectural decisions: App-of-Apps, chart locations, autarky invariant, HA gates, resource limits, domain injection, contract layer, network policies, current DX service state, ceremony loop.
+**`.lathe/agents/champion.md`** — The runtime playbook. Five stakeholders grounded in what's actually in the code:
+1. **Self-Hoster** — VPS operator running bootstrap.sh (emotional signal: confidence)
+2. **Platform Contributor** — Adding a Helm chart, watching CI (momentum)
+3. **Developer on Sovereign** — Using Forgejo/Grafana/ArgoCD daily (reliability)
+4. **Security Auditor** — Verifying zero-trust claims with actual gates (paranoia satisfied)
+5. **AI Agent in code-server** — Autonomous agent needing persistent workspace + tools (autonomy)
 
-**`.lathe/skills/build.md`** — Build process: kind bootstrap, Helm validation gates, shellcheck conventions, contract validation, vendor pipeline, Sovereign PM, CI coverage.
+Four genuine tensions were extracted from the code: sovereignty vs. getting started, HA vs. local dev, security depth vs. velocity, agent autonomy vs. cluster security.
 
-**`.lathe/skills/testing.md`** — Test locations and runners, HA gate, resource limits gate, contract validator, ceremony unit tests, kind integration tests, Jest for sovereign-pm, and the AC writing conventions (runnable commands, "at least N" counts, version-pinned vendor constants).
+The ranking section encodes "floor then lived experience" — no layer ladder. CI red means fix the floor; green CI means walk a journey.
 
-**`.lathe/skills/domains.md`** — Seven domain boundaries with their authorities and where cross-domain confusion shows up as wrong-layer fixes.
+**`.lathe/skills/journeys.md`** — Concrete, step-by-step walks for each stakeholder. Each lists real commands, where friction typically surfaces, and what "walking further" looks like.
 
-**`.lathe/alignment-summary.md`** — For you: stakeholder roster, emotional signals, four tensions, repository security assessment (no privileged workflow triggers found; branch protection unverifiable locally), and five "what could be wrong" entries including the empty Backstage catalog, the operator journey's Grafana assumption, and the VPS journey gap.
+**`.lathe/skills/architecture.md`** — Key architectural decisions in force: App-of-Apps, domain-as-variable, autarky invariant, HA requirements, Istio STRICT gate, contract validator, bootstrap phases, ceremony system.
+
+**`.lathe/skills/testing.md`** — All five constitutional gates, Python test runner format, Helm validation commands, CI workflow triggers, the shellcheck `pipefail`/`|| true` pitfall, and the SMART CRD-spec citation rule from past sprint failures.
+
+**`.lathe/skills/build.md`** — Non-obvious build process: `helm dependency update` before lint on upstream wrappers, `_globals/` handling, ArgoCD YAML validation workaround, vendor pipeline, commit format.
+
+**`.lathe/skills/domains.md`** — Domain map with authoritative sources and a boundary confusion table. The champion can use this when a bug seems to live in the wrong layer.
+
+**`.lathe/alignment-summary.md`** — Plain-English summary for you. Includes what could be wrong: `ambition.md` is missing, SCM naming discrepancy (GitLab vs Forgejo in architecture.md), G9 currently failing 20 charts, DEVEX-015 unreviewed, branch protection unverified.

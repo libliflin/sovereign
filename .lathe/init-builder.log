@@ -1,11 +1,18 @@
-`.lathe/agents/builder.md` is written.
+`.lathe/agents/builder.md` is written. Here's what it encodes:
 
-Key decisions made:
+**Identity and dialog model** — creative synthesis posture, the round-by-round builder/verifier oscillation, convergence as the natural exit.
 
-- **Identity and posture** open the file directly — creative synthesis, prefer the fewest moving parts.
-- **Dialog section** mirrors champion.md's structure: terse, behavioral, no hedging.
-- **Stakeholder framing** is implicit throughout — the builder knows the goal came from a lived journey (champion's report), so implementation serves the moment that turned, not an abstract spec.
-- **Brand section** encodes the project's specific signals: colon-delimited gate output, named violations, em-dash commit pattern, no-celebration success output. Concrete, not abstract.
-- **Conventions section** is project-specific and durable: the retired `charts/` directory, the `phase`→`increment` rename, the ArgoCD `revisionHistoryLimit: 3` requirement, the HA exception path through VENDORS.yaml.
-- **Validation sequence** is the exact commands from `build.md` and `testing.md`, scoped to "the thing you touched" — matching CLAUDE.md's framing that pre-existing failures elsewhere don't count.
-- **Rules** close the file, echoing the constitutional gates without restating the snapshot.
+**Project-specific conventions** — pulled directly from the codebase:
+- Directory layout (`platform/charts/`, `cluster/kind/charts/`, `platform/argocd-apps/`, etc.)
+- Helm template rules: `{{ .Values.global.domain }}`, `{{ .Values.global.imageRegistry }}`, never hardcoded
+- HA requirements: `replicaCount >= 2`, PDB, podAntiAffinity, probes, resource limits
+- Image tag format: `<upstream-version>-<source-sha>-p<patch-count>`
+- ArgoCD manifest requirements: `revisionHistoryLimit: 3`, valid `source.path`
+- Network policies: every deployed namespace must be in the egress baseline
+- Shellcheck `-S error` on all scripts, vendor scripts need `--dry-run` and `--backup`
+
+**Quality gates** — exact commands to run before pushing, with the `--chart <name>` scoping note so pre-existing failures elsewhere don't block the builder.
+
+**Stakeholder alignment** — maps each of the champion's five stakeholders to a concrete implementation lens (confidence, momentum, reliability, paranoia satisfied, autonomy), so the builder understands the *why* behind each change.
+
+**CI/CD model** — how to work within the lathe's PR/branch model, what `validate.yml` actually checks, when to raise issues in the whiteboard.

@@ -1,179 +1,141 @@
 # Stakeholder Journeys
 
-Concrete first-encounter journeys the champion walks each cycle. One per stakeholder. These are the steps to actually execute — run the commands, read the output, notice what the stakeholder would feel.
-
-Update this file when the project state changes (new bootstrap path, new service URL, changed convention). Stale journeys mislead more than no journeys.
+Concrete first-encounter journeys for each stakeholder. The champion walks one of these each cycle. Steps are literal — commands to run, docs to read, output to observe.
 
 ---
 
-## Journey: The Self-Hoster (kind path)
+## Journey 1: Self-Hoster — Bringing Up a Real Cluster
 
-**Emotional signal to track:** Momentum. Does one command lead cleanly to the next?
+**Emotional signal:** Confidence. Every step should feel expected, not surprising.
 
-**Prerequisites the stakeholder has:** Docker Desktop running, `kind`/`kubectl`/`helm`/`gh` installed.
+**Starting point:** 3 Hetzner nodes, a domain on Cloudflare, a local machine with bash/ssh/kubectl/helm.
 
-### Steps to walk
+1. Read `README.md` top-to-bottom. Register: 3-node minimum is enforced by `bootstrap.sh`.
+2. `git clone https://github.com/libliflin/sovereign && cd sovereign`
+3. `cp bootstrap/config.yaml.example bootstrap/config.yaml`
+4. Open `bootstrap/config.yaml`. Try to fill in: `domain`, `provider`, `frontDoor`, `sshKeyPath`, `nodes.count`, `hetzner.apiToken`, `hetzner.sshKeyName`, `cloudflare.apiToken`, `cloudflare.accountId`, `cloudflare.zoneId`, `cloudflare.tunnelName`, `platform.repoUrl`.
+5. `cp .env.example .env` — source credentials.
+6. `./bootstrap/bootstrap.sh --estimated-cost` — verify cost estimate before spending.
+7. `./bootstrap/bootstrap.sh --confirm-charges` — provision real servers.
+8. Wait for bootstrap to complete. Read every line of output — does each phase say what it's doing?
+9. `./bootstrap/verify.sh` — all checks should pass within 5-10 minutes of DNS propagation.
+10. Open `https://argocd.<domain>` — login with printed admin credentials.
+11. Open `https://forgejo.<domain>` — log in via Keycloak SSO.
+12. Push a commit to a test repo — watch Forgejo CI trigger and ArgoCD sync.
 
-1. Open the README. Read the Quick Start Option A section. Note: is the sequence clear? Are the commands copy-pasteable?
+**Where to stretch:** After the platform is up, try to rotate an OpenBao token. Try to add a new user in Keycloak and see them propagate to Forgejo. Try `./bootstrap/bootstrap.sh` against a different provider (generic/bare-metal).
 
-2. Run `./cluster/kind/bootstrap.sh --dry-run` from the repo root. Read the output. Does it explain what it would do?
-
-3. Run `./cluster/kind/bootstrap.sh`. Watch for errors. Time it. Does it give feedback while running or go silent for minutes?
-
-4. Once complete, run the smoke-test command from the README:
-   ```bash
-   helm install test-release cluster/kind/charts/sealed-secrets/ \
-     --namespace sealed-secrets --create-namespace \
-     --kube-context kind-sovereign-test --wait
-   ```
-   Does this work? Does the README give the right chart path?
-
-5. Run `kubectl --context kind-sovereign-test get pods -n sealed-secrets`. Are pods Running?
-
-6. Now ask: what do I do next? Is the README's "next steps" path clear, or does it dead-end?
-
-**Where the wall usually lives:** Step 4 (wrong chart path in README), step 3 (silent failure during bootstrap), step 6 (no clear next step after the smoke test).
-
----
-
-## Journey: The Self-Hoster (VPS path)
-
-**Emotional signal to track:** Momentum and trust. Does the estimated cost output match reality? Does bootstrap give feedback while running?
-
-**Prerequisites the stakeholder has:** A domain with Cloudflare DNS, Hetzner + Cloudflare tokens, 3 VPS nodes already running Ubuntu 22.04+.
-
-### Steps to walk
-
-1. Read `docs/quickstart.md`. Is it current? Does it reference correct file paths?
-
-2. Copy and edit config:
-   ```bash
-   cp bootstrap/config.yaml.example bootstrap/config.yaml
-   # check: does config.yaml.example document all required fields?
-   ```
-
-3. Copy and edit credentials:
-   ```bash
-   cp .env.example .env
-   # check: does .env.example tell you where to get each token?
-   ```
-
-4. Run `./bootstrap/bootstrap.sh --estimated-cost`. Read the output. Is it useful?
-
-5. Read `docs/providers/hetzner.md`. Does it give real-world cost numbers and gotchas?
-
-6. Review what `./bootstrap/bootstrap.sh --confirm-charges` would do. Is there a `--dry-run`? Is there a way to inspect the plan before spending money?
-
-**Where the wall usually lives:** Undocumented config fields, `.env.example` that's vague about where to get credentials, bootstrap that fails without a clear error message.
+**Common friction moments:**
+- `config.yaml.example` field is ambiguous — what exactly is `cloudflare.tunnelName`?
+- Bootstrap fails mid-run with no resume path — must re-run from the start.
+- `verify.sh` passes but ArgoCD shows apps out of sync.
+- SSO login to Forgejo fails because Keycloak isn't ready yet.
 
 ---
 
-## Journey: The Platform Operator
+## Journey 2: Platform Contributor — Adding a Helm Chart
 
-**Emotional signal to track:** Confidence. Does the observability tell me what I need to know?
+**Emotional signal:** Momentum. Quality gates should be fast, clear, and consistent with CI.
 
-**Prerequisites the stakeholder has:** A running cluster (kind or VPS). `kubectl` configured. Access to Grafana.
+**Starting point:** A forked repo, feature branch, a chart to add or modify. Kind optionally running.
 
-### Steps to walk
+1. Read `CONTRIBUTING.md` top-to-bottom. Note the pre-push checklist.
+2. Create `platform/charts/<name>/` with `Chart.yaml`, `values.yaml`, `templates/`.
+3. Ensure `values.yaml` has: `replicaCount: 2` minimum, `podDisruptionBudget`, `podAntiAffinity`, `resources.requests/limits`, `global.imageRegistry` reference.
+4. `helm lint platform/charts/<name>/` — must exit 0.
+5. `bash scripts/ha-gate.sh --chart <name>` — scoped to this chart; must exit 0.
+6. `grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/<name>/templates/` — must return no matches.
+7. `grep -n ":\s*latest" platform/charts/<name>/values.yaml` — must return no matches.
+8. If adding an ArgoCD app: `python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())" platform/argocd-apps/<tier>/<name>-app.yaml` — must exit 0.
+9. Create PR. Watch `validate.yml` CI workflow.
+10. Read CI failure output — does it name exactly what to fix?
 
-1. Check the state of the cluster:
-   ```bash
-   kubectl --context kind-sovereign-test get pods -A | grep -v Running | grep -v Completed
-   ```
-   Are there any non-Running pods? What's the story?
+**Where to stretch:** Try running `bash scripts/ha-gate.sh` (no `--chart` flag) against the full chart corpus. Watch it handle `platform/charts/_globals/` (no replicaCount field). Try the autarky check across all charts. Try adding a new namespace to `platform/charts/network-policies/values.yaml`.
 
-2. Look at what Helm charts are deployed and which have Grafana datasource ConfigMaps:
-   ```bash
-   helm template platform/charts/prometheus-stack/ | grep -i datasource
-   helm template platform/charts/loki/ | grep -i datasource
-   ```
-   Do the observability charts register themselves in Grafana automatically?
-
-3. Check HA posture across deployed charts:
-   ```bash
-   bash scripts/ha-gate.sh
-   ```
-   Read the output. Are there any failures? If so, which charts, and what's missing?
-
-4. Simulate a "what failed" investigation: pick a chart, look at its Helm values for resource limits, and verify `check-limits.py` would pass:
-   ```bash
-   helm template platform/charts/prometheus-stack/ | python3 scripts/check-limits.py
-   ```
-
-5. Read the network-policies chart values to understand what egress is being controlled:
-   ```bash
-   cat platform/charts/network-policies/values.yaml
-   ```
-   Does this list all deployed namespaces? Is anything missing?
-
-6. Ask: if I got paged right now because `argocd.<domain>` was unreachable, what would I look at first? Does the observability stack guide that investigation?
-
-**Where the wall usually lives:** A chart missing its Grafana datasource ConfigMap, the ha-gate showing a PDB missing, a namespace not in the network-policies egress baseline.
+**Common friction moments:**
+- `ha-gate.sh` runs under `set -euo pipefail` and a `grep` with no match kills the script.
+- CI runs a check that isn't documented in `CONTRIBUTING.md`.
+- The HA gate passes locally but CI fails on a different check.
+- `platform/charts/_globals/` causes `ha-gate.sh` to exit early with a false failure.
 
 ---
 
-## Journey: The Developer on the Platform
+## Journey 3: Developer on Sovereign — Daily Development Work
 
-**Emotional signal to track:** Flow. Does the environment disappear, or do I keep hitting it?
+**Emotional signal:** Reliability. The platform should be invisible — never demanding attention.
 
-**Prerequisites the stakeholder has:** A URL for code-server, SSO credentials (Keycloak).
+**Starting point:** Keycloak credentials, a team repo in Forgejo, Grafana access.
 
-### Steps to walk
+1. Open `https://forgejo.<domain>` — log in via Keycloak SSO.
+2. Clone team repo: `git clone https://forgejo.<domain>/<org>/<repo>`.
+3. Push a commit: `git commit -am "test" && git push`.
+4. Watch Forgejo Actions (CI) trigger — observe build log output.
+5. Open `https://argocd.<domain>` — see the app sync within minutes.
+6. Open `https://grafana.<domain>` — find the service's metrics dashboard.
+7. Open Loki in Grafana — search for the service's log output.
+8. Try to access `https://vault.<domain>` (OpenBao) — retrieve a test secret.
+9. Try to access `https://backstage.<domain>` — find the service in the catalog.
 
-1. Open `code-server` at its configured URL. Authenticate through Keycloak SSO.
+**Where to stretch:** Try the full on-call path: trigger an alert (let a pod fail), see it arrive in Alertmanager, find the corresponding Loki logs, trace the request in Tempo. Try rotating a credential: update a Sealed Secret and verify it propagates.
 
-2. Open a terminal in code-server. Run:
-   ```bash
-   kubectl version --client
-   helm version
-   k9s version
-   ```
-   Are these tools available? Are they on PATH without any setup?
-
-3. Check the workspace persistence: create a file, close and reopen code-server. Is the file there?
-
-4. Look at the code-server Helm values to understand the toolchain initContainer:
-   ```bash
-   grep -A 20 toolchainInit platform/charts/code-server/values.yaml
-   ```
-   Does the toolchain init container copy the right tools?
-
-5. Look at Backstage to find services: navigate to `backstage.<domain>`. Is the service catalog populated? Can you find the ArgoCD, Grafana, and Forgejo entries?
-
-6. Open Forgejo at `forgejo.<domain>`. Can you log in with Keycloak SSO? Create a test repo.
-
-**Where the wall usually lives:** code-server missing `kubectl`/`helm` in PATH (toolchain initContainer not working), Backstage showing empty catalog, SSO not wired to Forgejo or Backstage.
+**Common friction moments:**
+- Keycloak session expires and the re-login flow is confusing.
+- Grafana shows a service but the dashboard is empty (scrape not configured).
+- Loki log query times out because the time range is too broad.
+- Backstage catalog is stale — service exists but isn't registered.
 
 ---
 
-## Journey: The Contributor
+## Journey 4: Security Auditor — Verifying Zero-Trust Claims
 
-**Emotional signal to track:** Clarity. Do I know what's expected and does my work meet it?
+**Emotional signal:** Paranoia satisfied. Every claim must be machine-verifiable.
 
-**Prerequisites the stakeholder has:** The repo forked and cloned. A change in mind — say, a new provider doc or a small Helm chart fix.
+**Starting point:** Repo cloned locally, helm installed.
 
-### Steps to walk
+1. Read `docs/architecture.md` — Security Model section. List every claim.
+2. Claim: "mTLS everywhere." Verify: `helm template platform/charts/istio/ | grep -A5 PeerAuthentication` — confirm `mode: STRICT`.
+3. Claim: "No external registries." Verify: `grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/` — expect no output.
+4. Claim: "Sovereignty contract enforced." Verify:
+   - `python3 contract/validate.py contract/v1/tests/valid.yaml` — must exit 0.
+   - `python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml` — must exit 1.
+5. Claim: "Deny-all network policy." Read `platform/charts/network-policies/` — verify there's a deny-all base with explicit allows.
+6. Check `platform/vendor/VENDORS.yaml` — any BSL-licensed components? Any AGPL without review?
+7. Read `contract/validate.py` — does it actually enforce `autarky.externalEgressBlocked: true`?
+8. Run G8: `helm template platform/charts/istio/ 2>/dev/null | grep -q "kind: PeerAuthentication" && grep -q "mode: STRICT"`.
 
-1. Read `CONTRIBUTING.md`. Does it tell you what gates to run before opening a PR?
+**Where to stretch:** Try to write an invalid contract that bypasses the validator. Try to add a chart template that references `docker.io` — does CI catch it (G6)? Find the PeerAuthentication gate path that would let someone set `enabled: false` without the gate catching it.
 
-2. Read the root `CLAUDE.md` Quality Gates section. Can you run these locally?
+**Common friction moments:**
+- `contract/validate.py` passes a contract that it should reject.
+- The Istio gate only checks the default namespace policy, not per-service overrides.
+- A chart exists with an external registry reference that G6 missed (old path bug).
+- VENDORS.yaml has an entry with no license field.
 
-3. Try running the key gates against an existing chart:
-   ```bash
-   bash scripts/ha-gate.sh --chart platform/charts/prometheus-stack
-   helm lint platform/charts/prometheus-stack/
-   helm template platform/charts/prometheus-stack/ | python3 scripts/check-limits.py
-   ```
-   Do these work? Are the error messages clear when something fails?
+---
 
-4. Try `shellcheck` on a script:
-   ```bash
-   shellcheck -S error scripts/ha-gate.sh
-   ```
-   Does it pass? Do errors give you enough information to fix them?
+## Journey 5: AI Agent in code-server — Working from Inside the Cluster
 
-5. Open `.github/workflows/validate.yml`. Compare what CI checks against what CONTRIBUTING.md documents. Are they aligned?
+**Emotional signal:** Autonomy. No dead ends. Every tool works. The environment doesn't fight the agent.
 
-6. Imagine CI failed on your PR with "Assert replicaCount >= 2" for a chart you modified. Would the CI message tell you which chart, which file, and what value to change?
+**Starting point:** Browser open to `https://code.<domain>`.
 
-**Where the wall usually lives:** CONTRIBUTING.md that's outdated or references wrong paths, CI failure messages that name the check but not the specific fix, missing documentation of the `ha_exception` pattern for single-instance services.
+1. Open browser terminal.
+2. `git --version` — verify git is installed.
+3. `kubectl version --client` — verify kubectl is installed.
+4. `helm version` — verify helm is installed.
+5. `shellcheck --version` — verify shellcheck is installed.
+6. `kubectl get nodes` — verify kubeconfig is mounted and the cluster is reachable.
+7. `git clone https://forgejo.<domain>/<org>/<repo>` — verify Forgejo credentials work.
+8. `cd <repo> && bash scripts/ha-gate.sh --chart sealed-secrets` — verify quality gate runs from inside.
+9. Edit a file. Push. Verify the push goes through (`git push origin HEAD`).
+10. Check that `/home/coder` is persistent: `ls /home/coder` — workspace should survive a pod restart.
+11. Check VS Code extensions are pre-installed: YAML, Kubernetes Tools, ShellCheck.
+
+**Where to stretch:** Try opening a PR from inside code-server. Try running `helm install` against the kind cluster from inside. Try running `python3 contract/validate.py` — is Python available? Try a multi-step autonomous task: clone a repo, make a change, run quality gates, open a PR — all without leaving the browser terminal.
+
+**Common friction moments:**
+- `kubectl` not installed or kubeconfig not mounted.
+- `/home/coder` is ephemeral — workspace reset on pod restart (no PVC).
+- Extension install tries `marketplace.visualstudio.com` and fails (no external egress allowed).
+- `shellcheck` not available.
+- Git credentials require interactive auth that the agent can't complete.

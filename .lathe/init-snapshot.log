@@ -1,12 +1,13 @@
-Clean output, 1,550 chars — well within the 6,000-char budget. All sections pass green. Here's what the script covers:
+2,249 characters — well under the 4,000 target with plenty of headroom. The script is done.
 
-- **Git status + recent commits** — cycle-to-cycle change signals
-- **Helm lint** — 34 charts, summarized to one line on green
-- **Autarky gate (G6)** — no external registry refs in templates
-- **Contract validator (G7)** — valid accepted, invalid rejected
-- **Shellcheck** — all `.sh` files in `cluster/`, `platform/`, `scripts/`
-- **sovereign-pm typecheck + lint + tests** — 26 passed, one-liners on green, expands on failure
-- **CI config** — lists workflow files
-- **Sprint state** — active increment + story counts (done/passing/todo) from `prd/manifest.json`
+`.lathe/snapshot.sh` is written and executable. Here's what it captures:
 
-Every section shows a single summary line on the happy path and expands with failure details only when something breaks.
+- **Git status + log** — what changed, recent history
+- **Sprint state** — reads `prd/manifest.json` to find the active increment, reports pass/review/limbo counts with limbo story titles
+- **Constitutional gates** — G1 (ceremony scripts compile + imports), G6 (no external registries in templates), G7 (contract validator enforces sovereignty)
+- **Python tests** — runs `scripts/ralph/tests/test_*.py` directly (no pytest required), reports pass/fail counts
+- **Shellcheck** — across `scripts/ralph`, `cluster/kind`, `platform`, `bootstrap`
+- **Helm charts** — total count + lint check on recently-modified charts
+- **CI workflows** — lists `.github/workflows/` files
+
+Current run: all gates PASS, 3/3 tests pass, 24 scripts clean, 40 charts, 2,249 chars.

@@ -1,131 +1,123 @@
-# Testing Conventions
-
-How this project tests — test runner, conventions, fixture locations.
+# Testing — How This Project Tests
 
 ---
 
-## Test Types and Locations
+## Constitutional Gates (run every cycle, checked by snapshot.sh)
 
-| What | Where | How |
+The snapshot runs these gates and reports pass/fail. If any gate fails, it's the top priority.
+
+| Gate | Command | What It Checks |
 |---|---|---|
-| Helm chart validation | CI (`validate.yml`) | helm lint + template + PDB/antiAffinity/limits checks |
-| HA gate script | `scripts/ha-gate.sh` | PDB, podAntiAffinity, replicaCount across all charts |
-| Contract validator | `contract/validate.py` + `contract/v1/tests/` | Python, validates YAML against schema |
-| Ceremony unit tests | `scripts/ralph/tests/` | Python unittest |
-| Chaos/PDB test fixtures | `test/chaos/` | YAML fixtures for kubectl drain simulation |
-| Kind smoke test | `kind/smoke-test/rolling-update.sh` | Verifies zero-pod-unavailability during helm upgrade |
-| Kind HA fixtures | `kind/fixtures/` | PDB drain validation fixture |
-| Sovereign PM | `platform/sovereign-pm/` | Jest (npm test) |
+| G1 | `python3 -m py_compile scripts/ralph/ceremonies.py scripts/ralph/lib/orient.py scripts/ralph/lib/gates.py && PYTHONPATH=. python3 -c "from scripts.ralph.lib import orient, gates"` | Ceremony scripts compile + imports resolve |
+| G6 | `grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/*/templates/` (expect no output) | No external registry refs in chart templates |
+| G7 | `python3 contract/validate.py contract/v1/tests/valid.yaml` (must pass) and `python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml` (must exit 1) | Contract validator enforces sovereignty |
+| G8 | `helm template platform/charts/istio/ \| grep PeerAuthentication && grep "mode: STRICT"` | Istio chart renders STRICT mTLS |
+| G9 | `bash scripts/ha-gate.sh` | All charts pass HA requirements |
 
 ---
 
-## Contract Validator
+## Python Unit Tests (scripts/ralph/tests/)
 
-```bash
-# Must pass (exit 0) — valid config accepted
-python3 contract/validate.py contract/v1/tests/valid.yaml
+Tests live in `scripts/ralph/tests/test_*.py`. Runner: plain Python (`python3 <file>`), not pytest.
 
-# Must fail (exit 1) — invalid config rejected
-python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml
-echo "Exit: $?"  # expect 1
-```
+Output format: lines starting with `PASS:` for passing tests, ending with `All tests passed.` on success.
 
-The test corpus at `contract/v1/tests/` includes invariants for `externalEgressBlocked`, `imageRegistry`, and `storageClass`. These are the G7 constitutional gate tests.
+Run all: the snapshot runs `for f in scripts/ralph/tests/test_*.py; do cd "$(dirname "$f")" && python3 "$(basename "$f")"; done`.
+
+Tests cover ceremony logic, orient/gates modules, story lifecycle transitions.
 
 ---
 
-## HA Gate
+## Helm Chart Validation
 
 ```bash
-# All charts (including E13 testing charts)
-bash scripts/ha-gate.sh
+# Lint (catches YAML errors, required fields)
+helm lint platform/charts/<name>/
 
-# Scoped to one chart — exits 0/1 based only on that chart
+# HA gate (scoped — only checks the named chart)
 bash scripts/ha-gate.sh --chart <name>
 
-# List what would be checked (no helm run)
-bash scripts/ha-gate.sh --dry-run
-```
-
----
-
-## Resource Limits Gate
-
-```bash
+# Resource limits (check-limits.py wired into ha-gate.sh)
 helm template platform/charts/<name>/ | python3 scripts/check-limits.py
+
+# Autarky (no external registries)
+grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" platform/charts/<name>/templates/ && echo "FAIL" || echo "PASS"
+
+# No :latest tags
+grep -n ":\s*latest" platform/charts/<name>/values.yaml && echo "FAIL" || echo "PASS"
 ```
 
-Exhaustively checks every container and initContainer spec. **Do not use `grep -A5 resources:` as a substitute** — it misses individual containers that lack limits.
+**Important:** `ha-gate.sh` uses `set -euo pipefail`. Under `grep` with no match (e.g., `platform/charts/_globals/` has no `replicaCount`), the script can exit silently. Use `|| true` on grep pipelines where no match is expected. This is documented in `scripts/ralph/ceremonies/smart.md`.
+
+For upstream wrapper charts (bitnami, etc.), run `helm dependency update platform/charts/<name>/` before lint.
 
 ---
 
-## Ceremony Unit Tests
+## ArgoCD App Manifest Validation
+
+CI cannot run `kubectl apply --dry-run=client` because ArgoCD CRDs aren't installed in kind-sovereign-test. Use:
 
 ```bash
-cd scripts/ralph
-python3 -m pytest tests/
-# or individual test:
-python3 -m pytest tests/test_retro_guard.py
+python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())" platform/argocd-apps/<tier>/<name>-app.yaml
 ```
 
-These tests run without a live cluster — they test ceremony Python logic with mock data.
+All app manifests must have `spec.revisionHistoryLimit: 3`.
 
 ---
 
-## Kind Integration Tests
-
-The kind cluster must exist (`kind get clusters` shows `sovereign-test`) before running these.
+## Shell Script Validation
 
 ```bash
-# Kind smoke test: rolling update with zero unavailability
-./kind/smoke-test/rolling-update.sh
-
-# PDB drain validation: kubectl drain should be blocked when last pod would be evicted
-kubectl apply -f kind/fixtures/pdb-test.yaml --context kind-sovereign-test
-# Then attempt drain per the fixture README
+shellcheck -S error <script>.sh
 ```
+
+Common pitfalls:
+- Unquoted variables → always `"$var"` not `$var`.
+- `local x=$(cmd)` → split to `local x; x=$(cmd)` (SC2155).
+- `grep pattern file` under `set -euo pipefail` → use `|| true` when no match is expected.
+
+Scripts must be tested against all existing charts in `platform/charts/` before `passes: true`, not just synthetic fixtures. This catches `_globals/` edge cases.
 
 ---
 
-## Sovereign PM Tests
+## Contract Validator Tests
 
 ```bash
-cd platform/sovereign-pm
-npm test -- --forceExit     # Jest
-npm run typecheck            # TypeScript
-npm run lint                 # ESLint
+python3 contract/validate.py contract/v1/tests/valid.yaml        # must exit 0
+python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml  # must exit 1
+echo "Exit: $?"
 ```
 
 ---
 
-## CI Coverage
+## Kind Integration Tests (scripts/test/kind-smoke.sh)
 
-What CI actually runs (from `validate.yml` + `ha-gate.yml`):
+Static scaffold covering PLATFORM-001 through PLATFORM-004. Requires `kind-sovereign-test` cluster running. Tests: cert-manager, sealed-secrets, Harbor, Keycloak deployment verification.
 
-- Helm lint on every chart
-- HA gate (PDB, podAntiAffinity, replicaCount) on every chart
-- Resource limits check (`check-limits.py`) on every chart
-- No `:latest` image tags in values.yaml
-- No hardcoded external registry in `image.repository`
-- Shellcheck on all `.sh` files under `cluster/`, `platform/`, `prd/`, `scripts/ralph/`, `platform/vendor/`
-- Vendor scripts have `--dry-run` and `--backup` flags
-- ArgoCD Applications have `revisionHistoryLimit: 3`
-- Network-policies egress baseline covers all deployed namespaces
-- Contract validator: valid.yaml passes, invalid-egress-not-blocked.yaml fails
-- README chart paths exist in repo
-- bootstrap.sh has `--dry-run` flag
+Stories that require kind-sovereign-test get a `blocker` field. Accept static verification and move on — don't hold stories hostage to runtime tests that require infrastructure the contributor may not have.
 
 ---
 
-## Test Writing Conventions
+## CI Workflows (.github/workflows/)
 
-**ACs must be runnable, not aspirational.** Write the exact command with the exact expected output. Never assert "shows a value >= 2" when you can write `grep -E 'replicaCount:[[:space:]]+[2-9]'` which exits 0/1.
+| Workflow | Trigger | What It Runs |
+|---|---|---|
+| `validate.yml` | PR or push to main | Helm lint, HA gate, autarky, shellcheck, ArgoCD manifest YAML |
+| `ha-gate.yml` | PR touching `platform/charts/` | HA gate across all charts |
+| `release.yml` | Tag push | Release artifacts |
 
-**Count assertions use "at least N"**, not "== N", for resources that scale with component count (PDBs per component in distributed charts like Loki, Tempo).
+No `pull_request_target` or `issue_comment` triggers — lower prompt injection risk than PRs from forks would have with those triggers. The repo is public, so CI runs on fork PRs.
 
-**Vendor API field values must be version-pinned.** If an AC asserts a CRD phase name or status string, cite the upstream docs for that pinned chart version. Unverified constants fail review even when implementation is correct (e.g., chaos-mesh v2.6.3 uses `AllRecovered=True` not `Finished`).
+**Security note:** The lathe reads CI status and PR metadata from GitHub into agent prompts. This is a prompt injection surface. PR titles and descriptions from external contributors could contain adversarial content. The lathe should treat CI status (pass/fail) as authoritative and treat free-text fields (PR descriptions, issue titles) as untrusted.
 
-**CRD-backed resources use YAML-only validation**, not `kubectl apply --dry-run=client` (CRDs not installed in kind-sovereign-test):
-```bash
-python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())" <file>.yaml
-```
+---
+
+## SMART AC Guidance (critical for stories)
+
+When an AC asserts a vendor-specific status field value (e.g. `phase=X`, `condition=Y`), the story must either:
+- Cite the upstream CRD documentation for the pinned chart version, OR
+- Note that the value was empirically confirmed against a running instance.
+
+Violation: TEST-004b failed review 3x because AC3 asserted `phase=Finished` but chaos-mesh v2.6.3 uses `AllRecovered=True` as the terminal recovery state.
+
+Stories with chart-iterating shell scripts must be tested against all existing `platform/charts/` before `passes: true` — not just synthetic fixtures.

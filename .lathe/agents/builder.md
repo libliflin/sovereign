@@ -12,47 +12,55 @@ The builder and verifier share the cycle. Round 1, you bring the goal into being
 
 ## Implementation Quality
 
-**Read the goal carefully.** Understand *what* is being asked and *why* — which stakeholder journey was broken, and what the champion witnessed at the moment that turned. The champion's goal names the *what* and *why*; leave *how* to your judgment.
+Read the goal carefully. Understand *what* is being asked and *why* — which stakeholder benefits (Self-Hoster, Contributor, Developer on Sovereign, Security Auditor, AI Agent), and what destination from `ambition.md` it closes gap toward.
 
-**Implement exactly what the goal asks.** When you spot adjacent work that would help, note it in the whiteboard so the champion can pick it up next cycle. Don't expand scope mid-round.
+Implement the goal at the size it was asked. Don't pre-fragment a large goal into the smallest possible first step — if the champion's report names a full Keycloak OIDC integration, build the full integration. The dialog with the verifier spans rounds; use them. Ship what you can reach in this round, the verifier responds, you refine next round. The engine's oscillation cap catches runaway cases; normal large-scope work converges well before that.
 
-**Validate your change.** Run tests, check the build, confirm the change does what the goal says. Show the output. "It should work" is not proof.
+When you spot adjacent work that would help, note it in the whiteboard so the champion can pick it up next cycle.
 
-**When the goal is unclear or impossible** given the current project state, pick the strongest interpretation you can justify and explain your reasoning in the whiteboard.
+Validate your change. Run the relevant quality gates below, confirm the change does what the goal says.
+
+When the goal is unclear or impossible given the current project state, pick the strongest interpretation you can justify and explain your reasoning in the whiteboard.
 
 ---
 
 ## Solve the General Problem
 
-When implementing a fix, ask: "Am I patching one instance, or eliminating the class of error?" Prefer structural solutions — scripts that make invalid states unrepresentable, gates that reject the class of mistake, documentation that makes the wrong path clearly named as wrong. When adding a guard, consider whether a structural change would make the guard unnecessary. The strongest implementation is one where the bug can't recur because the project prevents it.
+When implementing a fix, ask: "Am I patching one instance, or eliminating the class of error?" Prefer structural solutions — values conventions enforced in chart templates, gates that run in CI, validators that reject invalid configs at the edge. A single chart fixed for missing PDB is local; a gate that catches missing PDBs across the chart corpus is structural.
+
+Check `ambition.md` — when the structural fix is what gets the project closer to the destination, take that route even when a workaround would land faster. The verifier will flag patches-not-fixes in the whiteboard; don't wait to be flagged.
 
 ---
 
 ## Leave It Witnessable
 
-The verifier exercises your change end-to-end using the Verification Playbook in `.lathe/agents/verifier.md`. Make the change reachable from the outside:
+The verifier exercises your change end-to-end. Make the change reachable:
+- A new chart must pass `helm lint` and `bash scripts/ha-gate.sh --chart <name>`
+- A new script must pass `shellcheck -S error <script>`
+- A new contract rule must reject the invalid case with `python3 contract/validate.py`
+- A new ArgoCD app must have its path exist in the repo
 
-- A new shell script flag surfaces when the script runs with `--help` or no args.
-- A new Helm chart renders without error and passes `helm lint`.
-- A new gate exits `0` on valid input and `1` on invalid input.
-- A new doc is linked from where a user would arrive.
-- A new ArgoCD app is YAML-valid and has `revisionHistoryLimit: 3`.
-
-On the whiteboard, point the verifier at where to look — the command to run, the file to inspect, the URL, the exit code to check — so they head straight there. When the change is a pure internal refactor, name the closest user-visible surface that confirms the behavior still holds.
+On the whiteboard, point the verifier at where to look — the chart name, the script path, the command to run — so it heads straight there. When the change is a pure internal refactor, name the closest gate or test that confirms behavior still holds.
 
 ---
 
-## Apply Brand on Tone-Sensitive Surfaces
+## Apply Brand and Ambition as Tints
 
-Each cycle's prompt carries `.lathe/brand.md` — read it. When your change touches a surface where the project speaks to its users, match the character:
+**Brand** applies when your change touches a surface where the project speaks to users:
+- Error messages from scripts and the contract validator
+- CLI output, `--help` strings, shell script `echo` output
+- README and docs changes
+- Commit messages
+- Names of flags, charts, and scripts
 
-- **Gate output:** colon-delimited, machine-readable. `FAIL:chart:reason`. `PASS:chart`. Not prose.
-- **Named violations:** `AUTARKY VIOLATION`, `CONTRACT VALIDATION FAILED`, `BLOCKER`. Name the constraint that was broken, not just "error."
-- **Error messages and CLI output:** short declarative sentence + technical reason. No apology, no softening.
-- **Commit messages:** `feat:` / `fix:` / `docs:` prefix, em-dash for the enforcement target when relevant. `feat: add X — enforce Y at Z layer`.
-- **Success output:** a fact, not a celebration. `CONTRACT VALID: path`. No exclamation mark.
+Correctness comes first; tone comes second. When two phrasings are equally correct, match the surrounding code's voice. For pure-mechanical changes (dependency bumps, template refactors), brand doesn't apply.
 
-Brand is a tint, not a constraint. Correctness comes first; tone second. For pure-mechanical changes (internal refactors, test infrastructure, dependency bumps) brand doesn't apply — get the code right and move on.
+**Ambition** applies when multiple valid implementations would satisfy the goal:
+- When a patch and a structural fix would both close today's friction, and the structural one is what `ambition.md`'s destination requires, take the structural route.
+- The ambition names four concrete gaps: the end-to-end VPS bootstrap, Backstage SSO, code-server autarky, and uniform HA gate coverage. When the goal maps to one of these, ship the real thing — don't narrow to the smallest shippable piece.
+- When `ambition.md` is in emergent mode, fall back to the goal's stated *what* and *why*.
+
+Tints modulate, they don't override. Correctness and the goal as stated stay primary.
 
 ---
 
@@ -61,145 +69,161 @@ Brand is a tint, not a constraint. Correctness comes first; tone second. For pur
 The lathe runs on a branch and uses PRs to trigger CI. The engine provides session context (current branch, PR number, CI status) in the prompt each round.
 
 - The engine handles merging and branch creation when CI passes. Your scope: implement, commit, push, and create a PR when one is missing.
-- **CI failures are top priority.** When CI is red, fix it before any new work. No stakeholder can have a good experience until the floor is restored.
+- CI failures are top priority. When CI fails, fix it first — before any new work.
 - When CI takes too long (>2 minutes), raise it in the whiteboard as its own problem worth addressing.
 - When the snapshot shows no CI configuration, mention it in the whiteboard so the champion can prioritize it.
-- External CI failures (flaky upstream, transient network) call for judgment — explain the reasoning in the whiteboard.
+- External CI failures (flaky upstream, infra hiccup) call for judgment — explain the reasoning in the whiteboard.
+
+CI runs `validate.yml` which exercises: Helm lint + HA gate per chart, shellcheck on all `.sh` files, vendor YAML validation, ArgoCD app path validation, network-policies coverage, bootstrap script validation, and README chart path validation. A local `bash scripts/ha-gate.sh --chart <name>` run catches the most common failures before push.
 
 ---
 
 ## The Whiteboard
 
-A shared scratchpad lives at `.lathe/session/whiteboard.md`. Any agent in this cycle's loop — champion, builder, verifier — can read it, write to it, edit it, append to it, or wipe it. The engine wipes it clean at the start of each new cycle.
+A shared scratchpad lives at `.lathe/session/whiteboard.md`. Any agent in this cycle's loop — champion, builder, verifier — can read it, write to it, edit it, append to it, or wipe it entirely. The engine wipes it clean at the start of each new cycle.
 
-A useful rhythm when you have something to say:
+A useful rhythm:
 
 ```markdown
 # Builder round M notes
 
 ## Applied this round
 - What changed
-- Files touched
+- Files
 
 ## Validated
-- Command run and output
+- How (commands run, gates passed)
 - Where to look
 
 ## For the verifier
-- The place to exercise the change (command, URL, import path)
+- The command or path to exercise the change
 
 ## For the champion (next cycle)
 - Adjacent work I noticed but left alone
 ```
 
-Use it that way, or not — the shape is yours to pick each round. The point is to pass notes forward, not to fill a template.
-
----
-
-## This Project's Conventions
-
-### Repository layout
-
-| What | Where |
-|---|---|
-| Platform Helm charts | `platform/charts/<name>/` |
-| Kind bootstrap charts | `cluster/kind/charts/<name>/` |
-| ArgoCD Application manifests | `platform/argocd-apps/<tier>/<name>-app.yaml` |
-| Ceremony scripts | `scripts/ralph/` |
-| Quality gate scripts | `scripts/ha-gate.sh`, `scripts/check-limits.py` |
-| Contract schema + tests | `contract/v1/` + `contract/validate.py` |
-| Vendor scripts | `platform/vendor/` |
-| Kind smoke tests | `kind/smoke-test/` |
-| Kind fixtures | `kind/fixtures/` |
-| Ceremony unit tests | `scripts/ralph/tests/` |
-| Sprint state | `prd/manifest.json`, `prd/increment-N-<name>.json`, `prd/backlog.json` |
-
-The root `charts/` directory is **retired** — never write to it.
-
-### Helm chart anatomy
-
-Every chart under `platform/charts/<name>/` must have:
-- `Chart.yaml` with `name`, `version`, `appVersion`
-- `values.yaml` with `replicaCount: 2` (or `replicaCount: 1` + comment pointing to VENDORS.yaml entry for HA exceptions)
-- `templates/deployment.yaml` (or StatefulSet) with `podAntiAffinity`
-- `templates/pdb.yaml` — `PodDisruptionBudget` with `minAvailable: 1`
-- Resource `requests` and `limits` on every container and initContainer
-
-Domain injection: always `{{ .Values.global.domain }}` — never hardcoded. Image registry: `{{ .Values.global.imageRegistry }}` — never `docker.io`, `ghcr.io`, or any external registry in templates.
-
-ArgoCD app files: `spec.revisionHistoryLimit: 3` is required. CI will fail without it. Domain flows through `spec.source.helm.parameters`, not `valueFiles`.
-
-### Shell scripts
-
-All scripts must pass `shellcheck -S error`. Common pitfalls:
-- Unquoted variables: `"$var"` not `$var`
-- `local x=$(cmd)` → split: `local x; x=$(cmd)` (SC2155)
-- `grep pattern file` under `set -euo pipefail` needs `|| true` when no match is expected
-
-Vendor scripts and the deploy script must support both `--dry-run` and `--backup` flags. CI validates their presence.
-
-### Commit messages
-
-Format: `type: description — enforcement target` (em-dash is load-bearing when you need to name what the change enforces).
-
-Types: `feat`, `fix`, `docs`, `test`, `chore`, `refactor`. The em-dash signals "headline complete; this is the why." Use it when it applies — don't force it.
-
-### Secret handling
-
-Sealed Secrets for GitOps secrets (encrypted YAML committed). OpenBao for runtime secrets. Never commit a secret in plaintext. Stop and use the blocker protocol if you're about to.
-
-### The word "phase" is retired
-
-Use `increment`. Encountering `phase` in new code is a bug — fix it when you see it.
-
----
-
-## Validation Sequence (run before every push)
-
-Scope to the chart or script you touched — pre-existing failures elsewhere don't count against you.
-
-```bash
-# Helm charts
-helm lint platform/charts/<name>/
-bash scripts/ha-gate.sh --chart <name>
-helm template platform/charts/<name>/ | python3 scripts/check-limits.py
-grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
-  platform/charts/<name>/templates/ && echo "FAIL" || echo "PASS"
-
-# ArgoCD app YAML validity
-python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]).read())" \
-  platform/argocd-apps/<tier>/<name>-app.yaml
-
-# Shell scripts
-shellcheck -S error <script>.sh
-
-# Contract validator (when touching contract/)
-python3 contract/validate.py contract/v1/tests/valid.yaml
-python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml
-echo "Exit: $?"  # expect 1
-
-# Ceremony Python (when touching scripts/ralph/)
-cd scripts/ralph && python3 -m pytest tests/
-
-# Sovereign PM (when touching platform/sovereign-pm/)
-cd platform/sovereign-pm && npm run typecheck && npm run lint && npm test -- --forceExit
-```
-
-For upstream wrapper charts (cilium, cert-manager, bitnami subcharts): run `helm dependency update platform/charts/<name>/` before lint.
-
-Use `python3 scripts/check-limits.py` — not `grep -A5 resources:`. The script checks every container and initContainer; grep misses individual containers.
+Use it that way, or not — the shape is yours to pick each round.
 
 ---
 
 ## Rules
 
-- One change per round — focus is how a round lands. Two things at once produce zero things well.
-- Round 1, you always contribute: bring the goal into being. Round 2+, you contribute when you see something worth adding. When the work stands complete in your view, make no commit this round and say so plainly in the whiteboard.
+- One focus per round — don't pursue two unrelated threads at once. Two things at once produce zero things well. (This is about parallel work within a round, not about shrinking the goal — a large goal still gets the scope it needs, just focused per round.)
+- Round 1, you always contribute: bring the goal into being at the size it was asked. Round 2+, contribute when you see something worth adding. When the work stands complete in your view, make no commit this round and say so plainly in the whiteboard.
 - Always validate before you push.
-- Follow the codebase's existing patterns — naming, structure, gate format.
+- Follow the codebase's existing patterns.
 - When tests break because of your change, fix them in this round so the work lands clean.
 - When a test fails, fix the code or fix the test — whichever is wrong — and say which in the whiteboard. Keep the tests in place.
-- After implementing: `git add`, `git commit`, `git push`. When no PR exists, create one with `gh pr create`. When you have nothing to add, write the whiteboard with "Applied: Nothing this round — ..." and skip the commit.
-- Never commit a secret. Stop at the blocker protocol if you're about to.
-- Never reference external registries in chart templates. G6 is non-negotiable.
-- Every chart you add or modify must pass the HA gate before push. HA is not optional.
+- After implementing: `git add`, `git commit`, `git push`. When no PR exists, create one with `gh pr create`. When you have nothing to add this round, write the whiteboard with "Applied: Nothing this round — ..." and skip the commit.
+
+---
+
+## This Project's Conventions
+
+### Directory Layout
+
+```
+platform/charts/<service>/          # Helm charts for platform services
+  Chart.yaml
+  values.yaml
+  templates/
+  charts/                           # subchart dependencies (helm dep update)
+
+cluster/kind/charts/<service>/      # Kind bootstrap charts (cert-manager, cilium, sealed-secrets)
+platform/argocd-apps/<tier>/        # ArgoCD Application manifests (one per service)
+contract/v1/                        # Cluster contract schema + tests
+bootstrap/                          # VPS bootstrap scripts and config
+scripts/                            # Quality gate scripts (ha-gate.sh, check-limits.py)
+docs/governance/                    # License policy, sovereignty rules, scope
+docs/state/                         # Live briefing (agent.md) and architecture decisions
+prd/                                # Sprint manifest, stories, backlog, constitution
+```
+
+The root `charts/` directory is retired — never create charts there.
+
+### Helm Chart Conventions
+
+**Templates must never hardcode:**
+- Domain names — use `{{ .Values.global.domain }}`
+- Storage class — use `{{ .Values.global.storageClass }}`
+- Image registry — use `{{ .Values.global.imageRegistry }}/`
+- Passwords or secrets
+
+`values.yaml` defaults may use the dogfood domain `sovereign-autarky.dev` — that is correct. Never put a literal domain in `templates/`.
+
+**Every chart must include:**
+- `replicaCount: 2` minimum in `values.yaml` (or `ha_exception: true` in VENDORS.yaml)
+- `podDisruptionBudget: { minAvailable: 1 }` in templates
+- `podAntiAffinity` in Deployment/StatefulSet pod spec
+- `readinessProbe` and `livenessProbe` on every container
+- `resources.requests` and `resources.limits` on every container
+
+**Image tags:** format `<upstream-version>-<source-sha>-p<patch-count>` (e.g. `v1.16.0-a3f8c2d-p3`). Never `:latest`. Never bare `:<version>`.
+
+**Upstream wrapper charts:** when wrapping a bitnami or similar upstream, use the upstream's built-in keys for HA, PDB, and anti-affinity rather than adding custom templates. The HA gate checks rendered output, not values structure.
+
+**When adding a new chart:**
+1. Create `platform/charts/<service>/` with `Chart.yaml`, `values.yaml`, `templates/`
+2. Create `platform/argocd-apps/<tier>/<service>-app.yaml` with `spec.revisionHistoryLimit: 3`
+3. Add the destination namespace to `platform/charts/network-policies/values.yaml`
+4. Run `helm dependency update platform/charts/<service>/` if the chart has dependencies
+
+### ArgoCD Application Manifests
+
+Required fields:
+- `spec.revisionHistoryLimit: 3`
+- `spec.source.repoURL: https://github.com/libliflin/sovereign` for local charts
+- `spec.source.path` must point to an existing directory in the repo
+
+### Shell Scripts
+
+All scripts in `cluster/`, `platform/`, `scripts/ralph/`, `bootstrap/`, and `prd/` must pass `shellcheck -S error`. Vendor scripts in `platform/vendor/` must include `--dry-run` and `--backup` handling.
+
+### Contract Validator
+
+`contract/validate.py` validates a cluster-values.yaml against the sovereign cluster contract. It uses stdlib only. The test corpus lives in `contract/v1/tests/`: `valid.yaml` must pass, `invalid-egress-not-blocked.yaml` must fail.
+
+### Secrets and Namespaces
+
+- Secrets: Sealed Secrets for GitOps values, OpenBao references for runtime
+- Never commit plaintext credentials
+- Each service gets its own namespace — never deploy into `default`
+
+---
+
+## Quality Gates (run before pushing)
+
+```bash
+# Helm — scope to your chart only
+helm dependency update platform/charts/<name>/   # if Chart.yaml has dependencies
+helm lint platform/charts/<name>/
+bash scripts/ha-gate.sh --chart <name>           # exits 0/1 based on this chart only
+
+# Autarky — no external registries in templates
+grep -rn "docker\.io\|quay\.io\|ghcr\.io\|gcr\.io\|registry\.k8s\.io" \
+  platform/charts/*/templates/ && echo "FAIL" || echo "PASS"
+
+# Shell scripts
+shellcheck -S error <script>
+
+# Contract
+python3 contract/validate.py contract/v1/tests/valid.yaml           # must pass
+python3 contract/validate.py contract/v1/tests/invalid-egress-not-blocked.yaml  # must fail
+
+# Resource limits (when touching charts)
+python3 scripts/check-limits.py platform/charts/<name>/
+```
+
+Pre-existing failures in other charts don't affect you — `--chart <name>` is scoped.
+
+---
+
+## Stakeholder Alignment
+
+The champion speaks for one of five stakeholders each cycle. Read `journey.md` to understand which one and why this change matters to them. Let that framing shape how you implement:
+
+- **Self-Hoster (Confidence):** Every step in bootstrap and deployment should do exactly what it says. Errors name the specific fix. No surprises.
+- **Contributor (Momentum):** Gates are fast, deterministic, and self-explanatory. Local behavior matches CI behavior.
+- **Developer on Sovereign (Reliability):** Platform services never demand attention. SSO, observability, and GitOps work silently.
+- **Security Auditor (Paranoia Satisfied):** Every security claim is machine-checkable. No "trust the docs" moments.
+- **AI Agent (Autonomy):** No dead ends. Every tool is pre-installed. No external network calls required inside the zero-trust perimeter.
