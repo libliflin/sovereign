@@ -1,33 +1,37 @@
-# Verification — Cycle 1, Round 1 (Verifier)
+# Verification — Cycle 1, Round 2 (Verifier)
 
 ## What I compared
 Goal: fix the contradiction between `bootstrap.sh`'s "Next step: platform/deploy.sh" and the README's `helm install test-release cluster/kind/charts/sealed-secrets/`.
 
-Builder's diff: replaced the `platform/deploy.sh` line with the `helm install` command plus `kind delete cluster` tear-down. Dynamic `kind-${CLUSTER_NAME}` (defaults to `sovereign-test`).
+Round 1 introduced the `kubectl get pods` line. This round I compared the terminal output side-by-side against the README, ran the gates, and checked CI.
 
 I ran:
-- `shellcheck -S error cluster/kind/bootstrap.sh` → EXIT: 0
-- `bash cluster/kind/bootstrap.sh --dry-run` → clean 4-line preview, no mention of deploy.sh
-- Side-by-side comparison of terminal output vs README Option A steps 3 and 4
+- `shellcheck -S error cluster/kind/bootstrap.sh` → exit 0
+- `bash cluster/kind/bootstrap.sh --dry-run` → clean 4-line preview, no `deploy.sh` reference
+- `gh pr checks 153` → all 39 checks pass, Vendor Audit skipping (no vendor change)
+- Side-by-side comparison of `bootstrap.sh` lines 107–111 against README lines 142–149
 
 ## What's here, what was asked
-Core contradiction is fixed. The `platform/deploy.sh` reference is gone; the terminal now directs to `helm install`. The dynamic `${CLUSTER_NAME}` correctly resolves to `sovereign-test` for the default path, matching the README's hardcoded `kind-sovereign-test`.
+Matches: the work holds up against the goal.
 
-Gap found: README step 3 shows two commands — `helm install ... --wait` followed immediately by `kubectl --context kind-sovereign-test get pods -n sealed-secrets`. The builder's terminal output included the helm install and the tear-down but skipped the `kubectl get pods` verification step. A developer copy-pasting from the terminal would install but never confirm the pods are running — the part of the smoke test that actually tells you it worked.
+`bootstrap.sh` terminal output (with default `CLUSTER_NAME=sovereign-test`) is now character-for-character equivalent to README Option A steps 3 and 4:
+
+```
+bootstrap.sh output              README step 3/4
+─────────────────────────────────────────────────────────────────
+helm install test-release        helm install test-release
+  cluster/kind/charts/...          cluster/kind/charts/...
+  --kube-context kind-${NAME}      --kube-context kind-sovereign-test
+  --wait                           --wait
+kubectl --context kind-${NAME}   kubectl --context kind-sovereign-test
+  get pods -n sealed-secrets         get pods -n sealed-secrets
+kind delete cluster --name ${NAME}  kind delete cluster --name sovereign-test
+```
+
+`platform/deploy.sh` is gone from the terminal output. No external registry leaks introduced. No new flags, no breaking changes to the script's interface.
 
 ## What I added
-Added the missing `kubectl get pods` line to `bootstrap.sh`'s terminal output so it fully matches README step 3:
-
-```
-Smoke test:  helm install test-release cluster/kind/charts/sealed-secrets/ \
-               --namespace sealed-secrets --create-namespace \
-               --kube-context kind-${CLUSTER_NAME} --wait
-             kubectl --context kind-${CLUSTER_NAME} get pods -n sealed-secrets
-Tear down:   kind delete cluster --name ${CLUSTER_NAME}
-```
-
-Files: `cluster/kind/bootstrap.sh`
-Commit: `d09f9fc`
+Nothing this round — the work holds up against the goal from my lens.
 
 ## Notes for the goal-setter
-None. The fix is tight, shellcheck passes, the terminal output now mirrors the README's step 3 exactly.
+PR #153 is open, all CI green, but merge is BLOCKED — branch protection requires a human review approval. The code fix is complete; the merge gate is a policy gate, not a correctness gate.
