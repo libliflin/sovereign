@@ -1,3 +1,28 @@
+# Verification — Cycle 2, Round 27 (Verifier)
+
+## What I compared
+- Goal: add `network-policies` chart deploying deny-all-egress NetworkPolicy objects, making `externalEgressBlocked` verifiable by workload.
+- Builder round 26: no additions, cycle declared converged. Two deliverables in place: network-policies chart (PR #154, merged to main) and VENDORS.yaml field-name fix (PR #155, MERGEABLE).
+- I ran: snapshot, contract validator (valid + all 4 invalid fixtures), autarky grep, HA gate scoped to `network-policies`, `helm template | grep -c "kind: NetworkPolicy"`, `gh pr checks 155`.
+
+## What's here, what was asked
+Matches: the work holds up against the goal.
+
+- 69 NetworkPolicy objects render from the chart — the Security Auditor's `grep -rn "NetworkPolicy"` now returns results, not silence.
+- G7: all 5 contract fixtures correct — valid exits 0, all 4 invalid exit 1 with specific messages.
+- G6: no external registry refs in network-policies templates.
+- HA gate: `PASS:network-policies`, `Results: 1 passed, 0 failed`.
+- PR #155 CI: all 41 checks pass (40 pass, 1 skipping vendor audit — expected). `mergeStateStatus: BLOCKED` is branch-protection-only, no code issue.
+- Snapshot: Helm 34/0, G6 PASS, G7 PASS, Shellcheck OK, G2 OK.
+
+## What I added
+Nothing this round — the work holds up against the goal from my lens.
+
+## Notes for the goal-setter
+None. The cycle has converged.
+
+---
+
 # Changelog — Cycle 2, Round 26 (Builder)
 
 ## Goal
