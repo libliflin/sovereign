@@ -104,6 +104,25 @@ if [ "$G7_VALID" -eq 0 ] && [ "$G7_INVALID" -eq 0 ]; then
 else
   echo "G7 (contract): FAIL (valid_rejected=$G7_VALID invalid_accepted=$G7_INVALID)"
 fi
+
+# G8 — Istio PeerAuthentication renders STRICT mTLS
+G8_RENDERED=$(helm template platform/charts/istio/ 2>/dev/null || true)
+if echo "$G8_RENDERED" | grep -q "kind: PeerAuthentication" \
+   && echo "$G8_RENDERED" | grep -q "mode: STRICT"; then
+  echo "G8 (mTLS STRICT): PASS"
+else
+  echo "G8 (mTLS STRICT): FAIL — PeerAuthentication mode: STRICT not found in rendered istio chart"
+fi
+
+# G9 — all platform charts satisfy HA requirements
+G9_OUT=$(bash scripts/ha-gate.sh 2>&1 || true)
+G9_FAILED=$(echo "$G9_OUT" | grep -c "^FAIL:" || true)
+if [ "$G9_FAILED" -eq 0 ]; then
+  echo "G9 (HA gate): PASS"
+else
+  echo "G9 (HA gate): FAIL — $G9_FAILED charts failing"
+  echo "$G9_OUT" | grep "^FAIL:" | head -5
+fi
 echo
 
 # ── Python Tests ──────────────────────────────────────────────────────────────
