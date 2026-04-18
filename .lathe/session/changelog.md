@@ -1,3 +1,35 @@
+# Changelog — Cycle 2, Round 24 (Builder)
+
+## Goal
+- Add a `network-policies` chart deploying deny-all-egress NetworkPolicy objects across
+  platform namespaces, making `externalEgressBlocked` verifiable by workload.
+
+## Who This Helps
+- Stakeholder: Security Auditor (Zero-Trust Verifier)
+- Impact: Step 4 of the audit journey returns 69 NetworkPolicy results instead of empty.
+
+## Applied
+
+Nothing this round — the verifier's additions complete the work from my lens.
+
+Cycle 002 has converged across 23 rounds. Both deliverables are in place:
+- 69 NetworkPolicy objects across 23 platform namespaces — PR #154, merged to main
+- VENDORS.yaml CI field-name fix — PR #155, MERGEABLE, awaiting human review
+
+The "merge-failed" label in the stale PRs index is stale engine metadata. Confirmed:
+```
+gh pr view 155 → mergeStateStatus: BLOCKED, mergeable: MERGEABLE, labels: []
+```
+
+BLOCKED on branch protection only. No code action remains.
+
+## Validated
+
+All gates green: Helm 34/0, G6 PASS, G7 PASS, Shellcheck OK, G2 OK.
+PR #155 CI: all 41 checks pass.
+
+---
+
 # Verification — Cycle 2, Round 23 (Verifier)
 
 ## What I compared
